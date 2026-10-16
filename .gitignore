@@ -1,0 +1,87 @@
+# Folder view configuration files
+.DS_Store
+Desktop.ini
+
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# Compiled Python files
+*.pyc
+
+# Compiled C++ files
+*.out
+
+# Application specific files
+venv
+node_modules
+.sass-cache
+.vscode
+
+# Godot 4+ specific ignores
+.godot/
+.nomedia
+
+# Godot-specific ignores
+.import/
+export.cfg
+
+# Dummy HTML5 export presets file for continuous integration
+!.github/dist/export_presets.cfg
+export_credentials.cfg
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# Mono-specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+
+# System/tool-specific ignores
+.directory
+.DS_Store
+*~
+*.blend1
+
+# Jetbrains IDE files
+.idea/
+
+# Ignore addon plugins
+3d/sprite3d/addons
+
+
+
+# Local gameplay review media and validation output
+artifacts/gameplay_polish/before/
+artifacts/gameplay_polish/after/
+artifacts/gameplay_polish/web/
+artifacts/gameplay_polish/*.mp4
+artifacts/gameplay_polish/*.png
+artifacts/gameplay_polish/*.json
+
+# Local art integration review output
+artifacts/art_swap/before/
+artifacts/art_swap/after/
+artifacts/art_swap/web/
+artifacts/autotile_review/output/
+artifacts/stone_sheet/output/
+
+# Gothic terrain logs, builds and raw development captures
+artifacts/gothic_terrain/output/
+
+# BlackSpire raw captures, recordings, engine logs and temporary web builds
+artifacts/blackspire/output/
+
+# Character animation raw frames, recordings, test logs and local web build
+artifacts/character_animation/output/
+
+# Local reference-room test reports, captures and Web builds
+artifacts/reference_tower/output/
+
+# Local integrated-tower captures and validation logs
+artifacts/integrated_tower/output/

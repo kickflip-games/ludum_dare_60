@@ -28,7 +28,7 @@ func _run() -> void:
 		game.gust_strength = 0.04 * trial
 		game.start_crossing()
 		game._physics_process(game.CAST_OFF_SECONDS)
-		game.boat.position = game.course_right() * -120
+		game.boat.position = Vector3(400, 0, 360)
 		var ship = game.enemy_encounters.ship
 		ship.begin()
 		ship.position = game.boat.position + game.cannon.starboard_direction() * 34 + game.course_forward() * (trial - 1) * 8

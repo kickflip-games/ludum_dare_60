@@ -1,5 +1,5 @@
 extends Node3D
-## A hand-placed, short crossing. All gameplay distances are in metres.
+## A compact, authored three-star archipelago. Distances are in metres.
 
 const VoyageDirector = preload("res://game/voyage_director.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
@@ -12,13 +12,11 @@ const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
+const ARCHIPELAGO = preload("res://game/world/archipelago.tscn")
 const SPEED: float = 6.3
 const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
-const CROSSING_LENGTH: float = 660.0
-const ARRIVAL_RADIUS: float = 58.0
-const BEACON_REVEAL_DISTANCE: float = 110.0
-const START_HEADING: float = PI * 0.28
+const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
 const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 
@@ -103,6 +101,11 @@ var hit_message: String = ""
 var hit_message_left: float = 0.0
 var hits_taken: int = 0
 var voyage := VoyageDirector.new()
+var archipelago: Node3D
+var discovery_text: String = ""
+var discovery_left: float = 0.0
+@export_group("Development")
+@export var development_tools: bool = false
 var _warning_audio: AudioStreamPlayer
 var heading: float = START_HEADING
 var elapsed: float = 0.0
@@ -153,25 +156,36 @@ var _sound_enabled: bool = true
 
 
 func course_forward() -> Vector3:
-	return Vector3(sin(TARGET_HEADING), 0.0, -cos(TARGET_HEADING))
+	var bearing := destination_bearing()
+	return Vector3(sin(bearing), 0.0, -cos(bearing))
 
 
 func course_right() -> Vector3:
-	return Vector3(cos(TARGET_HEADING), 0.0, sin(TARGET_HEADING))
+	var bearing := destination_bearing()
+	return Vector3(cos(bearing), 0.0, sin(bearing))
 
 
 func _ready() -> void:
 	ocean_settings = ocean_settings.duplicate(true)
 	hull = hull_capacity
-	target = course_forward() * CROSSING_LENGTH
+	target = Vector3(-230, 0, -155)
 	_configure_inputs()
 	_build_world()
 	_build_boat()
+	archipelago = ARCHIPELAGO.instantiate()
+	add_child(archipelago)
+	archipelago.configure(self)
+	var star_directions := PackedVector3Array()
+	for region: Marker3D in archipelago.get_node("NavigationRegions").get_children():
+		star_directions.append(region.star_direction.normalized())
+	sky_material.set_shader_parameter("guiding_stars", star_directions)
+	boat.position = archipelago.get_node("SpawnPoints/Departure").position
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
 	cannon.fired.connect(_on_cannon_fired)
 	voyage.reset(encounter_seed)
+	voyage.set_target(self)
 	_build_hazards()
 	enemy_encounters = Node3D.new()
 	enemy_encounters.set_script(ENCOUNTER_SCRIPT)
@@ -192,7 +206,11 @@ func _ready() -> void:
 		_danger_audio = cannon._audio(66.0, 0.8, -16.0)
 	_update_view(1.0)
 	if DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_title("The Last Bearing | Ludum Dare 60")
+		DisplayServer.window_set_title("Latitude Lines")
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--layout-debug":
+			development_tools = true
+			archipelago.toggle_debug()
 
 
 func _configure_inputs() -> void:
@@ -213,6 +231,11 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if development_tools and event is InputEventKey and event.pressed:
+		if event.keycode == KEY_F2:
+			archipelago.toggle_debug()
+		elif event.keycode in [KEY_F3, KEY_F4, KEY_F5]:
+			archipelago.debug_spawn(event.keycode - KEY_F3)
 	if event.is_action_pressed("restart_crossing") and state in [State.SAILING, State.LOST, State.ARRIVED]:
 		restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
@@ -246,14 +269,30 @@ func start_crossing() -> void:
 	state = State.CASTING_OFF
 
 
-func journey_distance() -> float:
-	if state == State.ARRIVED:
-		return CROSSING_LENGTH
-	return clampf(boat.position.dot(course_forward()), 0.0, CROSSING_LENGTH * 0.99)
+func destination_bearing() -> float:
+	var offset := target - boat.position if is_instance_valid(boat) else target
+	return atan2(offset.x, -offset.z)
+
+
+func guiding_star_direction() -> Vector3:
+	return voyage.region(self).star_direction.normalized()
+
+
+func guiding_star_name() -> String:
+	return voyage.region(self).star_name
+
+
+func show_discovery(value: String) -> void:
+	discovery_text = value
+	discovery_left = 4.0
 
 
 func journey_progress() -> float:
-	return journey_distance() / CROSSING_LENGTH
+	if voyage.stage == voyage.Stage.COMPLETE:
+		return 1.0
+	var lengths := [350.0, 470.0, 410.0]
+	var local_progress := clampf(1.0 - boat.position.distance_to(target) / lengths[voyage.stage], 0.0, 0.99)
+	return (voyage.stage + local_progress) / 3.0
 
 
 func restart() -> void:
@@ -270,13 +309,18 @@ func restart() -> void:
 	last_sighting_time = 0.0
 	_last_thunder = -1
 	for obstacle: Dictionary in obstacles:
+		if obstacle.body.get_meta("landmark", false):
+			continue
 		obstacle.body.collision_layer = 0
 		obstacle.body.set_meta("destroyed", true)
 		obstacle.body.queue_free()
-	obstacles.clear()
-	ocean.floating_visuals.clear()
+	obstacles = obstacles.filter(func(o: Dictionary) -> bool: return o.body.get_meta("landmark", false))
+	ocean.floating_visuals = ocean.floating_visuals.filter(func(o: Dictionary) -> bool: return is_instance_valid(o.visual) and o.visual.get_parent().get_meta("landmark", false))
 	voyage.reset(encounter_seed)
-	boat.position = Vector3.ZERO
+	voyage.set_target(self)
+	archipelago.reset()
+	discovery_left = 0.0
+	boat.position = archipelago.get_node("SpawnPoints/Departure").position
 	boat.velocity = Vector3.ZERO
 	heading = START_HEADING
 	boat_motion.reset()
@@ -339,7 +383,6 @@ func advance_sailing(delta: float, steering: float) -> void:
 		return
 	elapsed += delta
 	damage_immunity = maxf(0.0, damage_immunity - delta)
-	voyage.spawn_ahead(self)
 	voyage.update_forces(self, delta)
 	enemy_encounters.update_encounters(delta)
 	# Route only the rudder input away; currents, gusts, collision and damage keep running.
@@ -352,21 +395,22 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if hit:
 		take_damage(contact_damage, "Hull struck %s" % hit.get_collider().get_meta("hazard_name", "wreckage"))
 		# Keep responsive steering and let glancing hits slide; never teleport through a reef.
-		boat.move_and_collide(hit.get_remainder().slide(hit.get_normal()))
+		var shore_normal := Vector3(hit.get_normal().x, 0, hit.get_normal().z).normalized()
+		boat.move_and_collide(hit.get_remainder().slide(shore_normal))
+	boat.position.y = 0.0
 	if reading:
 		last_reading = heading
 		has_reading = true
 		last_sighting_time = elapsed
-	var distance := boat.position.distance_to(target)
-	if ((journey_progress() >= 0.85 and distance < 180.0) or distance < BEACON_REVEAL_DISTANCE) and not beacon_seen:
+	voyage.update_progress(self)
+	archipelago.update_discoveries()
+	var distance := boat.position.distance_to(archipelago.get_node("Landmarks/Lighthouse").position)
+	if voyage.stage >= voyage.Stage.LIGHTHOUSE and distance < 230.0 and not beacon_seen:
 		beacon_seen = true
 		beacon.visible = true
-	if distance < ARRIVAL_RADIUS and state == State.SAILING:
-		state = State.ARRIVED
-		cue_sound("victory")
-	# A broad safety boundary catches sailing away without punishing detours.
-	if boat.position.length() > 1150.0 or elapsed > 240.0:
-		failure_reason = "The current carried you beyond the crossing."
+	# Exploration is untimed; a distant boundary still catches a lost vessel.
+	if maxf(absf(boat.position.x), absf(boat.position.z)) > 640.0:
+		failure_reason = "You sailed beyond the archipelago. Follow the guiding stars home."
 		state = State.LOST
 	if state == State.LOST or state == State.ARRIVED:
 		reading = false
@@ -399,6 +443,7 @@ func shake(amount: float) -> void:
 
 
 func _update_view(delta: float) -> void:
+	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
 	hit_message_left = maxf(0.0, hit_message_left - delta)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
@@ -469,6 +514,7 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("cloud_highlights", cloud_highlights)
 	sky_material.set_shader_parameter("cloud_softness", cloud_softness)
 	sky_material.set_shader_parameter("cloud_variation", cloud_variation)
+	sky_material.set_shader_parameter("active_star", mini(voyage.stage, 2))
 	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
@@ -642,11 +688,11 @@ func _build_boat() -> void:
 
 
 func _build_hazards() -> void:
-	voyage.spawn_ahead(self)
+	archipelago.rebuild_hazards()
 
 
 func phase_name() -> String:
-	return ["CALM DEPARTURE", "DANGEROUS WATERS", "THE STORM", "THE FINAL APPROACH"][phase]
+	return ["THE WRECK", "TWIN PEAKS", "LIGHTHOUSE HARBOUR", "SAFE HARBOUR"][mini(voyage.stage, 3)]
 
 
 func _update_weather(delta: float) -> void:
@@ -658,14 +704,14 @@ func _update_weather(delta: float) -> void:
 	phase_banner_left = maxf(0, phase_banner_left - delta)
 	if not weather_enabled:
 		return
-	var strength: float = [0.0, 0.35, 1.0, 0.5][phase]
+	var strength: float = [0.0, 0.25, 0.45, 0.15][phase]
 	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
 	var height: float = _base_wave_height * lerpf(0.45, 1.4, storm_blend)
 	# Private resource copy: CPU/GPU remain authoritative together; saved presets never change.
 	if absf(ocean_settings.height_multiplier - height) > 0.01:
 		ocean_settings.height_multiplier = height
 	world_environment.environment.ambient_light_energy = lerpf(0.78, 0.56, storm_blend)
-	world_environment.environment.fog_density = lerpf(0.006, 0.009, storm_blend)
+	world_environment.environment.fog_density = lerpf(0.0035, 0.0048, storm_blend)
 	moon.light_energy = lerpf(0.88, 0.68, storm_blend)
 	sky_material.set_shader_parameter("storm", storm_blend)
 	var flash: float = maxf(0.0, 1.0 - fmod(elapsed, 9.0) / 0.16) if phase == 2 else 0.0
@@ -745,7 +791,7 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 func _build_destination() -> void:
 	beacon = Node3D.new()
 	beacon.name = "LateVisibleLighthouse"
-	beacon.position = target
+	beacon.position = archipelago.get_node("Landmarks/Lighthouse").position
 	beacon.visible = false
 	add_child(beacon)
 	var stone := _material(Color("566369"))

@@ -20,7 +20,8 @@ uniform float cloud_variation : hint_range(0.0, 1.0) = 0.35;
 // Review harness only: 1 = coverage, 2 = underlying stars, 3 = cloud paint.
 uniform int cloud_debug = 0;
 uniform float target_focus : hint_range(0.0, 1.0) = 0.0;
-const vec3 NORTH_STAR = vec3(0.0, 0.8290376, -0.5591929);
+uniform int active_star = 0;
+uniform vec3 guiding_stars[3];
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -115,7 +116,7 @@ vec4 painted_clouds(vec3 direction) {
 		}
 		// Reserve actual open sky around the principal star. This thins the
 		// formation itself, so background stars never shine over opaque paint.
-		float separation = length(direction - NORTH_STAR);
+		float separation = min(length(direction - guiding_stars[0]), min(length(direction - guiding_stars[1]), length(direction - guiding_stars[2])));
 		alpha *= smoothstep(0.035, 0.19, separation);
 		result = color * alpha + result * (1.0 - alpha);
 		coverage = alpha + coverage * (1.0 - alpha);
@@ -141,10 +142,16 @@ void sky() {
 		vec3 starlight = stars(star_uv.xy, 40.0, star_uv.z * 137.0, star_density * 0.58, pixel_angle);
 		starlight += stars(star_uv.xy, 20.0, 81.0 + star_uv.z * 137.0, star_density * 0.24, pixel_angle);
 		// The reference is one of several bright stars until the instrument focuses.
-		float separation = length(d - NORTH_STAR);
-		float north = 1.0 - smoothstep(0.0010, 0.0010 + pixel_angle, separation);
-		float glow = exp(-separation * separation / 0.000024) * (0.07 + target_focus * 0.19);
-		starlight += vec3(1.0, 0.91, 0.72) * (north * (1.1 + target_focus * 0.4) + glow);
+		for (int i = 0; i < 3; i++) {
+			vec3 reference = guiding_stars[i];
+			float focus = i == active_star ? target_focus : 0.0;
+			float separation = length(d - reference);
+			float core = 1.0 - smoothstep(0.0010, 0.0010 + pixel_angle, separation);
+			float glow = exp(-separation * separation / 0.000024) * (0.07 + focus * 0.19);
+			vec3 tint = i == 1 ? vec3(0.72, 0.87, 1.0) : vec3(1.0, 0.91, 0.72);
+			starlight += tint * (core * (1.1 + focus * 0.4) + glow);
+		}
+
 		night += starlight * smoothstep(0.015, 0.15, d.y) * mix(1.0, 0.78, storm);
 		vec4 clouds = painted_clouds(d);
 		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning);

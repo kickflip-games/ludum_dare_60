@@ -99,3 +99,6 @@ artifacts/night_clouds/refinement/
 artifacts/night_clouds/final-sequence/
 artifacts/night_clouds/combat/
 artifacts/night_clouds/*.mp4
+
+# Local archipelago renders and engine/test logs
+artifacts/archipelago/

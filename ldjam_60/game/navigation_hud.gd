@@ -129,12 +129,12 @@ func _build_menu() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu.add_child(column)
 	menu_kicker = _label(column, "Kicker", "A CROSSING BY STARLIGHT", 13, BRASS)
-	menu_title = _label(column, "Title", "THE LAST\nBEARING", 61, INK, true)
+	menu_title = _label(column, "Title", "LATITUDE\nLINES", 61, INK, true)
 	menu_title.add_theme_constant_override("line_spacing", -8)
 	menu_title.add_theme_constant_override("outline_size", 0)
-	menu_body = _label(column, "Subtitle", "A short crossing. A fixed star.\nFind your way to the lighthouse.", 18, MUTED)
+	menu_body = _label(column, "Subtitle", "Three stars. An island sea.\nFind the wreck, the peaks, and home.", 18, MUTED)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	menu_reference = _label(column, "StarReference", "Keep the North Star 30° to port (left).", 17, BRASS)
+	menu_reference = _label(column, "StarReference", "Sight each guiding star to read your next bearing.", 17, BRASS)
 	menu_controls = GridContainer.new()
 	menu_controls.name = "Controls"
 	menu_controls.columns = 2
@@ -194,9 +194,9 @@ func _build_instrument() -> void:
 	gameplay_hud.add_child(instrument)
 	instrument.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bearing_label = _label(instrument, "Bearing", "", 21, INK, true)
-	bearing_label.size = Vector2(190, 30)
+	bearing_label.size = Vector2(340, 30)
 	alignment_label = _label(instrument, "Alignment", "", 17, BRASS)
-	alignment_label.size = Vector2(190, 26)
+	alignment_label.size = Vector2(340, 62)
 	release_label = _label(instrument, "ReleaseHint", "Hold to focus", 14, MUTED)
 	release_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	release_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -225,10 +225,10 @@ func _sync_button() -> void:
 		return
 	var intro: bool = game.state == game.State.READY
 	var won: bool = game.state == game.State.ARRIVED
-	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "THE LAST BEARING"
-	menu_title.text = "THE LAST\nBEARING" if intro else "Safe harbour." if won else "Lost at sea."
+	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
+	menu_title.text = "LATITUDE\nLINES" if intro else "Safe harbour." if won else "Lost at sea."
 	menu_title.add_theme_font_size_override("font_size", 61 if intro else 51)
-	menu_body.text = "A short crossing. A fixed star.\nFind your way to the lighthouse." if intro else "The light has brought you home." if won else game.failure_reason
+	menu_body.text = "Three stars. An island sea.\nFind the wreck, the peaks, and home." if intro else "The light has brought you home." if won else game.failure_reason
 	menu_reference.visible = intro
 	menu_controls.visible = intro
 	menu_details.visible = won
@@ -291,7 +291,7 @@ func _process(delta: float) -> void:
 
 
 func _star_screen_position() -> Vector2:
-	var point: Vector3 = game.sky_root.global_position + game.NORTH_STAR_DIRECTION * 700.0
+	var point: Vector3 = game.sky_root.global_position + game.guiding_star_direction() * 700.0
 	return game.camera.unproject_position(point)
 
 
@@ -301,8 +301,8 @@ func _update_sighting_text() -> void:
 	var named: bool = active and focus > 0.55 and game.focused_text >= 1
 	var bearing: bool = active and focus > 0.85 and game.focused_text >= 2
 	var extended: bool = active and focus >= 1.0 and game.focus_elapsed >= game.extended_focus_delay and game.extended_text == 1
-	bearing_label.text = "North Star" if named else ""
-	alignment_label.text = _course_hint() if extended else _bearing_text(game.heading) if bearing else ""
+	bearing_label.text = game.guiding_star_name() if named else ""
+	alignment_label.text = _course_hint() if extended else _navigation_text() if bearing else ""
 	bearing_label.visible = named
 	alignment_label.visible = bearing or extended
 	bearing_label.modulate.a = smoothstep(0.55, 0.95, focus)
@@ -311,7 +311,7 @@ func _update_sighting_text() -> void:
 	release_label.modulate.a = 0.65 * (1.0 - smoothstep(0.0, 0.3, focus))
 	if named or bearing or extended:
 		var at := _star_screen_position() + Vector2(25, -21)
-		at.x = clampf(at.x, 24, size.x - 214)
+		at.x = clampf(at.x, 24, size.x - 364)
 		at.y = clampf(at.y, 24, size.y - 200)
 		bearing_label.position = at
 		alignment_label.position = at + Vector2(0, 29)
@@ -320,8 +320,11 @@ func _update_sighting_text() -> void:
 func _update_notice() -> void:
 	var value := ""
 	var alpha: float = 1.0
-	if game.elapsed < 6.0 and not game.has_reading:
-		value = "Hold SPACE · sight the North Star"
+	if game.discovery_left > 0:
+		value = game.discovery_text
+		alpha = minf(1.0, game.discovery_left)
+	elif game.elapsed < 6.0 and not game.has_reading:
+		value = "Hold SPACE · sight the guiding star"
 		alpha = clampf(6.0 - game.elapsed, 0.0, 1.0)
 	elif game.phase_banner_left > 0.0 and game.elapsed > 8.0:
 		value = game.phase_name()
@@ -356,17 +359,22 @@ func _bearing_text(angle: float) -> String:
 	return "%d° %s" % [roundi(absf(degrees)), "port" if degrees > 0.0 else "starboard"]
 
 
+func _navigation_text() -> String:
+	var bearing: float = fposmod(rad_to_deg(game.destination_bearing()), 360.0)
+	var rounded: int = roundi(bearing / 5.0) * 5 % 360
+	var star: Vector3 = game.guiding_star_direction()
+	var relative: float = wrapf(game.heading - atan2(star.x, -star.z), -PI, PI)
+	return "%s · steer ~%03d°\nStar %s" % [game.voyage.region(game).display_name, rounded, _bearing_text(relative).to_lower()]
+
+
 func _course_error() -> float:
-	# Preserve the existing coarse channel correction, only inside the astrolabe.
-	var lane: float = game.boat.position.dot(game.course_right())
-	var corrected: float = game.TARGET_HEADING - clampf(lane * 0.008, -0.35, 0.35)
-	return wrapf(game.heading - corrected, -PI, PI)
+	return wrapf(game.heading - game.destination_bearing(), -PI, PI)
 
 
 func _course_hint() -> String:
 	var error: float = _course_error()
-	if absf(error) < deg_to_rad(3.0):
-		return "Channel aligned"
+	if absf(error) < deg_to_rad(8.0):
+		return "Landmark bearing aligned"
 	return "Adjust to port" if error > 0.0 else "Adjust to starboard"
 
 

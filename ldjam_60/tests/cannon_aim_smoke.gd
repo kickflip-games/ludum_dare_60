@@ -42,7 +42,7 @@ func _run() -> void:
 	game.enemy_encounters.enabled = false
 	game.start_crossing()
 	step(1.3)
-	game.boat.position = game.course_right() * -120
+	game.boat.position = Vector3(400, 0, 360)
 	var c = game.cannon
 	action("fire_starboard", true)
 	check(c.aiming and c.shots_fired == 0, "press starts aiming immediately without firing")

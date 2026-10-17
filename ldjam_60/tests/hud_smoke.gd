@@ -61,7 +61,7 @@ func _run() -> void:
 	game.target += Vector3(200, 0, -200)
 	hud._process(0.0)
 	check(hud.compass.heading == before_destination, "changing lighthouse position cannot move the compass")
-	game.target = game.course_forward() * game.CROSSING_LENGTH
+	game.voyage.set_target(game)
 	game.cannon.fire()
 	hud._process(0.1)
 	check(hud.cannon_gauge.status.text == "Reloading" and hud.cannon_gauge.pulse == 0, "shot displays real reload state without a false ready flash")
@@ -82,7 +82,7 @@ func _run() -> void:
 	game._physics_process(game.focus_delay + game.focus_duration)
 	Input.action_release("astrolabe")
 	hud._process(0.2)
-	check(hud.bearing_label.text == "North Star" and hud.alignment_label.text == hud._bearing_text(game.heading), "continued hold reveals the actual live bearing")
+	check(hud.bearing_label.text == "North Star" and hud.alignment_label.text == hud._navigation_text(), "continued hold reveals the actual live bearing")
 	check(hud.compass.modulate.a < 0.01 and hud.cannon_gauge.modulate.a < 0.1 and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
 	var ship = game.enemy_encounters.ship
 	ship.begin()
@@ -103,7 +103,9 @@ func _run() -> void:
 	await settle()
 	check(game.hull == game.hull_capacity and hud.hull_gauge.status.text == "Hull" and hud.hull_gauge.pulse == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
 	game.elapsed = 102.0
-	game.boat.position = game.target - game.course_forward() * 42
+	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
+	game.voyage.set_target(game)
+	game.boat.position = game.target + Vector3(0,0,-5)
 	game.advance_sailing(0.001, 0.0)
 	await settle()
 	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.contains("01:42") and hud.menu_details.text.contains("3 / 3"), "arrival menu shows the real voyage time and remaining hull")

@@ -4,6 +4,6 @@
 
 [ext_resource type="Resource" path="res://game/ocean/presets/choppy.tres" id="2_ocean"]
 
-[node name="TheLastBearing" type="Node3D"]
+[node name="LatitudeLines" type="Node3D"]
 script = ExtResource("1_game")
 ocean_settings = ExtResource("2_ocean")

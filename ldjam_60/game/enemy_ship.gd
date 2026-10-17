@@ -15,6 +15,7 @@ enum Mode { DORMANT, APPROACH, POSITION, TELEGRAPH, FIRE, REPOSITION, SINKING, E
 @export var projectile_speed: float = 24.0
 @export var encounter_seconds: float = 24.0
 
+var territory := Vector3.ZERO
 var game: Node3D
 var mode: Mode = Mode.DORMANT
 var heading: float = 0.0
@@ -22,7 +23,6 @@ var hull: int = 2
 var age: float = 0.0
 var timer: float = 0.0
 var cooldown: float = 0.0
-var start_course: float = 0.0
 var locked_point := Vector3.ZERO
 var hit_reaction: float = 0.0
 var shots_fired: int = 0
@@ -91,15 +91,15 @@ func reset() -> void:
 	velocity = Vector3.ZERO
 
 
-func begin() -> void:
+func begin(at: Vector3 = Vector3.INF) -> void:
 	hull = hull_capacity
 	age = 0.0
 	timer = 0.0
 	cooldown = 0.0
 	hit_reaction = 0.0
-	start_course = game.journey_distance()
-	position = game.boat.position + game.course_forward() * 42.0 + game.course_right() * 48.0
-	heading = game.TARGET_HEADING - 1.9
+	position = at if at.is_finite() else game.boat.position + game.course_forward() * 42.0 + game.course_right() * 48.0
+	territory = position
+	heading = game.destination_bearing() - 1.9
 	rotation.y = -heading
 	mode = Mode.APPROACH
 	visible = true
@@ -145,7 +145,7 @@ func update_ship(delta: float) -> void:
 	age += delta
 	cooldown = maxf(0.0, cooldown - delta)
 	var to_player: Vector3 = game.boat.position - global_position
-	if age > encounter_seconds or to_player.length() > 145.0 or game.journey_distance() > start_course + 145.0:
+	if age > encounter_seconds or to_player.length() > 145.0 or global_position.distance_to(territory) > 155.0:
 		disengage()
 		return
 	var previous_heading: float = heading
@@ -180,10 +180,17 @@ func update_ship(delta: float) -> void:
 			if timer > 2.2:
 				_change(Mode.POSITION)
 	# All active states keep sailing. Local separation and a short terrain feeler prevent ramming.
-	var move_direction := forward()
-	var probe := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, global_position + Vector3.UP + move_direction * 12.0, 1)
-	if not get_world_3d().direct_space_state.intersect_ray(probe).is_empty() and mode != Mode.TELEGRAPH:
-		_turn_toward(move_direction + game.course_right() * 1.6, delta)
+	var terrain = game.archipelago.get_node("Terrain")
+	var probe_point := global_position + forward() * 28.0
+	if terrain.terrain_height_at(probe_point) > -3.0:
+		# Choose the clearer side before reaching shore; physical collision is final authority.
+		var left := forward().rotated(Vector3.UP, 1.0)
+		var right := forward().rotated(Vector3.UP, -1.0)
+		var left_height: float = terrain.terrain_height_at(global_position + left * 32.0)
+		var right_height: float = terrain.terrain_height_at(global_position + right * 32.0)
+		if mode == Mode.TELEGRAPH:
+			_change(Mode.REPOSITION)
+		_turn_toward(left if left_height < right_height else right, delta)
 	var separation_speed: float = 1.0
 	var relative_position: Vector3 = global_position - game.boat.position
 	var relative_motion: Vector3 = forward() * sailing_speed - game.boat.velocity
@@ -198,7 +205,9 @@ func update_ship(delta: float) -> void:
 	heading = previous_heading + clampf(wrapf(heading - previous_heading, -PI, PI), -turning_speed * delta, turning_speed * delta)
 	rotation.y = -heading
 	velocity = forward() * sailing_speed * separation_speed + game.course_right() * game.voyage.current * 0.6
-	move_and_slide()
+	var collision := move_and_collide(velocity * delta)
+	if collision:
+		move_and_collide(collision.get_remainder().slide(Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()))
 	position.y = 0.0
 	velocity.y = 0.0
 	_update_tell()

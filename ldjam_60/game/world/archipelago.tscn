@@ -1,0 +1,98 @@
+[gd_scene load_steps=7 format=3]
+[ext_resource type="Script" path="res://game/world/archipelago.gd" id="1"]
+[ext_resource type="Script" path="res://game/world/archipelago_terrain.gd" id="2"]
+[ext_resource type="Material" path="res://game/world/moonlit_terrain.tres" id="3"]
+[ext_resource type="Shape3D" path="res://game/world/archipelago_collision.res" id="4"]
+[ext_resource type="ArrayMesh" path="res://game/world/archipelago_mesh.res" id="5"]
+[ext_resource type="Script" path="res://game/world/navigation_region.gd" id="6"]
+[node name="Archipelago" type="Node3D"]
+script = ExtResource("1")
+[node name="Terrain" type="StaticBody3D" parent="."]
+scale = Vector3(4, 1, 4)
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("2")
+surface_material = ExtResource("3")
+use_image_data = false
+heightmap_path = "res://game/world/archipelago_height.res"
+enable_streaming_collision = false
+max_render_distance = 650.0
+lod_distance_0 = 100.0
+lod_distance_1 = 220.0
+lod_distance_2 = 450.0
+metadata/hazard_name = "the rocky shore"
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Terrain"]
+shape = ExtResource("4")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Terrain"]
+mesh = ExtResource("5")
+material_override = ExtResource("3")
+[node name="SpawnPoints" type="Node3D" parent="."]
+[node name="Departure" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(0, 0, 104)
+[node name="WreckApproach" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(-175, 0, -110)
+[node name="PeaksApproach" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(220, 0, -100)
+[node name="HarbourApproach" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(350, 0, 155)
+[node name="NavigationRegions" type="Node3D" parent="."]
+[node name="Wreck" type="Marker3D" parent="NavigationRegions"]
+position = Vector3(-230, 0, -155)
+script = ExtResource("6")
+display_name = "The Wreck"
+radius = 32.0
+[node name="TwinPeaks" type="Marker3D" parent="NavigationRegions"]
+position = Vector3(226, 0, -205)
+script = ExtResource("6")
+display_name = "Twin Peaks"
+radius = 29.0
+star_name = "East Lantern"
+star_direction = Vector3(0.518, 0.838, -0.171)
+[node name="Lighthouse" type="Marker3D" parent="NavigationRegions"]
+position = Vector3(260, 0, 183)
+script = ExtResource("6")
+display_name = "Lighthouse Harbour"
+radius = 31.0
+star_name = "Ember Star"
+star_direction = Vector3(0.28, 0.85, 0.446)
+[node name="Landmarks" type="Node3D" parent="."]
+[node name="Wreck" type="Marker3D" parent="Landmarks"]
+position = Vector3(-248, 0, -163)
+[node name="Lighthouse" type="Marker3D" parent="Landmarks"]
+position = Vector3(275, 18, 250)
+[node name="OptionalDiscoveries" type="Node3D" parent="."]
+[node name="HiddenCove" type="Marker3D" parent="OptionalDiscoveries"]
+position = Vector3(-196, 0, 125)
+metadata/label = "Lantern Cove"
+[node name="Salvage" type="Marker3D" parent="OptionalDiscoveries"]
+position = Vector3(-85, 0, -242)
+metadata/label = "Drifter's Cache"
+[node name="Outpost" type="Marker3D" parent="OptionalDiscoveries"]
+position = Vector3(76, 0, 203)
+metadata/label = "The Watchman's Rest"
+[node name="PiratePatrols" type="Node3D" parent="."]
+[node name="WreckPatrol" type="Marker3D" parent="PiratePatrols"]
+position = Vector3(-177, 0, -144)
+metadata/radius = 110.0
+metadata/stage = 0
+metadata/spawn = Vector3(-176, 0, -183)
+[node name="EasternPatrol" type="Marker3D" parent="PiratePatrols"]
+position = Vector3(325, 0, -55)
+metadata/radius = 110.0
+metadata/stage = 2
+metadata/spawn = Vector3(365, 0, 3)
+[node name="IslandProps" type="Node3D" parent="."]
+[node name="Hazards" type="Node3D" parent="."]
+[node name="ReefWest" type="Marker3D" parent="Hazards"]
+position = Vector3(-164, 0, -106)
+metadata/radius = 5.0
+[node name="ReefEast" type="Marker3D" parent="Hazards"]
+position = Vector3(330, 0, 90)
+metadata/radius = 6.0
+[node name="PeaksShoal" type="Marker3D" parent="Hazards"]
+position = Vector3(227, 0, -261)
+metadata/radius = 6.0
+[node name="WreckTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(-184, 0, -174)
+metadata/radius = 3.0
+metadata/kind = "debris"

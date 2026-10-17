@@ -46,7 +46,7 @@ func _run() -> void:
 	check(hud.alignment_label.text.is_empty(), "mid-focus still withholds exact bearing")
 	step(0.6)
 	check(game.focus_strength == 1 and hud.bearing_label.text == "North Star", "short continued hold reliably identifies the star")
-	check(hud.alignment_label.text == hud._bearing_text(game.heading), "focused cue measures live world-north bearing")
+	check(hud.alignment_label.text == hud._navigation_text(), "focused cue measures the active regional bearing")
 	check(not hud.alignment_label.text.contains("Adjust"), "default assistance avoids solving the course correction")
 	game.extended_text = 1
 	step(1)
@@ -78,10 +78,12 @@ func _run() -> void:
 			var at: Vector2 = hud._star_screen_position()
 			check(Rect2(Vector2.ZERO, hud.size).has_point(at), "world-north star is in view at %d degrees / %s" % [degrees, dimensions])
 		check(Rect2(Vector2.ZERO, hud.size).encloses(hud.alignment_label.get_rect()), "focused text stays in view at %s" % dimensions)
-	game.heading = game.TARGET_HEADING
+	game.boat.position = Vector3(400, 0, -370)
+	game.heading = 0
 	var ship = game.enemy_encounters.ship
 	ship.begin()
 	ship.position = game.boat.position + game.cannon.starboard_direction() * 40
+	ship.territory = ship.position
 	ship.heading = game.heading
 	ship.mode = ship.Mode.TELEGRAPH
 	ship.timer = 0

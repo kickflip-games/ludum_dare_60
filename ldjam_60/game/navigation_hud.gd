@@ -26,9 +26,6 @@ var gameplay_hud: Control
 var threat_label: Label
 var notice: Label
 var instrument: Control
-var bearing_label: Label
-var alignment_label: Label
-var release_label: Label
 var _last_state: int = -1
 var _last_hull: int = -1
 var _last_cooldown: float = 0.0
@@ -127,7 +124,7 @@ func _build_menu() -> void:
 	menu_title.add_theme_constant_override("outline_size", 0)
 	menu_body = _label(column, "Subtitle", "An island sea. A distant harbour.\nFind your way home by starlight.", 18, MUTED)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	menu_reference = _label(column, "StarReference", "Use the stars to read your destination's compass bearing.", 17, BRASS)
+	menu_reference = _label(column, "StarReference", "Hold Space until a star glows. Remember its direction, then steer.", 17, BRASS)
 	menu_reference.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu_controls = GridContainer.new()
 	menu_controls.name = "Controls"
@@ -136,7 +133,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Read destination bearing"], ["F · press again to fire", "Cannon view / shoot"]]:
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Find the guiding star"], ["F · press again to fire", "Cannon view / shoot"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -187,17 +184,6 @@ func _build_instrument() -> void:
 	instrument.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gameplay_hud.add_child(instrument)
 	instrument.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bearing_label = _label(instrument, "Bearing", "", 21, INK, true)
-	bearing_label.size = Vector2(420, 30)
-	alignment_label = _label(instrument, "Alignment", "", 17, BRASS)
-	alignment_label.size = Vector2(420, 62)
-	release_label = _label(instrument, "ReleaseHint", "Hold to focus", 14, MUTED)
-	release_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	release_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	release_label.offset_left = -250
-	release_label.offset_right = 250
-	release_label.offset_top = -37
-	release_label.offset_bottom = -13
 
 
 func _sync_button() -> void:
@@ -249,8 +235,6 @@ func _process(delta: float) -> void:
 	if game.state != game.State.SAILING:
 		_reading_alpha = 0.0
 		instrument.visible = false
-		bearing_label.text = ""
-		alignment_label.text = ""
 		_last_hull = game.hull
 		_last_cooldown = game.cannon.cooldown
 		queue_redraw()
@@ -274,37 +258,47 @@ func _process(delta: float) -> void:
 		gauge.update_presentation(delta)
 	instrument.modulate.a = _reading_alpha
 	instrument.visible = _reading_alpha > 0.01
-	_update_sighting_text()
 	_update_threat()
 	_update_notice()
 	queue_redraw()
 
 
 func _star_screen_position() -> Vector2:
-	var point: Vector3 = game.sky_root.global_position + game.guiding_star_direction() * 700.0
-	return game.camera.unproject_position(point)
+	# A direction at infinity: camera translation/shake cannot introduce parallax.
+	return game.camera.unproject_position(game.camera.global_position + game.guiding_star_direction() * 700.0)
 
 
-func _update_sighting_text() -> void:
-	var active: bool = game.reading and game.state == game.State.SAILING
-	var focus: float = game.focus_strength if active else 0.0
-	var named: bool = active and focus > 0.55 and game.focused_text >= 1
-	var bearing: bool = active and focus > 0.85 and game.focused_text >= 2
-	var extended: bool = active and focus >= 1.0 and game.focus_elapsed >= game.extended_focus_delay and game.extended_text == 1
-	bearing_label.text = game.guiding_star_name() if named else ""
-	alignment_label.text = _course_hint() if extended else _navigation_text() if bearing else ""
-	bearing_label.visible = named
-	alignment_label.visible = bearing or extended
-	bearing_label.modulate.a = smoothstep(0.55, 0.95, focus)
-	alignment_label.modulate.a = smoothstep(0.85, 1.0, focus)
-	release_label.visible = active and game.search_text == 1 and focus < 0.3
-	release_label.modulate.a = 0.65 * (1.0 - smoothstep(0.0, 0.3, focus))
-	if named or bearing or extended:
-		var at := _star_screen_position() + Vector2(25, -21)
-		at.x = clampf(at.x, 24, size.x - 444)
-		at.y = clampf(at.y, 24, size.y - 200)
-		bearing_label.position = at
-		alignment_label.position = at + Vector2(0, 29)
+func star_guidance() -> Dictionary:
+	# Presentation geometry only; every ray comes from the authoritative bearing.
+	if not game.reading or game.state != game.State.SAILING or game.focus_strength <= 0.0:
+		return {}
+	var direction: Vector3 = game.guiding_star_direction()
+	var at := _star_screen_position()
+	var center := size * 0.5
+	var bounds := Rect2(Vector2(22, 22), size - Vector2(44, 44))
+	var local: Vector3 = game.camera.global_basis.inverse() * direction
+	var visible := local.z < 0.0 and bounds.has_point(at)
+	if visible:
+		return {"visible": true, "position": at}
+	# Perspective flips points behind the camera. Use camera-plane components
+	# there, and the actual projected displacement for front-facing vertical exits.
+	var outward := at - center if local.z < -0.0001 else Vector2(local.x, -local.y) * size
+	var forward: Vector3 = -game.camera.global_basis.z
+	var planar_forward := Vector2(forward.x, forward.z).normalized()
+	var planar_star := Vector2(direction.x, direction.z).normalized()
+	if planar_forward.dot(planar_star) < 0.0:
+		# An elevated astern star projects ABOVE a pitched camera. Suggest a
+		# reachable rudder turn, not a nonexistent look-up control. Exact astern
+		# is a deterministic port tie; either rudder reaches the star.
+		var right := Vector2(-planar_forward.y, planar_forward.x)
+		var side := planar_star.dot(right)
+		outward.x = (-1.0 if side <= 0.001 else 1.0) * size.x
+		outward.y = clampf(outward.y, -size.y * 0.18, size.y * 0.18)
+	if outward.length_squared() < 0.0001:
+		outward = Vector2.LEFT
+	var half_extent := bounds.size * 0.5
+	var scale_to_edge := 1.0 / maxf(absf(outward.x) / half_extent.x, absf(outward.y) / half_extent.y)
+	return {"visible": false, "position": center + outward * scale_to_edge}
 
 
 func _update_notice() -> void:
@@ -336,24 +330,6 @@ func _update_threat() -> void:
 	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right else HORIZONTAL_ALIGNMENT_LEFT
 	threat_label.position = Vector2(size.x - 300 if right else 76.0, size.y * 0.33 - 13)
 	threat_label.size = Vector2(224, 30)
-
-
-func _navigation_text() -> String:
-	var rounded: int = game.NavigationBearings.compass_degrees(game.destination_bearing(), 5)
-	return "Bearing ~%03d°" % rounded
-
-
-func _course_error() -> float:
-	return game.destination_turn()
-
-
-func _course_hint() -> String:
-	var error: float = _course_error()
-	if absf(error) < deg_to_rad(8.0):
-		return "Ahead of the bow"
-	if absf(error) > deg_to_rad(177.5):
-		return "Astern · either side"
-	return "Starboard of the bow" if error > 0.0 else "Port of the bow"
 
 
 func _text(at: Vector2, value: String, point_size: int = 16, color: Color = INK, centered: bool = false, elegant: bool = false) -> void:
@@ -486,10 +462,24 @@ func _draw_instrument() -> void:
 		draw_line(sight + Vector2(0, side * 7), sight + Vector2(0, side * 13), Color(INK, alpha * 0.32), 1, true)
 	if not game.reading or game.focus_strength <= 0.0:
 		return
+	var guidance := star_guidance()
+	if guidance.is_empty():
+		return
 	var focus: float = game.focus_strength
-	var at := _star_screen_position()
-	var ring := lerpf(29.0, 13.0, focus) + sin(game.sea_time * 2.0) * 0.8
-	var glint := Color(BRASS, alpha * focus * game.target_highlight_strength)
-	for side in range(3):
-		var angle: float = side * TAU / 3.0 + sin(game.sea_time * 0.4) * 0.08
-		draw_arc(at, ring, angle, angle + TAU / 3.0 - 0.45, 16, glint, 1.2, true)
+	var at: Vector2 = guidance.position
+	var tint: Color = game.guiding_star_color()
+	var pulse := 0.92 + sin(game.sea_time * (1.7 + game.voyage.stage * 0.3)) * 0.08
+	var glint := Color(tint, alpha * focus * game.target_highlight_strength * pulse)
+	if not guidance.visible:
+		# A little peripheral shimmer, never an arrow, word or sailing marker.
+		for layer in range(5, 0, -1):
+			draw_circle(at, layer * 2.8, Color(tint, glint.a * 0.035 * (6 - layer)), true, -1, true)
+		draw_circle(at, 1.8, glint, true, -1, true)
+		draw_line(at + Vector2(-5, 0), at + Vector2(5, 0), Color(tint, glint.a * 0.6), 1, true)
+		return
+	# Small broken halos distinguish stages by shape as well as colour.
+	var segments: int = 2 + mini(game.voyage.stage, 2)
+	var halo_radius := 10.0 + sin(game.sea_time * 1.7) * 0.5
+	for segment in range(segments):
+		var angle: float = segment * TAU / segments + game.sea_time * 0.08
+		draw_arc(at, halo_radius, angle, angle + TAU / segments - 0.6, 20, glint, 1.0, true)

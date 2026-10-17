@@ -31,11 +31,11 @@ func coverage(label: String) -> void:
 		for x in range(0, mask.get_width(), 3):
 			covered += int(mask.get_pixel(x, y).r > 0.2)
 			samples += 1
-	var star_position: Vector2 = game.camera.unproject_position(game.camera.position + game.NORTH_STAR_DIRECTION * 100)
+	var star_position: Vector2 = game.camera.unproject_position(game.camera.position + game.guiding_star_direction() * 100)
 	var star_mask := -1.0
 	if Rect2(Vector2.ZERO, Vector2(mask.get_size())).has_point(star_position):
 		star_mask = mask.get_pixelv(Vector2i(star_position)).r
-	report[label] = {"visible_cloud_fraction": float(covered) / samples, "north_star_mask": star_mask}
+	report[label] = {"visible_cloud_fraction": float(covered) / samples, "guiding_star_mask": star_mask}
 	if label == "01-stargazing":
 		game.sky_material.set_shader_parameter("cloud_debug", 0)
 		await capture("occlusion-composite")

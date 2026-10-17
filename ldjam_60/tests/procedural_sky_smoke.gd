@@ -27,7 +27,6 @@ func _run() -> void:
 	game.wave_encounters.enabled = false
 	game.enemy_encounters.enabled = false
 	var material: ShaderMaterial = game.sky_material
-	var catalog: PackedVector3Array = material.get_shader_parameter("guiding_stars")
 	var offset: Vector3 = material.get_shader_parameter("cloud_offset")
 	var field = game.ocean.wave_field
 	check(game.procedural_clouds and material.get_shader_parameter("procedural_clouds"), "real game uses the procedural cloud layer")
@@ -51,13 +50,13 @@ func _run() -> void:
 	for frame in range(114):
 		game._physics_process(1.0 / 60.0)
 	game.hud._process(0.0)
-	check(game.focus_strength == 1.0 and game.hud.bearing_label.text == "North Star", "actual Space hold focuses with high coverage")
+	check(game.focus_strength == 1.0 and not game.hud.star_guidance().is_empty(), "actual Space hold focuses with high coverage")
 	check(game.boat.position.distance_to(start) > 10 and game.ocean.wave_field == field, "sailing continues using the original authoritative wave field")
 	Input.action_release("astrolabe")
 	game._physics_process(1.0 / 60.0)
 	game.hud._process(0.0)
-	check(game.focus_strength == 0.0 and material.get_shader_parameter("target_focus") == 0.0 and game.hud.alignment_label.text.is_empty(), "Space release clears guidance without changing cloud seed")
-	check(material.get_shader_parameter("cloud_offset") == offset and material.get_shader_parameter("guiding_stars") == catalog, "focus and sailing never move cloud seed or celestial references")
+	check(game.focus_strength == 0.0 and material.get_shader_parameter("target_focus") == 0.0 and game.hud.star_guidance().is_empty(), "Space release clears guidance without changing cloud seed")
+	check(material.get_shader_parameter("cloud_offset") == offset and material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()), "focus and sailing never move cloud seed; the star follows the live destination")
 	game.voyage.stage = 2
 	game.voyage.set_target(game)
 	game.boat.position = game.archipelago.get_node("SpawnPoints/Departure").position
@@ -75,7 +74,7 @@ func _run() -> void:
 		event.pressed = true
 		game._unhandled_input(event)
 		check(game.state == game.State.CASTING_OFF and game.voyage.stage == 0 and game.hull == game.hull_capacity, "R retry preserves gameplay reset from state %d" % state)
-		check(material.get_shader_parameter("cloud_offset") == offset and material.get_shader_parameter("guiding_stars") == catalog and material.get_shader_parameter("target_focus") == 0.0, "retry keeps the same procedural world and clears focus from state %d" % state)
+		check(material.get_shader_parameter("cloud_offset") == offset and material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()) and material.get_shader_parameter("target_focus") == 0.0, "retry keeps the same procedural world and clears focus from state %d" % state)
 		check(material.get_shader_parameter("lightning") == 0.0 and material.get_shader_parameter("storm") == 0.0, "retry clears storm and lightning from state %d" % state)
 	print("PROCEDURAL SKY CHECK: %d checks, %d failures" % [checks, failures])
 	game.queue_free()

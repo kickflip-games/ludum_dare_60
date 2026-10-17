@@ -104,10 +104,10 @@ func sky_coverage(label: String) -> void:
 			covered += int(mask.get_pixel(x, y).r > 0.2)
 			samples += 1
 	var star_masks: Array[float] = []
-	for region in game.archipelago.get_node("NavigationRegions").get_children():
-		var direction: Vector3 = region.star_direction.normalized()
-		var at: Vector2 = game.camera.unproject_position(game.camera.position + direction * 100)
-		star_masks.append(mask.get_pixelv(Vector2i(at)).r if Rect2(Vector2.ZERO, Vector2(mask.get_size())).has_point(at) else -1.0)
+	var direction: Vector3 = game.guiding_star_direction()
+	var at: Vector2 = game.camera.unproject_position(game.camera.position + direction * 100)
+	star_masks.append(mask.get_pixelv(Vector2i(at)).r if Rect2(Vector2.ZERO, Vector2(mask.get_size())).has_point(at) else -1.0)
+
 	report[label] = {"cloud_fraction": float(covered) / samples, "navigation_star_masks": star_masks}
 	if label.begins_with("tilt-") and label != "tilt-00":
 		check(float(covered) / samples < 0.45, label + " leaves most of the sky clear")

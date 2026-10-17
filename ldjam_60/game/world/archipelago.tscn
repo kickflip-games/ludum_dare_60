@@ -49,15 +49,11 @@ position = Vector3(226, 0, -205)
 script = ExtResource("6")
 display_name = "Twin Peaks"
 radius = 29.0
-star_name = "East Lantern"
-star_direction = Vector3(0.518, 0.838, -0.171)
 [node name="Lighthouse" type="Marker3D" parent="NavigationRegions"]
 position = Vector3(260, 0, 183)
 script = ExtResource("6")
 display_name = "Lighthouse Harbour"
 radius = 31.0
-star_name = "Ember Star"
-star_direction = Vector3(0.28, 0.85, 0.446)
 [node name="Landmarks" type="Node3D" parent="."]
 [node name="Wreck" type="Marker3D" parent="Landmarks"]
 position = Vector3(-248, 0, -163)

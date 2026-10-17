@@ -64,7 +64,7 @@ func _run() -> void:
 	check(absf(angle_difference(old_heading, hud.compass.heading)) > 0.01 and absf(angle_difference(game.heading, hud.compass.heading)) > 0.01, "compass turns smoothly toward the actual bow heading")
 	game.heading = deg_to_rad(-40)
 	hud._process(0.1)
-	check(hud.compass.status.text == "Heading 320°", "compass shows the numeric heading needed to match a star reading")
+	check(hud.compass.status.text == "Heading 320°", "compass shows the ordinary numeric bow heading")
 	var before_destination: float = hud.compass.heading
 	game.target += Vector3(200, 0, -200)
 	hud._process(0.0)
@@ -85,14 +85,14 @@ func _run() -> void:
 	game._physics_process(0.3)
 	Input.action_release("astrolabe")
 	hud._process(0.2)
-	check(hud.instrument.visible and hud.bearing_label.text.is_empty() and hud.alignment_label.text.is_empty(), "early sighting shows the instrument without giving away a bearing")
+	check(hud.instrument.visible and hud.instrument.get_child_count() == 0, "early sighting shows the instrument without giving away a bearing")
 	Input.action_press("astrolabe")
 	game._physics_process(game.focus_delay + game.focus_duration)
 	Input.action_release("astrolabe")
 	hud._process(0.2)
-	check(hud.bearing_label.text == "North Star" and hud.alignment_label.text == hud._navigation_text(), "continued hold reveals the actual live bearing")
-	check(hud.alignment_label.text.begins_with("Bearing ~") and not hud.alignment_label.text.contains("Wreck"), "focused reading labels its approximate absolute bearing without repeating the objective")
-	check_inside(hud.alignment_label, "full navigation explanation fits the small window")
+	check(game.focus_strength == 1 and not hud.star_guidance().is_empty(), "continued hold reveals the live star")
+	check(hud.instrument.get_child_count() == 0, "focused instrument contains no text or number labels")
+	check_inside(hud.instrument, "text-free instrument fits the small window")
 	check(hud.compass.modulate.a < 0.01 and hud.cannon_gauge.modulate.a < 0.1 and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
 	var ship = game.enemy_encounters.ship
 	ship.begin()
@@ -115,7 +115,7 @@ func _run() -> void:
 	game.boat.position = game.target
 	game.voyage.update_progress(game)
 	hud._process(0.1)
-	check(game.voyage.stage == game.voyage.Stage.TWIN_PEAKS and hud.notice.text == "The Wreck found" and hud.alignment_label.text.is_empty(), "finding the wreck acknowledges discovery without revealing or directing the next stop")
+	check(game.voyage.stage == game.voyage.Stage.TWIN_PEAKS and hud.notice.text == "The Wreck found" and hud.star_guidance().is_empty(), "finding the wreck acknowledges discovery without revealing or directing the next stop")
 	game.elapsed = 102.0
 	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
 	game.voyage.set_target(game)

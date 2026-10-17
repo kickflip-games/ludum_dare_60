@@ -27,7 +27,8 @@ const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
 # Leave room for the hull and camera inside the terrain's 512 m edges.
 const SAILING_LIMIT: float = 480.0
-const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
+const GUIDING_STAR_ELEVATION: float = PI / 3.0
+const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
 @export var encounter_seed: int = 60
@@ -70,10 +71,6 @@ var gust_strength := 0.0
 @export_range(0.2, 2.5, 0.05) var focus_delay: float = 0.95
 @export_range(0.2, 1.2, 0.05) var focus_duration: float = 0.65
 @export_range(0.0, 1.0, 0.05) var target_highlight_strength: float = 0.65
-@export_range(1.8, 5.0, 0.1) var extended_focus_delay: float = 2.6
-@export_enum("None", "Hold to focus") var search_text: int = 1
-@export_enum("None", "Star name", "Name and bearing") var focused_text: int = 2
-@export_enum("Keep focus text", "Course hint") var extended_text: int = 0
 
 @export_group("Sailing camera")
 ## Distance behind the hull centre, before a gentle speed extension.
@@ -210,10 +207,6 @@ func _ready() -> void:
 	archipelago = ARCHIPELAGO.instantiate()
 	add_child(archipelago)
 	archipelago.configure(self)
-	var star_directions := PackedVector3Array()
-	for region: Marker3D in archipelago.get_node("NavigationRegions").get_children():
-		star_directions.append(region.star_direction.normalized())
-	sky_material.set_shader_parameter("guiding_stars", star_directions)
 	boat.position = archipelago.get_node("SpawnPoints/Departure").position
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
@@ -282,8 +275,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		cannon.set_fire_held(event.is_pressed())
 	elif (event.is_action("steer_port") or event.is_action("steer_starboard")) and not event.is_echo():
 		cannon.note_steering_event(maxf(event.get_action_strength("steer_port"), event.get_action_strength("steer_starboard")))
-	elif event.is_action_pressed("astrolabe"):
-		cannon.cancel_aim()
+	elif event.is_action("astrolabe") and not event.is_echo():
+		# Even a release/repress between physics ticks starts a new sighting.
+		focus_elapsed = 0.0
+		focus_strength = 0.0
+		if event.is_pressed():
+			cannon.cancel_aim()
+		else:
+			reading = false
+		update_guiding_star()
 	elif event.is_action_pressed("mute_sea"):
 		_sound_enabled = not _sound_enabled
 		if is_instance_valid(_sound):
@@ -295,6 +295,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(cannon):
 		cannon.cancel_aim()
+		Input.action_release("astrolabe")
+		reading = false
+		focus_elapsed = 0.0
+		focus_strength = 0.0
+		update_guiding_star()
 
 
 func _on_cannon_fired(_direction: Vector3) -> void:
@@ -319,11 +324,22 @@ func destination_turn() -> float:
 
 
 func guiding_star_direction() -> Vector3:
-	return voyage.region(self).star_direction.normalized()
+	# The same live landmark bearing drives the sky, focus and edge projection.
+	# North is -Z, east is +X; neither camera shake nor hull rocking enters here.
+	var bearing := destination_bearing()
+	return Vector3(sin(bearing) * cos(GUIDING_STAR_ELEVATION), sin(GUIDING_STAR_ELEVATION),
+		-cos(bearing) * cos(GUIDING_STAR_ELEVATION))
 
 
-func guiding_star_name() -> String:
-	return voyage.region(self).star_name
+func guiding_star_color() -> Color:
+	return GUIDING_STAR_COLORS[mini(voyage.stage, 2)]
+
+
+func update_guiding_star() -> void:
+	sky_material.set_shader_parameter("guiding_star", guiding_star_direction())
+	sky_material.set_shader_parameter("guiding_star_color", guiding_star_color())
+	sky_material.set_shader_parameter("active_star", mini(voyage.stage, 2))
+	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength if reading and state == State.SAILING else 0.0)
 
 
 func show_discovery(value: String, seconds: float = 4.0) -> void:
@@ -586,8 +602,8 @@ func _update_view(delta: float) -> void:
 	var helm_pose := _normal_sailing_pose(delta)
 	helm_pose = _sailing_camera_pose(helm_pose, delta)
 	# Sky has final priority, including while the aim camera is blending out.
-	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(78.0), -heading, 0.0)),
-		boat.position + Vector3(0, 2.55, 0))
+	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(60.0), -heading, 0.0)),
+		boat.position + Basis(Vector3.UP, -heading) * Vector3(0, 2.55, -4.5))
 	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
 	var sailing_fov := lerpf(62.0 + sailing_speed_fov * _sailing_speed, 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
@@ -637,8 +653,7 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("cloud_highlights", cloud_highlights)
 	sky_material.set_shader_parameter("cloud_softness", cloud_softness)
 	sky_material.set_shader_parameter("cloud_variation", cloud_variation)
-	sky_material.set_shader_parameter("active_star", mini(voyage.stage, 2))
-	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength)
+	update_guiding_star()
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
 

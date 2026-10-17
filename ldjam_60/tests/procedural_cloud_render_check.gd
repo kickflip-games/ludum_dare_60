@@ -63,7 +63,6 @@ func _run() -> void:
 	var geometry_mask: int = game.camera.cull_mask
 	game.camera.cull_mask = 0
 	var material: ShaderMaterial = game.sky_material
-	var catalog: PackedVector3Array = material.get_shader_parameter("guiding_stars")
 	material.set_shader_parameter("cloud_density", 0.0)
 	var empty := await sky_mask("zero-coverage")
 	var empty_total := 0.0
@@ -73,6 +72,7 @@ func _run() -> void:
 	check(empty_total == 0.0, "coverage zero removes every procedural cloud pixel")
 	material.set_shader_parameter("cloud_debug", 0)
 	material.set_shader_parameter("twinkle_strength", 0.0)
+	material.set_shader_parameter("target_focus", 0.0)
 	material.set_shader_parameter("visual_time", 0.0)
 	var stars_a := await capture("stars-time-000")
 	material.set_shader_parameter("visual_time", 240.0)
@@ -136,15 +136,18 @@ func _run() -> void:
 				max_error = maxf(max_error, maxf(absf(a.r - b.r), maxf(absf(a.g - b.g), absf(a.b - b.b))))
 	check(opaque > 1000 and max_error <= 2.0 / 255.0, "opaque clouds truly occlude stars in the actual renderer")
 	report["occlusion"] = {"opaque_pixels_sampled": opaque, "max_rgb_error": max_error}
-	# Clear lanes are independent of focus and active star, even at high coverage.
+	# The single active star stays readable through dense weather at every stage.
 	for seed in [60, 97]:
 		game._cloud_layout.configure_procedural(material, seed)
 		for time in [0.0, 60.0, 240.0, 480.0]:
-			material.set_shader_parameter("visual_time", time)
-			var sample_mask := await sky_mask("seed-%d-time-%03d" % [seed, time])
 			for stage in 3:
-				var at: Vector2 = game.camera.unproject_position(game.camera.position + catalog[stage] * 100)
-				check(Rect2(Vector2.ZERO, Vector2(1280, 720)).has_point(at) and sample_mask.get_pixelv(Vector2i(at)).r < 0.01, "seed %d / time %.0f keeps fixed navigation star %d clear in dense storm" % [seed, time, stage])
+				game.voyage.stage = stage
+				game.voyage.set_target(game)
+				game.camera.basis = Basis.from_euler(Vector3(deg_to_rad(60), -game.destination_bearing(), 0))
+				material.set_shader_parameter("visual_time", time)
+				var sample_mask := await sky_mask("seed-%d-time-%03d-stage-%d" % [seed, time, stage])
+				var at: Vector2 = game.camera.unproject_position(game.camera.position + game.guiding_star_direction() * 100)
+				check(Rect2(Vector2.ZERO, Vector2(1280, 720)).has_point(at) and sample_mask.get_pixelv(Vector2i(at)).r < 0.01, "seed %d / time %.0f keeps active destination star %d clear in dense storm" % [seed, time, stage])
 	game._cloud_layout.configure_procedural(material, 60)
 	game.camera.cull_mask = geometry_mask
 	game.hud.show()
@@ -157,13 +160,11 @@ func _run() -> void:
 		await capture("stage-%d-search" % stage)
 		step(1.3)
 		await capture("stage-%d-focus" % stage)
-		var region = game.voyage.region(game)
-		check(game.hud.bearing_label.text == region.star_name and game.focus_strength == 1.0 and material.get_shader_parameter("active_star") == stage, "real Space input focuses the existing stage %d star" % stage)
-		var star_at: Vector2 = game.hud._star_screen_position()
-		check(Rect2(Vector2.ZERO, game.hud.size).has_point(star_at) and game.hud.get_viewport_rect().encloses(game.hud.alignment_label.get_global_rect()), "stage %d focus UI remains aligned and inside the viewport" % stage)
+		check(game.hud.instrument.get_child_count() == 0 and game.focus_strength == 1.0 and material.get_shader_parameter("active_star") == stage, "real Space input focuses the existing stage %d star" % stage)
+		check(Rect2(Vector2.ZERO, game.hud.size).has_point(game.hud.star_guidance().position), "stage %d focus UI remains aligned and inside the viewport" % stage)
 		Input.action_release("astrolabe")
 		step(1.0 / 60.0)
-		check(game.hud.alignment_label.text.is_empty() and material.get_shader_parameter("target_focus") == 0.0, "stage %d Space release clears guidance immediately" % stage)
+		check(game.hud.star_guidance().is_empty() and material.get_shader_parameter("target_focus") == 0.0, "stage %d Space release clears guidance immediately" % stage)
 	# Existing weather clock, including its actual lightning pulse.
 	game.weather_enabled = true
 	game.elapsed = 18.0
@@ -177,7 +178,7 @@ func _run() -> void:
 	retry.physical_keycode = KEY_R
 	retry.pressed = true
 	game._unhandled_input(retry)
-	check(game.state == game.State.CASTING_OFF and game.voyage.stage == 0 and material.get_shader_parameter("guiding_stars") == catalog, "R begins the same voyage without moving celestial directions")
+	check(game.state == game.State.CASTING_OFF and game.voyage.stage == 0 and material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()), "R begins the same voyage with the live departure star")
 	report["checks"] = checks
 	report["failures"] = failures
 	var file := FileAccess.open(output.path_join("result.json"), FileAccess.WRITE)

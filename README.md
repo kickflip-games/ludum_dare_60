@@ -2,8 +2,8 @@
 
 Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
 Find the Wreck, cross Twin Peaks, then reach Lighthouse Harbour. Sailing has no
-destination labels or route instructions. Hold Space when you want a landmark
-bearing from a guiding star; your numeric bow heading stays beneath the compass.
+destination labels or route instructions. Hold Space until a guiding star glows,
+remember its direction, then steer. The ordinary compass follows the bow.
 Discovery notices acknowledge the place you found without announcing the next stop.
 Reach the lighthouse by recovering your course after reefs and directional waves,
 with optional cutter duels. The sea is mostly calm, interrupted by sparse travelling
@@ -20,14 +20,18 @@ and a turn-back notice appears; steering remains available to sail back in.
 - Steering held on entry is ignored until neutral, then a fresh press exits. **Space** cancels gun view; releasing Space returns to sailing.
 - **R / Try again / Sail again:** retry. **M:** mute. **Esc:** quit.
 
-The small heading rose and numeric heading follow the bow. Sextant assistance begins after 0.95 seconds;
-the North Star and one live bearing cue become readable by 1.6 seconds. Releasing
-Space immediately clears the highlight and text: remember the bearing while you sail.
-The focused display shows only the star name and **Bearing ~320°**, rounded to 5°.
-Both bearing and bow heading use 000° north / 090° east. The reading measures the
-landmark from the boat, separately from the star's fixed celestial direction.
-Landmark discovery messages fade after 2.8 seconds. See the [navigation review](artifacts/navigation_hud_review.md)
-for angle conventions, wraparound checks and before/after screenshots.
+The small heading rose and numeric heading follow the bow. After 0.95 seconds of
+holding Space, one magical star brightens over 0.65 seconds. Its horizontal direction
+is always the live direction from the boat to the next destination, at 60° elevation.
+The Wreck's star is pale gold, Twin Peaks' pale blue, and the harbour's soft coral;
+two, three and four broken halo segments also distinguish them. There are no star
+names, bearings or turn instructions in the sky. An off-screen star produces a
+small peripheral glimmer only after focus begins. Use A/D to bring it into view.
+Releasing Space immediately clears both effects; every hold starts afresh.
+Remember the direction and choose your own path around islands. The star does not
+provide a safe route, turn the boat or rotate the sky. Discoveries reset focus and
+briefly acknowledge the place found for 2.8 seconds. See the world documentation
+for the shared bearing convention and scripted navigation checks.
 The open instrument has no instant bearing needle or course bubble. Hull icons and the starboard
 reload ring stay quiet until needed; incoming-fire cues remain visible while sighting.
 The lighthouse's stone silhouette can be glimpsed in the distance; its warm lantern
@@ -68,14 +72,11 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   and retracts at shores. See the [camera review](artifacts/sailing_camera_review.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
   and sky FOV (94°). Procedural toon cloud banks drift in world space;
-  broad wind lanes protect the references even in storm weather. See the cloud
+  a broad wind lane keeps the active star readable in storm weather. See the cloud
   controls and review notes below.
-- **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65),
-  and text at each stage. Default: a quiet search prompt, then name + bearing.
-  Optional **Extended text → Course hint** shows which side of the bow contains
-  the landmark after 2.6 s; it gives no route around land. Each release resets the
-  hold. Sky mode suppresses the combat glance and damps wave/shock motion without
-  changing sailing or damage.
+- **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65).
+  Each release, discovery, focus loss and retry resets the search. Sky mode
+  suppresses combat glance and damps shock motion without changing sailing/damage.
 - **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-0.6, 1.0, -0.6)
   from the existing starboard mount. The level camera tracks 15% of sweep yaw.
   Priority: stargazing → gun view → nearby-hostile combat → sailing. Active
@@ -114,6 +115,39 @@ visible and physical cannonballs coincide. The small sight indicates direction;
 it does not predict impact. Space, focus loss, retry and sinking clear gun mode
 and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
 
+## Quick UI review
+
+Open `ldjam_60/tests/ui_review.tscn` in Godot and press **F6**. The review scene
+freezes 34 presentation states from the existing game; no sailing is required.
+
+- **← / →** or the dropdown: browse states (wraps at either end).
+- **Home / End:** first / last state. **H:** hide the review panel.
+- **S** or **Screenshot:** save a clean frame to `build/ui_review/current/`.
+- **Esc:** quit. Normal gameplay inputs are disabled in this test scene.
+
+Coverage: title/controls, casting off, sailing/drift, searching and all three star
+halos, off-screen glimmers, cutter/target/incoming cues, gun view/reload, damage,
+critical hull, repair, discoveries/salvage, boundary, storm, victory and defeat.
+Four authored tooltip states enable hover **in the test only** (normal gauges
+ignore mouse input). The last state is the development-only chart.
+
+Capture all states with the real renderer and create a clickable screenshot gallery:
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/ui_previews.gd
+# Open build/ui_review/current/index.html; click a thumbnail for the full image.
+# Optional: -- --size=960x540 --output=/tmp/latitude-lines-ui
+```
+
+Review regression check (fixtures, frozen state, picker/keyboard navigation and reset):
+
+```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/ui_review_smoke.gd
+```
+
+These are staged UI fixtures, not evidence of a human playthrough or game balance.
+Generated captures stay in the ignored `build/` folder.
+
 ## Validation
 
 Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps 60`:
@@ -143,8 +177,8 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
 - `--script res://tests/hud_smoke.gd`: menu actions, responsive bounds,
   heading, reload/damage feedback, sighting priorities and result screens.
 - `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
-  repeated checks, fixed-north visibility across headings/window sizes, optional
-  text stages, active enemy fire, camera precedence and vulnerability.
+  repeated checks, live-star/edge projection across headings/window sizes, text-free
+  focus stages, active enemy fire, camera precedence and vulnerability.
 - `--script res://tests/navigation_smoke.gd`: compass/turn wraparound, actual A/D
   direction, independent hull-axis bearing checks, moving readings and discoveries.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
@@ -213,8 +247,8 @@ The active cloud layer is an original procedural field in the existing sky pass:
 connected low banks, sparse upper wisps, dark blue-grey undersides and restrained
 moonlit toon shading. It uses two lattice-noise samples and a bounded nine-cell
 lobe neighbourhood, with no atlas sampling, raymarching or extra cloud draw calls.
-The fixed stars, navigation focus, night gradient, storms and lightning retain
-their existing composition. Only the gradient contributes to environment lighting.
+The background stars stay fixed in world space. The live guiding star uses the
+existing focus timing; the night gradient, storms and lightning keep their palette. Only the gradient contributes to environment lighting.
 
 Select the root of `game/crossing.tscn`, under **Stargazing sky → Cloud formations**:
 
@@ -257,3 +291,16 @@ Older [painterly sky evidence](artifacts/painterly_sky_review.md) documents the
 retained fallback. Both layers use an infinitely distant sky, so translating the
 boat produces no physical cloud parallax. Browser rendering is checked separately
 from native frame timing; low-end devices still need their own performance check.
+
+Visual navigation review (real renderer, staged comparison poses):
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/navigation_previews.gd -- --output=/tmp/latitude-star/final
+```
+
+This captures search, partial/full focus, left/right stars, both peripheral sides,
+all three colours, discoveries, release and combat. `navigation_smoke.gd` checks
+the shared ray against live destinations, wrong-way sailing, rudder recovery,
+vertical/behind-camera projection and wraparound. The full `archipelago_voyage.gd`
+uses actual Space/A/D inputs with test-only route choices; `--alternate` takes the
+longer island detour. These establish scripted reachability, not human intuition.

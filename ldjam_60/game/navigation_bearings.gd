@@ -1,6 +1,6 @@
 extends RefCounted
 ## World compass: north = -Z, east = +X. Positive turns are clockwise/starboard.
-## Celestial directions are fixed references, separate from landmark bearings.
+## The magical guiding star uses the same live landmark bearing.
 
 static func bearing_to(origin: Vector3, destination: Vector3, fallback: float = 0.0) -> float:
 	var offset := Vector2(destination.x - origin.x, destination.z - origin.z)

@@ -1,32 +1,25 @@
 extends SceneTree
-## Reproducible UI fixtures rendered by Godot. Not a human playthrough.
+## Capture the same frozen states used by ui_review.tscn, plus a local HTML gallery.
+const States = preload("res://tests/ui_review_states.gd")
 var game
-var output := "/tmp/last-bearing-ui/before"
+var states: RefCounted
+var output := "res://../build/ui_review/current"
 var requested_size := Vector2i(1280, 720)
+var failures := 0
 
 
 func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--output="):
 			output = arg.trim_prefix("--output=")
-		if arg.begins_with("--size="):
+		elif arg.begins_with("--size="):
 			var dimensions := arg.trim_prefix("--size=").split("x")
+			if dimensions.size() != 2 or int(dimensions[0]) < 900 or int(dimensions[1]) < 506:
+				push_error("Use --size=WIDTHxHEIGHT, at least 900x506.")
+				quit(1)
+				return
 			requested_size = Vector2i(int(dimensions[0]), int(dimensions[1]))
 	_run.call_deferred()
-
-
-func capture(label: String) -> void:
-	for frame in range(24):
-		game.hud.queue_redraw()
-		await process_frame
-	# Explicit drawing also works while another review window covers this one.
-	RenderingServer.force_draw(true, 1.0 / 60.0)
-	var pixels := root.get_texture().get_image()
-	var result := pixels.save_png(output.path_join(label + ".png"))
-	print("UI CAPTURE %s: %d (%s)" % [label, result, pixels.get_size()])
-	if pixels.get_size() != requested_size or result != OK:
-		push_error("UI capture did not match the requested window size.")
-		quit(1)
 
 
 func _run() -> void:
@@ -34,85 +27,49 @@ func _run() -> void:
 		push_error("UI previews require a real renderer.")
 		quit(1)
 		return
-	DirAccess.make_dir_recursive_absolute(output)
+	output = ProjectSettings.globalize_path(output)
+	if DirAccess.make_dir_recursive_absolute(output) != OK:
+		push_error("Cannot create capture directory: " + output)
+		quit(1)
+		return
+	root.gui_embed_subwindows = true
 	root.size = requested_size
 	await process_frame
-	print("UI WINDOW: pixels=%s logical=%s" % [root.size, root.get_visible_rect()])
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
-	await process_frame
-	game.set_physics_process(false)
-	game.cannon.set_physics_process(false)
-	await capture("01-title")
-	game.start_crossing()
-	game._physics_process(game.CAST_OFF_SECONDS)
-	game.elapsed = 14.0
-	game.phase_banner_left = 0.0
-	game._update_view(1.0)
-	await capture("02-sailing")
-	Input.action_press("astrolabe")
-	game._physics_process(1.8)
-	Input.action_release("astrolabe")
-	await capture("03-astrolabe")
-	game._physics_process(0.3)
-	var ship = game.enemy_encounters.ship
-	ship.begin()
-	ship.position = game.boat.position + game.cannon.starboard_direction() * 24.0 + Vector3(0, 0, -6)
-	ship.mode = ship.Mode.TELEGRAPH
-	ship.timer = 0.5
-	ship.locked_point = game.boat.position
-	game.starboard_look = true
-	game._update_view(0.4)
-	await capture("04-combat-ready")
-	game.cannon.fire()
-	game.cannon.advance(0.4)
-	await capture("05-combat-reload")
-	game.take_damage(1, "Enemy broadside hit")
-	game._update_view(0.1)
-	await capture("06-damage")
-	game.damage_immunity = 0.0
-	game.take_damage(1, "Hull struck reef")
-	game._update_view(0.7)
-	await capture("07-low-hull")
-	game.reading = true
-	game._update_view(1.8)
-	await capture("08-astrolabe-danger")
-	game.reading = false
-	ship.reset()
-	game.starboard_look = false
-	game.wave_encounters.enabled = false
-	# Keep these staged UI captures in open water with authored patrols consumed.
-	game.enemy_encounters.visited.assign(["WreckPatrol", "EasternPatrol"])
-	game.boat.position = Vector3(400, 0, -360)
-	game.heading = 0.0
-	for frame in range(240):
-		game.advance_sailing(1.0 / 60.0, 0.0)
-		game.cannon.advance(1.0 / 60.0)
-		game._update_view(1.0 / 60.0)
-	await capture("08b-repair-progress")
-	for frame in range(240):
-		game.advance_sailing(1.0 / 60.0, 0.0)
-		game.cannon.advance(1.0 / 60.0)
-		game._update_view(1.0 / 60.0)
-	await capture("08c-hull-restored")
-	for frame in range(480):
-		game.advance_sailing(1.0 / 60.0, 0.0)
-		game.cannon.advance(1.0 / 60.0)
-		game._update_view(1.0 / 60.0)
-	await capture("08d-fully-repaired")
-	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
-	game.voyage.set_target(game)
-	game.boat.position = game.target + Vector3(0, 0, -5)
-	game.advance_sailing(0.001, 0.0)
-	game._update_view(1.0)
-	await capture("09-victory")
-	game.restart()
-	game._physics_process(game.CAST_OFF_SECONDS)
-	for hit in range(game.hull_capacity):
-		game.damage_immunity = 0.0
-		game.take_damage(1, "Hull struck reef")
-	game._update_view(1.0)
-	await capture("10-defeat")
+	states = States.new(game)
+	var cards := ""
+	for index in range(States.CASES.size()):
+		states.apply(index)
+		await process_frame
+		await process_frame
+		var problem: String = states.problem(index)
+		if not problem.is_empty():
+			push_error(problem)
+			failures += 1
+		var control: Control = states.tooltip_control(index)
+		var motion := InputEventMouseMotion.new()
+		motion.position = control.get_global_rect().get_center() if control != null else Vector2(4, 4)
+		root.push_input(motion)
+		if control != null:
+			await create_timer(0.8).timeout # Real native tooltip, including its delay.
+		for frame in range(8):
+			await process_frame
+		RenderingServer.force_draw(true, 1.0 / 60.0)
+		var pixels := root.get_texture().get_image()
+		var filename := "%02d-%s.png" % [index + 1, States.CASES[index][0]]
+		var result := pixels.save_png(output.path_join(filename))
+		if pixels.get_size() != requested_size or result != OK:
+			push_error("Capture failed or size mismatch: " + filename)
+			failures += 1
+		print("UI CAPTURE %s: %s error=%d" % [filename, pixels.get_size(), result])
+		cards += '<article><a href="%s"><img loading="lazy" src="%s" alt="%s"></a><h2>%02d · %s</h2><p>%s</p></article>\n' % [filename, filename, States.CASES[index][1].xml_escape(), index + 1, States.CASES[index][1].xml_escape(), States.CASES[index][2].xml_escape()]
+	var gallery := FileAccess.open(output.path_join("index.html"), FileAccess.WRITE)
+	if gallery == null:
+		failures += 1
+	else:
+		gallery.store_string('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Latitude Lines — UI review</title><style>body{background:#102d35;color:#f5efdc;font:16px system-ui;margin:24px}header{max-width:900px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:24px}article{background:#173e48;padding:12px;border-radius:10px}img{width:100%;display:block}h2{font-size:18px;color:#e6bf7c}p{line-height:1.5}a{color:#e6bf7c}</style><header><h1>Latitude Lines · UI review</h1><p>34 frozen states from the real game renderer. Click any screenshot for full size. These are staged presentation fixtures, not a human playthrough. The final chart is development-only. Authored tooltips are shown with hover enabled by the test; gameplay gauges currently ignore mouse input.</p><p>Live browser: open <strong>tests/ui_review.tscn</strong> in Godot and press <strong>F6</strong>. Use ←/→ or the picker, H to hide the review panel, S to save a clean frame.</p></header><main>''' + cards + "</main></html>")
+	print("UI PREVIEWS: %d captures, %d failures — %s" % [States.CASES.size(), failures, output])
 	game.queue_free()
 	await process_frame
-	quit()
+	quit(0 if failures == 0 else 1)

@@ -21,7 +21,8 @@ uniform float cloud_variation : hint_range(0.0, 1.0) = 0.35;
 uniform int cloud_debug = 0;
 uniform float target_focus : hint_range(0.0, 1.0) = 0.0;
 uniform int active_star = 0;
-uniform vec3 guiding_stars[3];
+uniform vec3 guiding_star = vec3(0.0, 0.8660254, -0.5);
+uniform vec4 guiding_star_color : source_color = vec4(1.0, 0.91, 0.72, 1.0);
 
 #include "res://game/toon_clouds.gdshaderinc"
 
@@ -82,7 +83,7 @@ vec3 drift_direction(vec3 d, float angle) {
 	return vec3(d.x * cos(angle) - d.z * sin(angle), d.y, d.x * sin(angle) + d.z * cos(angle));
 }
 
-// Fade the complete painted formation before it crosses a fixed navigation
+// Fade the complete painted formation before it crosses the active navigation
 // star. Per-pixel star cutouts produced conspicuous round holes during drift.
 float star_clearance(vec3 reference, vec3 center, vec3 right, vec3 up) {
 	float facing = dot(reference, center);
@@ -94,12 +95,8 @@ float star_clearance(vec3 reference, vec3 center, vec3 right, vec3 up) {
 vec4 painted_clouds(vec3 direction) {
 	vec3 near_ray = drift_direction(direction, visual_time * cloud_speed * 0.0019);
 	vec3 far_ray = drift_direction(direction, visual_time * cloud_speed * 0.0008);
-	vec3 near_star0 = drift_direction(guiding_stars[0], visual_time * cloud_speed * 0.0019);
-	vec3 near_star1 = drift_direction(guiding_stars[1], visual_time * cloud_speed * 0.0019);
-	vec3 near_star2 = drift_direction(guiding_stars[2], visual_time * cloud_speed * 0.0019);
-	vec3 far_star0 = drift_direction(guiding_stars[0], visual_time * cloud_speed * 0.0008);
-	vec3 far_star1 = drift_direction(guiding_stars[1], visual_time * cloud_speed * 0.0008);
-	vec3 far_star2 = drift_direction(guiding_stars[2], visual_time * cloud_speed * 0.0008);
+	vec3 near_star = drift_direction(guiding_star, visual_time * cloud_speed * 0.0019);
+	vec3 far_star = drift_direction(guiding_star, visual_time * cloud_speed * 0.0008);
 	vec3 result = vec3(0.0);
 	float coverage = 0.0;
 	// Distant banks first, then nearer formations: explicit back-to-front
@@ -118,9 +115,7 @@ vec4 painted_clouds(vec3 direction) {
 		vec3 center = cloud_centers[i].xyz;
 		vec3 right = cloud_rights[i].xyz;
 		vec3 up = cloud_ups[i].xyz;
-		presence *= star_clearance(distant ? far_star0 : near_star0, center, right, up)
-			* star_clearance(distant ? far_star1 : near_star1, center, right, up)
-			* star_clearance(distant ? far_star2 : near_star2, center, right, up);
+		presence *= star_clearance(distant ? far_star : near_star, center, right, up);
 		if (presence < 0.001) { continue; }
 		float family = cloud_rights[i].w;
 		vec2 atlas_uv = (uv + vec2(mod(family, 4.0), floor(family / 4.0))) / vec2(4.0, 2.0);
@@ -166,16 +161,16 @@ void sky() {
 		vec3 starlight = stars(star_uv.xy, 52.0, star_uv.z * 137.0, star_density * 0.48, pixel_angle, 0.18, 0.72);
 		starlight += stars(star_uv.xy, 26.0, 81.0 + star_uv.z * 137.0, star_density * 0.22, pixel_angle, 0.72, 1.0);
 		starlight += stars(star_uv.xy, 12.0, 193.0 + star_uv.z * 137.0, star_density * 0.09, pixel_angle, 1.5, 1.4);
-		// The reference is one of several bright stars until the instrument focuses.
-		for (int i = 0; i < 3; i++) {
-			vec3 reference = guiding_stars[i];
-			float focus = i == active_star ? target_focus : 0.0;
-			float separation = length(d - reference);
-			float core = 1.0 - smoothstep(0.0010, 0.0010 + pixel_angle, separation);
-			float glow = exp(-separation * separation / 0.000024) * (0.07 + focus * 0.19);
-			vec3 tint = i == 1 ? vec3(0.72, 0.87, 1.0) : vec3(1.0, 0.91, 0.72);
-			starlight += tint * (core * (1.1 + focus * 0.4) + glow);
-		}
+		// One magical star, ordinary until focused. Suppress only a tiny patch of
+		// underlying light so overlaps compose as one star, never a double sprite.
+		float separation = length(d - guiding_star);
+		starlight *= smoothstep(0.003, 0.009, separation);
+		float focus = target_focus;
+		float pulse = 1.0 + focus * 0.10 * sin(visual_time * (1.7 + float(active_star) * 0.3));
+		float radius = mix(0.0008, 0.0018, focus);
+		float core = 1.0 - smoothstep(radius, radius + pixel_angle, separation);
+		float glow = exp(-separation * separation / mix(0.000016, 0.000090, focus));
+		starlight += guiding_star_color.rgb * (core * (0.8 + focus * 1.6) + glow * (0.035 + focus * 0.32)) * pulse;
 
 		night += starlight * smoothstep(0.015, 0.15, d.y) * mix(1.0, 0.78, storm);
 		vec4 clouds = procedural_clouds ? toon_clouds(d) : painted_clouds(d);

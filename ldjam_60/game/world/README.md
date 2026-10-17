@@ -108,7 +108,21 @@ On 18 October, all 21 composition checks and 65 full-voyage checks passed. Both 
 
 `voyage_director.gd` owns WRECK → TWIN_PEAKS → LIGHTHOUSE → COMPLETE. Discovery uses a generous radial test against the actual CharacterBody3D position. Early visits cannot skip stages; sinking cannot trigger victory. Replay resets stages, enemy territories, navigation memory and salvage.
 
-The existing Space/sextant focus timing is retained. North Star, East Lantern and Ember Star use fixed world directions from the scene markers. The sky shader and HUD receive the same normalized directions. A player-requested focused reading gives only the landmark name and bearing rounded to 5 degrees; the compass shows the numeric bow heading. Releasing Space clears the reading. Sailing has no persistent destination labels, coastal directions or automatic navigation prompts. Discovery notices acknowledge the place just found without naming the next stop. Wave counters and routine sea-state banners are hidden. No world waypoint arrows are drawn.
+Hold Space to search the sky. After 0.95 seconds, one guiding star gradually
+brightens over 0.65 seconds. Its world direction uses `destination_bearing()`
+(north = -Z, east = +X), at a constant 60° elevation. The shader, focus halo and
+camera projection share that ray. Boat movement updates it exactly; heading
+changes rotate the view naturally. Ordinary stars retain their world-fixed hashes.
+The star is pale gold for Wreck, pale blue for Twin Peaks and soft coral for the
+harbour, with two/three/four small halo segments. There are no star names,
+numerical readings or turn instructions. A focused star outside the actual
+camera frustum gives a faint edge glimmer. Astern glimmers choose the reachable
+rudder side (port for the exact tie); vertical exits use projected top/bottom.
+Release clears assistance immediately, and discovery/focus loss/retry clear focus.
+The ordinary compass shows bow heading only. Sailing has no destination overlay.
+Stars indicate orientation, including through land; players choose their detour.
+Discoveries still acknowledge the place found without announcing the next stop.
+
 
 For development only, enable `development_tools` on the crossing or launch with:
 
@@ -134,7 +148,7 @@ godot --headless --path ldjam_60 --script res://tests/hud_smoke.gd
 godot --headless --path ldjam_60 --script res://tests/ocean_smoke.gd
 ```
 
-The archipelago suite completes both routes with real movement/collision, checks all stage bearings from multiple positions, tests all guiding-star projections at four headings, shoots a real cannonball into terrain, and checks salvage/reset/early arrival/death behavior. Existing crossing/sailing entry points delegate to this suite, replacing the former 90–120 second linear-course fixtures. Cannon, UI, ocean and enemy tests retain their separate coverage; their isolated arenas now sit in open water.
+The archipelago suite completes both routes with real movement/collision, checks all stage bearings from multiple positions, tests guiding-star or peripheral projections at four headings, shoots a real cannonball into terrain, and checks salvage/reset/early arrival/death behavior. Existing crossing/sailing entry points delegate to this suite, replacing the former 90–120 second linear-course fixtures. Cannon, UI, ocean and enemy tests retain their separate coverage; their isolated arenas now sit in open water.
 
 Historical baseline on 17 October 2026 with Godot 4.8-dev6 (before the composition pass):
 

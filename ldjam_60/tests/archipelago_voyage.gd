@@ -4,16 +4,21 @@ const Pilot = preload("res://tests/archipelago_pilot.gd")
 var game
 var output := ProjectSettings.globalize_path("res://../artifacts/archipelago/voyage")
 var captured: Dictionary = {}
+var alternate := false
+var guidance_checks := 0
+var guidance_failures := 0
 func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--output="):
 			output = arg.trim_prefix("--output=")
+		if arg == "--alternate":
+			alternate = true
 	_run.call_deferred()
 func capture(label: String) -> void:
 	if captured.has(label):
 		return
 	captured[label] = true
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(true, 1.0 / 60.0)
 	root.get_texture().get_image().save_png(output.path_join(label + ".png"))
 func _run() -> void:
 	if DisplayServer.get_name() == "headless":
@@ -32,6 +37,7 @@ func _run() -> void:
 		game._physics_process(1.0 / 60.0)
 		await process_frame
 	var pilot := Pilot.new()
+	pilot.alternate = alternate
 	var cadence: Array[float] = []
 	var previous: int = Time.get_ticks_usec()
 	var stages: Array[int] = [0]
@@ -48,6 +54,14 @@ func _run() -> void:
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 		game.hud._process(1.0 / 60.0)
+		if game.reading and game.focus_strength >= 1:
+			guidance_checks += 1
+			var ray: Vector3 = game.sky_material.get_shader_parameter("guiding_star")
+			var toward: Vector3 = (game.target - game.boat.global_position).normalized()
+			if Vector3(ray.x, 0, ray.z).normalized().dot(toward) < 0.9999 or game.hud.star_guidance().is_empty():
+				guidance_failures += 1
+		elif not game.reading and not game.hud.star_guidance().is_empty():
+			guidance_failures += 1
 		await process_frame
 		var now := Time.get_ticks_usec()
 		cadence.append((now - previous) / 1000.0)
@@ -78,11 +92,11 @@ func _run() -> void:
 		await process_frame
 	await capture("safe-harbour" if game.state == game.State.ARRIVED else "failed")
 	cadence.sort()
-	var result := {"arrived":game.state == game.State.ARRIVED,"seconds":game.elapsed,"hull":game.hull,"hits":game.hits_taken,"stages":stages,"encounters":game.enemy_encounters.encounter_index,"median_frame_ms":cadence[cadence.size()/2],"p95_frame_ms":cadence[int(cadence.size()*0.95)],"captures":captured.keys()}
+	var result := {"arrived":game.state == game.State.ARRIVED,"alternate":alternate,"seconds":game.elapsed,"hull":game.hull,"hits":game.hits_taken,"stages":stages,"encounters":game.enemy_encounters.encounter_index,"guidance_checks":guidance_checks,"guidance_failures":guidance_failures,"median_frame_ms":cadence[cadence.size()/2],"p95_frame_ms":cadence[int(cadence.size()*0.95)],"captures":captured.keys()}
 	var report := FileAccess.open(output.path_join("result.json"),FileAccess.WRITE)
 	report.store_string(JSON.stringify(result,"\t"))
 	report.close()
 	print("NATIVE VOYAGE " + JSON.stringify(result))
 	game.queue_free()
 	await process_frame
-	quit(0 if result.arrived else 1)
+	quit(0 if result.arrived and stages == [0, 1, 2, 3] and guidance_failures == 0 and guidance_checks > 0 else 1)

@@ -16,10 +16,7 @@ func set_target(game: Node3D) -> void:
 	game.has_reading = false
 	# Clear the previous star immediately, including between physics and HUD updates.
 	if is_instance_valid(game.sky_material):
-		game.sky_material.set_shader_parameter("active_star", mini(stage, Stage.LIGHTHOUSE))
-		game.sky_material.set_shader_parameter("target_focus", 0.0)
-	if is_instance_valid(game.hud):
-		game.hud._update_sighting_text()
+		game.update_guiding_star()
 
 func update_progress(game: Node3D) -> void:
 	if stage == Stage.COMPLETE or game.state != game.State.SAILING:

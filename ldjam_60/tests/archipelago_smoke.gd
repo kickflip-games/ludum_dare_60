@@ -30,16 +30,16 @@ func _run() -> void:
 	check(water_hazards, "all water obstacles have submerged footprints")
 	for p in [Vector3(-512,0,0), Vector3(512,0,512), Vector3(0,0,-512)]:
 		check(terrain.terrain_height_at(p) < -10, "map edge remains underwater %s" % p)
-	# Bearings are recomputed from any position. The stars never move with targets.
+	# Star azimuth and landmark bearing update together from every position.
 	for stage in range(3):
 		game.voyage.stage = stage
 		game.voyage.set_target(game)
-		var star: Vector3 = game.guiding_star_direction()
 		for p in [Vector3(0,0,104), Vector3(-180,0,-180), Vector3(350,0,140)]:
 			game.boat.position = p
 			var desired: Vector3 = (game.target - p).normalized()
 			check(game.course_forward().dot(desired) > 0.999, "stage %d recovers bearing from %s" % [stage, p])
-			check(game.guiding_star_direction().is_equal_approx(star), "star direction stays fixed")
+			var ray: Vector3 = game.guiding_star_direction()
+			check(Vector3(ray.x, 0, ray.z).normalized().dot(desired) > 0.999, "star direction follows live destination")
 	# Every stage projects the exact same direction used by the rendered sky.
 	for stage in range(3):
 		game.voyage.stage = stage
@@ -52,11 +52,12 @@ func _run() -> void:
 			game.focus_elapsed = 2.0
 			game._update_view(0.0)
 			game.hud._process(0.0)
-			check(root.get_visible_rect().has_point(game.hud._star_screen_position()), "stage %d star projection visible at heading %.0f" % [stage,rad_to_deg(angle)])
+			var guidance: Dictionary = game.hud.star_guidance()
+			check(not guidance.is_empty() and root.get_visible_rect().has_point(guidance.position), "stage %d star or edge visible at heading %.0f" % [stage,rad_to_deg(angle)])
 		game.reading = false
 		game._update_view(0.2)
 		game.hud._process(0.1)
-		check(game.hud.alignment_label.text.is_empty() and game.focus_strength == 0.0, "stage %d lowering erases bearing assistance" % stage)
+		check(game.hud.star_guidance().is_empty() and game.focus_strength == 0.0, "stage %d lowering erases bearing assistance" % stage)
 	game.restart()
 	game.state = game.State.SAILING
 	game.boat.position = Vector3(140,0,10)

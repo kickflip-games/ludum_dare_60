@@ -96,9 +96,7 @@ vec4 toon_clouds(vec3 d) {
 	// Broad low banks blend into a sparse, stretched upper layer.
 	field += 0.07 * exp(-pow((d.y - 0.17) * 5.0, 2.0));
 	field -= high * 0.10;
-	float lane = max(navigation_lane(d, guiding_stars[0], wind, broad.x - 0.5),
-		max(navigation_lane(d, guiding_stars[1], wind, broad.x - 0.5),
-			navigation_lane(d, guiding_stars[2], wind, broad.x - 0.5)));
+	float lane = navigation_lane(d, guiding_star, wind, broad.x - 0.5);
 	field -= lane * 0.62;
 	float threshold = mix(0.99, 0.36, cloud_density) - storm * 0.035 * cloud_density;
 	float edge = mix(0.005, 0.025, cloud_softness);

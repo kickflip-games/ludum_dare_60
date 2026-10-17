@@ -1,0 +1,54 @@
+# Changelog
+
+Concise development history for Latitude Lines. Dates use Pacific/Auckland time.
+This initial history summarises recent Git commits; linked reviews contain their
+recorded evidence and limitations.
+
+## Unreleased — work in progress
+
+- Local, uncommitted stargazing work lowers the sighting camera pitch from 60° to
+  a configurable 25° so the guiding star and sea horizon share the view. Camera
+  yaw continues to follow the boat's heading.
+- That work also extends camera/framing regression checks and adds repeatable
+  comparison captures. These changes remain outside the documentation commit;
+  their tests and rendered captures were not rerun for this changelog task.
+
+## 2026-10-18
+
+- Added this changelog and required agents to read it before changes and update
+  it in the same commit as each task. Documentation links and whitespace checked;
+  gameplay tests were not rerun for this documentation-only update.
+- Simplified quiet sailing to hull symbols, with transient damage, repair and
+  cannon feedback. Sextant guidance uses delayed star focus and a vertical line
+  toward the horizon, with no sailing compass or numeric heading (`53abb82`).
+  See the [UI review](artifacts/ui_cleanup_review.md).
+- Improved nighttime sea, island and ship visibility with adjustable ambient,
+  moon and lantern lighting (`4524d86`). See the
+  [atmosphere review](artifacts/night_atmosphere_review.md).
+- Added procedural moonlit cloud banks, retained the painted fallback, and then
+  increased default cloud drift speed (`b11bdf0`, `7931bf3`). See the
+  [cloud review](artifacts/procedural_cloud_review.md).
+- Added a scene for reviewing frozen UI states (`94f5edf`); these fixtures do
+  not establish human playability or balance.
+- Added automatic post-battle hull recovery once cutters and their cannonballs
+  are clear: one hull point per eight uninterrupted seconds. Damage or another
+  hostile interrupts repairs; discovery salvage remains immediate (`825a690`).
+- Refined the chase camera, map boundaries, island composition and landmark
+  dressing (`825a690`). See the [camera review](artifacts/sailing_camera_review.md),
+  [island review](artifacts/island_composition_review.md) and
+  [landmark review](artifacts/landmark_storytelling_review.md).
+- Added curved boat wakes, shoreline foam and water-impact splashes (`825a690`).
+  See the [ocean review](artifacts/night_ocean_review.md).
+- Added seeded regional wave encounters with countersteerable heading changes,
+  sideways drift, finite crest sets and protected calm recovery (`370dc68`).
+  See the [wave implementation report](artifacts/water_review/IMPLEMENTATION_REPORT.md).
+
+## 2026-10-17
+
+- Built the authored archipelago voyage through the Wreck, Twin Peaks and
+  Lighthouse Harbour, with three guiding stars and optional cutter encounters
+  (`d2d7f6e`).
+- Added the automatically sweeping starboard cannon and close gunner camera;
+  fresh F presses fire, steering returns to the helm, and Space raises the
+  sextant (`ec1df72`). See the [cannon review](artifacts/cannon_sweep/REPORT.md).
+- Refined island materials and coastal scenery (`df74a0f`).

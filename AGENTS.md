@@ -7,9 +7,16 @@ These instructions apply to the whole repository. This is an existing playable G
 - **Current game name:** Latitude Lines (the root README still uses the earlier title, The Last Bearing).
 - **Engine:** Godot 4.8; open `ldjam_60/project.godot`. Main scene: `res://game/crossing.tscn`.
 - **Gameplay:** a compact, first-person-ish/boat-view, star-guided sailing journey through an archipelago. Steering, maintaining/recovering a heading, coping with directional waves, and reaching the lighthouse are central. Optional cutter combat and hazards provide pressure; the sextant/star sightings provide navigation.
-- Read the root `README.md`, `ldjam_60/game/crossing.gd`, relevant scene(s), and subsystem docs **before** changing a feature. Confirm behavior against code when the README is stale.
+- Read the root `README.md`, recent entries in `changelog.md`, `ldjam_60/game/crossing.gd`, relevant scene(s), and subsystem docs **before** changing a feature. Confirm behavior against code when documentation is stale.
 - Preserve existing input contracts and navigation affordances unless the task expressly changes them. Examples: automatic forward motion; A/D steering; hold Space to sight stars; hold E to glance; F to enter/shoot in the cannon view; R to retry. Do not introduce waypoint arrows, instant perfect navigation, or automatic steering as an unrequested shortcut.
 - Treat game readability and satisfying *player decisions* as goals, not merely attractive water or passing smoke tests.
+
+## Changelog upkeep
+
+- Before making changes, read `changelog.md` for recent decisions, preserved behavior and work in progress; verify its claims against the current code and Git state.
+- Update `changelog.md` for each task that changes gameplay, visuals, controls, assets, tooling or project instructions. Include the update in the same commit as the changes it describes.
+- Keep entries concise, newest first, using `YYYY-MM-DD` dates and short bullets describing what changed and why. Link existing review documents for detail instead of duplicating them.
+- Clearly distinguish committed changes from work in progress. Record relevant validation results or remaining gaps accurately; never describe an unrun check or human playtest as passed. Move or revise in-progress entries when the work is completed or abandoned.
 
 ## Operating method: requirements -> code -> play -> evidence
 
@@ -80,6 +87,7 @@ If Godot, a display, an asset, or a required test runner is unavailable, continu
 - [ ] Adjacent working gameplay and session restart/reset were regression-checked as appropriate.
 - [ ] Visual changes were reviewed in rendered captures when possible; before/after evidence supplied where useful.
 - [ ] No unrelated rework, temporary files, broken links, or unlicensed assets were introduced.
+- [ ] `changelog.md` was read before the task and updated to reflect the actual changes and validation status.
 - [ ] Final report includes files changed, test commands and actual outcomes, remaining limitations, and commit hash/branch if committed.
 
 ## Why this workflow

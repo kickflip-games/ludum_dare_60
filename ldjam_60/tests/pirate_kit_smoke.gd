@@ -34,10 +34,10 @@ func _run() -> void:
 	root.add_child(game)
 	await physics_frame
 	game.set_physics_process(false)
-	var ship: Node3D = game.find_child("PirateKitPlayerShip", true, false)
+	var ship: Node3D = game.find_child("SailBoatPlayer", true, false)
 	var cannon: Node3D = game.find_child("PirateKitStarboardCannon", true, false)
 	var rock: Node3D = game.find_child("PirateKitRock", true, false)
-	check(ship != null and cannon != null and rock != null, "all three imported models instantiate in the playable scene")
+	check(ship != null and cannon != null and rock != null, "sailboat, cannon and rock models instantiate in the playable scene")
 	var ship_bounds := bounds_of(ship, game.boat)
 	check(ship_bounds.size.x > 2.5 and ship_bounds.size.x < 4.0 and ship_bounds.size.z > 5.0 and ship_bounds.size.z < 7.0,
 		"ship visual scale and forward axis match the existing boat")

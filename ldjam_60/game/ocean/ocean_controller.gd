@@ -6,6 +6,7 @@ const WaveField = preload("res://game/ocean/wave_field.gd")
 var wave_field := WaveField.new()
 const WATER_SHADER = preload("res://game/sea.gdshader")
 const WAKE_SHADER = preload("res://game/ocean/wake.gdshader")
+const WAKE_TRAIL = preload("res://game/ocean/wake_trail.gd")
 const PATCH_SIZE: float = 120.0
 var settings: WaveSettings
 var quality: int = 1
@@ -29,6 +30,7 @@ func initialize(value: WaveSettings, quality_value: int = 1) -> void:
 	quality = quality_value
 	material = ShaderMaterial.new()
 	material.shader = WATER_SHADER
+	material.set_shader_parameter("coastal_foam_mask",ImageTexture.create_from_image(load("res://game/ocean/coastal_foam_mask.res")))
 	wake_material = ShaderMaterial.new()
 	wake_material.shader = WAKE_SHADER
 	near_mesh = _instance("DetailedOcean", material)
@@ -112,8 +114,9 @@ func _sync_settings() -> void:
 		return
 	settings.apply_waves(material)
 	settings.apply_palette(material)
-	settings.apply_waves(wake_material)
-	for mat: ShaderMaterial in [material, wake_material]:
+	for mat: ShaderMaterial in wake_root.materials:
+		settings.apply_waves(mat)
+	for mat: ShaderMaterial in [material]+wake_root.materials:
 		mat.set_shader_parameter("fade_start", fade_start)
 		mat.set_shader_parameter("fade_end", fade_end)
 	var margin: float = settings.maximum_displacement() + absf(settings.sea_level) + wave_field.MAX_WAVES * wave_field.MAX_HEIGHT + 0.6
@@ -135,15 +138,15 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 	global_position = Vector3(snappedf(boat_position.x, grid_step), 0.0, snappedf(boat_position.z, grid_step))
 	material.set_shader_parameter("wave_time", wave_time)
 	material.set_shader_parameter("focus_xz", focus_xz)
-	wake_material.set_shader_parameter("wave_time", wave_time)
-	wake_material.set_shader_parameter("focus_xz", focus_xz)
 	wave_field.apply_to(material)
-	wave_field.apply_to(wake_material)
+	for mat: ShaderMaterial in wake_root.materials:
+		mat.set_shader_parameter("wave_time",wave_time)
+		mat.set_shader_parameter("focus_xz",focus_xz)
+		wave_field.apply_to(mat)
 	_update_floating_visuals(delta)
-	wake_strength = lerpf(wake_strength, clampf(speed_factor, 0.0, 1.0), 1.0 - exp(-4.0 * delta))
+	var actual_factor: float = wake_root.advance_path(boat_position,time,delta,speed_factor,heading)
+	wake_strength = lerpf(wake_strength, actual_factor, 1.0 - exp(-4.0 * delta))
 	wake_yaw = lerp_angle(wake_yaw, -heading, 1.0 - exp(-5.0 * delta))
-	wake_root.global_position = Vector3(boat_position.x, 0.0, boat_position.z)
-	wake_root.global_rotation = Vector3(0.0, wake_yaw, 0.0)
 	wake_material.set_shader_parameter("strength", wake_strength)
 
 
@@ -207,26 +210,16 @@ func _update_floating_visuals(delta: float) -> void:
 
 
 func _build_wake() -> void:
-	wake_root = Node3D.new()
-	wake_root.name = "SubtleWake"
+	wake_root = WAKE_TRAIL.new()
+	wake_root.name = "SailingWake"
 	add_child(wake_root)
-	for side in [-1.0, 1.0]:
-		var ribbon := MeshInstance3D.new()
-		var plane := PlaneMesh.new()
-		plane.size = Vector2(0.32, 5.5)
-		plane.subdivide_depth = 15
-		ribbon.mesh = plane
-		ribbon.material_override = wake_material
-		ribbon.position = Vector3(side * 1.95, 0.0, 3.25)
-		ribbon.rotation.y = side * -0.23
-		ribbon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ribbon.extra_cull_margin = 2.5
-		wake_root.add_child(ribbon)
+	wake_root.setup(wake_material)
 
 
 func reset_wake(heading: float) -> void:
 	wake_strength = 0.0
 	wake_yaw = -heading
+	wake_root.clear_path()
 
 
 func _exit_tree() -> void:

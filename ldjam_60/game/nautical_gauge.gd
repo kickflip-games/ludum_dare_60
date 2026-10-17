@@ -31,12 +31,20 @@ func update_presentation(delta: float) -> void:
 	heading = lerp_angle(heading, game.heading, 1.0 - exp(-14.0 * delta))
 	pulse = maxf(0.0, pulse - delta)
 	if kind == Kind.HULL:
-		status.text = "Hull critical · %d/%d" % [game.hull, game.hull_capacity] if game.hull == 1 else "Hull hit · %d/%d" % [game.hull, game.hull_capacity] if game.hit_message_left > 0 else "Hull"
-		status.modulate = CORAL if game.hull == 1 or game.hit_flash > 0.0 else CREAM
+		if game.hit_message_left > 0.0:
+			status.text = ("Hull critical" if game.hull == 1 else "Hull hit") + " · %d/%d" % [game.hull, game.hull_capacity]
+		elif game.hull_repair_notice_left > 0.0:
+			status.text = "Hull repaired · %d/%d" % [game.hull, game.hull_capacity]
+		elif game.is_repairing_hull():
+			status.text = "Repairing · %ds · %d/%d" % [ceili(game.hull_repair_seconds - game.hull_repair_elapsed - 0.00001), game.hull, game.hull_capacity]
+		else:
+			status.text = "Hull critical · %d/%d" % [game.hull, game.hull_capacity] if game.hull == 1 else "Hull"
+		status.modulate = CORAL if game.hit_flash > 0.0 else GOLD if game.hull_repair_notice_left > 0.0 or game.is_repairing_hull() else CORAL if game.hull == 1 else CREAM
 		tooltip_text = "Hull: %d of %d" % [game.hull, game.hull_capacity]
 	elif kind == Kind.COMPASS:
-		status.text = "SPACE · sight star"
-		tooltip_text = "Bow heading. The rose turns against fixed north. Hold Space to use the astrolabe."
+		var degrees: int = game.NavigationBearings.compass_degrees(game.heading)
+		status.text = "Heading %03d°" % degrees
+		tooltip_text = "Bow heading · 000° north, 090° east. The rose turns against fixed north."
 	else:
 		status.text = "Reloading" if game.cannon.cooldown > 0 else "F · Shoot" if game.cannon.aiming else "F · Enter Gun View" if game.cannon.entries == 0 else "F · Cannon"
 		status.modulate = GOLD if game.cannon.cooldown == 0 else CREAM
@@ -66,6 +74,8 @@ func _draw_hull() -> void:
 		var color := CORAL if low else CREAM
 		if i >= game.hull:
 			color = Color(CREAM, 0.22)
+		elif pulse > 0.0 and game.hull_repair_notice_left > 0.0:
+			color = GOLD
 		elif pulse > 0.0 or low:
 			color = CORAL.lerp(CREAM, 0.25 + sin(game.sea_time * 5.0) * 0.12)
 		var outline := PackedVector2Array([center + Vector2(-12, 0), center + Vector2(-6, 8), center + Vector2(7, 8), center + Vector2(13, -1), center + Vector2(-12, 0)])
@@ -75,6 +85,11 @@ func _draw_hull() -> void:
 		_stroke(PackedVector2Array([center + Vector2(0, -13), center + Vector2(0, -2), center + Vector2(8, -3), center + Vector2(0, -13)]), color, 1.5)
 		if i >= game.hull:
 			_stroke(PackedVector2Array([center + Vector2(-5, -2), center + Vector2(4, 6)]), color, 1.2)
+	if game.is_repairing_hull():
+		var bar := Rect2(3, 42, game.hull_capacity * 30.0 - 5.0, 2)
+		draw_rect(bar, Color(CREAM, 0.22))
+		bar.size.x *= clampf(game.hull_repair_elapsed / game.hull_repair_seconds, 0.0, 1.0)
+		draw_rect(bar, GOLD)
 
 
 func _draw_compass() -> void:

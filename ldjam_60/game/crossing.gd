@@ -2,6 +2,7 @@ extends Node3D
 ## A compact, authored three-star archipelago. Distances are in metres.
 
 const VoyageDirector = preload("res://game/voyage_director.gd")
+const NavigationBearings = preload("res://game/navigation_bearings.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
@@ -14,6 +15,7 @@ var actual_speed := 0.0
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
+const PLAYER_SAIL_BOAT = preload("res://assets/sail_boat/sail_boat.glb")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
@@ -23,6 +25,8 @@ const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
+# Leave room for the hull and camera inside the terrain's 512 m edges.
+const SAILING_LIMIT: float = 480.0
 const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 
 @export_group("Sailing difficulty")
@@ -35,6 +39,8 @@ var gust_strength := 0.0
 @export_range(1, 6, 1) var hull_capacity: int = 3
 @export_range(1, 3, 1) var contact_damage: int = 1
 @export_range(0.5, 4.0, 0.1) var hit_immunity_seconds: float = 2.2
+## Restore one hull point per uninterrupted interval clear of cutters and incoming fire.
+@export_range(2.0, 20.0, 0.5) var hull_repair_seconds: float = 8.0
 
 @export_group("Voyage presentation")
 @export var weather_enabled: bool = true
@@ -42,15 +48,22 @@ var gust_strength := 0.0
 @export_group("Stargazing sky")
 @export_range(0.0, 1.0, 0.05) var star_density: float = 0.72
 @export_range(0.0, 0.5, 0.01) var twinkle_strength: float = 0.16
+@export_subgroup("Cloud formations")
 @export_range(0.0, 1.0, 0.05) var cloud_density: float = 0.62
+@export_range(0.4, 2.0, 0.05) var cloud_scale: float = 1.0
+@export var cloud_wind := Vector2(1.0, 0.28)
 @export_range(0.0, 3.0, 0.05) var cloud_speed: float = 0.7
-## Scales the authored angular widths/heights; distant banks remain smaller.
-@export var cloud_size_range := Vector2(0.9, 1.2)
 @export_range(0.3, 1.5, 0.05) var cloud_brightness: float = 0.85
 @export_range(0.0, 1.0, 0.05) var cloud_highlights: float = 0.55
 @export_range(0.0, 1.0, 0.05) var cloud_softness: float = 0.60
+## Billowing banks at zero; more stretched upper wisps at one.
 @export_range(0.0, 1.0, 0.05) var cloud_variation: float = 0.35
 @export var cloud_seed: int = 60
+@export_subgroup("Cloud fallback")
+## Disable only to compare or revert to the previous painted sky.
+@export var procedural_clouds: bool = true
+@export var cloud_size_range := Vector2(0.9, 1.2)
+@export_subgroup("")
 @export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
 
 @export_group("Sextant assistance")
@@ -62,11 +75,21 @@ var gust_strength := 0.0
 @export_enum("None", "Star name", "Name and bearing") var focused_text: int = 2
 @export_enum("Keep focus text", "Course hint") var extended_text: int = 0
 
+@export_group("Sailing camera")
+## Distance behind the hull centre, before a gentle speed extension.
+@export_range(8.0, 24.0, 0.5) var sailing_follow_distance: float = 11.0
+@export_range(3.0, 12.0, 0.25) var sailing_camera_height: float = 5.5
+## Exponential response rates, in inverse seconds. Larger values follow faster.
+@export_range(2.0, 14.0, 0.5) var sailing_follow_smoothing: float = 7.0
+@export_range(2.0, 14.0, 0.5) var sailing_rotation_smoothing: float = 5.5
+@export_range(0.0, 10.0, 0.5) var sailing_look_ahead: float = 5.0
+@export_range(0.0, 6.0, 0.25) var sailing_speed_fov: float = 3.0
+
 @export_group("Cannon camera")
 @export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.4
 @export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.4
 ## Offset from the existing cannon mount, in hull coordinates (X is starboard).
-@export var aim_camera_offset := Vector3(-2.8, 1.9, 0.0)
+@export var aim_camera_offset := Vector3(-0.6, 1.0, -0.6)
 @export var combat_camera_offset := Vector3(2.8, 6.0, 10.5)
 @export_range(0.0, 0.25, 0.01) var camera_target_bias: float = 0.1
 @export_range(60.0, 90.0, 1.0) var aim_camera_fov: float = 76.0
@@ -102,10 +125,14 @@ var shake_strength: float = 0.0
 var hit_message: String = ""
 var hit_message_left: float = 0.0
 var hits_taken: int = 0
+var hull_repair_elapsed: float = 0.0
+var hull_repair_notice_left: float = 0.0
+var _last_hull_damage_time: float = 0.0
 var voyage := VoyageDirector.new()
 var archipelago: Node3D
 var discovery_text: String = ""
 var discovery_left: float = 0.0
+var _at_sailing_boundary: bool = false
 @export_group("Development")
 @export var development_tools: bool = false
 var _warning_audio: AudioStreamPlayer
@@ -124,6 +151,12 @@ var aim_camera_blend: float = 0.0
 var combat_camera_blend: float = 0.0
 var _camera_aim_degrees: float = 0.0
 var _camera_target_offset := Vector3.ZERO
+var _sailing_anchor := Vector3.ZERO
+var _sailing_heading: float = START_HEADING
+var _sailing_speed: float = 0.0
+var _sailing_camera_initialized := false
+var _camera_clear_fraction: float = 1.0
+var _camera_probe := SphereShape3D.new()
 var _cannon_impulse: float = 0.0
 var turn_input: float = 0.0
 var last_reading: float = START_HEADING
@@ -277,8 +310,12 @@ func start_crossing() -> void:
 
 
 func destination_bearing() -> float:
-	var offset := target - boat.position if is_instance_valid(boat) else target
-	return atan2(offset.x, -offset.z)
+	# Internal radians may be signed; presentation converts absolute bearings to 000–359°.
+	return NavigationBearings.bearing_to(boat.global_position if is_instance_valid(boat) else Vector3.ZERO, target, heading)
+
+
+func destination_turn() -> float:
+	return NavigationBearings.signed_turn(heading, destination_bearing())
 
 
 func guiding_star_direction() -> Vector3:
@@ -289,9 +326,9 @@ func guiding_star_name() -> String:
 	return voyage.region(self).star_name
 
 
-func show_discovery(value: String) -> void:
+func show_discovery(value: String, seconds: float = 4.0) -> void:
 	discovery_text = value
-	discovery_left = 4.0
+	discovery_left = seconds
 
 
 func journey_progress() -> float:
@@ -314,6 +351,9 @@ func restart() -> void:
 	hit_flash = 0.0
 	shake_strength = 0.0
 	hits_taken = 0
+	hull_repair_elapsed = 0.0
+	hull_repair_notice_left = 0.0
+	_last_hull_damage_time = 0.0
 	hit_message_left = 0.0
 	phase = 0
 	phase_banner_left = 4.0
@@ -332,6 +372,7 @@ func restart() -> void:
 	voyage.set_target(self)
 	archipelago.reset()
 	discovery_left = 0.0
+	_at_sailing_boundary = false
 	boat.position = archipelago.get_node("SpawnPoints/Departure").position
 	boat.velocity = Vector3.ZERO
 	heading = START_HEADING
@@ -349,6 +390,8 @@ func restart() -> void:
 	combat_camera_blend = 0.0
 	_camera_aim_degrees = 0.0
 	_camera_target_offset = Vector3.ZERO
+	_sailing_camera_initialized = false
+	_camera_clear_fraction = 1.0
 	_cannon_impulse = 0.0
 	camera_mode = CameraMode.SAILING
 	turn_input = 0.0
@@ -416,9 +459,13 @@ func advance_sailing(delta: float, steering: float) -> void:
 		wave_sailing.slide(Vector2(shore_normal.x, shore_normal.z))
 		boat.move_and_collide(hit.get_remainder().slide(shore_normal))
 	boat.position.y = 0.0
-	actual_speed = boat.position.distance_to(previous_position) / maxf(delta, 0.0001)
-	if reading:
-		last_reading = heading
+	_constrain_sailing_area()
+	boat.velocity = (boat.position - previous_position) / maxf(delta, 0.0001)
+	actual_speed = boat.velocity.length()
+	if reading and focus_strength >= 1.0:
+		# This snapshot is a focused landmark reading, not the bow's heading.
+		# It never supplies a sailing arrow or persistent HUD label.
+		last_reading = destination_bearing()
 		has_reading = true
 		last_sighting_time = elapsed
 	voyage.update_progress(self)
@@ -427,10 +474,6 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if voyage.stage >= voyage.Stage.LIGHTHOUSE and distance < 230.0 and not beacon_seen:
 		beacon_seen = true
 		beacon.visible = true
-	# Exploration is untimed; a distant boundary still catches a lost vessel.
-	if maxf(absf(boat.position.x), absf(boat.position.z)) > 640.0:
-		failure_reason = "You sailed beyond the archipelago. Follow the guiding stars home."
-		state = State.LOST
 	if state == State.LOST or state == State.ARRIVED:
 		reading = false
 		turn_input = 0.0
@@ -438,6 +481,51 @@ func advance_sailing(delta: float, steering: float) -> void:
 		enemy_encounters.stop()
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
+	_update_hull_recovery(delta)
+
+
+func is_repairing_hull() -> bool:
+	return state == State.SAILING and hull > 0 and hull < hull_capacity and not enemy_encounters.battle_active()
+
+
+func restore_hull(amount: int) -> bool:
+	if state != State.SAILING or hull <= 0 or hull >= hull_capacity or amount <= 0:
+		return false
+	hull = mini(hull_capacity, hull + amount)
+	hull_repair_notice_left = 3.0
+	if hull == hull_capacity:
+		hull_repair_elapsed = 0.0
+	return true
+
+
+func _update_hull_recovery(delta: float) -> void:
+	hull_repair_notice_left = maxf(0.0, hull_repair_notice_left - delta)
+	if not is_repairing_hull():
+		hull_repair_elapsed = 0.0
+		return
+	# Hits resolved during this sailing step cannot count as time spent safe.
+	hull_repair_elapsed += minf(delta, maxf(0.0, elapsed - _last_hull_damage_time))
+	while hull_repair_elapsed + 0.00001 >= hull_repair_seconds and hull < hull_capacity:
+		hull_repair_elapsed = maxf(0.0, hull_repair_elapsed - hull_repair_seconds)
+		restore_hull(1)
+		cue_sound("victory")
+
+
+func _constrain_sailing_area() -> void:
+	var at_boundary := false
+	for axis: int in [Vector3.AXIS_X, Vector3.AXIS_Z]:
+		var coordinate: float = boat.position[axis]
+		if absf(coordinate) < SAILING_LIMIT:
+			continue
+		at_boundary = true
+		boat.position[axis] = clampf(coordinate, -SAILING_LIMIT, SAILING_LIMIT)
+		var inward := Vector2.ZERO
+		inward[0 if axis == Vector3.AXIS_X else 1] = -signf(coordinate)
+		# Stop outward wave momentum; preserve motion along the edge and the rudder.
+		wave_sailing.slide(inward)
+	if at_boundary and not _at_sailing_boundary:
+		show_discovery("Open sea · turn back toward the islands")
+	_at_sailing_boundary = at_boundary
 
 
 func take_damage(amount: int, reason: String) -> bool:
@@ -445,6 +533,9 @@ func take_damage(amount: int, reason: String) -> bool:
 		return false
 	hull = maxi(0, hull - amount)
 	hits_taken += 1
+	hull_repair_elapsed = 0.0
+	hull_repair_notice_left = 0.0
+	_last_hull_damage_time = elapsed
 	damage_immunity = hit_immunity_seconds
 	hit_flash = 0.8
 	hit_message = reason.to_upper()
@@ -483,23 +574,24 @@ func _update_view(delta: float) -> void:
 	boat.rotation.y = -heading
 	var speed_factor := actual_speed / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
-	boat_motion.update_motion(ocean, boat, boat_visual, delta)
+	var sailing_turn := wave_sailing.rudder_rate + wave_sailing.yaw_rate if state == State.SAILING else 0.0
+	# Let sail-driven heel settle in gun view; sampled wave rocking still applies.
+	var trim_speed := 0.0 if cannon.aiming else speed_factor
+	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
 		boat_visual.rotation.z += end_view_blend * 0.32
 	var sky_blend := smoothstep(0.0, 1.0, read_blend)
-	var helm_pose := Transform3D(Basis.from_euler(Vector3(
-		deg_to_rad(-6.0), -heading - deg_to_rad(75.0) * look_blend,
-		0.0)),
-		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18), 0.0))
+	var helm_pose := _normal_sailing_pose(delta)
 	helm_pose = _sailing_camera_pose(helm_pose, delta)
 	# Sky has final priority, including while the aim camera is blending out.
 	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(78.0), -heading, 0.0)),
 		boat.position + Vector3(0, 2.55, 0))
 	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
-	camera.fov = lerpf(lerpf(74.0, aim_camera_fov, aim_camera_blend), stargazing_fov, sky_blend)
+	var sailing_fov := lerpf(62.0 + sailing_speed_fov * _sailing_speed, 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
+	camera.fov = lerpf(lerpf(sailing_fov, aim_camera_fov, aim_camera_blend), stargazing_fov, sky_blend)
 	if state == State.READY:
 		camera.transform = _title_camera_pose()
 		camera.h_offset = -4.2
@@ -508,7 +600,7 @@ func _update_view(delta: float) -> void:
 		var amount := smoothstep(0.0, 1.0, transition_elapsed / CAST_OFF_SECONDS)
 		camera.transform = _transition_from.interpolate_with(helm_pose, amount)
 		camera.h_offset = lerpf(-4.2, 0.0, amount)
-		camera.fov = lerpf(64.0, 74.0, amount)
+		camera.fov = lerpf(64.0, sailing_fov, amount)
 	elif state == State.ARRIVED or state == State.LOST:
 		end_view_blend = minf(1.0, end_view_blend + delta * 1.3)
 		var orientation := Basis(Vector3.UP, -heading)
@@ -520,11 +612,15 @@ func _update_view(delta: float) -> void:
 	else:
 		camera.transform = helm_pose
 	if state == State.SAILING:
-		var sight_shake := shake_strength * lerpf(1.0, 0.15, sky_blend)
+		# Keep the chase view quiet during impacts; retain dedicated gun feedback.
+		var sailing_shake := lerpf(0.22, 1.0, maxf(aim_camera_blend, combat_camera_blend))
+		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend)
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
 		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
 		camera.position.y = maxf(camera.position.y, ocean.height_at(Vector2(camera.position.x, camera.position.z)) + 1.2)
+		# Final safety includes the sky transition and the small recoil displacement.
+		camera.position = _camera_obstruction_limit(camera.position)
 	_cannon_impulse *= exp(-16.0 * delta)
 	sky_root.position = camera.position
 	sky_material.set_shader_parameter("visual_time", sea_time)
@@ -532,6 +628,10 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("twinkle_strength", twinkle_strength)
 	sky_material.set_shader_parameter("cloud_density", cloud_density)
 	sky_material.set_shader_parameter("cloud_speed", cloud_speed)
+	sky_material.set_shader_parameter("cloud_scale", cloud_scale)
+	sky_material.set_shader_parameter("cloud_wind", cloud_wind)
+	sky_material.set_shader_parameter("procedural_clouds", procedural_clouds)
+	_cloud_layout.configure_procedural(sky_material, cloud_seed)
 	_cloud_layout.configure(sky_material, cloud_seed, cloud_size_range)
 	sky_material.set_shader_parameter("cloud_brightness", cloud_brightness)
 	sky_material.set_shader_parameter("cloud_highlights", cloud_highlights)
@@ -541,6 +641,62 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
+
+
+func _normal_sailing_pose(delta: float) -> Transform3D:
+	# The planar collision root supplies position and heading; only a little
+	# filtered heave follows the visual hull. Pitch and roll never enter the rig.
+	var stable_orientation := Basis(Vector3.UP, -heading)
+	var center := boat.position + stable_orientation * BoatWaveMotion.HULL_CENTER
+	center.y += clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18)
+	var speed := clampf(actual_speed / SPEED, 0.0, 1.15) if state == State.SAILING else 0.0
+	if not _sailing_camera_initialized or _sailing_anchor.distance_to(center) > 60.0:
+		_sailing_anchor = center
+		_sailing_heading = heading
+		_sailing_speed = speed
+		_sailing_camera_initialized = true
+		_camera_clear_fraction = 1.0
+	else:
+		_sailing_anchor = _sailing_anchor.lerp(center, 1.0 - exp(-sailing_follow_smoothing * delta))
+		_sailing_heading = lerp_angle(_sailing_heading, heading, 1.0 - exp(-sailing_rotation_smoothing * delta))
+		_sailing_speed = lerpf(_sailing_speed, speed, 1.0 - exp(-3.0 * delta))
+	var orientation := Basis(Vector3.UP, -_sailing_heading - deg_to_rad(75.0) * look_blend)
+	var distance := sailing_follow_distance * (1.0 + _sailing_speed * 0.07)
+	var at := _sailing_anchor + orientation * Vector3(0, sailing_camera_height, distance)
+	var focus := _sailing_anchor + orientation * Vector3(0, 0.85, -sailing_look_ahead)
+	return Transform3D(Basis.looking_at(focus - at, Vector3.UP), at)
+
+
+func _camera_obstruction_limit(at: Vector3) -> Vector3:
+	# Extend the existing terrain-only feeler to every sailing pose. A small swept
+	# sphere protects the near plane and the screen edges rather than one thin ray.
+	var anchor := _camera_shore_anchor()
+	var motion := at - anchor
+	if motion.length_squared() < 0.01:
+		return at
+	_camera_probe.radius = 0.4
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = _camera_probe
+	query.transform = Transform3D(Basis.IDENTITY, anchor)
+	query.motion = motion
+	query.collision_mask = 1
+	var fractions := get_world_3d().direct_space_state.cast_motion(query)
+	var result := anchor + motion * maxf(0.0, fractions[0] - (0.15 / motion.length() if fractions[0] < 1.0 else 0.0))
+	var floor_height: float = ocean.height_at(Vector2(result.x, result.z)) + 1.2
+	if result.y < floor_height:
+		# A shortened arm may end over a different part of a crest. Lift there,
+		# then recheck terrain rather than pushing the camera below that water.
+		result.y = floor_height
+		query.motion = result - anchor
+		fractions = get_world_3d().direct_space_state.cast_motion(query)
+		result = anchor.lerp(result, fractions[0])
+	return result
+
+
+func _camera_shore_anchor() -> Vector3:
+	# Keep the feeler above passing crests as well as above the planar hull root.
+	var water: float = ocean.height_at(Vector2(boat.position.x, boat.position.z))
+	return boat.position + Vector3.UP * maxf(2.8, water + 1.6)
 
 
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
@@ -572,13 +728,17 @@ func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	var aim_focus := mount + orientation * (aim_direction * 22.0 + Vector3.UP * 0.5)
 	var aim_pose := Transform3D(Basis.looking_at(aim_focus - aim_at), aim_at)
 	var result := sailing_pose.interpolate_with(aim_pose, smoothstep(0, 1, aim_camera_blend))
-	if state == State.SAILING and maxf(aim_camera_blend, combat_camera_blend) > 0.01:
-		# Terrain-only feeler keeps the shoulder outside rocks; own hull is layer 2.
-		var anchor := boat.position + Vector3.UP * 2.8
-		var ray := PhysicsRayQueryParameters3D.create(anchor, result.origin, 1)
-		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
-		if not hit.is_empty():
-			result.origin = hit.position + hit.normal * 0.65
+	if state == State.SAILING:
+		# Pull inward immediately at a shore; ease back to full distance once clear.
+		var anchor := _camera_shore_anchor()
+		var full_distance := anchor.distance_to(result.origin)
+		var safe_distance := anchor.distance_to(_camera_obstruction_limit(result.origin))
+		var fraction := clampf(safe_distance / maxf(full_distance, 0.01), 0.0, 1.0)
+		if aiming or reading:
+			_camera_clear_fraction = fraction
+		else:
+			_camera_clear_fraction = minf(fraction, lerpf(_camera_clear_fraction, 1.0, 1.0 - exp(-5.0 * delta)))
+		result.origin = anchor.lerp(result.origin, _camera_clear_fraction)
 	return result
 
 
@@ -695,12 +855,16 @@ func _build_boat() -> void:
 	boat_visual = Node3D.new()
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
-	var ship: Node3D = PIRATE_SHIP.instantiate()
-	ship.name = "PirateKitPlayerShip"
-	ship.rotation.y = -PI / 2.0
-	ship.scale = Vector3(1.15, 0.8, 0.8)
-	ship.position = Vector3(0.0, -0.10, -1.8)
+	var ship: Node3D = PLAYER_SAIL_BOAT.instantiate()
+	ship.name = "SailBoatPlayer"
+	# The source bow faces +Z; seat the 6 m hull around the existing flotation centre.
+	ship.rotation.y = PI
+	ship.scale = Vector3.ONE * 7.0
+	ship.position = Vector3(-0.072, 0.0, -2.065)
 	boat_visual.add_child(ship)
+	# Set the boom off the centreline so the canvas catches wind and reads from astern.
+	var sail := ship.get_node("RootNode/Sail") as Node3D
+	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
 	var brass := _material(Color("e4b96f"), 1.0)
@@ -764,10 +928,10 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 	body.position = at
 	body.collision_layer = 1
 	body.collision_mask = 2
-	body.set_meta("hazard_name", "a rock" if kind == "rock" else "a wreck" if kind == "wreck" else "floating timber")
-	body.set_meta("destructible", kind == "debris")
+	body.set_meta("hazard_name", "a rock" if kind == "rock" else "a wreck" if kind == "wreck" else "floating barrels" if kind == "barrels" else "floating timber")
+	body.set_meta("destructible", kind in ["debris", "barrels"])
 	body.set_meta("destroyed", false)
-	if kind == "debris":
+	if kind in ["debris", "barrels"]:
 		body.set_meta("target_kind", "timber")
 		body.set_meta("target_radius", radius)
 		body.add_to_group("cannon_targets")
@@ -801,6 +965,17 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 		_box(visual, Vector3(5.0, 0.2, 0.2), Vector3(1.5, 5.1, 0.0), edge).rotation.z = -0.34
 		for i in range(4):
 			_box(visual, Vector3(0.35, 2.7, 0.28), Vector3(-radius * 0.6, 1.4, -2.0 + i * 1.4), edge).rotation.z = 0.3
+	elif kind == "barrels":
+		var staves := _material(Color("a28a61"))
+		var hoops := _material(Color("435b60"))
+		for i in range(3):
+			var barrel := Node3D.new()
+			barrel.position = Vector3((i - 1) * radius * 0.62, 0.1, sin(i * 2.0) * radius * 0.4)
+			barrel.rotation = Vector3(0.12 * i, i * 1.7, 0.2 - i * 0.2)
+			visual.add_child(barrel)
+			_cylinder(barrel, 0.65, 0.65, 1.7, Vector3.ZERO, staves)
+			for y: float in [-0.55, 0.55]:
+				_cylinder(barrel, 0.69, 0.69, 0.12, Vector3(0, y, 0), hoops)
 	else:
 		timber = _material(Color("8f7350"))
 		for i in range(5):
@@ -818,21 +993,7 @@ func _build_destination() -> void:
 	beacon.position = archipelago.get_node("Landmarks/Lighthouse").position
 	beacon.visible = false
 	add_child(beacon)
-	var stone := _material(Color("566369"))
-	var pale := _material(Color("b2b5a5"))
-	var red := _material(Color("593c38"))
-	_cylinder(beacon, 25.0, 16.0, 5.0, Vector3(0.0, -0.8, 0.0), stone)
-	_cylinder(beacon, 4.8, 3.2, 22.0, Vector3(0.0, 11.0, 0.0), pale)
-	_cylinder(beacon, 4.2, 3.9, 3.0, Vector3(0.0, 15.0, 0.0), red)
-	_cylinder(beacon, 5.0, 5.0, 0.8, Vector3(0.0, 22.0, 0.0), stone)
-	beacon_lamp = _cylinder(beacon, 2.8, 2.8, 3.0, Vector3(0.0, 24.0, 0.0), _material(Color("ffdb8a"), 2.0))
-	_cylinder(beacon, 4.2, 0.0, 3.5, Vector3(0.0, 27.0, 0.0), red)
-	var glow := OmniLight3D.new()
-	glow.position = Vector3(0.0, 24.0, 0.0)
-	glow.light_color = Color("ffcc83")
-	glow.light_energy = 5.0
-	glow.omni_range = 40.0
-	beacon.add_child(glow)
+	beacon_lamp = archipelago.story_landmarks.build_lighthouse_effects(beacon)
 
 
 func _build_audio() -> void:

@@ -76,7 +76,30 @@ func _run() -> void:
 			break
 	check(game.cannon.feedback.contains("SPLASH"), "a missed cannonball gives distinct water-hit feedback")
 	game.restart()
+	game.state = game.State.SAILING
+	game.boat.position = Vector3(400, 0, 320)
+	game.heading = 0.0
+	game.boat.rotation.y = 0.0
+	game._update_view(1.0)
+	var barrels_at: Vector3 = game.cannon.shot_origin() + game.cannon.starboard_direction() * 22.0
+	barrels_at.y = 0.0
+	game._add_hazard(barrels_at, 2.5, "barrels")
+	var barrels = game.obstacles.back().body
+	await physics_frame
+	game.boat.position = barrels_at - Vector3(0, 0, -1) * 5.0
+	game.advance_sailing(1.0, 0.0)
+	check(game.hull == 2 and game.hit_message.contains("BARRELS"), "floating barrels physically obstruct sailing and damage the hull")
+	game.boat.position = Vector3(400, 0, 320)
+	game.boat.rotation.y = 0.0
+	game._update_view(1.0)
+	check(game.cannon.fire(), "barrel cluster can be targeted with the existing broadside")
+	for i in range(60):
+		game.cannon.advance(1.0 / 60.0)
+		await physics_frame
+	check(barrels.get_meta("destroyed") and barrels.collision_layer == 0 and not barrels.visible, "real cannonball clears the barrel cluster and its collision")
+	game.restart()
 	check(game.cannon.projectiles.is_empty() and game.cannon.effects.is_empty(), "retry clears all shots, splash rings, and reload")
+	check(game.obstacles.size() == game.archipelago.get_node("Hazards").get_child_count() + 1, "retry restores all authored obstacles without accumulating debris")
 	game.queue_free()
 	await process_frame
 	print("COMBAT CHECK: " + ("PASS" if failures == 0 else "FAIL"))

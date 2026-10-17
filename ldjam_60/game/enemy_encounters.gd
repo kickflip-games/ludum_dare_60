@@ -24,9 +24,12 @@ func update_encounters(delta: float) -> void:
 	for patrol: Marker3D in game.archipelago.get_node("PiratePatrols").get_children():
 		if patrol.name in visited or game.voyage.stage != patrol.get_meta("stage"):
 			continue
+		if game.elapsed < patrol.get_meta("min_elapsed", 0.0):
+			continue
 		var spawn: Vector3 = patrol.get_meta("spawn")
 		var distance: float = game.boat.position.distance_to(patrol.position)
-		if distance < patrol.get_meta("radius") and game.boat.position.distance_to(spawn) > 55.0 and game.boat.position.distance_to(spawn) < 110.0:
+		var spawn_distance: float = game.boat.position.distance_to(spawn)
+		if distance < patrol.get_meta("radius") and spawn_distance > patrol.get_meta("min_distance", 55.0) and spawn_distance < patrol.get_meta("max_distance", 110.0):
 			ship.begin(spawn)
 			ship.territory = patrol.position
 			visited.append(patrol.name)
@@ -41,6 +44,10 @@ func reset() -> void:
 
 func stop() -> void:
 	ship.reset()
+
+func battle_active() -> bool:
+	# A defeated or escaped cutter's last shot can still hit the player.
+	return enabled and (ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] or not ship.projectiles.is_empty())
 
 func approach_warning() -> String:
 	return ship.warning() if enabled else ""

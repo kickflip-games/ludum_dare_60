@@ -23,6 +23,8 @@ uniform float target_focus : hint_range(0.0, 1.0) = 0.0;
 uniform int active_star = 0;
 uniform vec3 guiding_stars[3];
 
+#include "res://game/toon_clouds.gdshaderinc"
+
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -55,7 +57,7 @@ vec3 star_coordinates(vec3 d) {
 }
 
 // Subpixel coverage avoids harsh on/off star flicker while turning.
-vec3 stars(vec2 uv, float cells, float seed, float density, float pixel_angle) {
+vec3 stars(vec2 uv, float cells, float seed, float density, float pixel_angle, float energy, float size_scale) {
 	vec2 grid_scale = vec2(cells * 2.0, cells);
 	vec2 grid = uv * grid_scale;
 	vec2 id = floor(grid) + seed;
@@ -63,13 +65,15 @@ vec3 stars(vec2 uv, float cells, float seed, float density, float pixel_angle) {
 	vec2 center = vec2(hash(id + 13.7), hash(id - 9.2)) * 0.7 + 0.15;
 	vec2 offset = (fract(grid) - center) / grid_scale * 2.0;
 	float distance_angle = length(offset) / sqrt(1.0 + dot(uv * 2.0 - 1.0, uv * 2.0 - 1.0));
-	float bright = pow(hash(id + 41.3), 5.0);
-	float radius = mix(0.00045, 0.0015, bright);
+	float bright = pow(hash(id + 41.3), 3.0);
+	float radius = mix(0.00050, 0.0013, bright) * size_scale;
 	float core = 1.0 - smoothstep(max(0.0, radius - pixel_angle * 0.5), radius + pixel_angle * 0.5, distance_angle);
-	float halo = exp(-distance_angle * distance_angle / 0.000016) * bright * 0.08;
-	float pulse = 1.0 + twinkle_strength * sin(visual_time * (0.65 + chance) + chance * 95.0);
-	vec3 tint = mix(vec3(0.55, 0.72, 0.89), vec3(1.0, 0.86, 0.65), hash(id + 8.0));
-	return tint * (core + halo) * mix(0.35, 1.5, bright) * pulse * step(chance, density);
+	float halo = exp(-distance_angle * distance_angle / 0.000016) * bright * 0.055 * size_scale;
+	float phase = hash(id + 72.6) * 6.283185;
+	float pulse = 1.0 + twinkle_strength * (0.7 * sin(visual_time * (0.55 + chance * 0.9) + phase)
+		+ 0.3 * sin(visual_time * (0.23 + bright * 0.4) + phase * 2.7));
+	vec3 tint = mix(vec3(0.67, 0.79, 1.0), vec3(1.0, 0.91, 0.77), hash(id + 8.0));
+	return tint * (core + halo) * mix(0.45, 1.0, bright) * energy * pulse * step(chance, density);
 }
 
 // Both layers move around world up, never the camera. A fixed spherical
@@ -78,9 +82,24 @@ vec3 drift_direction(vec3 d, float angle) {
 	return vec3(d.x * cos(angle) - d.z * sin(angle), d.y, d.x * sin(angle) + d.z * cos(angle));
 }
 
+// Fade the complete painted formation before it crosses a fixed navigation
+// star. Per-pixel star cutouts produced conspicuous round holes during drift.
+float star_clearance(vec3 reference, vec3 center, vec3 right, vec3 up) {
+	float facing = dot(reference, center);
+	if (facing <= 0.0) { return 1.0; }
+	vec2 projected = vec2(dot(reference, right), dot(reference, up)) / facing;
+	return smoothstep(1.0, 1.35, max(abs(projected.x), abs(projected.y)));
+}
+
 vec4 painted_clouds(vec3 direction) {
 	vec3 near_ray = drift_direction(direction, visual_time * cloud_speed * 0.0019);
 	vec3 far_ray = drift_direction(direction, visual_time * cloud_speed * 0.0008);
+	vec3 near_star0 = drift_direction(guiding_stars[0], visual_time * cloud_speed * 0.0019);
+	vec3 near_star1 = drift_direction(guiding_stars[1], visual_time * cloud_speed * 0.0019);
+	vec3 near_star2 = drift_direction(guiding_stars[2], visual_time * cloud_speed * 0.0019);
+	vec3 far_star0 = drift_direction(guiding_stars[0], visual_time * cloud_speed * 0.0008);
+	vec3 far_star1 = drift_direction(guiding_stars[1], visual_time * cloud_speed * 0.0008);
+	vec3 far_star2 = drift_direction(guiding_stars[2], visual_time * cloud_speed * 0.0008);
 	vec3 result = vec3(0.0);
 	float coverage = 0.0;
 	// Distant banks first, then nearer formations: explicit back-to-front
@@ -96,15 +115,22 @@ vec4 painted_clouds(vec3 direction) {
 		if (facing < 0.3) { continue; }
 		vec2 uv = vec2(dot(ray, cloud_rights[i].xyz), -dot(ray, cloud_ups[i].xyz)) / facing * 0.5 + 0.5;
 		if (uv.x <= 0.015 || uv.x >= 0.985 || uv.y <= 0.025 || uv.y >= 0.975) { continue; }
+		vec3 center = cloud_centers[i].xyz;
+		vec3 right = cloud_rights[i].xyz;
+		vec3 up = cloud_ups[i].xyz;
+		presence *= star_clearance(distant ? far_star0 : near_star0, center, right, up)
+			* star_clearance(distant ? far_star1 : near_star1, center, right, up)
+			* star_clearance(distant ? far_star2 : near_star2, center, right, up);
+		if (presence < 0.001) { continue; }
 		float family = cloud_rights[i].w;
 		vec2 atlas_uv = (uv + vec2(mod(family, 4.0), floor(family / 4.0))) / vec2(4.0, 2.0);
 		vec4 paint = texture(cloud_atlas, atlas_uv);
 		float feather = mix(0.035, 0.22, cloud_softness);
 		float alpha = smoothstep(0.5 - feather, 0.5 + feather, paint.a) * presence;
 		alpha *= smoothstep(0.006, 0.075, direction.y);
-		vec3 shadow = vec3(0.070, 0.100, 0.170);
-		vec3 body = vec3(0.215, 0.285, 0.405);
-		vec3 moonlight = vec3(0.395, 0.455, 0.610);
+		vec3 shadow = vec3(0.075, 0.095, 0.165);
+		vec3 body = vec3(0.220, 0.280, 0.415);
+		vec3 moonlight = vec3(0.420, 0.475, 0.635);
 		vec3 color = mix(shadow, body, paint.r);
 		color = mix(color, moonlight, paint.g * cloud_highlights * 0.75);
 		float lavender = cloud_ups[i].w * paint.b * cloud_variation;
@@ -114,10 +140,6 @@ vec4 painted_clouds(vec3 direction) {
 			color = mix(vec3(0.09, 0.14, 0.20), color, 0.68);
 			alpha *= 0.94;
 		}
-		// Reserve actual open sky around the principal star. This thins the
-		// formation itself, so background stars never shine over opaque paint.
-		float separation = min(length(direction - guiding_stars[0]), min(length(direction - guiding_stars[1]), length(direction - guiding_stars[2])));
-		alpha *= smoothstep(0.035, 0.19, separation);
 		result = color * alpha + result * (1.0 - alpha);
 		coverage = alpha + coverage * (1.0 - alpha);
 	}
@@ -139,8 +161,11 @@ void sky() {
 		float band = exp(-pow((d.x * 0.65 + d.z * 0.4 + d.y * 0.2 - 0.15) * 5.0, 2.0));
 		float dust = noise(d.xz * 6.0 + d.y * 3.0) * 0.6 + noise(d.xz * 15.0) * 0.4;
 		night += vec3(0.019, 0.026, 0.048) * band * dust * height;
-		vec3 starlight = stars(star_uv.xy, 40.0, star_uv.z * 137.0, star_density * 0.58, pixel_angle);
-		starlight += stars(star_uv.xy, 20.0, 81.0 + star_uv.z * 137.0, star_density * 0.24, pixel_angle);
+		// Deliberate hierarchy: a faint backdrop, fewer readable lights and a
+		// handful of bright anchors. All hashes are fixed world-space positions.
+		vec3 starlight = stars(star_uv.xy, 52.0, star_uv.z * 137.0, star_density * 0.48, pixel_angle, 0.18, 0.72);
+		starlight += stars(star_uv.xy, 26.0, 81.0 + star_uv.z * 137.0, star_density * 0.22, pixel_angle, 0.72, 1.0);
+		starlight += stars(star_uv.xy, 12.0, 193.0 + star_uv.z * 137.0, star_density * 0.09, pixel_angle, 1.5, 1.4);
 		// The reference is one of several bright stars until the instrument focuses.
 		for (int i = 0; i < 3; i++) {
 			vec3 reference = guiding_stars[i];
@@ -153,7 +178,7 @@ void sky() {
 		}
 
 		night += starlight * smoothstep(0.015, 0.15, d.y) * mix(1.0, 0.78, storm);
-		vec4 clouds = painted_clouds(d);
+		vec4 clouds = procedural_clouds ? toon_clouds(d) : painted_clouds(d);
 		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning);
 		if (cloud_debug == 1) { COLOR = vec3(clouds.a); }
 		if (cloud_debug == 2) { COLOR = night; }

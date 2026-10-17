@@ -14,7 +14,7 @@ https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt.
 
 The GLBs are unmodified, self-contained static models with embedded material
 data. Godot applies scale, rotation, and placement at runtime. The Small Ship
-is used for the player boat and wreck hulls; the Cannon faces starboard; the
+is used for enemy ships and wreck hulls; the Cannon faces starboard; the
 Rock replaces hazard visuals. Existing collision shapes, shot direction,
 muzzle position, and navigation remain independent of these visual models.
 

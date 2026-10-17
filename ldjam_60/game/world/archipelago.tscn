@@ -31,7 +31,7 @@ material_override = ExtResource("3")
 script = ExtResource("7")
 [node name="SpawnPoints" type="Node3D" parent="."]
 [node name="Departure" type="Marker3D" parent="SpawnPoints"]
-position = Vector3(0, 0, 104)
+position = Vector3(24, 0, 148)
 [node name="WreckApproach" type="Marker3D" parent="SpawnPoints"]
 position = Vector3(-175, 0, -110)
 [node name="PeaksApproach" type="Marker3D" parent="SpawnPoints"]
@@ -75,15 +75,19 @@ position = Vector3(76, 0, 203)
 metadata/label = "The Watchman's Rest"
 [node name="PiratePatrols" type="Node3D" parent="."]
 [node name="WreckPatrol" type="Marker3D" parent="PiratePatrols"]
-position = Vector3(-177, 0, -144)
-metadata/radius = 110.0
+position = Vector3(-55, 0, 79)
+metadata/radius = 175.0
 metadata/stage = 0
-metadata/spawn = Vector3(-176, 0, -183)
+metadata/spawn = Vector3(-100, 0, 90)
+metadata/min_elapsed = 8.0
+metadata/min_distance = 45.0
+metadata/max_distance = 140.0
 [node name="EasternPatrol" type="Marker3D" parent="PiratePatrols"]
-position = Vector3(325, 0, -55)
-metadata/radius = 110.0
+position = Vector3(350, 0, 40)
+metadata/radius = 170.0
 metadata/stage = 2
 metadata/spawn = Vector3(365, 0, 3)
+metadata/max_distance = 155.0
 [node name="IslandProps" type="Node3D" parent="."]
 [node name="Hazards" type="Node3D" parent="."]
 [node name="ReefWest" type="Marker3D" parent="Hazards"]
@@ -99,3 +103,99 @@ metadata/radius = 6.0
 position = Vector3(-184, 0, -174)
 metadata/radius = 3.0
 metadata/kind = "debris"
+[node name="DepartureTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(-53, 0, 82)
+metadata/radius = 2.8
+metadata/kind = "debris"
+[node name="DepartureRock" type="Marker3D" parent="Hazards"]
+position = Vector3(-78, 0, 61)
+metadata/radius = 3.5
+[node name="WesternBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(-110, 0, 46)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="WesternShelf" type="Marker3D" parent="Hazards"]
+position = Vector3(-147, 0, 50)
+metadata/radius = 4.0
+[node name="CoveTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(-205, 0, 9)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="ChannelRock" type="Marker3D" parent="Hazards"]
+position = Vector3(-217, 0, -36)
+metadata/radius = 4.5
+[node name="WreckApproachRock" type="Marker3D" parent="Hazards"]
+position = Vector3(-242, 0, -92)
+metadata/radius = 4.5
+[node name="WreckBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(-214, 0, -184)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="NorthernReef" type="Marker3D" parent="Hazards"]
+position = Vector3(-178, 0, -215)
+metadata/radius = 5.0
+[node name="NorthernTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(-95, 0, -224)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="NorthernShelf" type="Marker3D" parent="Hazards"]
+position = Vector3(-27, 0, -187)
+metadata/radius = 4.0
+[node name="NorthernWreck" type="Marker3D" parent="Hazards"]
+position = Vector3(46, 0, -223)
+metadata/radius = 4.5
+metadata/kind = "wreck"
+[node name="PeaksTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(98, 0, -174)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="PeaksShelf" type="Marker3D" parent="Hazards"]
+position = Vector3(166, 0, -137)
+metadata/radius = 4.0
+[node name="PeaksBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(209, 0, -173)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="PeaksOuterReef" type="Marker3D" parent="Hazards"]
+position = Vector3(252, 0, -251)
+metadata/radius = 4.5
+[node name="EasternTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(316, 0, -136)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="EasternReef" type="Marker3D" parent="Hazards"]
+position = Vector3(374, 0, -76)
+metadata/radius = 5.0
+[node name="EasternBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(334, 0, -18)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="EasternWreck" type="Marker3D" parent="Hazards"]
+position = Vector3(379, 0, 42)
+metadata/radius = 4.5
+metadata/kind = "wreck"
+[node name="HarbourChannelRock" type="Marker3D" parent="Hazards"]
+position = Vector3(332, 0, 91)
+metadata/radius = 4.0
+[node name="HarbourTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(369, 0, 129)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="HarbourBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(311, 0, 180)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="InnerChannelRock" type="Marker3D" parent="Hazards"]
+position = Vector3(156, 0, 45)
+metadata/radius = 4.0
+[node name="SouthernTimber" type="Marker3D" parent="Hazards"]
+position = Vector3(176, 0, 96)
+metadata/radius = 3.0
+metadata/kind = "debris"
+[node name="SouthernBarrels" type="Marker3D" parent="Hazards"]
+position = Vector3(103, 0, 69)
+metadata/radius = 2.5
+metadata/kind = "barrels"
+[node name="SouthernReef" type="Marker3D" parent="Hazards"]
+position = Vector3(-65, 0, 152)
+metadata/radius = 4.0

@@ -1,19 +1,24 @@
 shader_type spatial;
-render_mode unshaded, world_vertex_coords, cull_disabled, depth_draw_never, shadows_disabled;
+render_mode unshaded, world_vertex_coords, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 
 #include "res://game/ocean/waves.gdshaderinc"
 
 uniform float strength = 0.0;
+uniform int wake_kind = 0;
+varying vec2 world_xz;
 
 void vertex() {
 	vec3 wave = surface_sample(VERTEX.xz);
 	VERTEX.y = sea_level + wave.x + 0.045;
+	world_xz = VERTEX.xz;
 }
 
 void fragment() {
-	float across = smoothstep(0.0, 0.22, UV.x) * (1.0 - smoothstep(0.78, 1.0, UV.x));
-	float along = sin(UV.y * PI);
-	float fray = 0.7 + 0.3 * sin(UV.y * 29.0 + wave_time * 1.1);
-	ALBEDO = foam_color.rgb;
-	ALPHA = across * along * fray * strength * 0.32;
+	float fray = 0.5+0.3*sin(dot(world_xz,vec2(0.73,1.31))-wave_time*0.2)
+		+0.2*sin(UV.y*2.7+world_xz.x*1.8-world_xz.y*0.31);
+	float edge = 0.1+0.18*(1.0-fray);
+	float across = smoothstep(edge,0.45,UV.x)*(1.0-smoothstep(0.55,1.0-edge,UV.x));
+	float body = smoothstep(0.25,0.76,fray);
+	ALBEDO = mix(foam_color.rgb,vec3(0.11,0.25,0.29),wake_kind==0 ? 0.12 : 0.24);
+	ALPHA = across*COLOR.a*body*(wake_kind==0 ? 0.42 : 0.50);
 }

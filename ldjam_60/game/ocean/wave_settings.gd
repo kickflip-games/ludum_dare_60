@@ -21,7 +21,7 @@ extends Resource
 	set(value):
 		direction_1 = value
 		emit_changed()
-@export_range(0.05, 3.0, 0.01) var frequency_1: float = 0.65:
+@export_range(0.05, 3.0, 0.01) var frequency_1: float = 0.28:
 	set(value):
 		frequency_1 = value
 		emit_changed()
@@ -39,7 +39,7 @@ extends Resource
 	set(value):
 		direction_2 = value
 		emit_changed()
-@export_range(0.05, 3.0, 0.01) var frequency_2: float = 1.10:
+@export_range(0.05, 3.0, 0.01) var frequency_2: float = 0.76:
 	set(value):
 		frequency_2 = value
 		emit_changed()
@@ -57,7 +57,7 @@ extends Resource
 	set(value):
 		direction_3 = value
 		emit_changed()
-@export_range(0.05, 3.0, 0.01) var frequency_3: float = 1.60:
+@export_range(0.05, 3.0, 0.01) var frequency_3: float = 1.30:
 	set(value):
 		frequency_3 = value
 		emit_changed()
@@ -71,17 +71,21 @@ extends Resource
 		emit_changed()
 
 @export_group("Toon palette")
-@export var trough_color: Color = Color("073b4c"):
+@export var trough_color: Color = Color("112c46"):
 	set(value):
 		trough_color = value
 		emit_changed()
-@export var main_color: Color = Color("087f8c"):
+@export var main_color: Color = Color("17556b"):
 	set(value):
 		main_color = value
 		emit_changed()
-@export var slope_color: Color = Color("20afaf"):
+@export var slope_color: Color = Color("238a98"):
 	set(value):
 		slope_color = value
+		emit_changed()
+@export var crest_color: Color = Color("3796a5"):
+	set(value):
+		crest_color = value
 		emit_changed()
 @export var sun_direction: Vector3 = Vector3(-0.6, 0.7, -0.4):
 	set(value):
@@ -101,13 +105,22 @@ extends Resource
 	set(value):
 		foam_softness = value
 		emit_changed()
-@export var foam_color: Color = Color("d9f8ee"):
+@export var foam_color: Color = Color("a1d7db"):
 	set(value):
 		foam_color = value
 		emit_changed()
 @export_range(0.0, 1.5, 0.01) var foam_intensity: float = 0.82:
 	set(value):
 		foam_intensity = value
+		emit_changed()
+## Independent of ambient foam, so calm water still shows approaching encounter caps.
+@export_range(0.0, 1.5, 0.05) var encounter_foam: float = 1.0:
+	set(value):
+		encounter_foam = value
+		emit_changed()
+@export_range(0.0, 2.0, 0.05) var pattern_density: float = 0.8:
+	set(value):
+		pattern_density = value
 		emit_changed()
 
 @export_group("Boat visual response")
@@ -184,9 +197,12 @@ func apply_palette(material: ShaderMaterial) -> void:
 	material.set_shader_parameter("trough_color", trough_color)
 	material.set_shader_parameter("main_color", main_color)
 	material.set_shader_parameter("slope_color", slope_color)
+	material.set_shader_parameter("crest_color", crest_color)
 	material.set_shader_parameter("sun_direction", sun_direction.normalized())
 	material.set_shader_parameter("band_softness", band_softness)
 	material.set_shader_parameter("foam_threshold", foam_threshold)
 	material.set_shader_parameter("foam_softness", foam_softness)
 	material.set_shader_parameter("foam_intensity", foam_intensity)
+	material.set_shader_parameter("encounter_foam", encounter_foam)
+	material.set_shader_parameter("pattern_density", pattern_density)
 	material.set_shader_parameter("crest_scale", maxf(0.5, maximum_displacement()))

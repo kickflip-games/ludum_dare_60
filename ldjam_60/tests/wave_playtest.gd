@@ -20,7 +20,7 @@ func steer(value: float) -> void:
 
 func capture(label: String) -> void:
 	await process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(true, 1.0 / 60.0)
 	root.get_texture().get_image().save_png(output_dir.path_join(label + ".png"))
 
 func _run() -> void:
@@ -47,7 +47,7 @@ func _run() -> void:
 			steer(input_value)
 			game._physics_process(1.0 / 60.0)
 			await process_frame
-			await RenderingServer.frame_post_draw
+			RenderingServer.force_draw(true, 1.0 / 60.0)
 			if counter and frame in [120, 180, 240]:
 				root.get_texture().get_image().save_png(output_dir.path_join("steering-%d.png" % frame))
 		results.append({"countersteering": counter, "sideways_m": game.boat.position.x + 300,
@@ -77,7 +77,7 @@ func _run() -> void:
 		last_hits = game.hits_taken
 		if frame % 8 == 0:
 			await process_frame
-			await RenderingServer.frame_post_draw
+			RenderingServer.force_draw(true, 1.0 / 60.0)
 			actual_frames += 1
 			var now := Time.get_ticks_usec()
 			frame_ms.append((now - previous_tick) / 1000.0)

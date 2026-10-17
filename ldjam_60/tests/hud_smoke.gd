@@ -52,11 +52,19 @@ func _run() -> void:
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
 	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing shows anchored instruments")
+	check(hud.gameplay_hud.get_node_or_null("Destination") == null and hud.gameplay_hud.get_node_or_null("RouteHint") == null and not hud.notice.visible, "departure leaves navigation to the player without route instructions")
+	game.wave_encounters.begin_region(0, Vector2(0, -1), game.sea_time)
+	hud._process(0.1)
+	check(hud.gameplay_hud.get_node_or_null("WaveWarning") == null and not hud.notice.text.contains("Wave"), "wave sets add no counters or routine sea-state banners")
+	game.wave_encounters.stop(game.ocean.wave_field)
 	check(hud.hull_gauge.status.text == "Hull" and hud.cannon_gauge.status.text == "F · Enter Gun View", "healthy hull and loaded cannon use compact status text")
 	var old_heading: float = hud.compass.heading
 	game.heading += 0.6
 	hud._process(0.1)
 	check(absf(angle_difference(old_heading, hud.compass.heading)) > 0.01 and absf(angle_difference(game.heading, hud.compass.heading)) > 0.01, "compass turns smoothly toward the actual bow heading")
+	game.heading = deg_to_rad(-40)
+	hud._process(0.1)
+	check(hud.compass.status.text == "Heading 320°", "compass shows the numeric heading needed to match a star reading")
 	var before_destination: float = hud.compass.heading
 	game.target += Vector3(200, 0, -200)
 	hud._process(0.0)
@@ -83,6 +91,8 @@ func _run() -> void:
 	Input.action_release("astrolabe")
 	hud._process(0.2)
 	check(hud.bearing_label.text == "North Star" and hud.alignment_label.text == hud._navigation_text(), "continued hold reveals the actual live bearing")
+	check(hud.alignment_label.text.begins_with("Bearing ~") and not hud.alignment_label.text.contains("Wreck"), "focused reading labels its approximate absolute bearing without repeating the objective")
+	check_inside(hud.alignment_label, "full navigation explanation fits the small window")
 	check(hud.compass.modulate.a < 0.01 and hud.cannon_gauge.modulate.a < 0.1 and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
 	var ship = game.enemy_encounters.ship
 	ship.begin()
@@ -102,6 +112,10 @@ func _run() -> void:
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
 	check(game.hull == game.hull_capacity and hud.hull_gauge.status.text == "Hull" and hud.hull_gauge.pulse == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
+	game.boat.position = game.target
+	game.voyage.update_progress(game)
+	hud._process(0.1)
+	check(game.voyage.stage == game.voyage.Stage.TWIN_PEAKS and hud.notice.text == "The Wreck found" and hud.alignment_label.text.is_empty(), "finding the wreck acknowledges discovery without revealing or directing the next stop")
 	game.elapsed = 102.0
 	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
 	game.voyage.set_target(game)

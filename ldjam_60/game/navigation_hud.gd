@@ -24,7 +24,6 @@ var compass: Control
 var cannon_gauge: Control
 var gameplay_hud: Control
 var threat_label: Label
-var wind_label: Label
 var notice: Label
 var instrument: Control
 var bearing_label: Label
@@ -64,19 +63,13 @@ func _ready() -> void:
 	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-206, -108, 174, 78))
 	compass.heading = game.heading
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
-	wind_label = _label(gameplay_hud, "WaveWarning", "", 14, INK)
-	wind_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	wind_label.offset_left = -440
-	wind_label.offset_right = -82
-	wind_label.offset_top = 34
-	wind_label.offset_bottom = 60
-	wind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	notice = _label(gameplay_hud, "ContextNotice", "", 19)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	notice.offset_left = -300
 	notice.offset_right = 300
-	notice.offset_top = 52
-	notice.offset_bottom = 88
+	notice.offset_top = 104
+	notice.offset_bottom = 158
+	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_build_instrument()
 	_sync_button()
@@ -132,9 +125,10 @@ func _build_menu() -> void:
 	menu_title = _label(column, "Title", "LATITUDE\nLINES", 61, INK, true)
 	menu_title.add_theme_constant_override("line_spacing", -8)
 	menu_title.add_theme_constant_override("outline_size", 0)
-	menu_body = _label(column, "Subtitle", "Three stars. An island sea.\nFind the wreck, the peaks, and home.", 18, MUTED)
+	menu_body = _label(column, "Subtitle", "An island sea. A distant harbour.\nFind your way home by starlight.", 18, MUTED)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	menu_reference = _label(column, "StarReference", "Sight each guiding star to read your next bearing.", 17, BRASS)
+	menu_reference = _label(column, "StarReference", "Use the stars to read your destination's compass bearing.", 17, BRASS)
+	menu_reference.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu_controls = GridContainer.new()
 	menu_controls.name = "Controls"
 	menu_controls.columns = 2
@@ -142,7 +136,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["F · press again to fire", "Cannon view / shoot"]]:
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Read destination bearing"], ["F · press again to fire", "Cannon view / shoot"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -194,9 +188,9 @@ func _build_instrument() -> void:
 	gameplay_hud.add_child(instrument)
 	instrument.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bearing_label = _label(instrument, "Bearing", "", 21, INK, true)
-	bearing_label.size = Vector2(340, 30)
+	bearing_label.size = Vector2(420, 30)
 	alignment_label = _label(instrument, "Alignment", "", 17, BRASS)
-	alignment_label.size = Vector2(340, 62)
+	alignment_label.size = Vector2(420, 62)
 	release_label = _label(instrument, "ReleaseHint", "Hold to focus", 14, MUTED)
 	release_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	release_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -228,7 +222,7 @@ func _sync_button() -> void:
 	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
 	menu_title.text = "LATITUDE\nLINES" if intro else "Safe harbour." if won else "Lost at sea."
 	menu_title.add_theme_font_size_override("font_size", 61 if intro else 51)
-	menu_body.text = "Three stars. An island sea.\nFind the wreck, the peaks, and home." if intro else "The light has brought you home." if won else game.failure_reason
+	menu_body.text = "An island sea. A distant harbour.\nFind your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
 	menu_reference.visible = intro
 	menu_controls.visible = intro
 	menu_details.visible = won
@@ -261,11 +255,10 @@ func _process(delta: float) -> void:
 		_last_cooldown = game.cannon.cooldown
 		queue_redraw()
 		return
-	var ship = game.enemy_encounters.ship
-	var combat: bool = ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING]
+	var combat: bool = game.enemy_encounters.battle_active()
 	_combat_blend = move_toward(_combat_blend, 1.0 if combat or game.cannon.aiming or game.cannon.cooldown > 0 or game.look_blend > 0.1 else 0.0, delta * 5.0)
 	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend)
-	if _last_hull >= 0 and game.hull < _last_hull:
+	if _last_hull >= 0 and game.hull != _last_hull:
 		hull_gauge.pulse = 0.65
 	if _last_cooldown > 0.0 and game.cannon.cooldown == 0.0:
 		cannon_gauge.pulse = 0.5
@@ -273,7 +266,7 @@ func _process(delta: float) -> void:
 	_last_cooldown = game.cannon.cooldown
 	# Aim queries are made once per frame and shared by the ring and world marks.
 	cannon_gauge.target = game.cannon.aim_target() if _reading_alpha < 0.9 else {}
-	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0
+	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0 or game.hull_repair_notice_left > 0.0
 	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.64 + _combat_blend * 0.25, 0.0, _reading_alpha)
 	cannon_gauge.modulate.a = lerpf(0.5 + _combat_blend * 0.5, 0.0, _reading_alpha)
 	compass.modulate.a = (1.0 - _reading_alpha) * (1.0 - smoothstep(0.0, 0.75, game.aim_camera_blend))
@@ -283,9 +276,6 @@ func _process(delta: float) -> void:
 	instrument.visible = _reading_alpha > 0.01
 	_update_sighting_text()
 	_update_threat()
-	wind_label.text = game.wave_encounters.warning(game.sea_time, game.heading)
-	wind_label.visible = not wind_label.text.is_empty()
-	wind_label.modulate.a = 1.0
 	_update_notice()
 	queue_redraw()
 
@@ -311,7 +301,7 @@ func _update_sighting_text() -> void:
 	release_label.modulate.a = 0.65 * (1.0 - smoothstep(0.0, 0.3, focus))
 	if named or bearing or extended:
 		var at := _star_screen_position() + Vector2(25, -21)
-		at.x = clampf(at.x, 24, size.x - 364)
+		at.x = clampf(at.x, 24, size.x - 444)
 		at.y = clampf(at.y, 24, size.y - 200)
 		bearing_label.position = at
 		alignment_label.position = at + Vector2(0, 29)
@@ -323,12 +313,8 @@ func _update_notice() -> void:
 	if game.discovery_left > 0:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
-	elif game.elapsed < 6.0 and not game.has_reading:
-		value = "Hold SPACE · sight the guiding star"
-		alpha = clampf(6.0 - game.elapsed, 0.0, 1.0)
-	elif game.phase_banner_left > 0.0 and game.elapsed > 8.0:
-		value = game.phase_name()
-		alpha = minf(1.0, game.phase_banner_left)
+	elif game.enemy_encounters.ship.age < 6.0 and game.enemy_encounters.battle_active():
+		value = "Pirate cutter · F for cannon, or steer clear"
 	notice.text = value
 	notice.modulate.a = alpha * (1.0 - _reading_alpha)
 	notice.visible = not value.is_empty()
@@ -352,30 +338,22 @@ func _update_threat() -> void:
 	threat_label.size = Vector2(224, 30)
 
 
-func _bearing_text(angle: float) -> String:
-	var degrees: float = rad_to_deg(wrapf(angle, -PI, PI))
-	if absf(degrees) < 0.5:
-		return "Dead ahead"
-	return "%d° %s" % [roundi(absf(degrees)), "port" if degrees > 0.0 else "starboard"]
-
-
 func _navigation_text() -> String:
-	var bearing: float = fposmod(rad_to_deg(game.destination_bearing()), 360.0)
-	var rounded: int = roundi(bearing / 5.0) * 5 % 360
-	var star: Vector3 = game.guiding_star_direction()
-	var relative: float = wrapf(game.heading - atan2(star.x, -star.z), -PI, PI)
-	return "%s · steer ~%03d°\nStar %s" % [game.voyage.region(game).display_name, rounded, _bearing_text(relative).to_lower()]
+	var rounded: int = game.NavigationBearings.compass_degrees(game.destination_bearing(), 5)
+	return "Bearing ~%03d°" % rounded
 
 
 func _course_error() -> float:
-	return wrapf(game.heading - game.destination_bearing(), -PI, PI)
+	return game.destination_turn()
 
 
 func _course_hint() -> String:
 	var error: float = _course_error()
 	if absf(error) < deg_to_rad(8.0):
-		return "Landmark bearing aligned"
-	return "Adjust to port" if error > 0.0 else "Adjust to starboard"
+		return "Ahead of the bow"
+	if absf(error) > deg_to_rad(177.5):
+		return "Astern · either side"
+	return "Starboard of the bow" if error > 0.0 else "Port of the bow"
 
 
 func _text(at: Vector2, value: String, point_size: int = 16, color: Color = INK, centered: bool = false, elegant: bool = false) -> void:
@@ -408,8 +386,6 @@ func _draw() -> void:
 		var color := Color(CORAL, 0.8 + sin(game.sea_time * 14) * 0.2)
 		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
-	if wind_label.visible:
-		_draw_wave_icon(Vector2(size.x - 55, 47), wind_label.modulate.a)
 	if _reading_alpha > 0.01:
 		_draw_instrument()
 	else:
@@ -434,16 +410,6 @@ func _draw_weather() -> void:
 		for i in range(16):
 			var at := Vector2(fmod(i * 91.0 + game.sea_time * 95.0, size.x + 20), 140 + fmod(i * 133.0 + game.sea_time * 410.0, size.y * 0.6))
 			draw_line(at, at + Vector2(-6, 24), Color(0.65, 0.8, 0.81, 0.11), 1, true)
-
-
-func _draw_wave_icon(at: Vector2, alpha: float) -> void:
-	var color := Color(INK, alpha * 0.8)
-	for i in range(3):
-		var y: float = (i - 1) * 7.0
-		var points := PackedVector2Array()
-		for x in range(25):
-			points.append(at + Vector2(x - 12, y + sin(x * 0.34 + game.sea_time) * 2.0))
-		draw_polyline(points, color, 1.5, true)
 
 
 func _draw_cannon_sight() -> void:

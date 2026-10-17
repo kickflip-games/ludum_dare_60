@@ -8,10 +8,7 @@ var gust_warning: float = 0.0
 var gust_direction: float = 1.0
 var next_gust: float = 9.0
 var gust_left: float = 0.0
-var wind_phase: int = 0
 var rng := RandomNumberGenerator.new()
-var notice: String = ""
-var notice_left: float = 0.0
 
 
 func reset(seed_value: int) -> void:
@@ -21,9 +18,6 @@ func reset(seed_value: int) -> void:
 	gust_warning = 0.0
 	gust_left = 0.0
 	next_gust = 9.0
-	wind_phase = 0
-	notice = ""
-	notice_left = 0.0
 	encounters.clear()
 	var mirror: float = 1.0 if rng.randf() > 0.5 else -1.0
 	var shift: float = rng.randf_range(-2.0, 2.0)
@@ -76,7 +70,6 @@ func update_forces(game: Node3D, delta: float) -> void:
 	if progress > 0.54 and progress < 0.63:
 		target_current *= 1.25
 	current = lerpf(current, target_current, 1.0 - exp(-game.current_response * delta))
-	notice_left = maxf(0.0, notice_left - delta)
 	gust_push = 0.0
 	if gust_warning > 0.0:
 		gust_warning = maxf(0.0, gust_warning - delta)
@@ -91,7 +84,6 @@ func update_forces(game: Node3D, delta: float) -> void:
 		gust_warning = game.gust_warning_seconds
 		next_gust = game.elapsed + game.gust_interval + rng.randf_range(-1.5, 1.5)
 		game.cue_sound("warning")
-	wind_phase = cycle
 
 
 func force_warning() -> String:

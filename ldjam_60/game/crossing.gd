@@ -34,10 +34,14 @@ const CAST_OFF_SECONDS: float = 1.25
 @export_range(1, 3, 1) var contact_damage: int = 1
 @export_range(0.5, 4.0, 0.1) var hit_immunity_seconds: float = 2.2
 
+@export_group("Voyage presentation")
+@export var weather_enabled: bool = true
+
 @export_group("Ocean")
 @export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
 	set(value):
 		ocean_settings = value
+		_base_wave_height = value.height_multiplier
 		if is_instance_valid(ocean):
 			ocean.configure(value)
 @export_enum("Low", "Standard", "High") var ocean_quality: int = 1:
@@ -48,6 +52,16 @@ const CAST_OFF_SECONDS: float = 1.25
 
 enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
+var phase: int = 0
+var phase_banner_left: float = 4.0
+var storm_blend: float = 0.0
+var last_sighting_time: float = 0.0
+var _base_wave_height: float = 0.7
+var _last_thunder: int = -1
+var world_environment: WorldEnvironment
+var moon: DirectionalLight3D
+var _victory_audio: AudioStreamPlayer
+var _danger_audio: AudioStreamPlayer
 var hull: int = 3
 var damage_immunity: float = 0.0
 var hit_flash: float = 0.0
@@ -62,6 +76,8 @@ var elapsed: float = 0.0
 var sea_time: float = 0.0
 var reading: bool = false
 var read_blend: float = 0.0
+var look_blend: float = 0.0
+var starboard_look: bool = false
 var turn_input: float = 0.0
 var last_reading: float = START_HEADING
 var has_reading: bool = false
@@ -102,6 +118,7 @@ func course_right() -> Vector3:
 
 
 func _ready() -> void:
+	ocean_settings = ocean_settings.duplicate(true)
 	hull = hull_capacity
 	target = course_forward() * CROSSING_LENGTH
 	_configure_inputs()
@@ -128,6 +145,8 @@ func _ready() -> void:
 	_build_audio()
 	if DisplayServer.get_name() != "headless":
 		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
+		_victory_audio = cannon._audio(440.0, 0.03, -16.0)
+		_danger_audio = cannon._audio(66.0, 0.8, -16.0)
 	_update_view(1.0)
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_title("The Last Bearing | Ludum Dare 60")
@@ -138,7 +157,7 @@ func _configure_inputs() -> void:
 		"steer_port": [KEY_A, KEY_LEFT], "steer_starboard": [KEY_D, KEY_RIGHT],
 		"astrolabe": [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
-		"fire_starboard": [KEY_F],
+		"fire_starboard": [KEY_F], "watch_starboard": [KEY_E],
 	}
 	for action: String in bindings:
 		if not InputMap.has_action(action):
@@ -191,6 +210,11 @@ func restart() -> void:
 	shake_strength = 0.0
 	hits_taken = 0
 	hit_message_left = 0.0
+	phase = 0
+	phase_banner_left = 4.0
+	storm_blend = 0.0
+	last_sighting_time = 0.0
+	_last_thunder = -1
 	for obstacle: Dictionary in obstacles:
 		obstacle.body.collision_layer = 0
 		obstacle.body.set_meta("destroyed", true)
@@ -207,6 +231,8 @@ func restart() -> void:
 	enemy_encounters.reset()
 	reading = false
 	read_blend = 0.0
+	look_blend = 0.0
+	starboard_look = false
 	turn_input = 0.0
 	last_reading = START_HEADING
 	has_reading = false
@@ -225,6 +251,7 @@ func _physics_process(delta: float) -> void:
 	sea_time += delta
 	if state == State.SAILING:
 		reading = Input.is_action_pressed("astrolabe")
+		starboard_look = Input.is_action_pressed("watch_starboard") and not reading
 		turn_input = Input.get_axis("steer_port", "steer_starboard")
 		advance_sailing(delta, turn_input)
 	elif state == State.CASTING_OFF:
@@ -260,12 +287,14 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if reading:
 		last_reading = heading
 		has_reading = true
+		last_sighting_time = elapsed
 	var distance := boat.position.distance_to(target)
-	if distance < BEACON_REVEAL_DISTANCE and not beacon_seen:
+	if ((journey_progress() >= 0.85 and distance < 180.0) or distance < BEACON_REVEAL_DISTANCE) and not beacon_seen:
 		beacon_seen = true
 		beacon.visible = true
 	if distance < ARRIVAL_RADIUS and state == State.SAILING:
 		state = State.ARRIVED
+		cue_sound("victory")
 	# A broad safety boundary catches sailing away without punishing detours.
 	if boat.position.length() > 1150.0 or elapsed > 240.0:
 		failure_reason = "The current carried you beyond the crossing."
@@ -304,6 +333,8 @@ func _update_view(delta: float) -> void:
 	hit_flash = maxf(0.0, hit_flash - delta)
 	hit_message_left = maxf(0.0, hit_message_left - delta)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
+	_update_weather(delta)
+	look_blend = move_toward(look_blend, 1.0 if starboard_look and not reading and state == State.SAILING else 0.0, delta * 5.0)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	boat.rotation.y = -heading
 	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
@@ -314,7 +345,7 @@ func _update_view(delta: float) -> void:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
 		boat_visual.rotation.z += end_view_blend * 0.32
 	var helm_pose := Transform3D(Basis.from_euler(Vector3(
-		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading,
+		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading - deg_to_rad(75.0) * look_blend,
 		0.0)),
 		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18), 0.0))
 	camera.h_offset = 0.0
@@ -419,10 +450,10 @@ func _build_world() -> void:
 	environment.fog_light_energy = 0.6
 	environment.fog_density = 0.007
 	environment.fog_sky_affect = 0.0
-	var world_environment := WorldEnvironment.new()
+	world_environment = WorldEnvironment.new()
 	world_environment.environment = environment
 	add_child(world_environment)
-	var moon := DirectionalLight3D.new()
+	moon = DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-35.0, -35.0, 0.0)
 	moon.light_color = Color("a4c6d4")
 	moon.light_energy = 0.85
@@ -510,9 +541,47 @@ func _build_hazards() -> void:
 	voyage.spawn_ahead(self)
 
 
+func phase_name() -> String:
+	return ["CALM DEPARTURE", "DANGEROUS WATERS", "THE STORM", "THE FINAL APPROACH"][phase]
+
+
+func _update_weather(delta: float) -> void:
+	var progress: float = journey_progress()
+	var new_phase: int = 0 if progress < 0.2 else 1 if progress < 0.5 else 2 if progress < 0.85 else 3
+	if new_phase != phase and state == State.SAILING:
+		phase = new_phase
+		phase_banner_left = 3.0
+	phase_banner_left = maxf(0, phase_banner_left - delta)
+	if not weather_enabled:
+		return
+	var strength: float = [0.0, 0.35, 1.0, 0.5][phase]
+	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
+	var height: float = _base_wave_height * lerpf(0.45, 1.4, storm_blend)
+	# Private resource copy: CPU/GPU remain authoritative together; saved presets never change.
+	if absf(ocean_settings.height_multiplier - height) > 0.01:
+		ocean_settings.height_multiplier = height
+	world_environment.environment.ambient_light_energy = lerpf(0.78, 0.56, storm_blend)
+	world_environment.environment.fog_density = lerpf(0.006, 0.009, storm_blend)
+	moon.light_energy = lerpf(0.88, 0.68, storm_blend)
+	sky_material.set_shader_parameter("storm", storm_blend)
+	var flash: float = maxf(0.0, 1.0 - fmod(elapsed, 9.0) / 0.16) if phase == 2 else 0.0
+	sky_material.set_shader_parameter("lightning", flash * 0.3)
+	var thunder: int = int(elapsed / 9.0)
+	if flash > 0.0 and thunder != _last_thunder:
+		_last_thunder = thunder
+		cue_sound("thunder")
+
+
 func cue_sound(kind: String) -> void:
-	if is_instance_valid(_warning_audio) and _sound_enabled:
-		_warning_audio.pitch_scale = 0.45 if kind == "damage" else 0.6 if kind == "gust" else 1.0
+	if not _sound_enabled:
+		return
+	if kind == "victory" and is_instance_valid(_victory_audio):
+		_victory_audio.play()
+	elif kind in ["enemy_shot", "damage", "thunder"] and is_instance_valid(_danger_audio):
+		_danger_audio.pitch_scale = 0.7 if kind == "thunder" else 1.0
+		_danger_audio.play()
+	elif is_instance_valid(_warning_audio):
+		_warning_audio.pitch_scale = 0.6 if kind == "gust" else 1.0
 		_warning_audio.play()
 
 
@@ -615,6 +684,6 @@ func _fill_audio() -> void:
 	for i in range(frames):
 		_audio_phase += 1.0 / 22050.0
 		_audio_noise = lerpf(_audio_noise, _audio_rng.randf_range(-1.0, 1.0), 0.07)
-		var swell := 0.45 + 0.2 * sin(_audio_phase * 0.75)
+		var swell := (0.45 + 0.2 * sin(_audio_phase * 0.75)) * (1.0 + storm_blend * 0.75)
 		var sample := _audio_noise * swell + sin(_audio_phase * TAU * 57.0) * 0.015
 		_audio_playback.push_frame(Vector2(sample, sample))

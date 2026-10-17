@@ -111,7 +111,7 @@ func _draw_intro() -> void:
 	_text(Vector2(74, 502), "HOLD SPACE", 21, brass)
 	_text(Vector2(340, 502), "Raise the astrolabe", 20)
 	_text(Vector2(74, 540), "F  /  FIRE STARBOARD", 20, brass)
-	_text(Vector2(340, 540), "Right-side cannon", 19)
+	_text(Vector2(340, 540), "E glance right · F fire", 19)
 	_text(Vector2(74, 568), "Boat never stops. Dodge rocks; shoot timber or cutters.", 18, muted)
 	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    90–120 seconds", 14, muted)
 	_text(Vector2(872, 651), "Trust the star.", 30, brass, true)
@@ -120,83 +120,76 @@ func _draw_intro() -> void:
 
 
 func _draw_sailing() -> void:
-	draw_rect(Rect2(0, 0, 1280, 100), Color(0.02, 0.05, 0.07, 0.76))
-	_text(Vector2(36, 40), "THE LAST BEARING", 23, ink, true)
-	_text(Vector2(37, 68), "A CROSSING BY STARLIGHT", 12, muted)
-	_text(Vector2(354, 31), "JOURNEY TO THE LIGHT  ·  %d%%" % roundi(game.journey_progress() * 100.0), 13, brass)
-	draw_rect(Rect2(354, 45, 445, 9), Color("263b43"))
-	draw_rect(Rect2(354, 45, 445 * game.journey_progress(), 9), brass)
-	_text(Vector2(354, 76), "%d / %d m along the crossing" % [roundi(game.journey_distance()), int(game.CROSSING_LENGTH)], 13, muted)
-	_text(Vector2(855, 36), "COURSE: NORTH STAR 30° TO PORT", 18, brass)
-	_text(Vector2(855, 64), "HULL  " + "● ".repeat(game.hull) + "○ ".repeat(game.hull_capacity - game.hull), 21, ink)
+	# The sea gets the screen. Bearing is live only inside the raised instrument.
+	draw_rect(Rect2(0, 0, 1280, 60), Color(0.02, 0.05, 0.07, 0.86))
+	_text(Vector2(24, 25), game.phase_name(), 13, brass)
+	draw_rect(Rect2(24, 38, 260, 5), Color("263b43"))
+	draw_rect(Rect2(24, 38, 260 * game.journey_progress(), 5), brass)
+	_text(Vector2(306, 43), "%d%%" % roundi(game.journey_progress() * 100), 15, muted)
+	_text(Vector2(1010, 38), "HULL " + "● ".repeat(game.hull) + "○ ".repeat(game.hull_capacity - game.hull), 20, ink)
+	_text(Vector2(876, 38), "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60], 19, muted)
+	if game.storm_blend > 0.6:
+		for i in range(16):
+			var x: float = fmod(i * 91.0 + game.sea_time * 95.0, 1300.0)
+			var y: float = 140.0 + fmod(i * 133.0 + game.sea_time * 410.0, 430.0)
+			_line(Vector2(x, y), Vector2(x - 6.0, y + 24.0), Color(0.65, 0.8, 0.81, 0.11))
+	if game.voyage.gust_warning > 0.0 or game.voyage.gust_left > 0.0:
+		for i in range(5):
+			var x: float = fmod(i * 260.0 + game.sea_time * game.voyage.gust_direction * 480.0 + 12800, 1280)
+			var y: float = 210.0 + i * 61.0
+			_line(Vector2(x, y), Vector2(x + game.voyage.gust_direction * 95, y - 8), Color(0.8, 0.9, 0.85, 0.22))
+	var warning: String = ""
 	if game.hit_message_left > 0.0:
-		_center(Vector2(640, 300), game.hit_message + "  ·  %d HULL LEFT" % game.hull, 19, brass)
-	if game.beacon_seen and game.read_blend < 0.05:
-		draw_rect(Rect2(393, 116, 494, 43), Color(0.03, 0.1, 0.12, 0.92))
-		_center(Vector2(640, 145), "LIGHTHOUSE SIGHTED  /  MAKE FOR THE LIGHT", 17, brass)
-	elif game.elapsed < 9.0 and game.read_blend < 0.05:
-		_center(Vector2(640, 145), "Hold SPACE for a bearing. There is clear water ahead.", 20, ink)
-	if game.cannon.feedback_time > 0.0 and game.read_blend < 0.05:
-		draw_rect(Rect2(340, 177, 600, 38), Color(0.025, 0.06, 0.08, 0.92))
-		_center(Vector2(640, 203), game.cannon.feedback, 17, brass)
-	elif game.read_blend < 0.05:
-		var warning: String = game.enemy_encounters.approach_warning()
-		if warning != "":
-			draw_rect(Rect2(340, 177, 600, 38), Color(0.025, 0.06, 0.08, 0.92))
-			_center(Vector2(640, 203), warning, 16, brass)
-	var force_warning: String = game.voyage.force_warning()
-	if force_warning != "":
-		draw_rect(Rect2(400, 230, 480, 34), Color(0.025, 0.06, 0.08, 0.92))
-		_center(Vector2(640, 253), force_warning, 17, brass)
+		warning = game.hit_message + "  ·  %d HULL LEFT" % game.hull
+	elif game.enemy_encounters.ship.mode == game.enemy_encounters.ship.Mode.TELEGRAPH:
+		warning = game.enemy_encounters.approach_warning()
+	elif game.voyage.force_warning() != "":
+		warning = game.voyage.force_warning()
+	elif game.cannon.feedback_time > 0.0:
+		warning = game.cannon.feedback
+	elif game.enemy_encounters.approach_warning() != "":
+		warning = game.enemy_encounters.approach_warning()
+	elif absf(game.boat.position.dot(game.course_right())) > 65.0:
+		warning = "WIDE OF THE CHANNEL  ·  TAKE A BEARING TO RETURN"
+	elif game.elapsed < 8.0:
+		warning = "HOLD SPACE FOR A BEARING  ·  KEEP THE STAR 30° TO PORT"
+	elif game.phase == 3 and game.phase_banner_left > 0.0:
+		warning = "LIGHTHOUSE SIGHTED  ·  ONE LAST REEF"
+	if warning != "":
+		draw_rect(Rect2(210, 76, 860, 37), Color(0.025, 0.06, 0.08, 0.92))
+		_center(Vector2(640, 101), warning, 17, brass)
+	if game.phase_banner_left > 0.0 and game.read_blend < 0.05 and game.elapsed > 8:
+		_center(Vector2(640, 154), game.phase_name(), 26, ink, true)
 	if game.read_blend < 0.05:
+		draw_rect(Rect2(24, 606, 390, 65), Color(0.025, 0.06, 0.08, 0.90))
+		_text(Vector2(40, 630), "LAST SIGHT  ·  SPACE TO CHECK", 12, muted)
+		_text(Vector2(40, 656), _bearing_text(game.last_reading) if game.has_reading else "No bearing taken", 18, ink)
+		if game.has_reading:
+			_text(Vector2(274, 631), "%ds ago" % int(game.elapsed - game.last_sighting_time), 12, muted)
 		_draw_cannon_target()
-	draw_rect(Rect2(0, 624, 1280, 96), Color(0.025, 0.06, 0.08, 0.95))
-	_line(Vector2(36, 625), Vector2(1244, 625), Color("536967"))
-	_text(Vector2(36, 656), "HOLD SPACE", 18, brass)
-	_text(Vector2(36, 684), "Sight the star", 18, ink)
-	_line(Vector2(262, 646), Vector2(262, 697), Color("35494d"))
-	_text(Vector2(289, 656), "LAST SIGHTING", 12, muted)
-	var last_text := "No bearing taken"
-	if game.has_reading:
-		last_text = _bearing_text(game.last_reading)
-	_text(Vector2(289, 684), last_text, 19)
-	_text(Vector2(638, 656), "A / D  ·  ← / →", 18, brass)
-	_text(Vector2(638, 684), "Port / starboard", 18)
-	_text(Vector2(828, 653), "F  →  CANNON", 16, brass)
-	var cannon_status := "READY · RIGHT SIDE"
-	if game.reading:
-		cannon_status = "LOWER INSTRUMENT"
-	elif game.cannon.cooldown > 0.0:
-		cannon_status = "RELOAD %.1fs" % game.cannon.cooldown
-	_text(Vector2(828, 680), cannon_status, 12, muted)
-	if not game.reading and game.elapsed < 19.0 and game.elapsed > 9.0:
-		draw_rect(Rect2(340, 556, 600, 50), Color(0.025, 0.06, 0.08, 0.94))
-		_center(Vector2(640, 587), "F fires RIGHT. Turn broadside to line up floating timber.", 18, brass)
-	_text(Vector2(1028, 656), "UNDER WAY", 12, muted)
-	_text(Vector2(1028, 684), "%02d:%02d   ·   R restart" % [int(game.elapsed) / 60, int(game.elapsed) % 60], 18)
+	draw_rect(Rect2(0, 687, 1280, 33), Color(0.025, 0.06, 0.08, 0.92))
+	_center(Vector2(640, 710), "A / D  steer     ·     HOLD SPACE  sight the star     ·     E  glance right     ·     F  cannon     ·     R  retry", 14, muted)
 
 
 func _draw_cannon_target() -> void:
 	var target: Dictionary = game.cannon.aim_target()
+	draw_rect(Rect2(968, 606, 288, 65), Color(0.025, 0.06, 0.08, 0.90))
+	var status: String = "F  ·  STARBOARD READY"
+	if game.cannon.cooldown > 0.0:
+		status = "RELOADING  %.1fs" % game.cannon.cooldown
+	elif not target.is_empty() and target.aligned:
+		status = "ABEAM  ·  F TO FIRE"
+	_text(Vector2(984, 631), status, 15, brass)
+	draw_rect(Rect2(984, 647, 254, 5), Color("263b43"))
+	draw_rect(Rect2(984, 647, 254 * (1.0 - game.cannon.cooldown / game.cannon.RELOAD_SECONDS), 5), brass)
 	if target.is_empty():
 		return
-	var color: Color = brass if target.aligned else ink
-	draw_rect(Rect2(955, 365, 289, 145), Color(0.025, 0.06, 0.08, 0.93))
-	_text(Vector2(973, 391), "STARBOARD TARGET  →", 13, brass)
-	_text(Vector2(973, 421), target.kind, 19, color)
-	_text(Vector2(973, 447), "%d m  ·  %03d° TO THE RIGHT" % [roundi(target.distance), roundi(target.bearing)], 13, muted)
-	var instruction: String = "ABEAM  ·  F TO FIRE"
-	if target.aligned and game.cannon.cooldown > 0.0:
-		instruction = "ABEAM  ·  RELOADING"
-	if not target.aligned:
-		instruction = "STEER PORT TO LINE UP" if target.bearing < 90.0 else "STEER STARBOARD TO LINE UP"
-	_text(Vector2(973, 481), instruction, 13, color)
-	var world_position: Vector3 = target.body.global_position + Vector3.UP * 1.5
-	if not game.camera.is_position_behind(world_position):
-		var at: Vector2 = game.camera.unproject_position(world_position) / (get_viewport_rect().size / Vector2(1280, 720))
-		if at.x > 40 and at.x < 1230 and at.y > 225 and at.y < 355:
-			draw_arc(at, 17.0, 0.0, TAU, 32, brass, 1.0, true)
-			_text(at + Vector2(24, 5), target.kind, 12, brass)
+	var point: Vector3 = target.body.global_position + Vector3.UP * 5.0
+	if not game.camera.is_position_behind(point):
+		var at: Vector2 = game.camera.unproject_position(point) / (get_viewport_rect().size / Vector2(1280, 720))
+		if at.x > 30 and at.x < 1250 and at.y > 175 and at.y < 575:
+			var label: String = "CUTTER  " + "● ".repeat(maxi(0, target.body.hull)) if target.body.get_meta("target_kind", "") == "ship" else "TIMBER"
+			_center(at, label, 14, brass)
 
 
 func _bearing_text(angle: float) -> String:
@@ -265,7 +258,7 @@ func _draw_end() -> void:
 	_center(Vector2(300, 293), "Safe harbour." if won else "Lost at sea.", 48, ink, true)
 	var detail: String = "You reached the light in %d seconds." % int(game.elapsed) if won else game.failure_reason
 	_center(Vector2(300, 341), detail, 18, muted)
-	_center(Vector2(300, 382), "Hull %d / %d  ·  Old tech brought you home." % [game.hull, game.hull_capacity] if won else "Dodge, take a sight, and try again.", 19, ink)
+	_center(Vector2(300, 382), "Hull %d / %d  ·  Cutters sunk %d" % [game.hull, game.hull_capacity, game.enemy_encounters.ships_sunk] if won else "Dodge, take a sight, and try again.", 19, ink)
 	if won:
 		draw_rect(Rect2(90, 409, 420, 7), brass)
 	_center(Vector2(300, 528), "660 m crossing complete" if won else "The sea gives you another chance.", 14, muted)

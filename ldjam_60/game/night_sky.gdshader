@@ -2,6 +2,8 @@ shader_type sky;
 render_mode disable_fog;
 
 uniform float visual_time = 0.0;
+uniform float storm = 0.0;
+uniform float lightning = 0.0;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -40,6 +42,6 @@ void sky() {
 		cover *= 1.0 - smoothstep(0.90, 0.985, dot(d, navigation_star));
 		float lining = smoothstep(0.44, 0.59, mass) - smoothstep(0.60, 0.76, mass);
 		vec3 cloud = mix(vec3(0.065, 0.095, 0.13), vec3(0.20, 0.26, 0.30), lining * 0.55 + wisps * 0.25);
-		COLOR = mix(night, cloud, cover * 0.82);
+		COLOR = mix(night, cloud * mix(1.0, 0.68, storm), cover * mix(0.82, 0.96, storm)) + vec3(lightning);
 	}
 }

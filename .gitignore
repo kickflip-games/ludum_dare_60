@@ -85,3 +85,6 @@ artifacts/reference_tower/output/
 
 # Local integrated-tower captures and validation logs
 artifacts/integrated_tower/output/
+
+# Local Web export staging, logs and distributable builds
+/build/

@@ -47,7 +47,9 @@ SSR, refraction, normal map, per-fragment fractal noise, or CPU mesh deformation
 damping drives the existing `BoatVisualPivot`, rotating around the hull center.
 Default limits are 8° pitch and 12° roll. The helm camera inherits only a small,
 clamped heave contribution and no boat pitch/roll. Draft is adjustable independently.
-Floating hazard/creature visuals follow the surface; their collision roots do not.
+Floating hazards and both ships sample the same surface; gameplay collision stays planar.
+The voyage uses a private resource copy to fade wave height through four weather phases.
+Disable `Weather Enabled` on the scene root when tuning an unmodified water preset.
 
 The cannon keeps its existing planar simulation origin, side direction, cooldown,
 hit tests, and aiming cue. Its rendered projectile starts at the moving barrel

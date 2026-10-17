@@ -22,7 +22,6 @@ var hull: int = 2
 var age: float = 0.0
 var timer: float = 0.0
 var cooldown: float = 0.0
-var side: float = 1.0
 var start_course: float = 0.0
 var locked_point := Vector3.ZERO
 var hit_reaction: float = 0.0
@@ -149,6 +148,7 @@ func update_ship(delta: float) -> void:
 	if age > encounter_seconds or to_player.length() > 145.0 or game.journey_distance() > start_course + 145.0:
 		disengage()
 		return
+	var previous_heading: float = heading
 	var goal: Vector3 = game.boat.position + game.course_forward() * 16.0 + game.course_right() * 29.0
 	match mode:
 		Mode.APPROACH:
@@ -184,7 +184,20 @@ func update_ship(delta: float) -> void:
 	var probe := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, global_position + Vector3.UP + move_direction * 12.0, 1)
 	if not get_world_3d().direct_space_state.intersect_ray(probe).is_empty() and mode != Mode.TELEGRAPH:
 		_turn_toward(move_direction + game.course_right() * 1.6, delta)
-	velocity = forward() * sailing_speed + game.course_right() * game.voyage.current * 0.6
+	var separation_speed: float = 1.0
+	var relative_position: Vector3 = global_position - game.boat.position
+	var relative_motion: Vector3 = forward() * sailing_speed - game.boat.velocity
+	var closest_time: float = clampf(-relative_position.dot(relative_motion) / maxf(0.01, relative_motion.length_squared()), 0.0, 2.0)
+	var closest: float = (relative_position + relative_motion * closest_time).length()
+	if to_player.length() < 23.0 or (to_player.length() < 38.0 and closest < 11.0):
+		# Yield to the player's route, including during a wind-up. Never hold a ramming line.
+		if mode == Mode.TELEGRAPH:
+			_change(Mode.REPOSITION)
+		_turn_toward(-to_player.normalized() + game.course_forward() * 0.6, delta)
+		separation_speed = 0.45
+	heading = previous_heading + clampf(wrapf(heading - previous_heading, -PI, PI), -turning_speed * delta, turning_speed * delta)
+	rotation.y = -heading
+	velocity = forward() * sailing_speed * separation_speed + game.course_right() * game.voyage.current * 0.6
 	move_and_slide()
 	position.y = 0.0
 	velocity.y = 0.0

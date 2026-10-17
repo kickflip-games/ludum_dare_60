@@ -31,6 +31,7 @@ func _run() -> void:
 		return
 	DirAccess.make_dir_recursive_absolute(output_dir.path_join("motion"))
 	game = load("res://game/crossing.tscn").instantiate()
+	game.weather_enabled = false
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)
@@ -61,11 +62,13 @@ func _run() -> void:
 	game.boat_motion.reset()
 	game.boat.position = game.course_forward() * 160.0 + game.course_right() * 20.0
 	game.elapsed = 27.0
-	game.sea_creatures.update_creatures()
+	game.enemy_encounters.ship.begin()
+	game.starboard_look = true
 	game._update_view(1.0)
-	await capture("05-choppy-creature")
-	game.boat.position = game.course_forward() * 480.0 + game.course_right() * -12.0
-	game.elapsed = 78.0
+	await capture("05-choppy-cutter")
+	game.starboard_look = false
+	game.boat.position = game.course_forward() * 610.0 + game.course_right() * -12.0
+	game.elapsed = 105.0
 	game.beacon.visible = true
 	game.beacon_seen = true
 	game.advance_sailing(1.0 / 60.0, 0.0)

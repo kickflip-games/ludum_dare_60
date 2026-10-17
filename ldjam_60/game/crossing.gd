@@ -15,6 +15,7 @@ var actual_speed := 0.0
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
+const PLAYER_SAIL_BOAT = preload("res://assets/sail_boat/sail_boat.glb")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
@@ -88,7 +89,7 @@ var gust_strength := 0.0
 @export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.4
 @export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.4
 ## Offset from the existing cannon mount, in hull coordinates (X is starboard).
-@export var aim_camera_offset := Vector3(-2.8, 1.9, 0.0)
+@export var aim_camera_offset := Vector3(-0.6, 1.0, -0.6)
 @export var combat_camera_offset := Vector3(2.8, 6.0, 10.5)
 @export_range(0.0, 0.25, 0.01) var camera_target_bias: float = 0.1
 @export_range(60.0, 90.0, 1.0) var aim_camera_fov: float = 76.0
@@ -573,7 +574,10 @@ func _update_view(delta: float) -> void:
 	boat.rotation.y = -heading
 	var speed_factor := actual_speed / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
-	boat_motion.update_motion(ocean, boat, boat_visual, delta)
+	var sailing_turn := wave_sailing.rudder_rate + wave_sailing.yaw_rate if state == State.SAILING else 0.0
+	# Let sail-driven heel settle in gun view; sampled wave rocking still applies.
+	var trim_speed := 0.0 if cannon.aiming else speed_factor
+	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
@@ -851,12 +855,16 @@ func _build_boat() -> void:
 	boat_visual = Node3D.new()
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
-	var ship: Node3D = PIRATE_SHIP.instantiate()
-	ship.name = "PirateKitPlayerShip"
-	ship.rotation.y = -PI / 2.0
-	ship.scale = Vector3(1.15, 0.8, 0.8)
-	ship.position = Vector3(0.0, -0.10, -1.8)
+	var ship: Node3D = PLAYER_SAIL_BOAT.instantiate()
+	ship.name = "SailBoatPlayer"
+	# The source bow faces +Z; seat the 6 m hull around the existing flotation centre.
+	ship.rotation.y = PI
+	ship.scale = Vector3.ONE * 7.0
+	ship.position = Vector3(-0.072, 0.0, -2.065)
 	boat_visual.add_child(ship)
+	# Set the boom off the centreline so the canvas catches wind and reads from astern.
+	var sail := ship.get_node("RootNode/Sail") as Node3D
+	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
 	var brass := _material(Color("e4b96f"), 1.0)

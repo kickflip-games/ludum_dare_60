@@ -76,7 +76,7 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   the landmark after 2.6 s; it gives no route around land. Each release resets the
   hold. Sky mode suppresses the combat glance and damps wave/shock motion without
   changing sailing or damage.
-- **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-2.8, 1.9, 0)
+- **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-0.6, 1.0, -0.6)
   from the existing starboard mount. The level camera tracks 15% of sweep yaw.
   Priority: stargazing → gun view → nearby-hostile combat → sailing. Active
   steering suppresses automatic combat framing while the camera returns.
@@ -184,8 +184,11 @@ accelerated voyage. The older ocean capture fixture uses obsolete map positions.
 Automated route following
 is evidence of reachability and regression behavior, not a substitute for human fun testing.
 
-The ship, cannon and rock use the [CC0 Pirate kit by Quaternius](https://poly.pizza/bundle/Pirate-kit-0q5ulmIYqQ).
-Source records and licenses are in `CREDITS.md` and `ldjam_60/assets/pirate_kit/`.
+The player uses [Sail Boat by Quaternius](https://poly.pizza/m/BgSZXwmm7k),
+with gentle sailing heel, bow trim and smooth banking into turns. Enemy ships,
+wreck hulls, cannon and rocks use the [CC0 Pirate kit by Quaternius](https://poly.pizza/bundle/Pirate-kit-0q5ulmIYqQ).
+Source records and licenses are in `CREDITS.md`, `ldjam_60/assets/sail_boat/`
+and `ldjam_60/assets/pirate_kit/`.
 Other visual/audio effects are generated in Godot; the night cloud atlas is baked
 by `tools/paint_night_clouds.py`. There are no new runtime dependencies,
 navmeshes, fluid-simulation dependencies, inventory systems, or procedural infinite levels.

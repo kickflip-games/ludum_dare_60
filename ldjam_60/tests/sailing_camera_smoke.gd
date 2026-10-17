@@ -41,7 +41,7 @@ func _run() -> void:
 		var fraction := rect.size.y/root.get_visible_rect().size.y
 		min_height = minf(min_height,fraction)
 		max_height = maxf(max_height,fraction)
-		check(all_visible and fraction > 0.20 and fraction < 0.27, "whole ship fits near 20-25 percent height at heading %d (%.1f%%)" % [degrees,fraction*100])
+		check(all_visible and fraction > 0.40 and fraction < 0.56, "whole sailboat including its tall mast fits within 40-56 percent height at heading %d (%.1f%%)" % [degrees,fraction*100])
 		check(absf(game.camera.basis.x.y) < 0.00001, "level horizon at heading %d" % degrees)
 	place(Vector3(390,0,350),0)
 	settle()

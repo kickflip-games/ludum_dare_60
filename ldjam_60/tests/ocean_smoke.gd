@@ -110,6 +110,52 @@ func _run() -> void:
 		fast.update_motion(ocean, game.boat, game.boat_visual, 1.0 / 60.0)
 	check(absf(slow.heave - fast.heave) < 0.0001 and absf(slow.pitch - fast.pitch) < 0.0001,
 		"exponential response gives equivalent 30/60 Hz damping")
+	# Isolate sailing attitude from waves, then exercise actual view integration.
+	var flat = original.duplicate(true)
+	flat.height_multiplier = 0.0
+	game.ocean_settings = flat
+	var trim = Motion.new()
+	trim.update_motion(ocean, game.boat, game.boat_visual, 0.0, true, 0.0, 0.72)
+	check(is_zero_approx(trim.pitch) and is_zero_approx(trim.roll), "stationary hull does not bank from steering alone")
+	trim.update_motion(ocean, game.boat, game.boat_visual, 0.0, true, 1.0, 0.0)
+	check(trim.pitch > 0.0 and trim.roll < 0.0 and absf(trim.roll) < deg_to_rad(3.0),
+		"straight sailing adds restrained bow trim and sail heel")
+	trim.update_motion(ocean, game.boat, game.boat_visual, 0.0, true, 1.0, 0.72)
+	check(trim.roll < -deg_to_rad(10.0), "starboard turn banks the mast toward starboard")
+	trim.update_motion(ocean, game.boat, game.boat_visual, 0.0, true, 1.0, -0.72)
+	check(trim.roll > deg_to_rad(7.0), "port turn banks the mast toward port")
+	for hz: int in [30, 60, 120]:
+		trim.reset()
+		trim.update_motion(ocean, game.boat, game.boat_visual, 0.0, true)
+		trim.update_motion(ocean, game.boat, game.boat_visual, 1.0 / hz, false, 1.0, 0.72)
+		check(absf(trim.roll) < deg_to_rad(1.0), "turn entry is eased at %d Hz" % hz)
+		for i in range(hz * 3):
+			trim.update_motion(ocean, game.boat, game.boat_visual, 1.0 / hz, false, 1.0, 0.72)
+		check(absf(rad_to_deg(trim.roll) + 11.8) < 0.02, "turn attitude converges consistently at %d Hz" % hz)
+		for i in range(hz * 3):
+			trim.update_motion(ocean, game.boat, game.boat_visual, 1.0 / hz)
+		check(absf(trim.roll) < deg_to_rad(0.02) and absf(trim.pitch) < deg_to_rad(0.02),
+			"blocked or stopped boat settles at %d Hz" % hz)
+	game.state = game.State.SAILING
+	game.actual_speed = game.SPEED
+	game.wave_sailing.rudder_rate = 0.72
+	game.boat_motion.reset()
+	game._update_view(0.0)
+	check(game.boat_motion.roll < -deg_to_rad(10.0) and absf(game.camera.rotation.z) < 0.0001,
+		"game view uses measured speed and turn while keeping the camera horizon level")
+	check(game.cannon.shot_origin().is_equal_approx(game.cannon.muzzle.global_position),
+		"banked cannon still launches at its visible muzzle")
+	game.cannon.set_fire_held(true)
+	game.cannon.set_fire_held(false)
+	game.cannon.update_aim(0.0)
+	for i in range(180):
+		game._update_view(1.0 / 60.0)
+	check(absf(game.boat_motion.roll) < deg_to_rad(0.02) and absf(game.boat_motion.pitch) < deg_to_rad(0.02),
+		"gun view smoothly settles added sailing trim on a flat sea")
+	game.restart()
+	check(is_zero_approx(game.boat_motion.sailing_roll) and is_zero_approx(game.boat_motion.sailing_pitch),
+		"retry clears the previous sailing attitude")
+	game.ocean_settings = original
 	# A speed request alone cannot paint a wake against an unmoving/blocked hull.
 	for i in range(60):
 		ocean.update_surface(game.boat.position+Vector3(0,0,-6.3*i/60.0),3.0+i/60.0,1.0/60,1.0,game.heading)

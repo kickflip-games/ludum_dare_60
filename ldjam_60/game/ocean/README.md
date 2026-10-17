@@ -37,6 +37,12 @@ Countersteering opposes yaw. Holding an offset heading corrects drift; pointing 
 
 `boat_wave_motion.gd` follows the same surface with damped heave, pitch and roll. Its visual pivot remains separate from the planar collision root. The camera keeps a level horizon and modest heave. Wake intensity uses measured movement, so a blocked hull does not leave a full-speed wake.
 
+The player's Quaternius Sail Boat also trims its bow up 1.3° and heels 1.8°
+underway. Actual rudder/wave yaw adds up to 10° of bank into a turn. The response
+eases at 3.5/s and fades with measured speed; total wave plus sailing tilt stays
+inside the existing pitch/roll limits. Cannon and lantern follow the same pivot.
+Sail-driven trim eases away in gun view while sampled wave rocking continues.
+
 Calm's existing five-point response uses damping 12/s and pitch/roll strengths 0.95, retaining the 8°/12° caps and 0.12 camera-bob strength. The normal sailing camera is 0.5 m further back to preserve whole-hull framing under the stronger rocking. Cannon and sky camera transforms, controls, and navigation are unchanged.
 
 Player and enemy cannonballs find the first sampled surface crossing along each segment, refine it in space/time, and compare it with solid impacts. Launch still follows the actual rocking muzzle. Splash rings remain short-lived visual effects.

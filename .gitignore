@@ -106,3 +106,6 @@ artifacts/archipelago/
 # Local water review captures and test output (keep written reports)
 artifacts/water_review/*
 !artifacts/water_review/*.md
+
+# Local matched atmosphere renders, source snapshots and runtime logs
+artifacts/atmosphere/

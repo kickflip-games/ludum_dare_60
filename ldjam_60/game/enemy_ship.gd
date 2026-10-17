@@ -14,6 +14,9 @@ enum Mode { DORMANT, APPROACH, POSITION, TELEGRAPH, FIRE, REPOSITION, SINKING, E
 @export var telegraph_seconds: float = 1.65
 @export var projectile_speed: float = 24.0
 @export var encounter_seconds: float = 24.0
+@export_group("Night presentation")
+@export var sail_color := Color("c06c52")
+@export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.16
 
 var territory := Vector3.ZERO
 var game: Node3D
@@ -57,7 +60,11 @@ func _ready() -> void:
 	visual.add_child(model)
 	var timber = game._material(Color("3b2423"))
 	game._box(visual, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
-	sail_material = game._material(Color("a23e32"))
+	sail_material = game._material(sail_color)
+	# A restrained cloth fill keeps the red identity on the moon's shadow side.
+	sail_material.emission_enabled = true
+	sail_material.emission = sail_color
+	sail_material.emission_energy_multiplier = sail_fill
 	game._box(visual, Vector3(4.8, 3.4, 0.09), Vector3(0, 4.3, -1.8), sail_material)
 	game._box(visual, Vector3(5.2, 0.14, 0.14), Vector3(0, 6.1, -1.8), timber)
 	game._box(visual, Vector3(1.6, 0.8, 0.06), Vector3(0.7, 7.0, -1.8), game._material(Color("151e23")))
@@ -105,7 +112,8 @@ func begin(at: Vector3 = Vector3.INF) -> void:
 	visible = true
 	collision_layer = 4
 	set_meta("destroyed", false)
-	sail_material.albedo_color = Color("a23e32")
+	sail_material.albedo_color = sail_color
+	sail_material.emission = sail_color
 	motion.reset()
 	game.cue_sound("enemy")
 
@@ -296,6 +304,7 @@ func take_hit() -> void:
 	hull -= 1
 	hit_reaction = 0.65
 	sail_material.albedo_color = Color("612e2b")
+	sail_material.emission = Color("612e2b")
 	if hull <= 0:
 		set_meta("destroyed", true)
 		collision_layer = 0

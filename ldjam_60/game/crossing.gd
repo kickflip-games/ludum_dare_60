@@ -46,6 +46,17 @@ var gust_strength := 0.0
 @export_group("Voyage presentation")
 @export var weather_enabled: bool = true
 
+@export_group("Night illumination")
+@export var night_ambient_color := Color("627f95")
+@export var moonlight_color := Color("b2c9dc")
+@export var night_fog_color := Color("263b53")
+@export_range(0.0, 2.0, 0.05) var calm_ambient_energy: float = 0.68
+@export_range(0.0, 2.0, 0.05) var storm_ambient_energy: float = 0.52
+@export_range(0.0, 2.0, 0.05) var calm_moon_energy: float = 0.72
+@export_range(0.0, 2.0, 0.05) var storm_moon_energy: float = 0.48
+@export var lantern_color := Color("ffcf94")
+@export_range(0.0, 3.0, 0.05) var lantern_energy: float = 1.15
+
 @export_group("Stargazing sky")
 @export_range(0.0, 1.0, 0.05) var star_density: float = 0.72
 @export_range(0.0, 0.5, 0.01) var twinkle_strength: float = 0.16
@@ -578,6 +589,7 @@ func _update_view(delta: float) -> void:
 	hit_message_left = maxf(0.0, hit_message_left - delta)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	_update_weather(delta)
+	_apply_night_illumination()
 	look_blend = move_toward(look_blend, 1.0 if starboard_look and not reading and state == State.SAILING else 0.0, delta * 5.0)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	# A fresh, uninterrupted hold is required every time; lowering erases assistance.
@@ -821,21 +833,21 @@ func _build_world() -> void:
 	night_sky.process_mode = Sky.PROCESS_MODE_REALTIME
 	environment.sky = night_sky
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("60838e")
-	environment.ambient_light_energy = 0.7
+	environment.ambient_light_color = night_ambient_color
+	environment.ambient_light_energy = calm_ambient_energy
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.fog_enabled = true
-	environment.fog_light_color = Color("243c46")
+	environment.fog_light_color = night_fog_color
 	environment.fog_light_energy = 0.6
-	environment.fog_density = 0.007
+	environment.fog_density = 0.0035
 	environment.fog_sky_affect = 0.0
 	world_environment = WorldEnvironment.new()
 	world_environment.environment = environment
 	add_child(world_environment)
 	moon = DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-35.0, -35.0, 0.0)
-	moon.light_color = Color("a4c6d4")
-	moon.light_energy = 0.85
+	moon.light_color = moonlight_color
+	moon.light_energy = calm_moon_energy
 	add_child(moon)
 	ocean = OceanController.new()
 	ocean.name = "Ocean"
@@ -887,8 +899,9 @@ func _build_boat() -> void:
 	_box(boat_visual, Vector3(0.34, 0.08, 0.34), Vector3(-1.05, 1.51, -2.9), dark)
 	var lamp := OmniLight3D.new()
 	lamp.position = Vector3(-1.0, 1.6, -2.8)
-	lamp.light_color = Color("ffc178")
-	lamp.light_energy = 2.0
+	lamp.light_color = lantern_color
+	lamp.light_energy = lantern_energy
+	lamp.light_specular = 0.15
 	lamp.omni_range = 7.0
 	boat_visual.add_child(lamp)
 
@@ -913,9 +926,6 @@ func _update_weather(delta: float) -> void:
 	var strength: float = [0.0, 0.25, 0.45, 0.15][phase]
 	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
 	# Lighting follows voyage progress; wave difficulty belongs to the encounter director.
-	world_environment.environment.ambient_light_energy = lerpf(0.78, 0.56, storm_blend)
-	world_environment.environment.fog_density = lerpf(0.0035, 0.0048, storm_blend)
-	moon.light_energy = lerpf(0.88, 0.68, storm_blend)
 	sky_material.set_shader_parameter("storm", storm_blend)
 	var flash: float = maxf(0.0, 1.0 - fmod(elapsed, 9.0) / 0.16) if phase == 2 else 0.0
 	sky_material.set_shader_parameter("lightning", flash * 0.3)
@@ -923,6 +933,18 @@ func _update_weather(delta: float) -> void:
 	if flash > 0.0 and thunder != _last_thunder:
 		_last_thunder = thunder
 		cue_sound("thunder")
+
+
+func _apply_night_illumination() -> void:
+	# The same continuous weather blend serves startup, retry and every camera.
+	var environment := world_environment.environment
+	environment.ambient_light_color = night_ambient_color
+	environment.ambient_light_energy = lerpf(calm_ambient_energy, storm_ambient_energy, storm_blend)
+	environment.fog_light_color = night_fog_color
+	environment.fog_density = lerpf(0.0035, 0.0048, storm_blend)
+	moon.light_color = moonlight_color
+	moon.light_energy = lerpf(calm_moon_energy, storm_moon_energy, storm_blend)
+	water_material.set_shader_parameter("storm_shading", storm_blend)
 
 
 func cue_sound(kind: String) -> void:

@@ -17,6 +17,8 @@ uniform float pattern_density = 0.8;
 uniform float crest_scale = 1.0;
 uniform sampler2D coastal_foam_mask : filter_linear, repeat_disable;
 uniform float coastal_foam_strength = 0.38;
+// Presentation only: never enters the shared displacement/sampling functions.
+uniform float storm_shading : hint_range(0.0, 1.0) = 0.0;
 // Same linear horizon color as the existing night-sky shader, without extra fog.
 uniform vec3 horizon_color = vec3(0.075, 0.13, 0.17);
 
@@ -59,8 +61,8 @@ void fragment() {
 	float moon_slope = smoothstep(0.48-band_softness,0.88+band_softness,dot(n,normalize(sun_direction)));
 	vec3 water = mix(trough_color.rgb,main_color.rgb,0.10+swell*0.58);
 	water = mix(water,slope_color.rgb,swell*0.06+moon_slope*0.04)*0.72;
-	water = mix(water,slope_color.rgb,leading*0.65);
-	water = mix(water,crest_color.rgb,elevated*(0.15+leading*0.55));
+	water = mix(water,slope_color.rgb,leading*0.46);
+	water = mix(water,crest_color.rgb,elevated*(0.15+leading*0.40));
 	water = mix(water,trough_color.rgb,trailing*0.72);
 	float rim = 1.0-clamp(dot(n,view),0.0,1.0);
 	water = mix(water,slope_color.rgb,rim*rim*rim*0.055);
@@ -78,5 +80,5 @@ void fragment() {
 	water = mix(water,foam_color.rgb,max(cap_foam*foam_grain*0.88,coast));
 	float distance_to_eye = distance(surface_world, CAMERA_POSITION_WORLD);
 	float haze = smoothstep(48.0, 180.0, distance_to_eye);
-	ALBEDO = mix(water, horizon_color, haze);
+	ALBEDO = mix(water * mix(1.0, 0.76, storm_shading), horizon_color, haze);
 }

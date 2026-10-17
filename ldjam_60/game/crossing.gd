@@ -5,6 +5,7 @@ const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const SEA_SHADER = preload("res://game/sea.gdshader")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCRIPT = preload("res://game/broadside_cannon.gd")
+const CREATURE_SCRIPT = preload("res://game/sea_creatures.gd")
 const SPEED: float = 6.3
 const TURN_SPEED: float = 0.48
 const TARGET_HEADING: float = PI / 6.0
@@ -12,8 +13,9 @@ const CROSSING_LENGTH: float = 530.0
 const ARRIVAL_RADIUS: float = 58.0
 const BEACON_REVEAL_DISTANCE: float = 150.0
 const START_HEADING: float = PI * 0.28
+const CAST_OFF_SECONDS: float = 1.25
 
-enum State { READY, SAILING, LOST, ARRIVED }
+enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
 var heading: float = START_HEADING
 var elapsed: float = 0.0
@@ -25,6 +27,9 @@ var last_reading: float = START_HEADING
 var has_reading: bool = false
 var beacon_seen: bool = false
 var failure_reason: String = ""
+var transition_elapsed: float = 0.0
+var end_view_blend: float = 0.0
+var _transition_from: Transform3D
 var boat: CharacterBody3D
 var boat_visual: Node3D
 var camera: Camera3D
@@ -33,6 +38,7 @@ var beacon: Node3D
 var beacon_lamp: MeshInstance3D
 var hud: Control
 var cannon: Node3D
+var sea_creatures: Node3D
 var water_material: ShaderMaterial
 var sky_material: ShaderMaterial
 var obstacles: Array[Dictionary] = []
@@ -63,6 +69,10 @@ func _ready() -> void:
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
 	_build_hazards()
+	sea_creatures = Node3D.new()
+	sea_creatures.set_script(CREATURE_SCRIPT)
+	sea_creatures.set("game", self)
+	add_child(sea_creatures)
 	_build_destination()
 	var layer := CanvasLayer.new()
 	add_child(layer)
@@ -95,7 +105,7 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("restart_crossing"):
+	if event.is_action_pressed("restart_crossing") and state in [State.SAILING, State.LOST, State.ARRIVED]:
 		restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
 		start_crossing()
@@ -110,7 +120,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func start_crossing() -> void:
-	state = State.SAILING
+	if state != State.READY:
+		return
+	transition_elapsed = 0.0
+	_transition_from = camera.transform
+	state = State.CASTING_OFF
+
+
+func journey_distance() -> float:
+	if state == State.ARRIVED:
+		return CROSSING_LENGTH
+	return clampf(boat.position.dot(course_forward()), 0.0, CROSSING_LENGTH * 0.99)
+
+
+func journey_progress() -> float:
+	return journey_distance() / CROSSING_LENGTH
 
 
 func restart() -> void:
@@ -123,15 +147,20 @@ func restart() -> void:
 	boat.velocity = Vector3.ZERO
 	heading = START_HEADING
 	elapsed = 0.0
+	sea_creatures.reset()
 	reading = false
 	read_blend = 0.0
 	turn_input = 0.0
+	last_reading = START_HEADING
 	has_reading = false
 	beacon_seen = false
 	beacon.visible = false
 	failure_reason = ""
-	state = State.SAILING
+	transition_elapsed = 0.0
+	end_view_blend = 0.0
+	state = State.READY
 	_update_view(1.0)
+	start_crossing()
 
 
 func _physics_process(delta: float) -> void:
@@ -140,6 +169,12 @@ func _physics_process(delta: float) -> void:
 		reading = Input.is_action_pressed("astrolabe")
 		turn_input = Input.get_axis("steer_port", "steer_starboard")
 		advance_sailing(delta, turn_input)
+	elif state == State.CASTING_OFF:
+		reading = false
+		turn_input = 0.0
+		transition_elapsed = minf(CAST_OFF_SECONDS, transition_elapsed + delta)
+		if transition_elapsed >= CAST_OFF_SECONDS:
+			state = State.SAILING
 	else:
 		reading = false
 		turn_input = 0.0
@@ -152,6 +187,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if state != State.SAILING:
 		return
 	elapsed += delta
+	sea_creatures.update_creatures()
 	heading = wrapf(heading + steering * TURN_SPEED * delta, -PI, PI)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED
@@ -172,6 +208,10 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if boat.position.length() > 1150.0 or elapsed > 240.0:
 		failure_reason = "The current carried you beyond the crossing."
 		state = State.LOST
+	if state == State.LOST or state == State.ARRIVED:
+		reading = false
+		turn_input = 0.0
+		cannon.reset()
 
 
 func _update_view(delta: float) -> void:
@@ -179,14 +219,43 @@ func _update_view(delta: float) -> void:
 	boat.rotation.y = -heading
 	boat_visual.position.y = sin(sea_time * 1.55) * 0.07
 	boat_visual.rotation.z = sin(sea_time * 1.05) * 0.012 - turn_input * 0.035
-	camera.position = boat.position + Vector3(0.0, 2.55 + sin(sea_time * 1.55) * 0.06, 0.0)
-	camera.rotation = Vector3(lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading,
-		sin(sea_time * 1.05) * 0.005)
+	var helm_pose := Transform3D(Basis.from_euler(Vector3(
+		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading,
+		sin(sea_time * 1.05) * 0.005)),
+		boat.position + Vector3(0.0, 2.55 + sin(sea_time * 1.55) * 0.06, 0.0))
+	camera.h_offset = 0.0
+	camera.fov = 74.0
+	if state == State.READY:
+		camera.transform = _title_camera_pose()
+		camera.h_offset = -4.2
+		camera.fov = 64.0
+	elif state == State.CASTING_OFF:
+		var amount := smoothstep(0.0, 1.0, transition_elapsed / CAST_OFF_SECONDS)
+		camera.transform = _transition_from.interpolate_with(helm_pose, amount)
+		camera.h_offset = lerpf(-4.2, 0.0, amount)
+		camera.fov = lerpf(64.0, 74.0, amount)
+	elif state == State.ARRIVED or state == State.LOST:
+		end_view_blend = minf(1.0, end_view_blend + delta * 1.3)
+		var orientation := Basis(Vector3.UP, -heading)
+		var at := boat.position + orientation * Vector3(8.0, 5.0, 10.0)
+		var look_at_point := boat.position + course_forward() * 5.0 + Vector3.UP * 3.0
+		var end_pose := Transform3D(Basis.looking_at(look_at_point - at), at)
+		camera.transform = helm_pose.interpolate_with(end_pose, smoothstep(0.0, 1.0, end_view_blend))
+		camera.h_offset = lerpf(0.0, -3.6, end_view_blend)
+	else:
+		camera.transform = helm_pose
 	sky_root.position = camera.position
 	water_material.set_shader_parameter("visual_time", sea_time)
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
+
+
+func _title_camera_pose() -> Transform3D:
+	var orientation := Basis(Vector3.UP, -heading)
+	var at := boat.position + orientation * Vector3(7.0, 4.5, -7.0)
+	var look_at_point := boat.position + orientation * Vector3(0.0, 0.8, -1.6)
+	return Transform3D(Basis.looking_at(look_at_point - at), at)
 
 
 func _process(_delta: float) -> void:
@@ -392,6 +461,10 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 	body.set_meta("hazard_name", "a rock" if kind == "rock" else "a wreck" if kind == "wreck" else "floating timber")
 	body.set_meta("destructible", kind == "debris")
 	body.set_meta("destroyed", false)
+	if kind == "debris":
+		body.set_meta("target_kind", "timber")
+		body.set_meta("target_radius", radius)
+		body.add_to_group("cannon_targets")
 	add_child(body)
 	var collision := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()

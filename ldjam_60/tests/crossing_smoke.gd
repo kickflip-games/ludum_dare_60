@@ -26,7 +26,24 @@ func _run() -> void:
 	check(not game.cannon.fire(), "cannon cannot fire before cast off")
 	game._physics_process(1.0)
 	check(game.boat.position.length() < 0.01, "boat waits for cast off")
-	game.start_crossing()
+	await click_menu_button(game)
+	check(game.state == game.State.CASTING_OFF, "clicking Start begins the camera transition")
+	if game.state != game.State.CASTING_OFF:
+		print("BUTTON DIAGNOSTIC: root=%s, rect=%s, visible=%s" % [root.size, game.hud.action_button.get_global_rect(), game.hud.action_button.is_visible_in_tree()])
+		quit(1)
+		return
+	var title_position: Vector3 = game.camera.position
+	Input.action_press("steer_port")
+	Input.action_press("astrolabe")
+	game._physics_process(game.CAST_OFF_SECONDS * 0.5)
+	check(game.boat.position.length() < 0.01 and game.elapsed == 0.0 and game.heading == game.START_HEADING,
+		"movement, timer, and steering remain stopped during cast off")
+	check(not game.reading and not game.cannon.fire(), "instrument and cannon are blocked during transition")
+	Input.action_release("steer_port")
+	Input.action_release("astrolabe")
+	game._physics_process(game.CAST_OFF_SECONDS * 0.5)
+	check(game.state == game.State.SAILING and game.camera.position.distance_to(title_position) > 2.0,
+		"short transition reaches the helm before sailing starts")
 	Input.action_press("astrolabe")
 	game._physics_process(1.0)
 	check(absf(game.boat.position.length() - game.SPEED) < 0.1, "boat continues forward during a reading")
@@ -52,6 +69,7 @@ func _run() -> void:
 	game.cannon.advance(1.1)
 	check(game.cannon.fire(), "cannon can fire again after reload")
 	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
 	var debris: StaticBody3D
 	var rock: StaticBody3D
 	for obstacle: Dictionary in game.obstacles:
@@ -73,6 +91,7 @@ func _run() -> void:
 		"swept cannonball hit destroys floating timber and clears its collision")
 	check("SHATTERED" in game.cannon.feedback, "timber destruction gives readable impact feedback")
 	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
 	await physics_frame
 	check(debris.visible and debris.collision_layer == 1 and not debris.get_meta("destroyed"),
 		"restart restores destroyed hazards")
@@ -92,6 +111,7 @@ func _run() -> void:
 		"cannonballs cannot destroy rocks or remove their collision")
 	check("STEER AROUND" in game.cannon.feedback, "solid impacts tell the player to dodge")
 	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
 	game.heading = game.TARGET_HEADING
 	await physics_frame
 	for step in range(1100):
@@ -102,10 +122,59 @@ func _run() -> void:
 	check(game.state == game.State.LOST, "real physics collision with the first rock ends the crossing")
 	check("rock" in game.failure_reason, "collision feedback identifies the hazard")
 	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
 	await physics_frame
 	check(game.state == game.State.SAILING and game.boat.position.length() < 0.01, "R restart clears the collision and resets the crossing")
 	check(not game.beacon_seen and not game.has_reading, "restart clears beacon and bearing memory")
-	# Follow a route with port and starboard detours, using the real steering rate.
+	# Progress measures displacement toward the destination, never total path length.
+	game.boat.position = game.course_forward() * 100.0
+	var progress: float = game.journey_progress()
+	for lane in [50.0, -50.0, 0.0]:
+		game.boat.position = game.course_forward() * 100.0 + game.course_right() * lane
+		check(absf(game.journey_progress() - progress) < 0.001, "lateral travel does not add journey progress")
+	game.boat.position = game.target + game.course_right() * 150.0
+	game.advance_sailing(0.001, 0.0)
+	check(game.state == game.State.SAILING and game.journey_progress() < 1.0,
+		"passing the destination offshore cannot complete the crossing")
+	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
+	var serpent: StaticBody3D = game.sea_creatures.creatures[0].body
+	game.boat.position = serpent.position - Vector3(22.0, 0.0, -2.6)
+	game.heading = 0.0
+	game._update_view(1.0)
+	await physics_frame
+	var cue: Dictionary = game.cannon.aim_target()
+	check(not cue.is_empty() and cue.aligned and cue.kind == "REEF SERPENT",
+		"starboard cue identifies a creature and confirms a real broadside line")
+	game.cannon.fire()
+	for step in range(120):
+		game.cannon.advance(1.0 / 60.0)
+		await physics_frame
+		if serpent.get_meta("destroyed"):
+			break
+	check(serpent.get_meta("destroyed") and not serpent.visible and serpent.collision_layer == 0,
+		"cannonball destroys a creature and removes its threat")
+	check("SERPENT DRIVEN UNDER" in game.cannon.feedback, "creature hit gives a visible defeat reaction")
+	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
+	check(serpent.visible and not serpent.get_meta("destroyed") and serpent.collision_layer == 1,
+		"retry restores creature visibility and collision")
+	game.boat.position = serpent.position + Vector3(0.0, 0.0, 6.5)
+	game.heading = 0.0
+	game._update_view(1.0)
+	await physics_frame
+	check(game.sea_creatures.approach_warning() != "", "approaching creature gives a clear warning")
+	for step in range(90):
+		game.advance_sailing(1.0 / 60.0, 0.0)
+		await physics_frame
+		if game.state != game.State.SAILING:
+			break
+	check(game.state == game.State.LOST and "reef serpent" in game.failure_reason,
+		"ignoring a nearby creature can cause an actual hull collision")
+	await click_menu_button(game)
+	check(game.state == game.State.CASTING_OFF, "failure Retry button cleanly starts another crossing")
+	game._physics_process(game.CAST_OFF_SECONDS)
+	# Follow a route with port and starboard detours, without shooting creatures.
 	var route := [Vector2(45, -14), Vector2(100, -15), Vector2(145, -2),
 		Vector2(195, -17), Vector2(235, -17), Vector2(278, 12),
 		Vector2(335, 9), Vector2(377, -11), Vector2(417, -14),
@@ -130,7 +199,45 @@ func _run() -> void:
 	check(game.beacon_seen, "lighthouse appears late in the approach")
 	check(game.state == game.State.ARRIVED, "destination is reachable after multiple steering detours")
 	print("Crossing result: state=%s, seconds=%.1f, position=%s" % [game.state, game.elapsed, game.boat.position])
+	check(game.journey_progress() == 1.0, "actual harbour arrival completes the journey bar")
+	var arrived_position: Vector3 = game.boat.position
+	var arrived_time: float = game.elapsed
+	game._physics_process(2.0)
+	check(game.boat.position == arrived_position and game.elapsed == arrived_time,
+		"arrival camera scene stops boat movement and preserves completion time")
+	await click_menu_button(game)
+	check(game.state == game.State.CASTING_OFF and game.boat.position.length() < 0.01 and game.elapsed == 0.0,
+		"Play Again button resets position and timers before the new transition")
+	check(not game.has_reading and not game.beacon_seen and game.cannon.projectiles.is_empty()
+		and game.cannon.cooldown == 0.0 and game.journey_progress() == 0.0,
+		"replay clears navigation memory, lighthouse, projectiles, reload, and journey bar")
 	game.queue_free()
 	await process_frame
 	print("SMOKE TEST: %s" % ("PASS" if failures == 0 else "FAIL (%d)" % failures))
 	quit(0 if failures == 0 else 1)
+
+
+func click_menu_button(game) -> void:
+	await process_frame
+	game.hud._sync_button()
+	var center: Vector2 = game.hud.action_button.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = center
+	motion.global_position = center
+	root.push_input(motion, true)
+	await process_frame
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.position = center
+	press.global_position = center
+	press.pressed = true
+	press.button_mask = MOUSE_BUTTON_MASK_LEFT
+	root.push_input(press, true)
+	await process_frame
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = center
+	release.global_position = center
+	release.pressed = false
+	root.push_input(release, true)
+	await process_frame

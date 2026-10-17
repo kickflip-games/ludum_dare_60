@@ -31,6 +31,10 @@ func _run() -> void:
 	game._update_view(1.0)
 	await capture("01-title")
 	game.start_crossing()
+	game._physics_process(game.CAST_OFF_SECONDS * 0.5)
+	game.hud.queue_redraw()
+	await capture("02a-casting-off")
+	game._physics_process(game.CAST_OFF_SECONDS * 0.5)
 	game._update_view(1.0)
 	game.hud.queue_redraw()
 	await capture("02-helm")
@@ -66,6 +70,24 @@ func _run() -> void:
 	game.hud.queue_redraw()
 	await capture("09-cannon-impact")
 	game.cannon.reset()
+	game.elapsed = 27.0
+	game.sea_creatures.update_creatures()
+	game.boat.position = game.course_forward() * 160.0 + game.course_right() * 20.0
+	game._update_view(1.0)
+	game.hud.queue_redraw()
+	await capture("10-creature-approach")
+	var serpent: StaticBody3D = game.sea_creatures.creatures[0].body
+	game.boat.position = serpent.position - game.course_right() * 25.0 - game.course_forward() * 2.6
+	game._update_view(1.0)
+	game.hud.queue_redraw()
+	await capture("11-creature-abeam")
+	game.cannon.fire()
+	for step in range(40):
+		game.cannon.advance(1.0 / 60.0)
+		await physics_frame
+	game.hud.queue_redraw()
+	await capture("12-creature-hit")
+	game.cannon.reset()
 	game.boat.position = game.course_forward() * 410.0 + game.course_right() * -15.0
 	game.elapsed = 67.0
 	game.beacon.visible = true
@@ -73,15 +95,21 @@ func _run() -> void:
 	game._update_view(1.0)
 	game.hud.queue_redraw()
 	await capture("05-lighthouse")
-	game.state = game.State.ARRIVED
+	game.boat.position = game.course_forward() * 480.0 + game.course_right() * -12.0
 	game.elapsed = 78.0
+	game.advance_sailing(1.0 / 60.0, 0.0)
+	game._update_view(1.0)
 	game.hud.queue_redraw()
+	game.hud._sync_button()
 	await capture("06-arrived")
 	game.state = game.State.LOST
 	game.failure_reason = "The hull struck a rock."
+	game.end_view_blend = 1.0
+	game._update_view(1.0)
 	game.hud.queue_redraw()
 	await capture("07-collision")
 	game.restart()
+	game._physics_process(game.CAST_OFF_SECONDS)
 	game._update_view(1.0)
 	game.hud.queue_redraw()
 	for frame in range(120):

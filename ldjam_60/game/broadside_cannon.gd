@@ -84,6 +84,8 @@ func fire() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	if game.state != game.State.SAILING:
+		return
 	advance(delta)
 
 
@@ -129,17 +131,42 @@ func advance(delta: float) -> void:
 
 func _impact(body: Object, at: Vector3) -> void:
 	var destructible: bool = body.get_meta("destructible", false)
+	var creature: bool = body.get_meta("target_kind", "") == "creature"
 	if destructible:
 		body.visible = false
 		body.collision_layer = 0
 		body.set_meta("destroyed", true)
-		feedback = "TIMBER SHATTERED  /  PASSAGE CLEAR"
+		feedback = "SERPENT DRIVEN UNDER  /  PASSAGE CLEAR" if creature else "TIMBER SHATTERED  /  PASSAGE CLEAR"
 	else:
 		feedback = "SOLID WRECK / ROCK  /  STEER AROUND"
 	feedback_time = 2.5
-	_splinters(at, destructible)
+	_splinters(at, destructible and not creature)
 	if is_instance_valid(_impact_audio) and game._sound_enabled:
 		_impact_audio.play()
+
+
+func aim_target() -> Dictionary:
+	var selected: Dictionary = {}
+	var best_score: float = INF
+	var forward := Vector3(sin(game.heading), 0.0, -cos(game.heading))
+	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
+		if body.get_meta("destroyed", false):
+			continue
+		var offset: Vector3 = body.global_position - muzzle.global_position
+		var right: float = offset.dot(starboard_direction())
+		var ahead: float = offset.dot(forward)
+		var distance: float = Vector2(right, ahead).length()
+		if right < 2.0 or distance > 75.0:
+			continue
+		var radius: float = body.get_meta("target_radius", 3.0)
+		var aligned: bool = absf(ahead) < maxf(0.5, radius - 0.6)
+		var score: float = distance + absf(ahead) * 2.0 - (80.0 if aligned else 0.0)
+		if score < best_score:
+			best_score = score
+			selected = {"body": body, "distance": distance, "aligned": aligned,
+				"bearing": rad_to_deg(atan2(right, ahead)),
+				"kind": "REEF SERPENT" if body.get_meta("target_kind") == "creature" else "FLOATING TIMBER"}
+	return selected
 
 
 func _splinters(at: Vector3, timber: bool) -> void:

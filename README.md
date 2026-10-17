@@ -1,13 +1,14 @@
 # The Last Bearing — Ludum Dare 60
 
 Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
-One 660 m crossing takes about 100–114 seconds with steering detours. Reach the
-lighthouse by checking the fixed North Star and recovering your course after reefs,
-current, gusts and two optional cutter duels. The initial reference is **30° to port**.
+Explore the Wreck, Twin Peaks and Lighthouse regions using the guiding stars.
+Reach the lighthouse by recovering your course after reefs and directional waves,
+with optional cutter duels. The sea is mostly calm, interrupted by sparse travelling
+crests and regional wave sets. Scripted routes take approximately 3½–4½ minutes.
 The astrolabe is a game abstraction rather than a historical simulator.
 
 - **Play / Enter:** cast off; forward motion is automatic.
-- **A / D or arrows:** steer. Current changes travel direction independently of the bow.
+- **A / D or arrows:** steer. Counter wave-induced turning and adjust your heading to recover from sideways drift.
 - **Hold Space:** raise the sextant; search briefly, then hold to focus. Movement and danger continue.
 - **Hold E:** glance starboard while steering; release to watch the bow.
 - **F:** enter the starboard gun view; press **F again** to shoot. The cannon sweeps automatically. **A / D or arrows** immediately return to steering on that same input. Shots require separate presses; holding/releasing F never shoots again.
@@ -33,11 +34,11 @@ and each hostile disengages after 24 seconds. There is one active hostile at a t
 
 Select `TheLastBearing` in `game/crossing.tscn`:
 
-- **Sailing difficulty:** seed, current strength/response, gust strength, interval,
-  warning and duration. Defaults: 1.15 m/s current before the danger multiplier,
-  1.8-second gust warning, 2-second push. Steering is 0.64 rad/s.
+- **Sailing difficulty:** encounter seed. Wave timing, safe regions and patterns are
+  in `game/ocean/wave_encounters.gd`; momentum and rudder response are in
+  `wave_sailing.gd`. Steering smoothly approaches 0.64 rad/s.
 - **Hull:** capacity 3, contact damage 1, immunity 2.2 seconds.
-- **Voyage presentation:** disable weather to inspect a water preset unchanged.
+- **Voyage presentation:** weather controls sky/lighting independently of wave encounters.
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
   and sky FOV (94°). Eight painted cloud silhouettes drift in two depth layers;
   a small clear region protects the reference even in storm weather. See the cloud
@@ -54,11 +55,16 @@ Select `TheLastBearing` in `game/crossing.tscn`:
 - **Ocean:** authoritative shared wave resource and quality. See
   [ocean tuning](ldjam_60/game/ocean/README.md).
 
-`game/voyage_director.gd` holds six small authored patterns: rock gate, wreckage
-field, split reef, narrows, broken masts and harbour reef. Seeds mirror/offset safe
-gaps. Patterns spawn 180 m ahead with a 55 m minimum reaction zone. Both sides of
-the split reef remain open. Four distance phases are 0–20%, 20–50%, 50–85%, and
-85–100%; storm waves, light rain streaks, clouds and thunder build in the third.
+`game/voyage_director.gd` tracks regional discoveries. The wave director schedules
+finite curved crests from left, right and ahead. Regional sets budget ten crests,
+then drain to 20 seconds of protected calm. Unsafe wave lanes are retried; sheltered
+sets have a deadline, and arrival ends remaining waves. New pirate encounters wait
+until active waves finish. See [wave mechanics and tuning](ldjam_60/game/ocean/README.md).
+
+There are 14 independent wave zones across the map. With `development_tools` enabled,
+**F6** jumps into the next zone for testing and **F2** shows their locations on the chart.
+Waves now apply force ahead of the hull's lateral resistance, creating a lasting
+heading change that needs countersteering, as well as sideways drift.
 
 `game/enemy_ship.tscn` is the reusable cutter. Its Inspector exports speed 7 m/s,
 turning 0.85 rad/s, hull 2, firing range 62 m, reload 3.8 s, telegraph 1.65 s,
@@ -83,13 +89,16 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
 
 - `--script res://tests/crossing_smoke.gd`: integrated input, menu, five strategies
   across three seeds, both duels, four phases, arrival and retry.
-- `--script res://tests/sailing_smoke.gd`: isolated currents/encounters, constant
-  heading and active sailing. `voyage_pilot.gd` is test-only; the game never loads it.
+- `--script res://tests/sailing_smoke.gd`: delegates to the current archipelago routes.
+  `archipelago_pilot.gd` is test-only; the game never loads it.
+- `--script res://tests/wave_encounter_smoke.gd`: crest geometry, size-dependent
+  drift/yaw, countersteering, frame-rate consistency, finite sets and calm recovery.
 - `--script res://tests/cannon_aim_smoke.gd`: input edges, held/analog steering,
   simultaneous presses, reload, camera priorities, terrain, aspect ratios,
   frame independence, wave-aligned launches, moving hits, damage, sinking and retry.
 - `--script res://tests/cannon_aim_battles.gd`: three staged moving AI duels using
-  timed presses and steering exits, with current/gust variations; results in `/tmp`.
+  timed presses and steering exits; results in `/tmp`. Legacy current/gust fixture
+  assignments no longer affect sailing.
 - `--script res://tests/combat_smoke.gd`: collision damage, immunity, sinking,
   broadside timber hits, water feedback, and retry.
 - `--script res://tests/ship_smoke.gd`: moving AI, incoming shots, warned evasion,
@@ -129,15 +138,17 @@ Real-renderer captures: `--script res://tests/gameplay_previews.gd -- --output=/
 Run captures with `--fixed-fps 60`; the harness also saves a bounded 15 fps PNG
 sequence under `clip/` during the first duel, suitable for encoding with an existing
 video encoder. This workflow uses a bounded viewport sequence rather than a large
-Movie Maker intermediate. `ocean_render_check.gd` checks actual GPU/CPU wave parity and
-short frame cadence; it is not a sustained GPU benchmark. Automated route following
+Movie Maker intermediate. Use `wave_render_check.gd` for current wave GPU/CPU parity
+and appearance, and `wave_playtest.gd` for rendered steering comparisons and a complete
+accelerated voyage. The older ocean capture fixture uses obsolete map positions.
+Automated route following
 is evidence of reachability and regression behavior, not a substitute for human fun testing.
 
 The ship, cannon and rock use the [CC0 Pirate kit by Quaternius](https://poly.pizza/bundle/Pirate-kit-0q5ulmIYqQ).
 Source records and licenses are in `CREDITS.md` and `ldjam_60/assets/pirate_kit/`.
 Other visual/audio effects are generated in Godot; the night cloud atlas is baked
 by `tools/paint_night_clouds.py`. There are no new runtime dependencies,
-navmeshes, ocean physics, inventory systems, or procedural infinite levels.
+navmeshes, fluid-simulation dependencies, inventory systems, or procedural infinite levels.
 
 
 ## Night clouds

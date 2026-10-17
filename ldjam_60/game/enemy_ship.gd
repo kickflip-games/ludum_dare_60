@@ -204,7 +204,7 @@ func update_ship(delta: float) -> void:
 		separation_speed = 0.45
 	heading = previous_heading + clampf(wrapf(heading - previous_heading, -PI, PI), -turning_speed * delta, turning_speed * delta)
 	rotation.y = -heading
-	velocity = forward() * sailing_speed * separation_speed + game.course_right() * game.voyage.current * 0.6
+	velocity = forward() * sailing_speed * separation_speed
 	var collision := move_and_collide(velocity * delta)
 	if collision:
 		move_and_collide(collision.get_remainder().slide(Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()))
@@ -273,13 +273,16 @@ func _advance_shots(delta: float) -> void:
 		var to: Vector3 = from + shot.velocity * delta
 		var query := PhysicsRayQueryParameters3D.create(from, to, 3)
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		var water: Dictionary = game.ocean.water_hit(from, to, delta)
+		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
+			hit = {}
 		shot.velocity.y -= 5.0 * delta
 		shot.ttl -= delta
-		if not hit.is_empty() or to.y < -0.2 or shot.ttl <= 0.0:
+		if not hit.is_empty() or not water.is_empty() or shot.ttl <= 0.0:
 			if not hit.is_empty() and hit.collider == game.boat:
 				if game.take_damage(1, "Enemy broadside hit"):
 					shots_hit += 1
-			game.cannon.water_splash(hit.position if not hit.is_empty() else to)
+			game.cannon.water_splash(hit.position if not hit.is_empty() else water.position if not water.is_empty() else to)
 			shot.node.queue_free()
 			projectiles.remove_at(i)
 		else:

@@ -64,9 +64,9 @@ func _ready() -> void:
 	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-206, -108, 174, 78))
 	compass.heading = game.heading
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
-	wind_label = _label(gameplay_hud, "Gust", "", 14, INK)
+	wind_label = _label(gameplay_hud, "WaveWarning", "", 14, INK)
 	wind_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	wind_label.offset_left = -320
+	wind_label.offset_left = -440
 	wind_label.offset_right = -82
 	wind_label.offset_top = 34
 	wind_label.offset_bottom = 60
@@ -283,9 +283,9 @@ func _process(delta: float) -> void:
 	instrument.visible = _reading_alpha > 0.01
 	_update_sighting_text()
 	_update_threat()
-	wind_label.visible = game.voyage.gust_warning > 0.0 or game.voyage.gust_left > 0.0
-	wind_label.text = "Gust from port" if game.voyage.gust_direction > 0 else "Gust from starboard"
-	wind_label.modulate.a = minf(1.0, maxf(game.voyage.gust_warning, game.voyage.gust_left) * 3.0)
+	wind_label.text = game.wave_encounters.warning(game.sea_time, game.heading)
+	wind_label.visible = not wind_label.text.is_empty()
+	wind_label.modulate.a = 1.0
 	_update_notice()
 	queue_redraw()
 
@@ -409,7 +409,7 @@ func _draw() -> void:
 		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
 	if wind_label.visible:
-		_draw_wind(Vector2(size.x - 55 + sin(game.sea_time * 6.0) * 2, 47), wind_label.modulate.a)
+		_draw_wave_icon(Vector2(size.x - 55, 47), wind_label.modulate.a)
 	if _reading_alpha > 0.01:
 		_draw_instrument()
 	else:
@@ -434,18 +434,16 @@ func _draw_weather() -> void:
 		for i in range(16):
 			var at := Vector2(fmod(i * 91.0 + game.sea_time * 95.0, size.x + 20), 140 + fmod(i * 133.0 + game.sea_time * 410.0, size.y * 0.6))
 			draw_line(at, at + Vector2(-6, 24), Color(0.65, 0.8, 0.81, 0.11), 1, true)
-	if game.voyage.gust_warning > 0 or game.voyage.gust_left > 0:
-		for i in range(5):
-			var at := Vector2(fposmod(i * size.x / 5 + game.sea_time * game.voyage.gust_direction * 480, size.x), size.y * 0.3 + i * 61)
-			draw_line(at, at + Vector2(game.voyage.gust_direction * 95, -8), Color(0.8, 0.9, 0.85, 0.16), 1, true)
 
 
-func _draw_wind(at: Vector2, alpha: float) -> void:
+func _draw_wave_icon(at: Vector2, alpha: float) -> void:
 	var color := Color(INK, alpha * 0.8)
 	for i in range(3):
 		var y: float = (i - 1) * 7.0
-		_line(at + Vector2(-15, y), at + Vector2(8 - i * 4, y), color)
-		draw_arc(at + Vector2(8 - i * 4, y - 3), 3, -PI / 2, PI / 2, 12, color, 1.5, true)
+		var points := PackedVector2Array()
+		for x in range(25):
+			points.append(at + Vector2(x - 12, y + sin(x * 0.34 + game.sea_time) * 2.0))
+		draw_polyline(points, color, 1.5, true)
 
 
 func _draw_cannon_sight() -> void:

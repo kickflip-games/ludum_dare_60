@@ -32,7 +32,7 @@ void vertex() {
 	float breakup = 0.5 + 0.25 * sin(dot(p, vec2(0.37, 0.53)) + wave_time * 0.35)
 		+ 0.25 * sin(dot(p, vec2(-0.83, 0.27)) - wave_time * 0.21);
 	float cap = smoothstep(foam_threshold, foam_threshold + foam_softness, crest_fraction);
-	cap_foam = cap * smoothstep(0.52, 0.82, breakup);
+	cap_foam = max(cap * smoothstep(0.52, 0.82, breakup) * foam_intensity, event_foam(p) * 0.88);
 }
 
 void fragment() {
@@ -44,7 +44,8 @@ void fragment() {
 	water = mix(water, slope_color.rgb, bright_band);
 	float valley = (1.0 - smoothstep(-0.10, 0.18, crest_fraction)) * 0.32;
 	water = mix(water, trough_color.rgb, valley);
-	water = mix(water, foam_color.rgb, clamp(cap_foam * foam_intensity, 0.0, 1.0));
+	float foam_grain = 0.88 + 0.12 * sin(surface_world.x * 7.1 + wave_time * 1.8) * sin(surface_world.z * 8.7 - wave_time * 1.3);
+	water = mix(water, foam_color.rgb, clamp(cap_foam * foam_grain, 0.0, 1.0));
 	float distance_to_eye = distance(surface_world, CAMERA_POSITION_WORLD);
 	float haze = smoothstep(48.0, 180.0, distance_to_eye);
 	ALBEDO = mix(water, horizon_color, haze);

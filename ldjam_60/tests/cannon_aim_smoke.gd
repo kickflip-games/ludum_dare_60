@@ -196,6 +196,8 @@ func _run() -> void:
 			action("fire_starboard", true)
 		step(0.4)
 		check(not c.aiming and c.shots_fired == shots and game.camera_mode == game.CameraMode.STARGAZING, "Space has priority over pending shot")
+		# Isolate camera shake from the intentional rudder momentum after earlier turns.
+		game.wave_sailing.reset()
 		var bearing: float = game.last_reading
 		game.shake(0.1)
 		step(0.3)

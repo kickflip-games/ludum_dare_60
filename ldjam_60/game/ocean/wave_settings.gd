@@ -189,4 +189,4 @@ func apply_palette(material: ShaderMaterial) -> void:
 	material.set_shader_parameter("foam_threshold", foam_threshold)
 	material.set_shader_parameter("foam_softness", foam_softness)
 	material.set_shader_parameter("foam_intensity", foam_intensity)
-	material.set_shader_parameter("crest_scale", maxf(0.001, maximum_displacement()))
+	material.set_shader_parameter("crest_scale", maxf(0.5, maximum_displacement()))

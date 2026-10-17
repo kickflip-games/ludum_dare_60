@@ -1,10 +1,12 @@
 extends Node3D
-## Cosmetic surface only: no bodies, raycast masks, gameplay clock, or CPU mesh updates.
+## Shared surface for rendering, flotation, projectiles and directional wave forces.
 
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
+const WaveField = preload("res://game/ocean/wave_field.gd")
+var wave_field := WaveField.new()
 const WATER_SHADER = preload("res://game/sea.gdshader")
 const WAKE_SHADER = preload("res://game/ocean/wake.gdshader")
-const PATCH_SIZE: float = 80.0
+const PATCH_SIZE: float = 120.0
 var settings: WaveSettings
 var quality: int = 1
 var wave_time: float = 0.0
@@ -19,7 +21,7 @@ var wake_root: Node3D
 var wake_strength: float = 0.0
 var wake_yaw: float = 0.0
 var floating_visuals: Array[Dictionary] = []
-var cells: int = 160
+var cells: int = 192
 
 
 func initialize(value: WaveSettings, quality_value: int = 1) -> void:
@@ -56,7 +58,7 @@ func _instance(node_name: String, mat: ShaderMaterial) -> MeshInstance3D:
 
 
 func _build_geometry() -> void:
-	cells = [128, 160, 224][clampi(quality, 0, 2)]
+	cells = [160, 192, 256][clampi(quality, 0, 2)]
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * PATCH_SIZE
 	plane.subdivide_width = cells - 1
@@ -64,7 +66,7 @@ func _build_geometry() -> void:
 	near_mesh.mesh = plane
 	# Every inner skirt vertex exactly matches the PlaneMesh edge (including corners).
 	# Only eight perimeter rows extend to the horizon; no dense 3,200 m grid.
-	var radii := PackedFloat32Array([40, 44, 52, 68, 92, 160, 400, 1600])
+	var radii := PackedFloat32Array([60, 64, 72, 84, 100, 160, 400, 1600])
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
@@ -114,8 +116,8 @@ func _sync_settings() -> void:
 	for mat: ShaderMaterial in [material, wake_material]:
 		mat.set_shader_parameter("fade_start", fade_start)
 		mat.set_shader_parameter("fade_end", fade_end)
-	var margin: float = settings.maximum_displacement() + absf(settings.sea_level) + 0.6
-	near_mesh.custom_aabb = AABB(Vector3(-40, -margin, -40), Vector3(80, margin * 2.0, 80))
+	var margin: float = settings.maximum_displacement() + absf(settings.sea_level) + wave_field.MAX_WAVES * wave_field.MAX_HEIGHT + 0.6
+	near_mesh.custom_aabb = AABB(Vector3(-60, -margin, -60), Vector3(120, margin * 2.0, 120))
 	distant_mesh.custom_aabb = AABB(Vector3(-1600, -margin, -1600), Vector3(3200, margin * 2.0, 3200))
 	near_mesh.extra_cull_margin = 0.5
 	distant_mesh.extra_cull_margin = 0.5
@@ -135,6 +137,8 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 	material.set_shader_parameter("focus_xz", focus_xz)
 	wake_material.set_shader_parameter("wave_time", wave_time)
 	wake_material.set_shader_parameter("focus_xz", focus_xz)
+	wave_field.apply_to(material)
+	wave_field.apply_to(wake_material)
 	_update_floating_visuals(delta)
 	wake_strength = lerpf(wake_strength, clampf(speed_factor, 0.0, 1.0), 1.0 - exp(-4.0 * delta))
 	wake_yaw = lerp_angle(wake_yaw, -heading, 1.0 - exp(-5.0 * delta))
@@ -151,13 +155,35 @@ func sample_surface(p: Vector2, time: float = -1.0) -> Vector3:
 	var envelope := 1.0 - u * u * (3.0 - 2.0 * u)
 	var derivative := -6.0 * u * (1.0 - u) / (fade_end - fade_start)
 	var envelope_gradient := offset / maxf(distance_value, 0.0001) * derivative
-	return Vector3(value.x * envelope + settings.sea_level,
+	return wave_field.sample(p, wave_time if time < 0.0 else time) + Vector3(value.x * envelope + settings.sea_level,
 		value.y * envelope + value.x * envelope_gradient.x,
 		value.z * envelope + value.x * envelope_gradient.y)
 
 
 func height_at(p: Vector2, time: float = -1.0) -> float:
 	return sample_surface(p, time).x
+
+
+func water_hit(from: Vector3, to: Vector3, delta: float) -> Dictionary:
+	# Subdivide fast shots, then refine the first surface crossing in space AND time.
+	var steps := clampi(ceili(from.distance_to(to) / 0.4), 1, 128)
+	for i in range(steps + 1):
+		var t := float(i) / steps
+		var p := from.lerp(to, t)
+		var at_time := maxf(0.0, wave_time - delta * (1.0 - t))
+		if p.y > height_at(Vector2(p.x, p.z), at_time):
+			continue
+		var low := maxf(0.0, float(i - 1) / steps)
+		var high := t
+		for refine in range(8):
+			var middle := (low + high) * 0.5
+			var q := from.lerp(to, middle)
+			if q.y > height_at(Vector2(q.x, q.z), maxf(0.0, wave_time - delta * (1.0 - middle))):
+				low = middle
+			else:
+				high = middle
+		return {"position": from.lerp(to, high)}
+	return {}
 
 
 func normal_at(p: Vector2, time: float = -1.0) -> Vector3:

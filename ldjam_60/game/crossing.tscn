@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://game/crossing.gd" id="1_game"]
 
-[ext_resource type="Resource" path="res://game/ocean/presets/choppy.tres" id="2_ocean"]
+[ext_resource type="Resource" path="res://game/ocean/presets/calm.tres" id="2_ocean"]
 
 [node name="LatitudeLines" type="Node3D"]
 script = ExtResource("1_game")

@@ -226,14 +226,17 @@ func advance(delta: float) -> void:
 		var to: Vector3 = from + shot.velocity * delta
 		var ray := PhysicsRayQueryParameters3D.create(from, to, 5)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+		var water: Dictionary = game.ocean.water_hit(from, to, delta)
+		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
+			hit = {}
 		shot.ttl -= delta
 		shot.velocity.y -= 0.9 * delta
 		if not hit.is_empty():
 			_impact(hit.collider, hit.position)
 			ball.queue_free()
 			projectiles.remove_at(i)
-		elif shot.ttl <= 0.0 or to.y < -0.05:
-			water_splash(to)
+		elif shot.ttl <= 0.0 or not water.is_empty():
+			water_splash(water.position if not water.is_empty() else to)
 			feedback = "SPLASH  ·  SHOT WIDE"
 			feedback_time = 0.9
 			ball.queue_free()

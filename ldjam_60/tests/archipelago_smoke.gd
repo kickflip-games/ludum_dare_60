@@ -119,6 +119,7 @@ func _run() -> void:
 				break
 		print("VOYAGE alternate=%s state=%d time=%.2f hull=%d hits=%d encounters=%d stages=%s position=%s enemy_ground_max=%.2f" % [alternate, game.state, game.elapsed, game.hull, game.hits_taken, game.enemy_encounters.encounter_index, transitions, game.boat.position, min_enemy_ground])
 		check(game.state == game.State.ARRIVED and transitions == [0,1,2,3], "complete physical voyage %s visits all stages in order" % alternate)
+		print("WAVE HISTORY: %s total=%d" % [game.wave_encounters.history, game.wave_encounters.total_launched])
 		check(terrain_hits == 0, "authored route %s needs no terrain impacts" % alternate)
 		check(min_enemy_ground < -1.0, "active pirates stay in water on route %s" % alternate)
 	game.restart()

@@ -19,6 +19,8 @@ func update_encounters(delta: float) -> void:
 	ship.update_ship(delta)
 	if ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED]:
 		return
+	if game.wave_encounters.busy() or not game.ocean.wave_field.waves.is_empty():
+		return
 	for patrol: Marker3D in game.archipelago.get_node("PiratePatrols").get_children():
 		if patrol.name in visited or game.voyage.stage != patrol.get_meta("stage"):
 			continue

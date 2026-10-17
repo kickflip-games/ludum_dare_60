@@ -67,6 +67,8 @@ godot --path ldjam_60 -- --layout-debug
 
 F2 toggles the overhead chart; F3/F4/F5 start near the wreck, peaks and harbour. The chart disables fog and hides the normal HUD while open. Development controls are disabled by default.
 
+The chart also marks all 14 independent wave-rampage zones. F6 starts a fresh wave-zone test and cycles through the zones, beginning in the spacious northwest open sea. It restores the hull, clears old waves and starts the normal warning/sequence; F2 returns from the chart to the helm.
+
 ## Validation
 
 Run from the repository root:

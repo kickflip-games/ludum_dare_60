@@ -102,3 +102,7 @@ artifacts/night_clouds/*.mp4
 
 # Local archipelago renders and engine/test logs
 artifacts/archipelago/
+
+# Local water review captures and test output (keep written reports)
+artifacts/water_review/*
+!artifacts/water_review/*.md

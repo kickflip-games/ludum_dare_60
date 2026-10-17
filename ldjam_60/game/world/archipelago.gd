@@ -6,6 +6,7 @@ var discoveries: Array[String] = []
 var debug_view: bool = false
 var debug_camera: Camera3D
 var debug_layer: CanvasLayer
+var wave_test_index := 9
 
 func configure(value: Node3D) -> void:
 	game = value
@@ -99,3 +100,43 @@ func debug_spawn(stage: int) -> void:
 	game.boat.position = $SpawnPoints.get_child(stage + 1).position
 	game.heading = game.destination_bearing()
 	game._update_view(1.0)
+
+func debug_wave_zone() -> void:
+	# F6 starts with the spacious northwest test area, then cycles all independent zones.
+	wave_test_index = (wave_test_index + 1) % game.wave_encounters.REGIONS.size()
+	game.restart()
+	var region: Vector4 = game.wave_encounters.REGIONS[wave_test_index]
+	game.state = game.State.SAILING
+	game.boat.position = Vector3(region.x, 0, region.y)
+	game.heading = _clear_water_heading(game.boat.position)
+	game.boat.rotation.y = -game.heading
+	var forward := Vector2(sin(game.heading), -cos(game.heading))
+	game.wave_encounters.begin_region(int(region.w), forward, game.sea_time)
+	game.show_discovery("Wave test · " + game.wave_encounters.REGION_NAMES[wave_test_index])
+	if debug_view:
+		toggle_debug()
+	game._update_view(1.0)
+
+func _clear_water_heading(origin: Vector3) -> float:
+	var best_heading := 0.0
+	var best_clearance := -1.0
+	for i in range(24):
+		var angle := i * TAU / 24.0
+		var forward := Vector3(sin(angle), 0, -cos(angle))
+		var right := Vector3(cos(angle), 0, sin(angle))
+		var clearance := 160.0
+		for side: float in [-4.0, 0.0, 4.0]:
+			var start := origin + right * side + Vector3.UP * 0.5
+			var query := PhysicsRayQueryParameters3D.create(start, start + forward * 160.0, 1)
+			var hit := get_world_3d().direct_space_state.intersect_ray(query)
+			if not hit.is_empty():
+				clearance = minf(clearance, start.distance_to(hit.position) - 8.0)
+			for distance in range(6, 161, 6):
+				var point := origin + right * side + forward * distance
+				if $Terrain.terrain_height_at(point) > -3.0:
+					clearance = minf(clearance, distance - 6.0)
+					break
+		if clearance > best_clearance:
+			best_clearance = clearance
+			best_heading = angle
+	return best_heading

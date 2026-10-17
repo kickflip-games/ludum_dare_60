@@ -97,9 +97,9 @@ func _draw_compass() -> void:
 	# Fixed bow mark, rotating rose: no destination or course reference here.
 	draw_colored_polygon(PackedVector2Array([center + Vector2(0, -40), center + Vector2(-4, -46), center + Vector2(4, -46)]), GOLD)
 	draw_colored_polygon(PackedVector2Array([center + Vector2(0, -7), center + Vector2(-3, 4), center + Vector2(3, 4)]), CREAM)
-	if absf(game.voyage.current) > 0.3:
+	if game.wave_sailing.drift.length() > 0.3:
 		# A lateral drift hint, measured relative to the bow, never to the light.
-		var drift: Vector3 = game.course_right() * game.voyage.current
+		var drift := Vector3(game.wave_sailing.drift.x, 0, game.wave_sailing.drift.y)
 		var local_right: float = drift.dot(game.cannon.starboard_direction())
 		var direction: float = signf(local_right)
 		var at := center + Vector2(0, 45)

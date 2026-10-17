@@ -27,15 +27,15 @@ func _run() -> void:
 	game.ocean_settings = settings
 	var ocean = game.ocean
 	ocean.update_surface(Vector3.ZERO, 2.7, 0.0, 0.0, 0.0)
-	check(ocean.near_mesh.mesh.size == Vector2(80, 80) and ocean.cells == 160,
-		"default water uses an 80 m patch with 160 cells per side")
+	check(ocean.near_mesh.mesh.size == Vector2(120, 120) and ocean.cells == 192,
+		"default water resolves approaching crests across a 120 m patch")
 	var vertices: PackedVector3Array = ocean.distant_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	var edge_ok: bool = true
 	for i in range(ocean.cells + 1):
-		var expected := Vector3(-40.0 + 80.0 * i / ocean.cells, 0.0, -40.0)
+		var expected := Vector3(-60.0 + 120.0 * i / ocean.cells, 0.0, -60.0)
 		edge_ok = edge_ok and vertices[i].is_equal_approx(expected)
 	check(edge_ok, "skirt inner edge exactly matches the detailed patch grid")
-	check(vertices.size() < 6000, "horizon uses a small fixed perimeter mesh")
+	check(vertices.size() < 7000, "horizon uses a small fixed perimeter mesh")
 	var max_derivative_error: float = 0.0
 	for i in range(20):
 		var p := Vector2(-17.3 + i * 3.71, 8.2 + i * 0.93)
@@ -89,7 +89,7 @@ func _run() -> void:
 		max_heave = maxf(max_heave, game.boat_motion.heave)
 		motion_ok = motion_ok and absf(game.boat_motion.pitch) <= deg_to_rad(original.pitch_limit_degrees) + 0.001
 		motion_ok = motion_ok and absf(game.boat_motion.roll) <= deg_to_rad(original.roll_limit_degrees) + 0.001
-	check(max_heave - min_heave > 0.20, "boat heave visibly responds to the actual shared waves")
+	check(max_heave - min_heave > 0.005 and max_heave - min_heave < 0.10, "calm baseline has gentle, bounded heave")
 	check(motion_ok, "wave pitch and roll remain within the configured comfort limits")
 	check(game.boat.position.y == 0.0 and absf(game.boat.rotation.x) < 0.00001 and absf(game.boat.rotation.z) < 0.00001,
 		"buoyancy leaves movement-root height and collision orientation unchanged")
@@ -116,7 +116,7 @@ func _run() -> void:
 	check(ocean.wake_strength < 0.001 and ocean.wake_root.get_child_count() == 2,
 		"two lightweight wake ribbons fade at rest")
 	ocean.set_quality(0)
-	check(ocean.cells == 128, "Low quality reduces the fixed grid resolution")
+	check(ocean.cells == 160, "Low quality reduces the fixed grid resolution")
 	ocean.set_quality(1)
 	game.restart()
 	check(game.ocean.wake_strength < 0.001 and game.boat_motion.initialized,

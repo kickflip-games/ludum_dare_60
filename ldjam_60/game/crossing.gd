@@ -6,6 +6,11 @@ const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
+const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
+const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
+var wave_sailing := WaveSailing.new()
+var wave_encounters := WaveEncounters.new()
+var actual_speed := 0.0
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
@@ -22,12 +27,9 @@ const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 
 @export_group("Sailing difficulty")
 @export var encounter_seed: int = 60
-@export_range(0.0, 2.5, 0.05) var current_strength: float = 1.15
-@export_range(0.1, 3.0, 0.1) var current_response: float = 0.65
-@export_range(0.0, 0.25, 0.005) var gust_strength: float = 0.12
-@export var gust_interval: float = 10.0
-@export var gust_warning_seconds: float = 1.8
-@export var gust_duration: float = 2.0
+# Legacy fixture properties; no invisible current or gust forces in gameplay.
+var current_strength := 0.0
+var gust_strength := 0.0
 
 @export_group("Hull")
 @export_range(1, 6, 1) var hull_capacity: int = 3
@@ -71,10 +73,9 @@ const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 @export_range(0.0, 0.2, 0.01) var cannon_camera_tracking: float = 0.15
 
 @export_group("Ocean")
-@export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
+@export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/calm.tres"):
 	set(value):
 		ocean_settings = value
-		_base_wave_height = value.height_multiplier
 		if is_instance_valid(ocean):
 			ocean.configure(value)
 @export_enum("Low", "Standard", "High") var ocean_quality: int = 1:
@@ -89,7 +90,6 @@ var phase: int = 0
 var phase_banner_left: float = 4.0
 var storm_blend: float = 0.0
 var last_sighting_time: float = 0.0
-var _base_wave_height: float = 0.7
 var _last_thunder: int = -1
 var world_environment: WorldEnvironment
 var moon: DirectionalLight3D
@@ -188,6 +188,7 @@ func _ready() -> void:
 	cannon.fired.connect(_on_cannon_fired)
 	voyage.reset(encounter_seed)
 	voyage.set_target(self)
+	wave_encounters.reset(encounter_seed)
 	_build_hazards()
 	enemy_encounters = Node3D.new()
 	enemy_encounters.set_script(ENCOUNTER_SCRIPT)
@@ -233,11 +234,13 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if development_tools and event is InputEventKey and event.pressed:
+	if development_tools and event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode == KEY_F2:
 			archipelago.toggle_debug()
 		elif event.keycode in [KEY_F3, KEY_F4, KEY_F5]:
 			archipelago.debug_spawn(event.keycode - KEY_F3)
+		elif event.keycode == KEY_F6:
+			archipelago.debug_wave_zone()
 	if event.is_action_pressed("restart_crossing") and state in [State.SAILING, State.LOST, State.ARRIVED]:
 		restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
@@ -301,6 +304,11 @@ func journey_progress() -> float:
 
 func restart() -> void:
 	cannon.reset()
+	wave_sailing.reset()
+	wave_encounters.reset(encounter_seed)
+	ocean.wave_field.clear()
+	sea_time = 0.0
+	actual_speed = 0.0
 	hull = hull_capacity
 	damage_immunity = 0.0
 	hit_flash = 0.0
@@ -358,7 +366,8 @@ func restart() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	sea_time += delta
+	if state != State.SAILING:
+		sea_time += delta
 	reading = state == State.SAILING and Input.is_action_pressed("astrolabe")
 	if reading or state != State.SAILING:
 		cannon.cancel_aim()
@@ -386,22 +395,28 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if state != State.SAILING:
 		return
 	elapsed += delta
+	sea_time += delta
 	damage_immunity = maxf(0.0, damage_immunity - delta)
-	voyage.update_forces(self, delta)
+	wave_encounters.update(self, delta)
+	ocean.wave_time = sea_time
 	enemy_encounters.update_encounters(delta)
-	# Route only the rudder input away; currents, gusts, collision and damage keep running.
+	# A fresh steering press exits cannon view; waves continue throughout aiming.
 	if cannon.aiming:
 		steering = 0.0
-	heading = wrapf(heading + (steering * TURN_SPEED + voyage.gust_push) * delta, -PI, PI)
+	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
+	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta)
 	boat.rotation.y = -heading
-	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED + course_right() * voyage.current
+	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
+	var previous_position := boat.position
 	var hit := boat.move_and_collide(boat.velocity * delta)
 	if hit:
 		take_damage(contact_damage, "Hull struck %s" % hit.get_collider().get_meta("hazard_name", "wreckage"))
 		# Keep responsive steering and let glancing hits slide; never teleport through a reef.
 		var shore_normal := Vector3(hit.get_normal().x, 0, hit.get_normal().z).normalized()
+		wave_sailing.slide(Vector2(shore_normal.x, shore_normal.z))
 		boat.move_and_collide(hit.get_remainder().slide(shore_normal))
 	boat.position.y = 0.0
+	actual_speed = boat.position.distance_to(previous_position) / maxf(delta, 0.0001)
 	if reading:
 		last_reading = heading
 		has_reading = true
@@ -421,6 +436,8 @@ func advance_sailing(delta: float, steering: float) -> void:
 		turn_input = 0.0
 		cannon.reset()
 		enemy_encounters.stop()
+		wave_encounters.stop(ocean.wave_field)
+		wave_sailing.reset()
 
 
 func take_damage(amount: int, reason: String) -> bool:
@@ -435,6 +452,8 @@ func take_damage(amount: int, reason: String) -> bool:
 	shake(0.16)
 	cue_sound("damage")
 	if hull == 0:
+		wave_encounters.stop(ocean.wave_field)
+		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
 		state = State.LOST
 		reading = false
@@ -462,7 +481,7 @@ func _update_view(delta: float) -> void:
 		focus_elapsed = 0.0
 		focus_strength = 0.0
 	boat.rotation.y = -heading
-	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
+	var speed_factor := actual_speed / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
 	boat_motion.update_motion(ocean, boat, boat_visual, delta)
 	enemy_encounters.update_visuals(delta)
@@ -714,10 +733,7 @@ func _update_weather(delta: float) -> void:
 		return
 	var strength: float = [0.0, 0.25, 0.45, 0.15][phase]
 	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
-	var height: float = _base_wave_height * lerpf(0.45, 1.4, storm_blend)
-	# Private resource copy: CPU/GPU remain authoritative together; saved presets never change.
-	if absf(ocean_settings.height_multiplier - height) > 0.01:
-		ocean_settings.height_multiplier = height
+	# Lighting follows voyage progress; wave difficulty belongs to the encounter director.
 	world_environment.environment.ambient_light_energy = lerpf(0.78, 0.56, storm_blend)
 	world_environment.environment.fog_density = lerpf(0.0035, 0.0048, storm_blend)
 	moon.light_energy = lerpf(0.88, 0.68, storm_blend)

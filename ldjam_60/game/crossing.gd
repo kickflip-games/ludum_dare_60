@@ -52,15 +52,16 @@ var gust_strength := 0.0
 @export_range(0.4, 2.0, 0.05) var cloud_scale: float = 1.0
 @export var cloud_wind := Vector2(1.0, 0.28)
 @export_range(0.0, 3.0, 0.05) var cloud_speed: float = 0.7
-## Retained only for the reversible painted fallback.
-@export var cloud_size_range := Vector2(0.9, 1.2)
 @export_range(0.3, 1.5, 0.05) var cloud_brightness: float = 0.85
 @export_range(0.0, 1.0, 0.05) var cloud_highlights: float = 0.55
 @export_range(0.0, 1.0, 0.05) var cloud_softness: float = 0.60
 ## Billowing banks at zero; more stretched upper wisps at one.
 @export_range(0.0, 1.0, 0.05) var cloud_variation: float = 0.35
 @export var cloud_seed: int = 60
+@export_subgroup("Cloud fallback")
+## Disable only to compare or revert to the previous painted sky.
 @export var procedural_clouds: bool = true
+@export var cloud_size_range := Vector2(0.9, 1.2)
 @export_subgroup("")
 @export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
 

@@ -48,44 +48,70 @@ float navigation_lane(vec3 d, vec3 star, vec3 wind, float irregularity) {
 		* (1.0 - smoothstep(0.035, 0.19, abs(y)));
 }
 
+vec3 cloud_lobes(vec2 p) {
+	ivec2 cell = ivec2(floor(p));
+	float joined = -2.0;
+	vec2 gradient = vec2(0.0);
+	// A bounded neighbourhood of unequal lobes merges into banks. This gives
+	// rounded cumulus edges instead of exposing the square value-noise lattice.
+	for (int y = -1; y <= 1; y++) {
+		for (int x = -1; x <= 1; x++) {
+			ivec2 id = cell + ivec2(x, y);
+			vec2 center = vec2(id) + vec2(0.15) + vec2(cloud_hash(ivec3(id, 3)), cloud_hash(ivec3(id, 7))) * 0.7;
+			float radius = mix(0.28, 0.74, cloud_hash(ivec3(id, 13)));
+			vec2 distance_to = center - p;
+			float distance_length = max(length(distance_to), 0.0001);
+			float lobe = radius - distance_length;
+			float blend = clamp(0.5 + 0.5 * (lobe - joined) / 0.16, 0.0, 1.0);
+			joined = mix(joined, lobe, blend) + 0.16 * blend * (1.0 - blend);
+			gradient = mix(gradient, distance_to / distance_length, blend);
+		}
+	}
+	return vec3(0.50 + joined * 0.7, gradient * 0.7);
+}
+
 vec4 toon_clouds(vec3 d) {
 	if (cloud_density <= 0.0 || d.y <= 0.0) { return vec4(0.0); }
-	vec2 wind2 = cloud_wind / max(length(cloud_wind), 0.001);
+	float wind_length = length(cloud_wind);
+	vec2 wind2 = wind_length > 0.001 ? cloud_wind / wind_length : vec2(1.0, 0.0);
 	vec3 wind = vec3(wind2.x, 0.0, wind2.y);
 	float high = smoothstep(0.25, 0.85, d.y);
-	float stretch = mix(1.0, 0.58, high * cloud_variation);
+	float stretch = mix(1.0, 0.40, high * cloud_variation);
 	// A curved horizontal deck has no pole or wrap seam. Perspective naturally
 	// flattens distant formations into banks instead of stretching tangent cards.
 	vec2 deck = d.xz / (d.y + 0.28);
 	vec3 p = vec3(dot(deck, wind2) * 2.4 * stretch,
 		dot(deck, vec2(-wind2.y, wind2.x)) * 3.1, length(deck) * 0.18);
-	p = p * cloud_scale + cloud_offset;
+	p = p * cloud_scale * mix(1.0, 1.5, high) + cloud_offset;
 	// Translation of the field is coherent wind, not camera-relative rotation.
-	p.x -= visual_time * cloud_speed * 0.012;
-	p.z += visual_time * cloud_speed * 0.002;
+	float drift = wind_length > 0.001 ? visual_time * cloud_speed : 0.0;
+	p.x -= drift * 0.012;
+	p.z += drift * 0.002;
 	vec4 broad = cloud_noise(p * 0.49 + vec3(17.0, 3.0, 11.0));
-	vec3 warped = p + broad.yzw * 0.24;
-	vec4 billow = cloud_noise(warped);
+	vec3 warped = p + broad.yzw * 0.18;
 	vec4 detail = cloud_noise(warped * 2.07 + vec3(7.0, 31.0, 19.0));
-	vec4 fringe = cloud_noise(warped * 4.13 + vec3(23.0, 9.0, 41.0));
-	float field = broad.x * 0.18 + billow.x * 0.55 + detail.x * 0.21 + fringe.x * 0.06;
-	vec3 gradient = billow.yzw * 0.55 + detail.yzw * 0.43;
+	vec3 lobes = cloud_lobes(warped.xy);
+	float field = broad.x * 0.55 + lobes.x * 0.30 + detail.x * 0.15;
+	vec2 gradient = lobes.yz * 0.30 + broad.yz * 0.27 + detail.yz * 0.31;
 	// Broad low banks blend into a sparse, stretched upper layer.
-	field += 0.095 * exp(-pow((d.y - 0.17) * 5.0, 2.0));
+	field += 0.07 * exp(-pow((d.y - 0.17) * 5.0, 2.0));
 	field -= high * 0.10;
 	float lane = max(navigation_lane(d, guiding_stars[0], wind, broad.x - 0.5),
 		max(navigation_lane(d, guiding_stars[1], wind, broad.x - 0.5),
 			navigation_lane(d, guiding_stars[2], wind, broad.x - 0.5)));
 	field -= lane * 0.62;
-	float threshold = mix(0.86, 0.34, cloud_density) - storm * 0.035 * cloud_density;
+	float threshold = mix(0.99, 0.36, cloud_density) - storm * 0.035 * cloud_density;
 	float edge = mix(0.005, 0.025, cloud_softness);
 	float alpha = smoothstep(threshold - edge, threshold + edge, field);
+	float wisps = smoothstep(0.57, 0.72, broad.x) * smoothstep(0.64, 0.82, detail.x);
+	wisps *= high * cloud_variation * cloud_density * 0.55 * (1.0 - lane);
+	alpha = max(alpha, wisps);
 	alpha *= smoothstep(0.004, 0.055, d.y);
-	float depth = clamp((field - threshold) / 0.20, 0.0, 1.0);
-	float light = clamp(0.45 + (1.0 - depth) * 0.29 + gradient.x * 0.16 - gradient.y * 0.12, 0.0, 1.0);
-	float bands = 0.35 + smoothstep(0.44, 0.48, light) * 0.35 + smoothstep(0.67, 0.71, light) * 0.30;
-	vec3 shadow = vec3(0.110, 0.155, 0.210);
-	vec3 body = vec3(0.185, 0.245, 0.305);
+	vec2 upper_face = -normalize(vec2(dot(deck, wind2) * stretch, dot(deck, vec2(-wind2.y, wind2.x))) + vec2(0.00001));
+	float light = clamp(0.42 - dot(gradient, upper_face) * 0.35 + dot(gradient, vec2(0.6, -0.5)) * 0.15, 0.0, 1.0);
+	float bands = smoothstep(0.28, 0.36, light) * 0.5 + smoothstep(0.48, 0.56, light) * 0.5;
+	vec3 shadow = vec3(0.090, 0.135, 0.185);
+	vec3 body = vec3(0.180, 0.235, 0.290);
 	vec3 moonlit = vec3(0.285, 0.355, 0.425);
 	vec3 color = mix(shadow, body, bands);
 	color = mix(color, moonlit, smoothstep(0.58, 0.82, light) * cloud_highlights * 0.65);

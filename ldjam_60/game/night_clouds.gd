@@ -1,6 +1,6 @@
 extends RefCounted
-## Fixed tangent cards composited inside the existing sky pass. No scene nodes,
-## transparent sorting, per-frame images, or camera-facing billboard transforms.
+## Seeded procedural field setup and the reversible painted fallback.
+## Both composite inside the existing sky pass, without cloud scene nodes.
 const ATLAS = preload("res://assets/sky/night_clouds.png")
 const COUNT := 40
 # Height follows each painting's intended proportions. A wisp must not inherit

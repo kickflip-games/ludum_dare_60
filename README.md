@@ -67,8 +67,8 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   3°. The camera follows a level heading with filtered heave, shows the whole ship,
   and retracts at shores. See the [camera review](artifacts/sailing_camera_review.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
-  and sky FOV (94°). Eight painted cloud silhouettes drift in two depth layers;
-  a small clear region protects the reference even in storm weather. See the cloud
+  and sky FOV (94°). Procedural toon cloud banks drift in world space;
+  broad wind lanes protect the references even in storm weather. See the cloud
   controls and review notes below.
 - **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65),
   and text at each stage. Default: a quiet search prompt, then name + bearing.
@@ -206,43 +206,51 @@ the native renderer to reproduce its curated art views.
 
 ## Night clouds
 
-Eight authored contours replace the repeated ellipse clouds: cumulus, broken
-clusters, wind feathers, billows, distant banks, stratus, anvils and ragged altocumulus.
-A 2048×512 packed atlas supplies broad paint washes and signed-distance edges.
-Fixed sky tangent cards composite in the existing sky shader, so stars are hidden
-by opaque paint and camera tilts never trigger billboard rotation. Two angular
-drift rates suggest depth; there are no cloud nodes or per-frame texture builds.
-Each family has its own angular proportions. Smaller overhead formations follow
-a shared world wind, with broader wisps and connected layered banks so they stay
-coherent when looking straight up. Faint, medium and bright star layers use fixed
-world directions with asynchronous brightness-only twinkling. All three regional
-navigation stars retain their original directions; approaching cloud formations
-fade gently as whole shapes to keep these stars readable without circular cutouts.
+The active cloud layer is an original procedural field in the existing sky pass:
+connected low banks, sparse upper wisps, dark blue-grey undersides and restrained
+moonlit toon shading. It uses two lattice-noise samples and a bounded nine-cell
+lobe neighbourhood, with no atlas sampling, raymarching or extra cloud draw calls.
+The fixed stars, navigation focus, night gradient, storms and lightning retain
+their existing composition. Only the gradient contributes to environment lighting.
 
-Select the root of `game/crossing.tscn`, under **Stargazing sky**:
+Select the root of `game/crossing.tscn`, under **Stargazing sky → Cloud formations**:
 
 | Control | Default | Effect |
 |---|---|---|
-| `cloud_density` | 0.62 | Activates more of the authored cloud groups. |
-| `cloud_size_range` | (0.9, 1.2) | Angular size multipliers; distant banks stay smaller. |
-| `cloud_speed` | 0.7 | Two slow continuous drift rates; zero freezes both. |
+| `cloud_density` | 0.62 | Coverage; zero removes clouds entirely. |
+| `cloud_scale` | 1.0 | Field frequency; lower values make larger formations. |
+| `cloud_wind` | (1.0, 0.28) | World X/Z drift direction; zero freezes drift. |
+| `cloud_speed` | 0.7 | Slow wind speed; zero freezes the field. |
 | `cloud_brightness` | 0.85 | Night palette brightness. |
-| `cloud_highlights` | 0.55 | Cool moonlit paint wash. |
-| `cloud_softness` | 0.60 | Silhouette feather width. |
-| `cloud_variation` | 0.35 | Muted lavender tint variation. |
-| `cloud_seed` | 60 | Repeatable placement, proportions and tint. |
+| `cloud_highlights` | 0.55 | Moonlit upper-face highlights. |
+| `cloud_softness` | 0.60 | Cloud-edge feathering. |
+| `cloud_variation` | 0.35 | Upper-layer stretch and soft wisp influence. |
+| `cloud_seed` | 60 | Repeatable field placement; unaffected by focus or camera changes. |
 
-`night_cloud_smoke.gd` checks deterministic layout and fixed tangent bases.
-Run the real renderer with `--fixed-fps 60 --script
-res://tests/night_cloud_previews.gd -- --output=/tmp/night-cloud-review` for
-sailing, sighting, close-up, all eight silhouettes, heading/clock/weather samples
-and GPU coverage/occlusion diagnostics. These are staged art fixtures.
-See [night cloud review](artifacts/night_clouds/REPORT.md) for results and limits.
-The latest [painterly sky review](artifacts/painterly_sky_review.md) includes matched
-horizon/45-degree/zenith captures, focus at all three journey stages, a drift time
-lapse and native render checks. Reproduce with `res://tests/painterly_sky_previews.gd`
-and the same `--output` argument; add `--clip` for the time-lapse frames.
-The optional atlas authoring script uses Pillow, NumPy and SciPy; the game only
-loads the imported PNG. Keep its data channels linear, alpha-border fixing off,
-and mipmaps on. The clouds are sky scenery with angular layer motion, so boat
-translation does not produce physical cloud parallax.
+**Cloud fallback → procedural_clouds** can be disabled to restore the painted
+clouds. `cloud_size_range`, the original atlas, its authoring tool and older card
+fixtures remain for that rollback; they do not drive the active procedural field.
+The CPU prepares the seed once. There are no per-frame textures or cloud nodes.
+
+The EmacE Art package was downloaded and its current proprietary LICENSE.txt
+checked. Its unmodified shader rendered in a separate Godot 4.8 GL Compatibility
+probe. No vendor shader source is included: its restriction on redistributing
+modified assets makes public source distribution unclear, so the replacement is
+independently authored. See the [procedural cloud review](artifacts/procedural_cloud_review.md)
+for provenance, matched screenshots, performance and remaining limits.
+
+Validation fixtures (run from `ldjam_60/` with Godot's `--script res://tests/...`):
+
+- `night_cloud_smoke.gd`: deterministic seeds and retained fallback invariants.
+- `procedural_sky_smoke.gd`: real sky controls, Space, weather/lightning and R resets.
+- `procedural_cloud_render_check.gd`: **native renderer required**; coverage zero,
+  opaque-star occlusion, drift, world-direction reprojection and all navigation stars.
+- `procedural_cloud_previews.gd`: **native renderer required**; matched sailing,
+  stargazing/storm and pitch/yaw images, with uncapped 1280×720 timings. Supply
+  `-- --output=/tmp/procedural-cloud-review`; add `--performance-only` to omit
+  screenshots or `--legacy` for the painted comparison.
+
+Older [painterly sky evidence](artifacts/painterly_sky_review.md) documents the
+retained fallback. Both layers use an infinitely distant sky, so translating the
+boat produces no physical cloud parallax. Browser rendering is checked separately
+from native frame timing; low-end devices still need their own performance check.

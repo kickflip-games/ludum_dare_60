@@ -16,6 +16,8 @@ func _run() -> void:
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
+	if "--legacy" in OS.get_cmdline_user_args():
+		game.procedural_clouds = false
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)

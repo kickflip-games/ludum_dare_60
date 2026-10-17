@@ -88,3 +88,14 @@ artifacts/integrated_tower/output/
 
 # Local Web export staging, logs and distributable builds
 /build/
+
+# Local cannon aiming review media and validation logs
+artifacts/cannon_aim/
+
+# Local night cloud review frames, diagnostics and recordings
+artifacts/night_clouds/before/
+artifacts/night_clouds/after/
+artifacts/night_clouds/refinement/
+artifacts/night_clouds/final-sequence/
+artifacts/night_clouds/combat/
+artifacts/night_clouds/*.mp4

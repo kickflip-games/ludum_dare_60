@@ -6,8 +6,9 @@ const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
+const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
-const CANNON_SCRIPT = preload("res://game/broadside_cannon.gd")
+const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
@@ -41,8 +42,15 @@ const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 @export_group("Stargazing sky")
 @export_range(0.0, 1.0, 0.05) var star_density: float = 0.72
 @export_range(0.0, 0.5, 0.01) var twinkle_strength: float = 0.16
-@export_range(0.0, 1.0, 0.05) var cloud_density: float = 0.42
+@export_range(0.0, 1.0, 0.05) var cloud_density: float = 0.62
 @export_range(0.0, 3.0, 0.05) var cloud_speed: float = 0.7
+## Scales the authored angular widths/heights; distant banks remain smaller.
+@export var cloud_size_range := Vector2(0.9, 1.2)
+@export_range(0.3, 1.5, 0.05) var cloud_brightness: float = 0.85
+@export_range(0.0, 1.0, 0.05) var cloud_highlights: float = 0.55
+@export_range(0.0, 1.0, 0.05) var cloud_softness: float = 0.60
+@export_range(0.0, 1.0, 0.05) var cloud_variation: float = 0.35
+@export var cloud_seed: int = 60
 @export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
 
 @export_group("Sextant assistance")
@@ -53,6 +61,14 @@ const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 @export_enum("None", "Hold to focus") var search_text: int = 1
 @export_enum("None", "Star name", "Name and bearing") var focused_text: int = 2
 @export_enum("Keep focus text", "Course hint") var extended_text: int = 0
+
+@export_group("Cannon camera")
+@export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.3
+@export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.5
+@export var aim_camera_offset := Vector3(2.4, 5.2, 9.5)
+@export var combat_camera_offset := Vector3(2.8, 6.0, 10.5)
+@export_range(0.0, 0.25, 0.01) var camera_target_bias: float = 0.1
+@export_range(70.0, 90.0, 1.0) var aim_camera_fov: float = 78.0
 
 @export_group("Ocean")
 @export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
@@ -97,6 +113,13 @@ var focus_elapsed: float = 0.0
 var focus_strength: float = 0.0
 var look_blend: float = 0.0
 var starboard_look: bool = false
+enum CameraMode { SAILING, COMBAT, AIMING, STARGAZING }
+var camera_mode: CameraMode = CameraMode.SAILING
+var aim_camera_blend: float = 0.0
+var combat_camera_blend: float = 0.0
+var _camera_aim_degrees: float = 0.0
+var _camera_target_offset := Vector3.ZERO
+var _cannon_impulse: float = 0.0
 var turn_input: float = 0.0
 var last_reading: float = START_HEADING
 var has_reading: bool = false
@@ -117,6 +140,7 @@ var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
 var water_material: ShaderMaterial
+var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
 var obstacles: Array[Dictionary] = []
 var target: Vector3 = Vector3.ZERO
@@ -143,10 +167,10 @@ func _ready() -> void:
 	_configure_inputs()
 	_build_world()
 	_build_boat()
-	cannon = Node3D.new()
-	cannon.set_script(CANNON_SCRIPT)
+	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
+	cannon.fired.connect(_on_cannon_fired)
 	voyage.reset(encounter_seed)
 	_build_hazards()
 	enemy_encounters = Node3D.new()
@@ -193,14 +217,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
 		start_crossing()
-	elif event.is_action_pressed("fire_starboard"):
-		cannon.fire()
+	elif event.is_action("fire_starboard") and not event.is_echo():
+		cannon.set_fire_held(event.is_pressed())
+	elif event.is_action_pressed("astrolabe"):
+		cannon.cancel_aim()
 	elif event.is_action_pressed("mute_sea"):
 		_sound_enabled = not _sound_enabled
 		if is_instance_valid(_sound):
 			_sound.volume_db = -26.0 if _sound_enabled else -80.0
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		get_tree().quit()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(cannon):
+		cannon.cancel_aim()
+
+
+func _on_cannon_fired(_direction: Vector3) -> void:
+	_cannon_impulse = 1.0
 
 
 func start_crossing() -> void:
@@ -254,6 +289,12 @@ func restart() -> void:
 	focus_strength = 0.0
 	look_blend = 0.0
 	starboard_look = false
+	aim_camera_blend = 0.0
+	combat_camera_blend = 0.0
+	_camera_aim_degrees = 0.0
+	_camera_target_offset = Vector3.ZERO
+	_cannon_impulse = 0.0
+	camera_mode = CameraMode.SAILING
 	turn_input = 0.0
 	last_reading = START_HEADING
 	has_reading = false
@@ -270,10 +311,14 @@ func restart() -> void:
 
 func _physics_process(delta: float) -> void:
 	sea_time += delta
+	reading = state == State.SAILING and Input.is_action_pressed("astrolabe")
+	if reading or state != State.SAILING:
+		cannon.cancel_aim()
+	cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
+	cannon.update_aim(delta, Input.get_axis("steer_port", "steer_starboard"))
 	if state == State.SAILING:
-		reading = Input.is_action_pressed("astrolabe")
 		starboard_look = Input.is_action_pressed("watch_starboard") and not reading
-		turn_input = Input.get_axis("steer_port", "steer_starboard")
+		turn_input = 0.0 if cannon.aiming else Input.get_axis("steer_port", "steer_starboard")
 		advance_sailing(delta, turn_input)
 	elif state == State.CASTING_OFF:
 		reading = false
@@ -297,6 +342,9 @@ func advance_sailing(delta: float, steering: float) -> void:
 	voyage.spawn_ahead(self)
 	voyage.update_forces(self, delta)
 	enemy_encounters.update_encounters(delta)
+	# Route only the rudder input away; currents, gusts, collision and damage keep running.
+	if cannon.aiming:
+		steering = 0.0
 	heading = wrapf(heading + (steering * TURN_SPEED + voyage.gust_push) * delta, -PI, PI)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED + course_right() * voyage.current
@@ -374,11 +422,16 @@ func _update_view(delta: float) -> void:
 		boat_visual.rotation.z += end_view_blend * 0.32
 	var sky_blend := smoothstep(0.0, 1.0, read_blend)
 	var helm_pose := Transform3D(Basis.from_euler(Vector3(
-		lerpf(deg_to_rad(-6.0), deg_to_rad(78.0), sky_blend), -heading - deg_to_rad(75.0) * look_blend * (1.0 - sky_blend),
+		deg_to_rad(-6.0), -heading - deg_to_rad(75.0) * look_blend,
 		0.0)),
-		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18) * lerpf(1.0, 0.15, sky_blend), 0.0))
+		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18), 0.0))
+	helm_pose = _sailing_camera_pose(helm_pose, delta)
+	# Sky has final priority, including while the aim camera is blending out.
+	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(78.0), -heading, 0.0)),
+		boat.position + Vector3(0, 2.55, 0))
+	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
-	camera.fov = lerpf(74.0, stargazing_fov, sky_blend)
+	camera.fov = lerpf(lerpf(74.0, aim_camera_fov, aim_camera_blend), stargazing_fov, sky_blend)
 	if state == State.READY:
 		camera.transform = _title_camera_pose()
 		camera.h_offset = -4.2
@@ -402,15 +455,58 @@ func _update_view(delta: float) -> void:
 		var sight_shake := shake_strength * lerpf(1.0, 0.15, sky_blend)
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
+		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
+		camera.position.y = maxf(camera.position.y, ocean.height_at(Vector2(camera.position.x, camera.position.z)) + 1.2)
+	_cannon_impulse *= exp(-16.0 * delta)
 	sky_root.position = camera.position
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	sky_material.set_shader_parameter("star_density", star_density)
 	sky_material.set_shader_parameter("twinkle_strength", twinkle_strength)
 	sky_material.set_shader_parameter("cloud_density", cloud_density)
 	sky_material.set_shader_parameter("cloud_speed", cloud_speed)
+	_cloud_layout.configure(sky_material, cloud_seed, cloud_size_range)
+	sky_material.set_shader_parameter("cloud_brightness", cloud_brightness)
+	sky_material.set_shader_parameter("cloud_highlights", cloud_highlights)
+	sky_material.set_shader_parameter("cloud_softness", cloud_softness)
+	sky_material.set_shader_parameter("cloud_variation", cloud_variation)
 	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
+
+
+func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
+	# Compose poses for the single transform writer in _update_view; never change gun yaw.
+	var ship = enemy_encounters.ship
+	var combat: bool = enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
+	camera_mode = CameraMode.STARGAZING if reading else CameraMode.AIMING if cannon.aiming else CameraMode.COMBAT if combat else CameraMode.SAILING
+	var aiming: bool = camera_mode == CameraMode.AIMING
+	var seconds: float = aim_camera_seconds if aiming else camera_return_seconds
+	aim_camera_blend = lerpf(aim_camera_blend, 1.0 if aiming else 0.0, 1.0 - exp(-3.0 * delta / seconds))
+	combat_camera_blend = lerpf(combat_camera_blend, 1.0 if combat else 0.0, 1.0 - exp(-5.0 * delta))
+	_camera_aim_degrees = lerpf(_camera_aim_degrees, cannon.aim_degrees, 1.0 - exp(-12.0 * delta))
+	var orientation := Basis(Vector3.UP, -heading)
+	var enemy_offset: Vector3 = orientation.inverse() * (ship.position - boat.position)
+	var target_offset := Vector3.ZERO
+	if combat and enemy_offset.x > 5.0 and absf(enemy_offset.z) < enemy_offset.x:
+		target_offset = Vector3(0, clampf(enemy_offset.y, -1, 2), clampf(enemy_offset.z, -10, 10)) * camera_target_bias
+	_camera_target_offset = _camera_target_offset.lerp(target_offset, 1.0 - exp(-5.0 * delta))
+	var combat_at := boat.position + orientation * combat_camera_offset
+	var combat_focus := boat.position + orientation * (Vector3(12, 1.4, -4) + _camera_target_offset)
+	var combat_pose := Transform3D(Basis.looking_at(combat_focus - combat_at), combat_at)
+	var sailing_pose := helm_pose.interpolate_with(combat_pose, smoothstep(0, 1, combat_camera_blend))
+	var aim_at := boat.position + orientation * aim_camera_offset
+	var aim_direction := Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(_camera_aim_degrees * 0.3))
+	var aim_focus := boat.position + orientation * (Vector3(0.8, 1.3, -2.6) + aim_direction * 12.0 + _camera_target_offset)
+	var aim_pose := Transform3D(Basis.looking_at(aim_focus - aim_at), aim_at)
+	var result := sailing_pose.interpolate_with(aim_pose, smoothstep(0, 1, aim_camera_blend))
+	if state == State.SAILING and maxf(aim_camera_blend, combat_camera_blend) > 0.01:
+		# Terrain-only feeler keeps the shoulder outside rocks; own hull is layer 2.
+		var anchor := boat.position + Vector3.UP * 2.8
+		var ray := PhysicsRayQueryParameters3D.create(anchor, result.origin, 1)
+		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+		if not hit.is_empty():
+			result.origin = hit.position + hit.normal * 0.65
+	return result
 
 
 func _title_camera_pose() -> Transform3D:

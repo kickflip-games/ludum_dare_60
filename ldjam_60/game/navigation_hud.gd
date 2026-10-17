@@ -142,7 +142,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["Hold E  /  F", "Glance right / fire"]]:
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["Hold F · A / D · release", "Aim starboard / fire"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -263,7 +263,7 @@ func _process(delta: float) -> void:
 		return
 	var ship = game.enemy_encounters.ship
 	var combat: bool = ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING]
-	_combat_blend = move_toward(_combat_blend, 1.0 if combat or game.cannon.cooldown > 0 or game.look_blend > 0.1 else 0.0, delta * 5.0)
+	_combat_blend = move_toward(_combat_blend, 1.0 if combat or game.cannon.aiming or game.cannon.cooldown > 0 or game.look_blend > 0.1 else 0.0, delta * 5.0)
 	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend)
 	if _last_hull >= 0 and game.hull < _last_hull:
 		hull_gauge.pulse = 0.65
@@ -404,8 +404,11 @@ func _draw() -> void:
 		_draw_wind(Vector2(size.x - 55 + sin(game.sea_time * 6.0) * 2, 47), wind_label.modulate.a)
 	if _reading_alpha > 0.01:
 		_draw_instrument()
-	elif _combat_blend > 0.1:
-		_draw_target()
+	else:
+		if game.cannon.indicator_alpha > 0.01:
+			_draw_cannon_sight()
+		elif _combat_blend > 0.1:
+			_draw_target()
 
 
 func _draw_damage_edges() -> void:
@@ -435,6 +438,32 @@ func _draw_wind(at: Vector2, alpha: float) -> void:
 		var y: float = (i - 1) * 7.0
 		_line(at + Vector2(-15, y), at + Vector2(8 - i * 4, y), color)
 		draw_arc(at + Vector2(8 - i * 4, y - 3), 3, -PI / 2, PI / 2, 12, color, 1.5, true)
+
+
+func _draw_cannon_sight() -> void:
+	# A direction sight, not a promised impact point or target lock. Ballistics
+	# retain their small fixed elevation/gravity; the sight projects the yaw ray.
+	var direction: Vector3 = game.cannon.aimed_direction()
+	var origin: Vector3 = game.cannon.shot_origin()
+	var alpha: float = game.cannon.indicator_alpha * (1.0 - _reading_alpha)
+	var point: Vector3 = origin + direction * 32.0
+	if game.camera.is_position_behind(point):
+		return
+	var at: Vector2 = game.camera.unproject_position(point)
+	if not Rect2(Vector2(24, 24), size - Vector2(48, 48)).has_point(at):
+		return
+	var color := Color(BRASS if game.cannon.cooldown == 0.0 else INK, alpha * 0.8)
+	for side in [-1, 1]:
+		_line(at + Vector2(side * 6, 0), at + Vector2(side * 13, 0), color, 1.2)
+		_line(at + Vector2(0, side * 6), at + Vector2(0, side * 10), color, 1.2)
+	# A tiny yaw tick makes the limited arc readable without covering the target.
+	var center := Vector2(size.x * 0.5, size.y - 171)
+	_line(center + Vector2(-34, 0), center + Vector2(34, 0), Color(INK, alpha * 0.35), 1)
+	for side in [-1, 1]:
+		_line(center + Vector2(side * 34, -3), center + Vector2(side * 34, 3), Color(INK, alpha * 0.5), 1)
+	var tick: float = -game.cannon.aim_degrees / game.cannon.max_aim_degrees * 34.0
+	_line(center + Vector2(tick, -5), center + Vector2(tick, 5), color, 2)
+	_text(center + Vector2(0, -15), "A / D · aim   Release F · fire", 14, Color(INK, alpha * 0.8), true)
 
 
 func _draw_target() -> void:

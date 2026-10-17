@@ -21,7 +21,13 @@ func _run() -> void:
 	check(terrain.get_dims() == Vector2i(257, 257), "baked LiteTerrain loads 257x257 data")
 	check(not terrain._col_active and not terrain.collision.disabled, "full-map collision covers boat, enemies and untracked projectiles")
 	check(terrain.terrain_height_at(game.boat.position) < -8, "departure is open water")
-	check(not game.beacon.visible, "lighthouse concealed at departure")
+	check(not game.beacon.visible, "lighthouse lantern and beam remain unlit at departure")
+	var water_hazards := true
+	for marker: Marker3D in game.archipelago.get_node("Hazards").get_children():
+		var radius: float = marker.get_meta("radius", 5.0)
+		for offset: Vector3 in [Vector3.ZERO, Vector3.LEFT * radius, Vector3.RIGHT * radius, Vector3.FORWARD * radius, Vector3.BACK * radius]:
+			water_hazards = water_hazards and terrain.terrain_height_at(marker.position + offset) < -2.5
+	check(water_hazards, "all water obstacles have submerged footprints")
 	for p in [Vector3(-512,0,0), Vector3(512,0,512), Vector3(0,0,-512)]:
 		check(terrain.terrain_height_at(p) < -10, "map edge remains underwater %s" % p)
 	# Bearings are recomputed from any position. The stars never move with targets.
@@ -99,6 +105,8 @@ func _run() -> void:
 		var min_enemy_ground := -INF
 		var terrain_hits := 0
 		var last_hits := 0
+		var first_encounter := -1.0
+		var opening_shot := -1.0
 		for frame in range(26000):
 			var steering: float = pilot.steering(game)
 			game.advance_sailing(1.0 / 60.0, steering)
@@ -111,6 +119,10 @@ func _run() -> void:
 			if transitions.back() != game.voyage.stage:
 				transitions.append(game.voyage.stage)
 			var ship = game.enemy_encounters.ship
+			if first_encounter < 0.0 and game.enemy_encounters.encounter_index > 0:
+				first_encounter = game.elapsed
+			if opening_shot < 0.0 and game.enemy_encounters.encounter_index == 1 and ship.shots_fired > 0:
+				opening_shot = game.elapsed
 			if ship.visible and ship.mode != ship.Mode.SINKING:
 				min_enemy_ground = maxf(min_enemy_ground, terrain.terrain_height_at(ship.position))
 			if frame % 6 == 0:
@@ -119,6 +131,8 @@ func _run() -> void:
 				break
 		print("VOYAGE alternate=%s state=%d time=%.2f hull=%d hits=%d encounters=%d stages=%s position=%s enemy_ground_max=%.2f" % [alternate, game.state, game.elapsed, game.hull, game.hits_taken, game.enemy_encounters.encounter_index, transitions, game.boat.position, min_enemy_ground])
 		check(game.state == game.State.ARRIVED and transitions == [0,1,2,3], "complete physical voyage %s visits all stages in order" % alternate)
+		check(first_encounter >= 8.0 and first_encounter < 12.0, "route %s meets a pirate in the opening stretch (%.2fs)" % [alternate, first_encounter])
+		check(opening_shot > first_encounter and opening_shot < 20.0, "route %s opening pirate fires after a warning (%.2fs)" % [alternate, opening_shot])
 		print("WAVE HISTORY: %s total=%d" % [game.wave_encounters.history, game.wave_encounters.total_launched])
 		check(terrain_hits == 0, "authored route %s needs no terrain impacts" % alternate)
 		check(min_enemy_ground < -1.0, "active pirates stay in water on route %s" % alternate)

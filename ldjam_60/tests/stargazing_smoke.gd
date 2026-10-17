@@ -98,6 +98,25 @@ func _run() -> void:
 	var hull_before: int = game.hull
 	game.take_damage(1, "Sighting vulnerability check")
 	check(game.hull == hull_before - 1 and game.reading, "the player remains vulnerable while stargazing")
+	# Every stage keeps its fixed celestial reference and correct map target.
+	var catalog: PackedVector3Array = game.sky_material.get_shader_parameter("guiding_stars")
+	for stage in 3:
+		game.voyage.stage = stage
+		game.voyage.set_target(game)
+		var region: Marker3D = game.archipelago.get_node("NavigationRegions").get_child(stage)
+		check(game.target == region.global_position and game.guiding_star_direction().is_equal_approx(catalog[stage]), "stage %d selects its existing target and fixed star" % stage)
+		game._update_view(0.5)
+		check(game.focus_strength == 0.0, "stage %d starts a fresh progressive search" % stage)
+		game._update_view(1.3)
+		hud._process(0.0)
+		check(game.focus_strength == 1.0 and hud.bearing_label.text == region.star_name, "stage %d focuses its own navigation star" % stage)
+		var bearing: float = game.destination_bearing()
+		for degrees in [0, 90, 180, 270]:
+			game.heading = deg_to_rad(degrees)
+			game._update_view(0.0)
+			hud._process(0.0)
+			var projected: Vector2 = game.camera.unproject_position(game.camera.position + catalog[stage] * 100)
+			check(Rect2(Vector2.ZERO, Vector2(root.size)).has_point(projected) and game.destination_bearing() == bearing and game.sky_material.get_shader_parameter("guiding_stars") == catalog, "stage %d / heading %d keeps star visible and bearing fixed" % [stage, degrees])
 	game.focused_text = 0
 	game.extended_text = 0
 	game.search_text = 0

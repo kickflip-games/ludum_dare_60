@@ -2,6 +2,9 @@ extends Node3D
 ## One sweeping starboard cannon. Sailing and gun view share the existing weapon.
 
 const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
+const SPLASH_SHADER = preload("res://game/ocean/splash.gdshader")
+var _splash_ring_mesh: TorusMesh
+var _splash_spray_mesh: SphereMesh
 const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
 signal aiming_started
@@ -257,11 +260,19 @@ func advance(delta: float) -> void:
 			effects.remove_at(i)
 		else:
 			if effect.get("ring", false):
-				var growth: float = 1.0 + (1.0 - effect.ttl) * 5.0
+				var remaining: float = effect.ttl/effect.lifetime
+				var growth: float = 1.0 + (1.0 - remaining) * 3.4
 				effect.node.scale = Vector3(growth, 0.15, growth)
+				effect.node.position.y = game.ocean.height_at(Vector2(effect.node.position.x,effect.node.position.z))+0.045
+				effect.node.material_override.set_shader_parameter("opacity",pow(remaining,1.4))
 			else:
 				effect.node.position += effect.velocity * delta
-				if effect.get("smoke", false):
+				if effect.get("water_spray",false):
+					effect.velocity.y -= delta*7.0
+					var remaining: float = effect.ttl/effect.lifetime
+					effect.node.scale = effect.spray_scale*(0.55+remaining*0.45)
+					effect.node.material_override.set_shader_parameter("opacity",remaining*remaining)
+				elif effect.get("smoke", false):
 					effect.node.scale += Vector3.ONE * delta * 1.5
 				else:
 					effect.velocity.y -= delta * 2.0
@@ -323,14 +334,32 @@ func aim_target() -> Dictionary:
 
 func water_splash(at: Vector3, sound: bool = true) -> void:
 	var point := Vector3(at.x, game.ocean.height_at(Vector2(at.x, at.z)) + 0.1, at.z)
-	var shape := TorusMesh.new()
-	shape.inner_radius = 0.6
-	shape.outer_radius = 0.85
-	shape.rings = 16
-	shape.ring_segments = 4
-	var ring = game._mesh(game, shape, point, game._material(Color("c4efde"), 0.8))
+	if _splash_ring_mesh == null:
+		_splash_ring_mesh = TorusMesh.new()
+		_splash_ring_mesh.inner_radius = 0.45
+		_splash_ring_mesh.outer_radius = 0.75
+		_splash_ring_mesh.rings = 16
+		_splash_ring_mesh.ring_segments = 4
+		_splash_spray_mesh = SphereMesh.new()
+		_splash_spray_mesh.radius = 0.16
+		_splash_spray_mesh.height = 0.70
+		_splash_spray_mesh.radial_segments = 7
+		_splash_spray_mesh.rings = 3
+	var material := ShaderMaterial.new()
+	material.shader = SPLASH_SHADER
+	var ring = game._mesh(game, _splash_ring_mesh, point, material)
 	ring.scale.y = 0.15
-	effects.append({"node": ring, "ttl": 1.0, "velocity": Vector3.ZERO, "ring": true})
+	effects.append({"node": ring, "ttl": 0.85, "lifetime":0.85, "velocity": Vector3.ZERO, "ring": true})
+	for i in range(5):
+		var spray_material := ShaderMaterial.new()
+		spray_material.shader = SPLASH_SHADER
+		var spray = game._mesh(game,_splash_spray_mesh,point+Vector3.UP*0.35,spray_material)
+		var direction := Vector3(sin(i*2.4),0,cos(i*2.4))*2.0 if i>0 else Vector3.ZERO
+		spray.rotation.z = 0.55*sin(i*2.4)
+		var life := 0.52 if i==0 else 0.42+i*0.025
+		var spray_scale := Vector3(1.2,1.8,1.2) if i==0 else Vector3(0.8,0.8,0.8)
+		spray.scale = spray_scale
+		effects.append({"node":spray,"ttl":life,"lifetime":life,"spray_scale":spray_scale,"water_spray":true,"velocity":direction+Vector3.UP*(2.0 if i==0 else 1.1)})
 	if sound and is_instance_valid(_water_audio) and game._sound_enabled:
 		_water_audio.play()
 

@@ -9,3 +9,13 @@
 shader = ExtResource("1")
 shader_parameter/paint_texture = ExtResource("2")
 shader_parameter/joint_texture = ExtResource("3")
+shader_parameter/stone = Color(0.17, 0.18, 0.205, 1)
+shader_parameter/stone_light = Color(0.31, 0.285, 0.25, 1)
+shader_parameter/crevice = Color(0.065, 0.085, 0.11, 1)
+shader_parameter/shore = Color(0.32, 0.285, 0.225, 1)
+shader_parameter/moss = Color(0.12, 0.205, 0.18, 1)
+shader_parameter/lichen = Color(0.26, 0.29, 0.24, 1)
+shader_parameter/wet_stone = Color(0.055, 0.095, 0.12, 1)
+shader_parameter/paint_scale = 420.0
+shader_parameter/texture_strength = 0.10
+shader_parameter/moss_amount = 0.28

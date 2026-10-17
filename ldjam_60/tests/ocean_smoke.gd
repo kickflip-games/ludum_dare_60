@@ -110,11 +110,13 @@ func _run() -> void:
 		fast.update_motion(ocean, game.boat, game.boat_visual, 1.0 / 60.0)
 	check(absf(slow.heave - fast.heave) < 0.0001 and absf(slow.pitch - fast.pitch) < 0.0001,
 		"exponential response gives equivalent 30/60 Hz damping")
-	ocean.update_surface(game.boat.position, 3.0, 1.0, 1.0, game.heading)
+	# A speed request alone cannot paint a wake against an unmoving/blocked hull.
+	for i in range(60):
+		ocean.update_surface(game.boat.position+Vector3(0,0,-6.3*i/60.0),3.0+i/60.0,1.0/60,1.0,game.heading)
 	check(ocean.wake_strength > 0.9, "subtle V wake strengthens with sailing speed")
-	ocean.update_surface(game.boat.position, 4.0, 2.0, 0.0, game.heading)
+	ocean.update_surface(game.boat.position+Vector3(0,0,-6.3*59/60.0),6.0,2.0,0.0,game.heading)
 	check(ocean.wake_strength < 0.001 and ocean.wake_root.get_child_count() == 2,
-		"two lightweight wake ribbons fade at rest")
+		"two reusable wake meshes stop emitting at rest")
 	ocean.set_quality(0)
 	check(ocean.cells == 160, "Low quality reduces the fixed grid resolution")
 	ocean.set_quality(1)

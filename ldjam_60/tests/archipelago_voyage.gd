@@ -5,6 +5,9 @@ var game
 var output := ProjectSettings.globalize_path("res://../artifacts/archipelago/voyage")
 var captured: Dictionary = {}
 func _initialize() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--output="):
+			output = arg.trim_prefix("--output=")
 	_run.call_deferred()
 func capture(label: String) -> void:
 	if captured.has(label):
@@ -61,6 +64,8 @@ func _run() -> void:
 			await capture("pirate-%d" % game.enemy_encounters.encounter_index)
 		if game.beacon_seen and game.voyage.stage == 2 and not game.reading:
 			await capture("final-approach")
+		if game.camera_mode == game.CameraMode.SAILING and game.read_blend < 0.01 and game.aim_camera_blend < 0.01 and game.combat_camera_blend < 0.01 and game.boat.position.distance_to(game.target) < 95.0:
+			await capture("sailing-approach-%d"%game.voyage.stage)
 		if frame % 1800 == 0:
 			print("VOYAGE t=%.1f stage=%d hull=%d position=%s" % [game.elapsed,game.voyage.stage,game.hull,game.boat.position])
 		if game.state != game.State.SAILING:

@@ -1,7 +1,9 @@
 extends Node3D
 ## One authored map. Marker positions/radii are editable in archipelago.tscn.
+const STORY = preload("res://game/world/landmark_dressing.gd")
 @export var coastal_shadows: bool = true
 var game: Node3D
+var story_landmarks: Node3D
 var discoveries: Array[String] = []
 var debug_view: bool = false
 var debug_camera: Camera3D
@@ -20,24 +22,10 @@ func configure(value: Node3D) -> void:
 	var wreck: Marker3D = $Landmarks/Wreck
 	game._add_hazard(wreck.position, 7.0, "wreck")
 	game.obstacles.back().body.set_meta("landmark", true)
-	_lantern(wreck.position + Vector3(0, 6, 0), $Landmarks)
-	for marker: Marker3D in $OptionalDiscoveries.get_children():
-		_lantern(marker.position + Vector3.UP * 2.5, $IslandProps)
-		game._box($IslandProps, Vector3(3, 0.5, 2), marker.position + Vector3.UP * 0.6, game._material(Color("78604a")))
-	# Stone lintel: a separate mesh above the traversable heightmap passage.
-	var passage := StaticBody3D.new()
-	passage.name = "PassageLintel"
-	passage.position = Vector3(234, 37, -224)
-	passage.rotation.z = -0.08
-	$IslandProps.add_child(passage)
-	var collision := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(100, 5, 12)
-	collision.shape = shape
-	passage.add_child(collision)
-	game._box(passage, shape.size, Vector3.ZERO, preload("res://game/world/moonlit_terrain.tres"))
-	for i in range(3):
-		game._cylinder($IslandProps, 1.2, 1.0, 8 + i * 2, Vector3(45 + i * 6, 15, 209), game._material(Color("647477")))
+	story_landmarks = STORY.new()
+	story_landmarks.name = "LandmarkDressing"
+	add_child(story_landmarks)
+	story_landmarks.configure(game, self, game.obstacles.back().body)
 	debug_camera = Camera3D.new()
 	debug_camera.name = "DevelopmentOverview"
 	debug_camera.position = Vector3(0, 850, 0)
@@ -56,18 +44,17 @@ func configure(value: Node3D) -> void:
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	debug_layer.hide()
 
-func _lantern(at: Vector3, parent: Node3D) -> void:
-	game._box(parent, Vector3(0.6, 1.1, 0.6), at, game._material(Color("ffcd80"), 1.3))
-	var light := OmniLight3D.new()
-	light.position = at
-	light.light_color = Color("ffc680")
-	light.light_energy = 2.2
-	light.omni_range = 17
-	parent.add_child(light)
-
 func rebuild_hazards() -> void:
 	for marker: Marker3D in $Hazards.get_children():
 		game._add_hazard(marker.position, marker.get_meta("radius", 5.0), marker.get_meta("kind", "rock"))
+		if marker.get_meta("kind", "rock") == "rock":
+			_paint_coastal_rock(game.obstacles.back().body)
+
+func _paint_coastal_rock(node: Node) -> void:
+	if node is MeshInstance3D:
+		node.material_override = preload("res://game/world/moonlit_terrain.tres")
+	for child in node.get_children():
+		_paint_coastal_rock(child)
 
 func update_discoveries() -> void:
 	if game.state != game.State.SAILING:
@@ -75,7 +62,7 @@ func update_discoveries() -> void:
 	for marker: Marker3D in $OptionalDiscoveries.get_children():
 		if marker.name not in discoveries and game.boat.position.distance_to(marker.position) < 19:
 			discoveries.append(marker.name)
-			game.hull = mini(game.hull_capacity, game.hull + 1)
+			game.restore_hull(1)
 			game.show_discovery("%s · salvage recovered" % marker.get_meta("label"))
 			game.cue_sound("victory")
 

@@ -3,15 +3,46 @@ extends SceneTree
 const Terrain = preload("res://addons/lite_terrain/map.gd")
 const SIZE := 257
 const SPACING := 4.0
-# centre x/z, coastline radii x/z, summit height, silhouette phase.
+# Centre x/z, existing footprint radii x/z, summit height, coastline phase,
+# inset summit x/z (relative to radius), ridge angle. The map topology is retained.
 const ISLANDS := [
-	[0, -25, 90, 103, 43, 0.3], [-84, -42, 66, 61, 30, 2.4],
-	[0, -115, 108, 49, 31, 1.7], [-269, -213, 54, 44, 17, 0.8],
-	[181, -211, 27, 43, 57, 2.0], [286, -212, 29, 41, 65, 4.2],
-	[239, 14, 56, 79, 35, 3.1], [275, 250, 46, 39, 19, 0.4],
-	[-234, 87, 49, 43, 24, 1.6], [38, 210, 47, 34, 20, 2.8],
-	[-142, -262, 16, 20, 19, 3.3], [139, 126, 13, 17, 13, 0.8],
+	[0, -25, 90, 103, 45, 0.3, -0.24, -0.24, -0.65],
+	[-84, -42, 66, 61, 29, 2.4, -0.13, -0.28, 0.45],
+	[0, -115, 108, 49, 33, 1.7, 0.24, -0.12, 0.18],
+	[-269, -213, 54, 44, 20, 0.8, -0.24, 0.08, -0.45],
+	[181, -211, 27, 43, 54, 2.0, -0.22, -0.16, -0.35],
+	[286, -212, 29, 41, 64, 4.2, 0.18, -0.28, 0.40],
+	[239, 14, 56, 79, 36, 3.1, 0.20, -0.26, 0.72],
+	[275, 250, 46, 39, 20, 0.4, 0.0, 0.0, 0.30],
+	[-234, 87, 49, 43, 23, 1.6, -0.28, -0.16, -0.60],
+	[38, 210, 47, 34, 20, 2.8, 0.25, 0.02, 0.15],
+	[-142, -262, 16, 20, 17, 3.3, -0.20, -0.16, -0.25],
+	[139, 126, 13, 17, 11, 0.8, 0.12, -0.24, 0.35],
 ]
+# Shallow coastal indentations, not cuts through an island or new channels.
+const COVES := [Vector4(48, 43, 23, 13), Vector4(-119, -23, 17, 11),
+	Vector4(211, 61, 18, 11), Vector4(-211, 109, 14, 9)]
+
+func island_height(p: Vector2, island: Array) -> float:
+	var q := (p - Vector2(island[0], island[1])) / Vector2(island[2], island[3])
+	var a := q.angle()
+	var phase: float = island[5]
+	var outline := 0.95 + 0.07 * sin(a * 3.0 + phase) + 0.045 * sin(a * 5.0 + phase) + 0.035 * cos(a * 9.0 - phase)
+	var r := q.length() / outline
+	if r >= 1.15:
+		return -14.0
+	var height := lerpf(-14.0, 1.8, smoothstep(1.15, 0.87, r))
+	# Low shelves at the navigable edge; steeper rock is set back inland.
+	var cliff_side := smoothstep(-0.1, 0.6, -q.y + q.x * 0.35)
+	height += island[4] * (0.035 + 0.12 * cliff_side) * smoothstep(0.99, 0.70, r)
+	var ridge := (q - Vector2(island[6], island[7])).rotated(island[8])
+	var main := maxf(0.0, 1.0 - absf(ridge.x) * 1.28 - absf(ridge.y) * 0.76)
+	var spur := (q - Vector2(-island[6] * 0.8, 0.12)).rotated(island[8] - 0.8)
+	var secondary := maxf(0.0, 1.0 - absf(spur.x) * 1.65 - absf(spur.y) * 1.2) * 0.53
+	height += island[4] * maxf(main, secondary) * smoothstep(1.02, 0.45, r)
+	# Metre-scale ledges, with broad facets rather than high-frequency noise.
+	height += smoothstep(0.92, 0.35, r) * (sin(p.x * 0.075 + p.y * 0.045 + phase) * 1.3 + cos(p.y * 0.09 - phase) * 0.8)
+	return height
 
 func _initialize() -> void:
 	var heights := PackedFloat32Array()
@@ -21,15 +52,12 @@ func _initialize() -> void:
 			var p := Vector2(x - (SIZE - 1) * 0.5, z - (SIZE - 1) * 0.5) * SPACING
 			var h := -14.0
 			for island in ISLANDS:
-				var q := (p - Vector2(island[0], island[1])) / Vector2(island[2], island[3])
-				var a := q.angle()
-				var r := q.length() / (1.0 + 0.09 * sin(a * 5.0 + island[5]) + 0.045 * cos(a * 9.0 - island[5]))
-				var profile := -14.0
-				if r < 1.15:
-					profile = lerpf(-14.0, 3.0, smoothstep(1.15, 0.85, r))
-					profile += island[4] * (0.28 * smoothstep(0.98, 0.78, r) + 0.72 * pow(maxf(0.0, 1.0 - r / 0.92), 0.66))
-					profile += maxf(0.0, 1.0 - r) * (sin(p.x * 0.13 + p.y * 0.07) * 2.8 + cos(p.y * 0.16) * 1.9)
-				h = maxf(h, profile)
+				h = maxf(h, island_height(p, island))
+			for cove: Vector4 in COVES:
+				h -= smoothstep(cove.z, 0.0, p.distance_to(Vector2(cove.x, cove.y))) * cove.w
+			# Keep the established lighthouse foundation at its authored elevation.
+			h = lerpf(h, 19.0, 1.0 - smoothstep(24.0, 37.0, p.distance_to(Vector2(275, 250))))
+			h = maxf(-14.0, h)
 			heights[z * SIZE + x] = h
 	var image := Image.create_from_data(SIZE, SIZE, false, Image.FORMAT_RF, heights.to_byte_array())
 	assert(ResourceSaver.save(image, "res://game/world/archipelago_height.res", ResourceSaver.FLAG_COMPRESS) == OK)

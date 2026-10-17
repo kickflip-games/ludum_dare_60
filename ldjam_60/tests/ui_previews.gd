@@ -79,7 +79,30 @@ func _run() -> void:
 	await capture("08-astrolabe-danger")
 	game.reading = false
 	ship.reset()
-	game.boat.position = game.target - game.course_forward() * 42.0
+	game.starboard_look = false
+	game.wave_encounters.enabled = false
+	# Keep these staged UI captures in open water with authored patrols consumed.
+	game.enemy_encounters.visited.assign(["WreckPatrol", "EasternPatrol"])
+	game.boat.position = Vector3(400, 0, -360)
+	game.heading = 0.0
+	for frame in range(240):
+		game.advance_sailing(1.0 / 60.0, 0.0)
+		game.cannon.advance(1.0 / 60.0)
+		game._update_view(1.0 / 60.0)
+	await capture("08b-repair-progress")
+	for frame in range(240):
+		game.advance_sailing(1.0 / 60.0, 0.0)
+		game.cannon.advance(1.0 / 60.0)
+		game._update_view(1.0 / 60.0)
+	await capture("08c-hull-restored")
+	for frame in range(480):
+		game.advance_sailing(1.0 / 60.0, 0.0)
+		game.cannon.advance(1.0 / 60.0)
+		game._update_view(1.0 / 60.0)
+	await capture("08d-fully-repaired")
+	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
+	game.voyage.set_target(game)
+	game.boat.position = game.target + Vector3(0, 0, -5)
 	game.advance_sailing(0.001, 0.0)
 	game._update_view(1.0)
 	await capture("09-victory")

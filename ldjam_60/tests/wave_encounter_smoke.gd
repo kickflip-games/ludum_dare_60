@@ -121,6 +121,11 @@ func _run() -> void:
 		director.reset(60)
 		game.ocean.wave_field.clear()
 		game.boat.position = Vector3(zone.x, 0, zone.y)
+		# The relocated departure's 75m quiet circle covers this zone's centre.
+		# Its eastern water remains inside the same zone and outside that refuge.
+		if id == 5:
+			game.boat.position.x += 20.0
+		valid_zones = valid_zones and Vector2(game.boat.position.x-zone.x,game.boat.position.z-zone.y).length()<zone.z and terrain.terrain_height_at(game.boat.position)<-3.0
 		game.sea_time = 0
 		director.update(game, 0)
 		triggered_zones = triggered_zones and director.phase == director.Phase.WARNING and director.region_id == id

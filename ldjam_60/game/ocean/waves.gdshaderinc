@@ -53,18 +53,26 @@ vec3 event_waves(vec2 p) {
 	return value;
 }
 
-float event_foam(vec2 p) {
-	float foam = 0.0;
+// Water vertices obtain displacement, face direction and caps in one event pass.
+// The same event_sample remains authoritative for wakes, GPU probes and CPU parity.
+vec3 styled_event_waves(vec2 p, out vec3 style) {
+	vec3 value = vec3(0.0);
+	style = vec3(0.0);
 	for (int i = 0; i < 4; i++) {
 		if (i >= event_count) { break; }
 		vec3 wave = event_sample(p, i);
-		// A continuous slender cap along the ridge, never round spots over the sea.
+		value += wave;
 		vec2 side = vec2(-event_origins[i].w, event_origins[i].z);
 		float along = dot(p - event_origins[i].xy, side);
-		float edge = 0.83 + 0.035 * sin(along * 2.3 + wave_time * 1.4);
-		foam = max(foam, smoothstep(edge, 0.98, wave.x / max(event_shapes[i].x, 0.001)));
+		float edge = 0.88 + 0.035 * sin(along * 1.1 + wave_time * 0.7);
+		float breakup = 0.72 + 0.28 * sin(along * 0.71 - wave_time * 0.35);
+		float magnitude = mix(0.38, 1.0, event_shapes[i].x / 2.0);
+		float cap = smoothstep(edge, 0.995, wave.x / max(event_shapes[i].x, 0.001));
+		style.x = max(style.x, wave.x);
+		style.y += -dot(wave.yz, event_origins[i].zw);
+		style.z = max(style.z, cap * magnitude * breakup);
 	}
-	return foam;
+	return value;
 }
 
 vec3 one_wave(vec2 p, vec4 wave, float amplitude) {
@@ -82,7 +90,7 @@ vec3 raw_waves(vec2 p) {
 		+ one_wave(p, wave_3, wave_amplitudes.z);
 }
 
-vec3 surface_sample(vec2 p) {
+vec3 ambient_surface(vec2 p) {
 	vec3 sample_value = raw_waves(p);
 	vec2 offset = p - focus_xz;
 	float distance_value = length(offset);
@@ -90,6 +98,10 @@ vec3 surface_sample(vec2 p) {
 	float envelope = 1.0 - u * u * (3.0 - 2.0 * u);
 	float derivative = -6.0 * u * (1.0 - u) / (fade_end - fade_start);
 	vec2 envelope_gradient = offset / max(distance_value, 0.0001) * derivative;
-	return event_waves(p) + vec3(sample_value.x * envelope,
+	return vec3(sample_value.x * envelope,
 		sample_value.yz * envelope + sample_value.x * envelope_gradient);
+}
+
+vec3 surface_sample(vec2 p) {
+	return ambient_surface(p) + event_waves(p);
 }

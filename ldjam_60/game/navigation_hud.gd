@@ -112,7 +112,7 @@ func _draw_intro() -> void:
 	_text(Vector2(340, 502), "Raise the astrolabe", 20)
 	_text(Vector2(74, 540), "F  /  FIRE STARBOARD", 20, brass)
 	_text(Vector2(340, 540), "Right-side cannon", 19)
-	_text(Vector2(74, 568), "Boat never stops. Dodge rocks; shoot timber or serpents.", 18, muted)
+	_text(Vector2(74, 568), "Boat never stops. Dodge rocks; shoot timber or cutters.", 18, muted)
 	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    90–120 seconds", 14, muted)
 	_text(Vector2(872, 651), "Trust the star.", 30, brass, true)
 	_text(Vector2(872, 681), "Watch the water.", 24, ink, true)
@@ -140,7 +140,7 @@ func _draw_sailing() -> void:
 		draw_rect(Rect2(340, 177, 600, 38), Color(0.025, 0.06, 0.08, 0.92))
 		_center(Vector2(640, 203), game.cannon.feedback, 17, brass)
 	elif game.read_blend < 0.05:
-		var warning: String = game.sea_creatures.approach_warning()
+		var warning: String = game.enemy_encounters.approach_warning()
 		if warning != "":
 			draw_rect(Rect2(340, 177, 600, 38), Color(0.025, 0.06, 0.08, 0.92))
 			_center(Vector2(640, 203), warning, 16, brass)

@@ -18,7 +18,7 @@ var flash_time: float = 0.0
 var _shot_audio: AudioStreamPlayer
 var _impact_audio: AudioStreamPlayer
 var _water_audio: AudioStreamPlayer
-var _creature_audio: AudioStreamPlayer
+var _ship_audio: AudioStreamPlayer
 var shots_fired: int = 0
 var targets_hit: int = 0
 
@@ -54,7 +54,7 @@ func _ready() -> void:
 		_shot_audio = _audio(68.0, 0.8, -13.0)
 		_impact_audio = _audio(135.0, 0.9, -17.0)
 		_water_audio = _audio(380.0, 0.8, -22.0)
-		_creature_audio = _audio(78.0, 0.35, -14.0)
+		_ship_audio = _audio(78.0, 0.35, -14.0)
 
 
 func starboard_direction() -> Vector3:
@@ -81,7 +81,7 @@ func fire() -> bool:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
-	projectiles.append({"node": ball, "velocity": starboard_direction() * SHOT_SPEED, "ttl": 1.8,
+	projectiles.append({"node": ball, "velocity": _launch_direction() * SHOT_SPEED + Vector3.UP * 0.35, "ttl": 1.8,
 		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin(), "trail_clock": 0.0})
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
@@ -110,7 +110,7 @@ func advance(delta: float) -> void:
 		var ball: MeshInstance3D = shot.node
 		var from: Vector3 = shot.physics_position
 		var to: Vector3 = from + shot.velocity * delta
-		var ray := PhysicsRayQueryParameters3D.create(from, to, 1)
+		var ray := PhysicsRayQueryParameters3D.create(from, to, 5)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		shot.ttl -= delta
 		shot.velocity.y -= 0.9 * delta
@@ -149,23 +149,39 @@ func advance(delta: float) -> void:
 
 
 func _impact(body: Object, at: Vector3) -> void:
+	var ship: bool = body.get_meta("target_kind", "") == "ship"
 	var destructible: bool = body.get_meta("destructible", false)
-	var creature: bool = body.get_meta("target_kind", "") == "creature"
-	if destructible:
+	if ship:
+		targets_hit += 1
+		body.take_hit()
+		feedback = "CUTTER SUNK" if body.hull <= 0 else "HULL HIT  ·  %d MORE" % body.hull
+	elif destructible:
 		targets_hit += 1
 		body.visible = false
 		body.collision_layer = 0
 		body.set_meta("destroyed", true)
-		feedback = "SERPENT DRIVEN UNDER  /  PASSAGE CLEAR" if creature else "TIMBER SHATTERED  /  PASSAGE CLEAR"
+		feedback = "TIMBER SHATTERED"
 	else:
-		feedback = "SOLID WRECK / ROCK  /  STEER AROUND"
-	feedback_time = 2.5
-	_splinters(at, destructible and not creature)
+		feedback = "SOLID REEF  ·  STEER AROUND"
+	feedback_time = 2.0
+	_splinters(at, destructible or ship)
 	water_splash(at, false)
-	game.shake(0.035)
-	var audio: AudioStreamPlayer = _creature_audio if creature else _impact_audio
+	game.shake(0.04 if ship else 0.025)
+	var audio: AudioStreamPlayer = _ship_audio if ship else _impact_audio
 	if is_instance_valid(audio) and game._sound_enabled:
 		audio.play()
+
+
+func _launch_direction() -> Vector3:
+	var exact := starboard_direction()
+	var target: Dictionary = aim_target()
+	if not target.is_empty() and target.body.get_meta("target_kind", "") == "ship" and target.aligned:
+		var offset: Vector3 = target.aim_point - shot_origin()
+		offset.y = 0
+		# Forgive at most 8 degrees, at launch only. The ball never tracks after firing.
+		if exact.dot(offset.normalized()) > cos(deg_to_rad(8.0)):
+			return offset.normalized()
+	return exact
 
 
 func aim_target() -> Dictionary:
@@ -175,20 +191,25 @@ func aim_target() -> Dictionary:
 	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
 		if body.get_meta("destroyed", false):
 			continue
-		var offset: Vector3 = body.global_position - shot_origin()
+		var aim_point: Vector3 = body.global_position
+		var ship: bool = body.get_meta("target_kind", "") == "ship"
+		if ship:
+			aim_point = body.to_global(Vector3(0, 1.0, -1.8))
+			aim_point += body.velocity * (aim_point.distance_to(shot_origin()) / SHOT_SPEED)
+		var offset: Vector3 = aim_point - shot_origin()
 		var right: float = offset.dot(starboard_direction())
 		var ahead: float = offset.dot(forward)
 		var distance: float = Vector2(right, ahead).length()
 		if right < 2.0 or distance > 75.0:
 			continue
 		var radius: float = body.get_meta("target_radius", 3.0)
-		var aligned: bool = absf(ahead) < maxf(0.5, radius - 0.6)
+		var aligned: bool = absf(ahead) < maxf(0.5, radius - 0.6) or (ship and absf(atan2(ahead, right)) < deg_to_rad(8.0))
 		var score: float = distance + absf(ahead) * 2.0 - (80.0 if aligned else 0.0)
 		if score < best_score:
 			best_score = score
 			selected = {"body": body, "distance": distance, "aligned": aligned,
 				"bearing": rad_to_deg(atan2(right, ahead)),
-				"kind": "REEF SERPENT" if body.get_meta("target_kind") == "creature" else "FLOATING TIMBER"}
+				"aim_point": aim_point, "kind": "HOSTILE CUTTER" if ship else "FLOATING TIMBER"}
 	return selected
 
 

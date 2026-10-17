@@ -10,7 +10,7 @@ const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCRIPT = preload("res://game/broadside_cannon.gd")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
-const CREATURE_SCRIPT = preload("res://game/sea_creatures.gd")
+const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
 const SPEED: float = 6.3
 const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
@@ -78,7 +78,7 @@ var beacon: Node3D
 var beacon_lamp: MeshInstance3D
 var hud: Control
 var cannon: Node3D
-var sea_creatures: Node3D
+var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
 var water_material: ShaderMaterial
@@ -113,10 +113,10 @@ func _ready() -> void:
 	boat_visual.add_child(cannon)
 	voyage.reset(encounter_seed)
 	_build_hazards()
-	sea_creatures = Node3D.new()
-	sea_creatures.set_script(CREATURE_SCRIPT)
-	sea_creatures.set("game", self)
-	add_child(sea_creatures)
+	enemy_encounters = Node3D.new()
+	enemy_encounters.set_script(ENCOUNTER_SCRIPT)
+	enemy_encounters.set("game", self)
+	add_child(enemy_encounters)
 	_build_destination()
 	var layer := CanvasLayer.new()
 	add_child(layer)
@@ -204,7 +204,7 @@ func restart() -> void:
 	boat_motion.reset()
 	ocean.reset_wake(heading)
 	elapsed = 0.0
-	sea_creatures.reset()
+	enemy_encounters.reset()
 	reading = false
 	read_blend = 0.0
 	turn_input = 0.0
@@ -248,7 +248,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	damage_immunity = maxf(0.0, damage_immunity - delta)
 	voyage.spawn_ahead(self)
 	voyage.update_forces(self, delta)
-	sea_creatures.update_creatures()
+	enemy_encounters.update_encounters(delta)
 	heading = wrapf(heading + (steering * TURN_SPEED + voyage.gust_push) * delta, -PI, PI)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED + course_right() * voyage.current
@@ -274,6 +274,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		reading = false
 		turn_input = 0.0
 		cannon.reset()
+		enemy_encounters.stop()
 
 
 func take_damage(amount: int, reason: String) -> bool:
@@ -308,7 +309,7 @@ func _update_view(delta: float) -> void:
 	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
 	boat_motion.update_motion(ocean, boat, boat_visual, delta)
-	sea_creatures.update_ocean_visuals()
+	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
 		boat_visual.rotation.z += end_view_blend * 0.32
@@ -475,7 +476,7 @@ func _build_boat() -> void:
 	boat = CharacterBody3D.new()
 	boat.name = "Boat"
 	boat.collision_layer = 2
-	boat.collision_mask = 1
+	boat.collision_mask = 5
 	add_child(boat)
 	var collision := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()

@@ -24,9 +24,8 @@ func make_game(seed_value: int):
 	game.start_crossing()
 	game._physics_process(game.CAST_OFF_SECONDS)
 	game.heading = game.TARGET_HEADING
-	# This phase isolates sailing from the unchanged legacy creatures.
-	for creature: Dictionary in game.sea_creatures.creatures:
-		creature.body.collision_layer = 0
+	# Isolate sailing; integrated enemy playthroughs run in crossing_smoke.gd.
+	game.enemy_encounters.enabled = false
 	return game
 
 

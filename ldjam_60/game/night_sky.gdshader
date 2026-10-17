@@ -7,7 +7,7 @@ uniform float lightning = 0.0;
 uniform float star_density : hint_range(0.0, 1.0) = 0.72;
 uniform float twinkle_strength : hint_range(0.0, 0.5) = 0.16;
 uniform float cloud_density : hint_range(0.0, 1.0) = 0.62;
-uniform float cloud_speed : hint_range(0.0, 3.0) = 0.7;
+uniform float cloud_speed : hint_range(0.0, 3.0) = 2.1;
 // Eight baked contour/paint maps, sampled only inside a cloud's tangent card.
 uniform sampler2D cloud_atlas : filter_linear_mipmap, repeat_disable;
 uniform vec4 cloud_centers[40];

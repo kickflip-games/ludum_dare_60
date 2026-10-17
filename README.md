@@ -266,7 +266,7 @@ Select the root of `game/crossing.tscn`, under **Stargazing sky → Cloud format
 | `cloud_density` | 0.62 | Coverage; zero removes clouds entirely. |
 | `cloud_scale` | 1.0 | Field frequency; lower values make larger formations. |
 | `cloud_wind` | (1.0, 0.28) | World X/Z drift direction; zero freezes drift. |
-| `cloud_speed` | 0.7 | Slow wind speed; zero freezes the field. |
+| `cloud_speed` | 2.1 | Wind speed (3× the previous default); zero freezes the field. |
 | `cloud_brightness` | 0.85 | Night palette brightness. |
 | `cloud_highlights` | 0.55 | Moonlit upper-face highlights. |
 | `cloud_softness` | 0.60 | Cloud-edge feathering. |

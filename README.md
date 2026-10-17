@@ -14,8 +14,8 @@ Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F6** on
 Reach the lighthouse by keeping the fixed North Star **30° to port**. The instrument
 shows the current reading only while raised. At the helm you retain the last reading;
 it does not update until you take another sight. Steering is available in either view,
-and the boat keeps moving during readings. Rocks, wrecks, and timber share collision
-behavior. Pale floating timber can be shattered by a cannonball; solid wrecks and
+and the boat keeps moving during readings. Rocks, wrecks, and timber share hull-damage behavior. Three significant hits sink
+the boat; a short immunity window prevents repeated contact damage. Pale floating timber can be shattered by a cannonball; solid wrecks and
 rocks must be avoided. Turn broadside to line up the fixed right-side cannon; it has
 a 1.5-second reload and no auto-aim. Recover your bearing after detours, then find the light.
 The harbour accepts a broad approach so a few detours do not spoil the crossing.
@@ -31,8 +31,8 @@ crossing remains achievable by avoiding every creature. Retries restore all haza
 
 This is an astrolabe-inspired **game abstraction**, not a historical navigation
 simulation. The star represents world north; the brass needle shows its angle from
-the bow and the teal mark is the desired 30° bearing. The short fixed course takes
-about 80–100 seconds. The first hazard is 80 metres out (roughly 12 seconds).
+the bow and the teal mark is the desired 30° bearing. The 660 m crossing takes roughly 100–115 seconds with steering detours. The first
+rock gate is 158 metres out; currents and warned gusts begin in the clear departure.
 
 ### Files
 
@@ -58,3 +58,20 @@ Boat, cannon, and rock visuals use the requested [Pirate kit by Quaternius](http
 wave field; movement, collision, cannon simulation, and progression remain planar. There is no ocean physics, complex enemy AI, procedural
 course generation, or downloaded scripts. Existing Godot AI plugin work
 is independent of the prototype.
+
+### Gameplay difficulty tuning
+
+Select `TheLastBearing` in `game/crossing.tscn`. **Sailing difficulty** exports the
+encounter seed, current strength/response, gust angular strength, interval, warning
+and duration. Default current strength is 1.15 m/s before the danger multiplier;
+steering is 0.64 rad/s. Gusts announce themselves for 1.8 seconds before a smooth
+2-second push. The bow's heading differs from actual travel under cross-current.
+**Hull** exports capacity (3), contact damage (1), and immunity (2.2 seconds).
+
+`game/voyage_director.gd` contains six compact authored encounter patterns. Seeds
+mirror and slightly offset safe gaps rather than inventing random impassable walls.
+They spawn 180 m ahead, with a 55 m minimum reaction zone. The split reef has two
+open routes. `tests/sailing_smoke.gd` compares constant-heading attempts against a
+steering route for three seeds; its route follower lives only under `tests/` and
+never supplies navigation to the player. `tests/combat_smoke.gd` exercises hull
+contact, immunity, sinking, broadside hits, splash feedback, and retry.

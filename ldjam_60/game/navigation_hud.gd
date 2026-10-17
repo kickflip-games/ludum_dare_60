@@ -89,6 +89,8 @@ func _draw() -> void:
 		_draw_end()
 		return
 	_draw_sailing()
+	if game.hit_flash > 0.0:
+		draw_rect(Rect2(0, 0, 1280, 720), Color(0.65, 0.12, 0.06, game.hit_flash * 0.2))
 	if game.read_blend > 0.05:
 		_draw_instrument()
 
@@ -111,7 +113,7 @@ func _draw_intro() -> void:
 	_text(Vector2(74, 540), "F  /  FIRE STARBOARD", 20, brass)
 	_text(Vector2(340, 540), "Right-side cannon", 19)
 	_text(Vector2(74, 568), "Boat never stops. Dodge rocks; shoot timber or serpents.", 18, muted)
-	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    ~90 seconds", 14, muted)
+	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    90–120 seconds", 14, muted)
 	_text(Vector2(872, 651), "Trust the star.", 30, brass, true)
 	_text(Vector2(872, 681), "Watch the water.", 24, ink, true)
 	_text(Vector2(74, 704), "Pirate kit models by Quaternius · CC0 · poly.pizza", 12, muted)
@@ -126,7 +128,9 @@ func _draw_sailing() -> void:
 	draw_rect(Rect2(354, 45, 445 * game.journey_progress(), 9), brass)
 	_text(Vector2(354, 76), "%d / %d m along the crossing" % [roundi(game.journey_distance()), int(game.CROSSING_LENGTH)], 13, muted)
 	_text(Vector2(855, 36), "COURSE: NORTH STAR 30° TO PORT", 18, brass)
-	_text(Vector2(855, 64), "Find the lighthouse beyond the wrecks.", 17, muted)
+	_text(Vector2(855, 64), "HULL  " + "● ".repeat(game.hull) + "○ ".repeat(game.hull_capacity - game.hull), 21, ink)
+	if game.hit_message_left > 0.0:
+		_center(Vector2(640, 300), game.hit_message + "  ·  %d HULL LEFT" % game.hull, 19, brass)
 	if game.beacon_seen and game.read_blend < 0.05:
 		draw_rect(Rect2(393, 116, 494, 43), Color(0.03, 0.1, 0.12, 0.92))
 		_center(Vector2(640, 145), "LIGHTHOUSE SIGHTED  /  MAKE FOR THE LIGHT", 17, brass)
@@ -140,6 +144,10 @@ func _draw_sailing() -> void:
 		if warning != "":
 			draw_rect(Rect2(340, 177, 600, 38), Color(0.025, 0.06, 0.08, 0.92))
 			_center(Vector2(640, 203), warning, 16, brass)
+	var force_warning: String = game.voyage.force_warning()
+	if force_warning != "":
+		draw_rect(Rect2(400, 230, 480, 34), Color(0.025, 0.06, 0.08, 0.92))
+		_center(Vector2(640, 253), force_warning, 17, brass)
 	if game.read_blend < 0.05:
 		_draw_cannon_target()
 	draw_rect(Rect2(0, 624, 1280, 96), Color(0.025, 0.06, 0.08, 0.95))
@@ -204,7 +212,7 @@ func _draw_instrument() -> void:
 	draw_rect(Rect2(345, 119, 590, 110), Color(0.025, 0.06, 0.08, 0.94 * alpha))
 	_center(Vector2(640, 147), "ASTROLABE  /  FIXED STAR SIGHT", 14, brass)
 	_center(Vector2(640, 185), _bearing_text(game.heading).to_upper(), 29, ink)
-	_center(Vector2(640, 213), "TARGET 30° TO PORT   ·   " + _course_hint(), 16, brass)
+	_center(Vector2(640, 213), "REFERENCE 30° TO PORT   ·   " + _course_hint(), 16, brass)
 	var center := Vector2(640, 497)
 	var radius := 112.0
 	draw_circle(center, radius + 8.0, Color(0.07, 0.09, 0.09, alpha))
@@ -240,9 +248,11 @@ func _draw_instrument() -> void:
 
 
 func _course_hint() -> String:
-	var error: float = wrapf(game.heading - game.TARGET_HEADING, -PI, PI)
+	var lane: float = game.boat.position.dot(game.course_right())
+	var corrected: float = game.TARGET_HEADING - clampf(lane * 0.008, -0.35, 0.35)
+	var error: float = wrapf(game.heading - corrected, -PI, PI)
 	if absf(error) < deg_to_rad(3.0):
-		return "ON COURSE"
+		return "CHANNEL COURSE"
 	return "STEER PORT" if error > 0.0 else "STEER STARBOARD"
 
 
@@ -255,7 +265,7 @@ func _draw_end() -> void:
 	_center(Vector2(300, 293), "Safe harbour." if won else "Lost at sea.", 48, ink, true)
 	var detail: String = "You reached the light in %d seconds." % int(game.elapsed) if won else game.failure_reason
 	_center(Vector2(300, 341), detail, 18, muted)
-	_center(Vector2(300, 382), "Old tech brought you home." if won else "A short sighting. Then watch the bow.", 19, ink)
+	_center(Vector2(300, 382), "Hull %d / %d  ·  Old tech brought you home." % [game.hull, game.hull_capacity] if won else "Dodge, take a sight, and try again.", 19, ink)
 	if won:
 		draw_rect(Rect2(90, 409, 420, 7), brass)
-	_center(Vector2(300, 528), "530 m crossing complete" if won else "The sea gives you another chance.", 14, muted)
+	_center(Vector2(300, 528), "660 m crossing complete" if won else "The sea gives you another chance.", 14, muted)

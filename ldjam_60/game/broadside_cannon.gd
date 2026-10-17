@@ -17,6 +17,10 @@ var flash_light: OmniLight3D
 var flash_time: float = 0.0
 var _shot_audio: AudioStreamPlayer
 var _impact_audio: AudioStreamPlayer
+var _water_audio: AudioStreamPlayer
+var _creature_audio: AudioStreamPlayer
+var shots_fired: int = 0
+var targets_hit: int = 0
 
 
 func _ready() -> void:
@@ -48,7 +52,9 @@ func _ready() -> void:
 	muzzle.add_child(flash_light)
 	if DisplayServer.get_name() != "headless":
 		_shot_audio = _audio(68.0, 0.8, -13.0)
-		_impact_audio = _audio(135.0, 0.9, -19.0)
+		_impact_audio = _audio(135.0, 0.9, -17.0)
+		_water_audio = _audio(380.0, 0.8, -22.0)
+		_creature_audio = _audio(78.0, 0.35, -14.0)
 
 
 func starboard_direction() -> Vector3:
@@ -63,18 +69,20 @@ func shot_origin() -> Vector3:
 func fire() -> bool:
 	if game.state != game.State.SAILING or cooldown > 0.0 or game.reading:
 		return false
+	shots_fired += 1
+	game.shake(0.055)
 	cooldown = RELOAD_SECONDS
 	flash_time = 0.14
 	flash.visible = true
 	flash_light.visible = true
 	var shape := SphereMesh.new()
-	shape.radius = 0.22
-	shape.height = 0.44
+	shape.radius = 0.32
+	shape.height = 0.64
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
 	projectiles.append({"node": ball, "velocity": starboard_direction() * SHOT_SPEED, "ttl": 1.8,
-		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin()})
+		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin(), "trail_clock": 0.0})
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
 	if is_instance_valid(_shot_audio) and game._sound_enabled:
@@ -93,7 +101,7 @@ func advance(delta: float) -> void:
 	flash_time = maxf(0.0, flash_time - delta)
 	flash.visible = flash_time > 0.0
 	flash_light.visible = flash_time > 0.0
-	barrel.position.x = -0.14 * sin(clampf(cooldown / RELOAD_SECONDS, 0.0, 1.0) * PI)
+	barrel.position.x = -0.24 * clampf((cooldown - RELOAD_SECONDS + 0.22) / 0.22, 0.0, 1.0)
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if feedback_time <= 0.0:
 		feedback = ""
@@ -111,12 +119,19 @@ func advance(delta: float) -> void:
 			ball.queue_free()
 			projectiles.remove_at(i)
 		elif shot.ttl <= 0.0 or to.y < -0.05:
-			_splinters(to, false)
+			water_splash(to)
+			feedback = "SPLASH  ·  SHOT WIDE"
+			feedback_time = 0.9
 			ball.queue_free()
 			projectiles.remove_at(i)
 		else:
 			shot.physics_position = to
 			ball.global_position = to + shot.visual_offset
+			shot.trail_clock += delta
+			if shot.trail_clock >= 0.055:
+				shot.trail_clock = 0.0
+				var trail = game._box(game, Vector3(0.10, 0.10, 0.10), ball.global_position, game._material(Color("f3dcb0"), 1.0))
+				effects.append({"node": trail, "ttl": 0.18, "velocity": Vector3.ZERO, "ring": false})
 	for i in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[i]
 		effect.ttl -= delta
@@ -124,15 +139,20 @@ func advance(delta: float) -> void:
 			effect.node.queue_free()
 			effects.remove_at(i)
 		else:
-			effect.node.position += effect.velocity * delta
-			effect.velocity.y -= delta * 2.0
-			effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
+			if effect.get("ring", false):
+				var growth: float = 1.0 + (1.0 - effect.ttl) * 5.0
+				effect.node.scale = Vector3(growth, 0.15, growth)
+			else:
+				effect.node.position += effect.velocity * delta
+				effect.velocity.y -= delta * 2.0
+				effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
 
 
 func _impact(body: Object, at: Vector3) -> void:
 	var destructible: bool = body.get_meta("destructible", false)
 	var creature: bool = body.get_meta("target_kind", "") == "creature"
 	if destructible:
+		targets_hit += 1
 		body.visible = false
 		body.collision_layer = 0
 		body.set_meta("destroyed", true)
@@ -141,8 +161,11 @@ func _impact(body: Object, at: Vector3) -> void:
 		feedback = "SOLID WRECK / ROCK  /  STEER AROUND"
 	feedback_time = 2.5
 	_splinters(at, destructible and not creature)
-	if is_instance_valid(_impact_audio) and game._sound_enabled:
-		_impact_audio.play()
+	water_splash(at, false)
+	game.shake(0.035)
+	var audio: AudioStreamPlayer = _creature_audio if creature else _impact_audio
+	if is_instance_valid(audio) and game._sound_enabled:
+		audio.play()
 
 
 func aim_target() -> Dictionary:
@@ -169,6 +192,20 @@ func aim_target() -> Dictionary:
 	return selected
 
 
+func water_splash(at: Vector3, sound: bool = true) -> void:
+	var point := Vector3(at.x, game.ocean.height_at(Vector2(at.x, at.z)) + 0.1, at.z)
+	var shape := TorusMesh.new()
+	shape.inner_radius = 0.6
+	shape.outer_radius = 0.85
+	shape.rings = 16
+	shape.ring_segments = 4
+	var ring = game._mesh(game, shape, point, game._material(Color("c4efde"), 0.8))
+	ring.scale.y = 0.15
+	effects.append({"node": ring, "ttl": 1.0, "velocity": Vector3.ZERO, "ring": true})
+	if sound and is_instance_valid(_water_audio) and game._sound_enabled:
+		_water_audio.play()
+
+
 func _splinters(at: Vector3, timber: bool) -> void:
 	var mat = game._material(Color("b08c58") if timber else Color("a1c3c3"), 0.5)
 	for i in range(7):
@@ -185,6 +222,8 @@ func reset() -> void:
 		effect.node.queue_free()
 	projectiles.clear()
 	effects.clear()
+	shots_fired = 0
+	targets_hit = 0
 	cooldown = 0.0
 	flash_time = 0.0
 	feedback = ""

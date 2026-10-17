@@ -1,6 +1,7 @@
 extends Node3D
 ## A hand-placed, short crossing. All gameplay distances are in metres.
 
+const VoyageDirector = preload("res://game/voyage_director.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
@@ -11,13 +12,27 @@ const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const CREATURE_SCRIPT = preload("res://game/sea_creatures.gd")
 const SPEED: float = 6.3
-const TURN_SPEED: float = 0.48
+const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
-const CROSSING_LENGTH: float = 530.0
+const CROSSING_LENGTH: float = 660.0
 const ARRIVAL_RADIUS: float = 58.0
-const BEACON_REVEAL_DISTANCE: float = 150.0
+const BEACON_REVEAL_DISTANCE: float = 110.0
 const START_HEADING: float = PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
+
+@export_group("Sailing difficulty")
+@export var encounter_seed: int = 60
+@export_range(0.0, 2.5, 0.05) var current_strength: float = 1.15
+@export_range(0.1, 3.0, 0.1) var current_response: float = 0.65
+@export_range(0.0, 0.25, 0.005) var gust_strength: float = 0.12
+@export var gust_interval: float = 10.0
+@export var gust_warning_seconds: float = 1.8
+@export var gust_duration: float = 2.0
+
+@export_group("Hull")
+@export_range(1, 6, 1) var hull_capacity: int = 3
+@export_range(1, 3, 1) var contact_damage: int = 1
+@export_range(0.5, 4.0, 0.1) var hit_immunity_seconds: float = 2.2
 
 @export_group("Ocean")
 @export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
@@ -33,6 +48,15 @@ const CAST_OFF_SECONDS: float = 1.25
 
 enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
+var hull: int = 3
+var damage_immunity: float = 0.0
+var hit_flash: float = 0.0
+var shake_strength: float = 0.0
+var hit_message: String = ""
+var hit_message_left: float = 0.0
+var hits_taken: int = 0
+var voyage := VoyageDirector.new()
+var _warning_audio: AudioStreamPlayer
 var heading: float = START_HEADING
 var elapsed: float = 0.0
 var sea_time: float = 0.0
@@ -78,6 +102,7 @@ func course_right() -> Vector3:
 
 
 func _ready() -> void:
+	hull = hull_capacity
 	target = course_forward() * CROSSING_LENGTH
 	_configure_inputs()
 	_build_world()
@@ -86,6 +111,7 @@ func _ready() -> void:
 	cannon.set_script(CANNON_SCRIPT)
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
+	voyage.reset(encounter_seed)
 	_build_hazards()
 	sea_creatures = Node3D.new()
 	sea_creatures.set_script(CREATURE_SCRIPT)
@@ -100,6 +126,8 @@ func _ready() -> void:
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(hud)
 	_build_audio()
+	if DisplayServer.get_name() != "headless":
+		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
 	_update_view(1.0)
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_title("The Last Bearing | Ludum Dare 60")
@@ -157,10 +185,19 @@ func journey_progress() -> float:
 
 func restart() -> void:
 	cannon.reset()
+	hull = hull_capacity
+	damage_immunity = 0.0
+	hit_flash = 0.0
+	shake_strength = 0.0
+	hits_taken = 0
+	hit_message_left = 0.0
 	for obstacle: Dictionary in obstacles:
-		obstacle.body.visible = true
-		obstacle.body.collision_layer = 1
-		obstacle.body.set_meta("destroyed", false)
+		obstacle.body.collision_layer = 0
+		obstacle.body.set_meta("destroyed", true)
+		obstacle.body.queue_free()
+	obstacles.clear()
+	ocean.floating_visuals.clear()
+	voyage.reset(encounter_seed)
 	boat.position = Vector3.ZERO
 	boat.velocity = Vector3.ZERO
 	heading = START_HEADING
@@ -179,6 +216,7 @@ func restart() -> void:
 	transition_elapsed = 0.0
 	end_view_blend = 0.0
 	state = State.READY
+	_build_hazards()
 	_update_view(1.0)
 	start_crossing()
 
@@ -207,14 +245,18 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if state != State.SAILING:
 		return
 	elapsed += delta
+	damage_immunity = maxf(0.0, damage_immunity - delta)
+	voyage.spawn_ahead(self)
+	voyage.update_forces(self, delta)
 	sea_creatures.update_creatures()
-	heading = wrapf(heading + steering * TURN_SPEED * delta, -PI, PI)
+	heading = wrapf(heading + (steering * TURN_SPEED + voyage.gust_push) * delta, -PI, PI)
 	boat.rotation.y = -heading
-	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED
+	boat.velocity = Vector3(sin(heading), 0.0, -cos(heading)) * SPEED + course_right() * voyage.current
 	var hit := boat.move_and_collide(boat.velocity * delta)
 	if hit:
-		failure_reason = "The hull struck %s." % hit.get_collider().get_meta("hazard_name", "wreckage")
-		state = State.LOST
+		take_damage(contact_damage, "Hull struck %s" % hit.get_collider().get_meta("hazard_name", "wreckage"))
+		# Keep responsive steering and let glancing hits slide; never teleport through a reef.
+		boat.move_and_collide(hit.get_remainder().slide(hit.get_normal()))
 	if reading:
 		last_reading = heading
 		has_reading = true
@@ -234,13 +276,42 @@ func advance_sailing(delta: float, steering: float) -> void:
 		cannon.reset()
 
 
+func take_damage(amount: int, reason: String) -> bool:
+	if state != State.SAILING or damage_immunity > 0.0:
+		return false
+	hull = maxi(0, hull - amount)
+	hits_taken += 1
+	damage_immunity = hit_immunity_seconds
+	hit_flash = 0.8
+	hit_message = reason.to_upper()
+	hit_message_left = 2.0
+	shake(0.16)
+	cue_sound("damage")
+	if hull == 0:
+		failure_reason = "The hull gave way. The sea came in."
+		state = State.LOST
+		reading = false
+		cannon.reset()
+	return true
+
+
+func shake(amount: float) -> void:
+	shake_strength = maxf(shake_strength, amount)
+
+
 func _update_view(delta: float) -> void:
+	hit_flash = maxf(0.0, hit_flash - delta)
+	hit_message_left = maxf(0.0, hit_message_left - delta)
+	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	boat.rotation.y = -heading
 	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
 	boat_motion.update_motion(ocean, boat, boat_visual, delta)
 	sea_creatures.update_ocean_visuals()
+	if state == State.LOST:
+		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
+		boat_visual.rotation.z += end_view_blend * 0.32
 	var helm_pose := Transform3D(Basis.from_euler(Vector3(
 		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading,
 		0.0)),
@@ -266,6 +337,9 @@ func _update_view(delta: float) -> void:
 		camera.h_offset = lerpf(0.0, -3.6, end_view_blend)
 	else:
 		camera.transform = helm_pose
+	if state == State.SAILING:
+		camera.position += camera.basis.x * sin(sea_time * 73.0) * shake_strength
+		camera.position.y += cos(sea_time * 91.0) * shake_strength * 0.5
 	sky_root.position = camera.position
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	if is_instance_valid(beacon_lamp):
@@ -432,21 +506,13 @@ func _build_boat() -> void:
 
 
 func _build_hazards() -> void:
-	# [distance along course, lateral offset, radius, type]. Early clear water is deliberate.
-	var layout := [
-		[80.0, 0.0, 5.5, "rock"], [125.0, -17.0, 5.0, "rock"],
-		[170.0, 9.0, 6.0, "wreck"], [215.0, -7.0, 4.2, "debris"],
-		[260.0, 18.0, 6.0, "rock"], [300.0, -6.0, 6.0, "wreck"],
-		[348.0, -21.0, 5.0, "rock"], [390.0, 10.0, 6.0, "wreck"],
-		[435.0, -6.0, 4.0, "debris"], [470.0, 23.0, 6.0, "rock"],
-		[145.0, 65.0, 12.0, "rock"], [290.0, -75.0, 16.0, "rock"],
-		[410.0, 80.0, 14.0, "rock"],
-		[105.0, 28.0, 4.5, "debris"], [155.0, -38.0, 5.0, "rock"],
-		[235.0, 38.0, 4.8, "debris"], [325.0, 30.0, 5.0, "debris"],
-		[365.0, -45.0, 5.5, "rock"], [450.0, -40.0, 4.5, "debris"],
-	]
-	for entry: Array in layout:
-		_add_hazard(course_forward() * entry[0] + course_right() * entry[1], entry[2], entry[3])
+	voyage.spawn_ahead(self)
+
+
+func cue_sound(kind: String) -> void:
+	if is_instance_valid(_warning_audio) and _sound_enabled:
+		_warning_audio.pitch_scale = 0.45 if kind == "damage" else 0.6 if kind == "gust" else 1.0
+		_warning_audio.play()
 
 
 func _add_hazard(at: Vector3, radius: float, kind: String) -> void:

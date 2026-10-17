@@ -1,5 +1,6 @@
 extends Node3D
 ## One authored map. Marker positions/radii are editable in archipelago.tscn.
+@export var coastal_shadows: bool = true
 var game: Node3D
 var discoveries: Array[String] = []
 var debug_view: bool = false
@@ -8,6 +9,13 @@ var debug_layer: CanvasLayer
 
 func configure(value: Node3D) -> void:
 	game = value
+	# Short shadow range grounds cliff details and groves without lighting the sea.
+	game.moon.shadow_enabled = coastal_shadows
+	game.moon.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	game.moon.directional_shadow_max_distance = 180.0
+	game.moon.directional_shadow_blend_splits = true
+	game.moon.shadow_normal_bias = 2.5
+	game.moon.shadow_bias = 0.15
 	var wreck: Marker3D = $Landmarks/Wreck
 	game._add_hazard(wreck.position, 7.0, "wreck")
 	game.obstacles.back().body.set_meta("landmark", true)
@@ -26,7 +34,7 @@ func configure(value: Node3D) -> void:
 	shape.size = Vector3(100, 5, 12)
 	collision.shape = shape
 	passage.add_child(collision)
-	game._box(passage, shape.size, Vector3.ZERO, game._material(Color("343e53")))
+	game._box(passage, shape.size, Vector3.ZERO, preload("res://game/world/moonlit_terrain.tres"))
 	for i in range(3):
 		game._cylinder($IslandProps, 1.2, 1.0, 8 + i * 2, Vector3(45 + i * 6, 15, 209), game._material(Color("647477")))
 	debug_camera = Camera3D.new()

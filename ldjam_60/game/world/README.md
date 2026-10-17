@@ -26,7 +26,7 @@ World north is -Z. Edit positions, region radii, stars, pirate territories and s
 
 The existing LiteTerrain 1.1 addon supplies the heightmap API, editor sculpting and mesh bake. Its installation, bundled resources and license are untouched. All custom resources are in this directory.
 
-The bake samples authored, irregular island lobes into a 257 × 257 R32F image at 4 m spacing, with a -14 m seabed and submerged map edges. It saves `archipelago_height.res`, `archipelago_collision.res` and `archipelago_mesh.res` using compressed Godot resources. The moonlit shader uses broad slate/sand zones without grass or snow.
+The bake samples authored, irregular island lobes into a 257 × 257 R32F image at 4 m spacing, with a -14 m seabed and submerged map edges. It saves `archipelago_height.res`, `archipelago_collision.res` and `archipelago_mesh.res` using compressed Godot resources. The moonlit shader uses slate rock, muted sand and moss zones without snow.
 
 For this compact map, `archipelago_terrain.gd` extends the installed terrain node and uses the baked full mesh plus a full HeightMapShape3D. Runtime streaming and LOD are deliberately bypassed: screenshot review found visible coarse/fine seams on steep peaks. This also gives cannonballs permanent collision, without relying on body tracking. Both ships keep their physics roots at sea level when sliding along shore. The elevated passage lintel has its own box collision.
 
@@ -37,6 +37,21 @@ godot --headless --path ldjam_60 --script res://tools/bake_archipelago.gd
 ```
 
 After sculpting the heightmap, keep all three baked resources synchronized. The recipe overwrites manual sculpting when rerun.
+
+## Island appearance
+
+- World-space rock paint and angular joints use two seamless, mipmapped noise textures. Cliff strata, lichen, sandy shelves, wet rock and a broken salt edge share one material across terrain, boulders and the passage lintel.
+- `island_dressing.gd` places deterministic groves, faceted boulders and gently moving dry grass on dry slopes. The default map has 64 pines, 186 boulders and 852 small grass tufts in four instanced meshes. The lighthouse platform stays clear. These are visual meshes; terrain and channel collision are unchanged.
+- Moon shadows extend 180 m with two blended splits. Disable `coastal_shadows` on Archipelago for cheaper rendering. Palette, paint scale, texture strength and moss coverage are exposed on `moonlit_terrain.tres`; grove positions, density and seed are in IslandDressing.
+- Material and dressing edits need no terrain rebake. The ocean shader and navigation stars are unchanged by the island visuals.
+
+Render the appearance review, including three close views and a frame-cadence sample:
+
+```sh
+godot --path ldjam_60 --script res://tests/archipelago_previews.gd -- --detail-views --output=/tmp/island-visual-review
+```
+
+The 17 October appearance review passed 50 geometry/navigation checks and rendered all eleven views. Before/after captures and the machine-specific frame sample are kept locally in `artifacts/archipelago/island_visuals/`. This visual check does not replace the full-voyage validation below.
 
 ## Navigation and development controls
 

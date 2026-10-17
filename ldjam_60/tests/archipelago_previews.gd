@@ -1,8 +1,14 @@
 extends SceneTree
 ## Native rendered review shots; curated camera positions are separate from voyage testing.
 var game
+var detail_views := false
 var output := ProjectSettings.globalize_path("res://../artifacts/archipelago/final")
 func _initialize() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--detail-views":
+			detail_views = true
+		if arg.begins_with("--output="):
+			output = arg.trim_prefix("--output=")
 	_run.call_deferred()
 func capture(label: String) -> void:
 	for i in range(12):
@@ -66,6 +72,36 @@ func _run() -> void:
 	game._update_view(0)
 	game.hud._process(0.1)
 	await capture("08-stargazing-horizon")
+	if detail_views:
+		game.has_reading = true
+		game.reading = false
+		game.read_blend = 0.0
+		game.phase_banner_left = 0.0
+		pose(Vector3(-150,0,30), Vector3(-150,3.4,30), Vector3(-97,11,-15), 0)
+		await capture("09-rocky-shore")
+		pose(Vector3(-180,0,130), Vector3(-180,4.5,130), Vector3(-235,16,87), 0)
+		await capture("10-lantern-cove")
+		pose(Vector3(0,0,104), Vector3(-14,52,73), Vector3(-40,21,-15), 0)
+		await capture("11-island-groves")
+		game.boat.position = Vector3(226,0,-140)
+		game.heading = 0.0
+		var intervals: Array[float] = []
+		var previous := Time.get_ticks_usec()
+		for frame in range(180):
+			game.sea_time += 1.0/60.0
+			game._update_view(1.0/60.0)
+			await process_frame
+			var now := Time.get_ticks_usec()
+			if frame >= 30:
+				intervals.append((now - previous) / 1000.0)
+			previous = now
+		intervals.sort()
+		var dressing = game.archipelago.get_node("IslandDressing")
+		var report := {"median_frame_ms":intervals[intervals.size()/2],"p95_frame_ms":intervals[int(intervals.size()*0.95)],"trees":dressing.get_meta("tree_count"),"boulders":dressing.get_meta("boulder_count"),"grass":dressing.get_meta("grass_count")}
+		var file := FileAccess.open(output.path_join("visual-review.json"),FileAccess.WRITE)
+		file.store_string(JSON.stringify(report,"\t"))
+		file.close()
+		print("ISLAND MATERIAL REVIEW " + JSON.stringify(report))
 	print("NATIVE PREVIEWS COMPLETE")
 	game.queue_free()
 	await process_frame

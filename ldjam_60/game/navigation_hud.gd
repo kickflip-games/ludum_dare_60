@@ -15,12 +15,10 @@ var menu_shade: TextureRect
 var menu_title: Label
 var menu_kicker: Label
 var menu_body: Label
-var menu_reference: Label
 var menu_controls: GridContainer
 var menu_details: Label
 var menu_footer: Label
 var hull_gauge: Control
-var compass: Control
 var cannon_gauge: Control
 var gameplay_hud: Control
 var threat_label: Label
@@ -29,7 +27,6 @@ var instrument: Control
 var _last_state: int = -1
 var _last_hull: int = -1
 var _last_cooldown: float = 0.0
-var _combat_blend: float = 0.0
 var _reading_alpha: float = 0.0
 var _threat_direction: float = 1.0
 var _has_threat: bool = false
@@ -55,17 +52,15 @@ func _ready() -> void:
 	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(gameplay_hud)
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hull_gauge = _gauge("Hull", Gauge.Kind.HULL, Control.PRESET_BOTTOM_LEFT, Rect2(32, -102, 200, 72))
-	compass = _gauge("HeadingCompass", Gauge.Kind.COMPASS, Control.PRESET_CENTER_BOTTOM, Rect2(-85, -142, 170, 122))
-	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-206, -108, 174, 78))
-	compass.heading = game.heading
+	hull_gauge = _gauge("Hull", Gauge.Kind.HULL, Control.PRESET_BOTTOM_LEFT, Rect2(24, -86, 210, 62))
+	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
-	notice = _label(gameplay_hud, "ContextNotice", "", 19)
+	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	notice.offset_left = -300
 	notice.offset_right = 300
-	notice.offset_top = 104
-	notice.offset_bottom = 158
+	notice.offset_top = 40
+	notice.offset_bottom = 90
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_build_instrument()
@@ -109,23 +104,21 @@ func _build_menu() -> void:
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(menu)
 	menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	menu.offset_left = 58
-	menu.offset_right = 538
-	menu.offset_top = -314
-	menu.offset_bottom = 314
+	menu.offset_left = 48
+	menu.offset_right = 488
+	menu.offset_top = -270
+	menu.offset_bottom = 270
 	var column := VBoxContainer.new()
 	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.add_theme_constant_override("separation", 18)
+	column.add_theme_constant_override("separation", 22)
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu.add_child(column)
 	menu_kicker = _label(column, "Kicker", "A CROSSING BY STARLIGHT", 13, BRASS)
-	menu_title = _label(column, "Title", "LATITUDE\nLINES", 61, INK, true)
+	menu_title = _label(column, "Title", "LATITUDE\nLINES", 58, INK, true)
 	menu_title.add_theme_constant_override("line_spacing", -8)
 	menu_title.add_theme_constant_override("outline_size", 0)
-	menu_body = _label(column, "Subtitle", "An island sea. A distant harbour.\nFind your way home by starlight.", 18, MUTED)
+	menu_body = _label(column, "Subtitle", "Find your way home by starlight.", 18, MUTED)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	menu_reference = _label(column, "StarReference", "Hold Space until a star glows. Remember its direction, then steer.", 17, BRASS)
-	menu_reference.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu_controls = GridContainer.new()
 	menu_controls.name = "Controls"
 	menu_controls.columns = 2
@@ -133,14 +126,14 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Find the guiding star"], ["F · press again to fire", "Cannon view / shoot"]]:
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold Space", "Find the guiding star"], ["F, then F", "Cannon view / shoot"], ["Hold E", "Glance starboard"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
 	menu_details.visible = false
 	action_button = Button.new()
 	action_button.name = "StartOrReplay"
-	action_button.custom_minimum_size = Vector2(252, 52)
+	action_button.custom_minimum_size = Vector2(180, 46)
 	action_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	action_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	action_button.add_theme_font_size_override("font_size", 19)
@@ -149,7 +142,7 @@ func _build_menu() -> void:
 	for kind: String in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = INK if kind == "hover" else BRASS if kind == "pressed" else Color("ebd6aa")
-		style.set_corner_radius_all(14)
+		style.set_corner_radius_all(4)
 		style.content_margin_left = 24
 		style.content_margin_right = 24
 		if kind == "focus":
@@ -200,21 +193,18 @@ func _sync_button() -> void:
 		if game.state == game.State.CASTING_OFF:
 			hull_gauge.pulse = 0.0
 			cannon_gauge.pulse = 0.0
-			compass.heading = game.heading
-			_combat_blend = 0.0
 		return
 	var intro: bool = game.state == game.State.READY
 	var won: bool = game.state == game.State.ARRIVED
 	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
 	menu_title.text = "LATITUDE\nLINES" if intro else "Safe harbour." if won else "Lost at sea."
-	menu_title.add_theme_font_size_override("font_size", 61 if intro else 51)
-	menu_body.text = "An island sea. A distant harbour.\nFind your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
-	menu_reference.visible = intro
+	menu_title.add_theme_font_size_override("font_size", 58 if intro else 48)
+	menu_body.text = "Find your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
 	menu_controls.visible = intro
 	menu_details.visible = won
 	menu_details.text = "Voyage time   %02d:%02d\nHull remaining   %d / %d" % [int(game.elapsed) / 60, int(game.elapsed) % 60, game.hull, game.hull_capacity]
-	action_button.text = "Play   ·   Enter" if intro else "Sail again   ·   R" if won else "Try again   ·   R"
-	menu_footer.text = "Automatic sailing · %d hull · avoid reefs\nR retry     M mute     Esc quit" % game.hull_capacity if intro else "Trust the star. Watch the water.\nM mute     Esc quit" if won else "The sea gives you another chance.\nM mute     Esc quit"
+	action_button.text = "Play" if intro else "Retry"
+	menu_footer.text = "Enter play · R retry · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
 	action_button.grab_focus()
 	_menu_alpha = 0.0 if not intro else 1.0
 
@@ -239,23 +229,19 @@ func _process(delta: float) -> void:
 		_last_cooldown = game.cannon.cooldown
 		queue_redraw()
 		return
-	var combat: bool = game.enemy_encounters.battle_active()
-	_combat_blend = move_toward(_combat_blend, 1.0 if combat or game.cannon.aiming or game.cannon.cooldown > 0 or game.look_blend > 0.1 else 0.0, delta * 5.0)
-	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend)
+	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend) if game.reading else 0.0
 	if _last_hull >= 0 and game.hull != _last_hull:
 		hull_gauge.pulse = 0.65
 	if _last_cooldown > 0.0 and game.cannon.cooldown == 0.0:
 		cannon_gauge.pulse = 0.5
 	_last_hull = game.hull
 	_last_cooldown = game.cannon.cooldown
-	# Aim queries are made once per frame and shared by the ring and world marks.
-	cannon_gauge.target = game.cannon.aim_target() if _reading_alpha < 0.9 else {}
-	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0 or game.hull_repair_notice_left > 0.0
-	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.64 + _combat_blend * 0.25, 0.0, _reading_alpha)
-	cannon_gauge.modulate.a = lerpf(0.5 + _combat_blend * 0.5, 0.0, _reading_alpha)
-	compass.modulate.a = (1.0 - _reading_alpha) * (1.0 - smoothstep(0.0, 0.75, game.aim_camera_blend))
-	for gauge: Control in [hull_gauge, compass, cannon_gauge]:
+	# Quiet sailing keeps only hull symbols. Danger remains legible in the sky.
+	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0 or game.hull_repair_notice_left > 0.0 or game.is_repairing_hull()
+	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.85, 0.55, _reading_alpha)
+	for gauge: Control in [hull_gauge, cannon_gauge]:
 		gauge.update_presentation(delta)
+	cannon_gauge.visible = not game.reading and (game.cannon.aiming or game.cannon.cooldown > 0.0 or cannon_gauge.pulse > 0.0)
 	instrument.modulate.a = _reading_alpha
 	instrument.visible = _reading_alpha > 0.01
 	_update_threat()
@@ -307,10 +293,11 @@ func _update_notice() -> void:
 	if game.discovery_left > 0:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
-	elif game.enemy_encounters.ship.age < 6.0 and game.enemy_encounters.battle_active():
-		value = "Pirate cutter · F for cannon, or steer clear"
+	elif game.enemy_encounters.ship.age < 4.0 and game.enemy_encounters.battle_active():
+		value = "Cutter nearby · F for cannon"
+		alpha = clampf(4.0 - game.enemy_encounters.ship.age, 0.0, 1.0)
 	notice.text = value
-	notice.modulate.a = alpha * (1.0 - _reading_alpha)
+	notice.modulate.a = alpha
 	notice.visible = not value.is_empty()
 
 
@@ -328,7 +315,7 @@ func _update_threat() -> void:
 	var right: bool = _threat_direction >= 0
 	threat_label.text = "Incoming · starboard" if right else "Incoming · port"
 	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right else HORIZONTAL_ALIGNMENT_LEFT
-	threat_label.position = Vector2(size.x - 300 if right else 76.0, size.y * 0.33 - 13)
+	threat_label.position = Vector2(size.x - 272 if right else 48.0, size.y * 0.33 - 13)
 	threat_label.size = Vector2(224, 30)
 
 
@@ -357,18 +344,16 @@ func _draw() -> void:
 	if game.hit_flash > 0.0:
 		_draw_damage_edges()
 	if _has_threat:
-		var at := Vector2(size.x - 48 if _threat_direction >= 0 else 48.0, size.y * 0.33)
+		var at := Vector2(size.x - 24 if _threat_direction >= 0 else 24.0, size.y * 0.33)
 		var side: float = 1 if _threat_direction >= 0 else -1
 		var color := Color(CORAL, 0.8 + sin(game.sea_time * 14) * 0.2)
 		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
-	if _reading_alpha > 0.01:
+	if game.reading and _reading_alpha > 0.01:
 		_draw_instrument()
 	else:
-		if game.cannon.indicator_alpha > 0.01:
+		if game.cannon.aiming and game.cannon.indicator_alpha > 0.01:
 			_draw_cannon_sight()
-		elif _combat_blend > 0.1:
-			_draw_target()
 
 
 func _draw_damage_edges() -> void:
@@ -393,7 +378,7 @@ func _draw_cannon_sight() -> void:
 	# retain their small fixed elevation/gravity; the sight projects the yaw ray.
 	var direction: Vector3 = game.cannon.aimed_direction()
 	var origin: Vector3 = game.cannon.shot_origin()
-	var alpha: float = game.cannon.indicator_alpha * (1.0 - _reading_alpha)
+	var alpha: float = game.cannon.indicator_alpha
 	var point: Vector3 = origin + direction * 32.0
 	if game.camera.is_position_behind(point):
 		return
@@ -416,50 +401,28 @@ func _draw_cannon_sight() -> void:
 		_text(center + Vector2(0, -15), "F — Shoot     A/D — Steer", 14, Color(INK, hint_alpha * 0.8), true)
 
 
-func _draw_target() -> void:
-	var target: Dictionary = cannon_gauge.target
-	if target.is_empty() or not target.aligned:
-		return
-	var point: Vector3 = target.body.global_position + Vector3.UP * 5.8
-	if game.camera.is_position_behind(point):
-		return
-	var at: Vector2 = game.camera.unproject_position(point)
-	if not Rect2(Vector2(36, 120), size - Vector2(72, 290)).has_point(at):
-		return
-	var color := Color(BRASS, _combat_blend * (1.0 - _reading_alpha))
-	for side in [-1, 1]:
-		_line(at + Vector2(side * 17, -8), at + Vector2(side * 24, -8), color)
-		_line(at + Vector2(side * 24, -8), at + Vector2(side * 24, 4), color)
-	if target.body.get_meta("target_kind", "") == "ship":
-		for i in range(target.body.hull_capacity):
-			draw_circle(at + Vector2((i - (target.body.hull_capacity - 1) * 0.5) * 9, 0), 2.5, color if i < target.body.hull else Color(color, 0.2))
-
-
 func _draw_instrument() -> void:
 	var alpha: float = _reading_alpha
-	var center := Vector2(size.x * 0.5, size.y - 168 + (1.0 - alpha) * 28)
-	var radius := 112.0
-	var brass := Color(BRASS, alpha * 0.65)
+	var center := Vector2(size.x * 0.5, size.y - 154)
+	var radius := 104.0
+	var brass := Color(BRASS, alpha * 0.72)
 	# An open sextant frame leaves the sky visible. No live needle or course
 	# bubble gives away the solution during the searching stage.
 	var a := PI * 0.20
 	var b := PI * 0.80
-	draw_arc(center, radius, a, b, 48, brass, 3, true)
+	draw_arc(center, radius, a, b, 48, brass, 1.3, true)
 	draw_arc(center, radius - 12, a, b, 48, Color(BRASS, alpha * 0.25), 1, true)
 	for tick in range(25):
 		var angle := lerpf(a, b, tick / 24.0)
 		var direction := Vector2(cos(angle), sin(angle))
-		var length_value: float = 12 if tick % 4 == 0 else 5
+		var length_value: float = 9 if tick % 4 == 0 else 4
 		draw_line(center + direction * (radius - length_value), center + direction * radius, brass, 1, true)
 	for angle: float in [a, b]:
-		_line(center, center + Vector2(cos(angle), sin(angle)) * radius, brass, 2.0)
-	_line(center + Vector2(-18, -4), center + Vector2(18, -4), brass, 4)
-	draw_circle(center, 4, brass)
-	# A quiet central sight is present from the start; it never points north.
-	var sight := size * Vector2(0.5, 0.44)
-	for side in [-1, 1]:
-		draw_line(sight + Vector2(side * 7, 0), sight + Vector2(side * 13, 0), Color(INK, alpha * 0.32), 1, true)
-		draw_line(sight + Vector2(0, side * 7), sight + Vector2(0, side * 13), Color(INK, alpha * 0.32), 1, true)
+		_line(center, center + Vector2(cos(angle), sin(angle)) * radius, Color(BRASS, alpha * 0.4), 1.0)
+	# Central alignment notch belongs to the sextant, never a second crosshair.
+	_line(center + Vector2(-10, -2), center + Vector2(-3, -2), brass, 1.2)
+	_line(center + Vector2(3, -2), center + Vector2(10, -2), brass, 1.2)
+	_line(center + Vector2(0, -7), center + Vector2(0, 3), brass, 1.2)
 	if not game.reading or game.focus_strength <= 0.0:
 		return
 	var guidance := star_guidance()
@@ -477,9 +440,36 @@ func _draw_instrument() -> void:
 		draw_circle(at, 1.8, glint, true, -1, true)
 		draw_line(at + Vector2(-5, 0), at + Vector2(5, 0), Color(tint, glint.a * 0.6), 1, true)
 		return
+	var guide := star_horizon_line()
+	if not guide.is_empty():
+		# Fade down the actual projected column; never a world-space waypoint.
+		var from: Vector2 = guide.from
+		var to: Vector2 = guide.to
+		for step in range(32):
+			var t := step / 32.0
+			var opacity := 0.30 * alpha * focus * (1.0 - smoothstep(0.60, 1.0, t))
+			draw_line(from.lerp(to, t), from.lerp(to, (step + 1) / 32.0), Color(INK, opacity), 1.0, true)
 	# Small broken halos distinguish stages by shape as well as colour.
 	var segments: int = 2 + mini(game.voyage.stage, 2)
 	var halo_radius := 10.0 + sin(game.sea_time * 1.7) * 0.5
 	for segment in range(segments):
 		var angle: float = segment * TAU / segments + game.sea_time * 0.08
 		draw_arc(at, halo_radius, angle, angle + TAU / segments - 0.6, 20, glint, 1.0, true)
+
+
+func star_horizon_line() -> Dictionary:
+	var guidance := star_guidance()
+	if guidance.is_empty() or not guidance.visible:
+		return {}
+	var at: Vector2 = guidance.position
+	# Intersect this screen column with the world-horizontal plane at infinity.
+	# Near-plane rays vary linearly in screen Y, including camera roll and offset.
+	var top: Vector3 = game.camera.project_position(Vector2(at.x, 0), 1.0) - game.camera.global_position
+	var bottom: Vector3 = game.camera.project_position(Vector2(at.x, size.y), 1.0) - game.camera.global_position
+	var horizon_y := size.y
+	if absf(bottom.y - top.y) > 0.00001:
+		horizon_y = -top.y / (bottom.y - top.y) * size.y
+	var end_y := minf(horizon_y, size.y - 24.0) if horizon_y > at.y else size.y - 24.0
+	if end_y <= at.y + 18.0:
+		return {}
+	return {"from": at + Vector2(0, 13), "to": Vector2(at.x, end_y)}

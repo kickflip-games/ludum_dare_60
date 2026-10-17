@@ -41,20 +41,33 @@ func _run() -> void:
 	var cards := ""
 	for index in range(States.CASES.size()):
 		states.apply(index)
+		# Keep the staged hold through OS focus notifications during capture waits.
+		# Snapshot only input-driven flags; retain the original camera/world pose.
+		var reading: bool = game.reading
+		var focus_elapsed: float = game.focus_elapsed
+		var focus_strength: float = game.focus_strength
+		var aiming: bool = game.cannon.aiming
 		await process_frame
 		await process_frame
-		var problem: String = states.problem(index)
-		if not problem.is_empty():
-			push_error(problem)
-			failures += 1
 		var control: Control = states.tooltip_control(index)
 		var motion := InputEventMouseMotion.new()
 		motion.position = control.get_global_rect().get_center() if control != null else Vector2(4, 4)
-		root.push_input(motion)
+		root.push_input(motion, true)
 		if control != null:
 			await create_timer(0.8).timeout # Real native tooltip, including its delay.
 		for frame in range(8):
 			await process_frame
+		game.reading = reading
+		game.focus_elapsed = focus_elapsed
+		game.focus_strength = focus_strength
+		game.cannon.aiming = aiming
+		game.update_guiding_star()
+		game.hud._process(0.0)
+		# Validate the exact frozen state rendered below, with no intervening await.
+		var problem: String = states.problem(index)
+		if not problem.is_empty():
+			push_error(problem)
+			failures += 1
 		RenderingServer.force_draw(true, 1.0 / 60.0)
 		var pixels := root.get_texture().get_image()
 		var filename := "%02d-%s.png" % [index + 1, States.CASES[index][0]]
@@ -68,7 +81,7 @@ func _run() -> void:
 	if gallery == null:
 		failures += 1
 	else:
-		gallery.store_string('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Latitude Lines — UI review</title><style>body{background:#102d35;color:#f5efdc;font:16px system-ui;margin:24px}header{max-width:900px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:24px}article{background:#173e48;padding:12px;border-radius:10px}img{width:100%;display:block}h2{font-size:18px;color:#e6bf7c}p{line-height:1.5}a{color:#e6bf7c}</style><header><h1>Latitude Lines · UI review</h1><p>34 frozen states from the real game renderer. Click any screenshot for full size. These are staged presentation fixtures, not a human playthrough. The final chart is development-only. Authored tooltips are shown with hover enabled by the test; gameplay gauges currently ignore mouse input.</p><p>Live browser: open <strong>tests/ui_review.tscn</strong> in Godot and press <strong>F6</strong>. Use ←/→ or the picker, H to hide the review panel, S to save a clean frame.</p></header><main>''' + cards + "</main></html>")
+		gallery.store_string('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Latitude Lines — UI review</title><style>body{background:#102d35;color:#f5efdc;font:16px system-ui;margin:24px}header{max-width:900px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:24px}article{background:#173e48;padding:12px;border-radius:10px}img{width:100%;display:block}h2{font-size:18px;color:#e6bf7c}p{line-height:1.5}a{color:#e6bf7c}</style><header><h1>Latitude Lines · UI review</h1><p>Frozen presentation states from the real game renderer. Click any screenshot for full size. These are staged presentation fixtures, not a human playthrough. The final chart is development-only. Two authored tooltips are shown with hover enabled by the test; gameplay gauges ignore mouse input. The retired compass and idle cannon tooltip slots now test horizon projection and immediate release.</p><p>Live browser: open <strong>tests/ui_review.tscn</strong> in Godot and press <strong>F6</strong>. Use ←/→ or the picker, H to hide the review panel, S to save a clean frame.</p></header><main>''' + cards + "</main></html>")
 	print("UI PREVIEWS: %d captures, %d failures — %s" % [States.CASES.size(), failures, output])
 	game.queue_free()
 	await process_frame

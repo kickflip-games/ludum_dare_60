@@ -65,6 +65,7 @@ func _run() -> void:
 	Input.action_press("astrolabe")
 	Input.action_press("watch_starboard")
 	step(0.6)
+	check(hud.star_horizon_line().is_empty(), "searching draws no star-to-horizon line")
 	check(game.focus_strength == 0 and game.focus_elapsed > 0.5, "searching has no target assistance before delay")
 	check(hud.instrument.get_child_count() == 0, "initial hold withholds star name and solution")
 	check(game.boat.position.distance_to(start) > 3, "sailing continues while the instrument is raised")
@@ -82,6 +83,7 @@ func _run() -> void:
 	step(1.0 / 60)
 	check(game.focus_strength == 0 and game.focus_elapsed == 0, "release immediately erases focus, including its sky glow")
 	check(hud.instrument.get_child_count() == 0 and hud.star_guidance().is_empty(), "release immediately clears all sighting text")
+	check(not hud.instrument.visible and hud.star_horizon_line().is_empty(), "one-frame release removes the sextant and line before camera return")
 	check(game.last_reading == last, "lowered instrument cannot update the remembered sighting")
 	step(0.3)
 	check(not hud.instrument.visible and game.look_blend == 1 and game.camera.rotation.x < 0, "release smoothly returns to the still-held combat glance")
@@ -94,7 +96,7 @@ func _run() -> void:
 		step(0.1)
 	Input.action_press("astrolabe")
 	step(1.8)
-	for dimensions: Vector2i in [Vector2i(1280, 720), Vector2i(960, 540), Vector2i(1440, 900)]:
+	for dimensions: Vector2i in [Vector2i(1280, 720), Vector2i(960, 540), Vector2i(900, 506), Vector2i(1440, 900)]:
 		root.size = dimensions
 		await process_frame
 		for degrees in [0, 90, 180, -90]:
@@ -110,6 +112,7 @@ func _run() -> void:
 	game.heading = game.destination_bearing() + PI
 	game.wave_sailing.reset()
 	game._update_view(0.0)
+	check(hud.star_horizon_line().is_empty(), "offscreen star never creates a horizon line")
 	check(not hud.star_guidance().visible, "wrong heading starts with peripheral guidance")
 	Input.action_press("steer_port")
 	step(3.0)
@@ -157,6 +160,18 @@ func _run() -> void:
 		game._update_view(1.3)
 		hud._process(0.0)
 		check(game.focus_strength == 1 and hud.instrument.get_child_count() == 0, "stage %d reveals light with no text" % stage)
+		game.heading = game.destination_bearing() + 0.5
+		game._update_view(0.0)
+		var guide: Dictionary = hud.star_horizon_line()
+		var projected: Vector2 = game.camera.unproject_position(game.camera.global_position + game.guiding_star_direction() * 700.0)
+		check(not guide.is_empty() and absf(guide.from.x - projected.x) < 0.01 and guide.from.x == guide.to.x and guide.from.y > projected.y and guide.to.y > guide.from.y, "stage %d guide descends vertically from the actual off-centre star" % stage)
+		check(guide.to.y <= hud.size.y - 24.0, "stage %d guide stays inside lower view when horizon is absent" % stage)
+		game.camera.rotation.x = deg_to_rad(30.0)
+		guide = hud.star_horizon_line()
+		check(not guide.is_empty() and absf(game.camera.project_ray_normal(guide.to).y) < 0.0001, "stage %d guide ends at the real horizon when visible" % stage)
+		game.camera.rotation.x = deg_to_rad(-60.0)
+		check(hud.star_horizon_line().is_empty(), "stage %d behind-camera star has no line" % stage)
+		game._update_view(0.0)
 		colors.append(game.guiding_star_color())
 	check(colors[0] != colors[1] and colors[1] != colors[2] and colors[0] != colors[2], "all three stages have distinct nighttime colours")
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)

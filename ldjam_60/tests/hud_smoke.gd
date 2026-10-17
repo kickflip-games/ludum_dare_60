@@ -36,49 +36,53 @@ func _run() -> void:
 	await settle()
 	var hud = game.hud
 	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.action_button.has_focus(), "title has keyboard focus and hides sailing instruments")
-	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540)]:
+	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
 		check_inside(hud.menu, "menu stays inside %s" % dimensions)
 		check_inside(hud.action_button, "Play button stays inside %s" % dimensions)
 		check_inside(hud.menu_footer, "controls footer stays inside %s" % dimensions)
 		check_inside(hud.hull_gauge, "hull stays inside %s" % dimensions)
-		check_inside(hud.compass, "compass stays inside %s" % dimensions)
 		check_inside(hud.cannon_gauge, "cannon stays inside %s" % dimensions)
 	check(hud.action_button.pressed.get_connections().size() == 1, "one menu action connection after repeated resizing")
-	hud.action_button.pressed.emit()
+	var mouse := InputEventMouseButton.new()
+	mouse.button_index = MOUSE_BUTTON_LEFT
+	mouse.position = hud.action_button.get_global_rect().get_center()
+	mouse.pressed = true
+	root.push_input(mouse, true)
+	mouse = mouse.duplicate()
+	mouse.pressed = false
+	root.push_input(mouse, true)
 	await settle()
 	check(game.state == game.State.CASTING_OFF and not hud.menu.visible and not hud.gameplay_hud.visible, "Play retains the cast-off transition and hides menus")
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
-	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing shows anchored instruments")
+	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing shows compact hull feedback")
 	check(hud.gameplay_hud.get_node_or_null("Destination") == null and hud.gameplay_hud.get_node_or_null("RouteHint") == null and not hud.notice.visible, "departure leaves navigation to the player without route instructions")
 	game.wave_encounters.begin_region(0, Vector2(0, -1), game.sea_time)
 	hud._process(0.1)
 	check(hud.gameplay_hud.get_node_or_null("WaveWarning") == null and not hud.notice.text.contains("Wave"), "wave sets add no counters or routine sea-state banners")
 	game.wave_encounters.stop(game.ocean.wave_field)
-	check(hud.hull_gauge.status.text == "Hull" and hud.cannon_gauge.status.text == "F · Enter Gun View", "healthy hull and loaded cannon use compact status text")
-	var old_heading: float = hud.compass.heading
+	check(hud.hull_gauge.status.text.is_empty() and not hud.cannon_gauge.visible and hud.get_node_or_null("SailingHUD/HeadingCompass") == null, "no-input sailing has only hull icons, no compass or cannon prompt")
+	var before_heading: float = game.heading
 	game.heading += 0.6
 	hud._process(0.1)
-	check(absf(angle_difference(old_heading, hud.compass.heading)) > 0.01 and absf(angle_difference(game.heading, hud.compass.heading)) > 0.01, "compass turns smoothly toward the actual bow heading")
-	game.heading = deg_to_rad(-40)
-	hud._process(0.1)
-	check(hud.compass.status.text == "Heading 320°", "compass shows the ordinary numeric bow heading")
-	var before_destination: float = hud.compass.heading
+	check(game.heading == before_heading + 0.6 and hud.star_horizon_line().is_empty(), "UI preserves authoritative heading without drawing sailing guidance")
 	game.target += Vector3(200, 0, -200)
 	hud._process(0.0)
-	check(hud.compass.heading == before_destination, "changing lighthouse position cannot move the compass")
+	check(not hud.instrument.visible and hud.star_guidance().is_empty(), "destination changes cannot produce a sailing guide")
 	game.voyage.set_target(game)
 	game.cannon.fire()
 	hud._process(0.1)
-	check(hud.cannon_gauge.status.text == "Reloading" and hud.cannon_gauge.pulse == 0, "shot displays real reload state without a false ready flash")
+	check(hud.cannon_gauge.visible and hud.cannon_gauge.status.text == "Reloading" and hud.cannon_gauge.pulse == 0, "shot displays real reload state without a false ready flash")
 	game.cannon.advance(game.cannon.RELOAD_SECONDS)
 	hud._process(0.1)
-	check(hud.cannon_gauge.status.text == "F · Enter Gun View" and hud.cannon_gauge.pulse > 0, "reload completion gives a brief ready pulse")
+	check(hud.cannon_gauge.status.text == "Ready" and hud.cannon_gauge.pulse > 0, "reload completion gives a brief ready pulse")
+	hud._process(0.6)
+	check(not hud.cannon_gauge.visible, "ready feedback expires after reload without a permanent popup")
 	game.take_damage(1, "UI regression hit")
 	hud._process(0.1)
-	check(hud.hull_gauge.pulse > 0 and hud.hull_gauge.status.text.contains("%d/%d" % [game.hull, game.hull_capacity]), "actual damage animates hull icons and reports accurate capacity")
+	check(hud.hull_gauge.pulse > 0 and hud.hull_gauge.status.text == "Hull hit" and game.hull == 2, "actual damage pulses hull icons and shows a short hit notice")
 	game.damage_immunity = 0.0
 	game.take_damage(1, "UI regression hit")
 	Input.action_press("astrolabe")
@@ -93,7 +97,7 @@ func _run() -> void:
 	check(game.focus_strength == 1 and not hud.star_guidance().is_empty(), "continued hold reveals the live star")
 	check(hud.instrument.get_child_count() == 0, "focused instrument contains no text or number labels")
 	check_inside(hud.instrument, "text-free instrument fits the small window")
-	check(hud.compass.modulate.a < 0.01 and hud.cannon_gauge.modulate.a < 0.1 and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
+	check(not hud.cannon_gauge.visible and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
 	var ship = game.enemy_encounters.ship
 	ship.begin()
 	ship.mode = ship.Mode.TELEGRAPH
@@ -103,15 +107,21 @@ func _run() -> void:
 	ship.reset()
 	hud._process(0.1)
 	check(not hud.threat_label.visible, "threat cue disappears when the threat clears")
+	game.reading = false
+	hud._process(0.0)
+	check(not hud.instrument.visible and hud.star_horizon_line().is_empty(), "release hides the whole instrument immediately, despite residual camera blend")
 	game.damage_immunity = 0.0
 	game.take_damage(1, "UI regression hit")
 	await settle()
 	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_title.text == "Lost at sea.", "sinking replaces every gameplay element with the defeat menu")
-	hud.action_button.pressed.emit()
+	var retry := InputEventAction.new()
+	retry.action = "restart_crossing"
+	retry.pressed = true
+	game._unhandled_input(retry)
 	await settle()
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
-	check(game.hull == game.hull_capacity and hud.hull_gauge.status.text == "Hull" and hud.hull_gauge.pulse == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
+	check(game.hull == game.hull_capacity and hud.hull_gauge.status.text.is_empty() and hud.hull_gauge.pulse == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
 	game.boat.position = game.target
 	game.voyage.update_progress(game)
 	hud._process(0.1)
@@ -124,6 +134,31 @@ func _run() -> void:
 	await settle()
 	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.contains("01:42") and hud.menu_details.text.contains("3 / 3"), "arrival menu shows the real voyage time and remaining hull")
 	check_inside(hud.menu_body, "result text stays inside the small window")
+	var mute := InputEventAction.new()
+	mute.action = "mute_sea"
+	mute.pressed = true
+	var sound_before: bool = game._sound_enabled
+	game._unhandled_input(mute)
+	check(game._sound_enabled != sound_before, "M mute action remains functional")
+	var chart := InputEventKey.new()
+	chart.keycode = KEY_F2
+	chart.pressed = true
+	game._unhandled_input(chart)
+	check(not game.archipelago.debug_layer.visible, "F2 development chart stays hidden by default")
+	game.development_tools = true
+	game._unhandled_input(chart)
+	check(game.archipelago.debug_layer.visible, "F2 remains available when development tools are enabled")
+	game._unhandled_input(chart)
+	check(not game.archipelago.debug_layer.visible, "F2 closes the chart again")
+	game.state = game.State.READY
+	hud._process(0.0)
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.physical_keycode = KEY_ENTER
+	enter.pressed = true
+	root.push_input(enter)
+	await settle()
+	check(game.state == game.State.CASTING_OFF, "Enter activates the keyboard-focused Play button")
 	print("HUD CHECK: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

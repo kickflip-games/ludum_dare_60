@@ -3,7 +3,7 @@
 Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
 Find the Wreck, cross Twin Peaks, then reach Lighthouse Harbour. Sailing has no
 destination labels or route instructions. Hold Space until a guiding star glows,
-remember its direction, then steer. The ordinary compass follows the bow.
+remember its direction, then steer. Quiet sailing shows only the three small hull symbols.
 Discovery notices acknowledge the place you found without announcing the next stop.
 Reach the lighthouse by recovering your course after reefs and directional waves,
 with optional cutter duels. The sea is mostly calm, interrupted by sparse travelling
@@ -18,22 +18,28 @@ and a turn-back notice appears; steering remains available to sail back in.
 - **Hold E:** glance starboard while steering; release to watch the bow.
 - **F:** enter the starboard gun view; press **F again** to shoot. The cannon sweeps automatically. **A / D or arrows** immediately return to steering on that same input. Shots require separate presses; holding/releasing F never shoots again.
 - Steering held on entry is ignored until neutral, then a fresh press exits. **Space** cancels gun view; releasing Space returns to sailing.
-- **R / Try again / Sail again:** retry. **M:** mute. **Esc:** quit.
+- **R / Retry:** retry. **M:** mute. **Esc:** quit.
 
-The small heading rose and numeric heading follow the bow. After 0.95 seconds of
+There is no sailing compass, numeric heading or course line. After 0.95 seconds of
 holding Space, one magical star brightens over 0.65 seconds. Its horizontal direction
 is always the live direction from the boat to the next destination, at 60° elevation.
 The Wreck's star is pale gold, Twin Peaks' pale blue, and the harbour's soft coral;
 two, three and four broken halo segments also distinguish them. There are no star
 names, bearings or turn instructions in the sky. An off-screen star produces a
 small peripheral glimmer only after focus begins. Use A/D to bring it into view.
-Releasing Space immediately clears both effects; every hold starts afresh.
+A thin vertical line descends from the actual visible focused star toward the
+horizon, fading near the lower edge when the horizon is outside the view. The
+graduated brass sextant appears only while Space is held. Releasing Space
+immediately clears the instrument and guidance; every hold starts afresh.
 Remember the direction and choose your own path around islands. The star does not
 provide a safe route, turn the boat or rotate the sky. Discoveries reset focus and
 briefly acknowledge the place found for 2.8 seconds. See the world documentation
 for the shared bearing convention and scripted navigation checks.
-The open instrument has no instant bearing needle or course bubble. Hull icons and the starboard
-reload ring stay quiet until needed; incoming-fire cues remain visible while sighting.
+The open instrument has no instant bearing needle or course bubble. Hull symbols
+stay at bottom left; damaged boats have broken, sail-free outlines.
+Short hit/repair notices and progress appear beside them when relevant. The cannon
+ring appears only during gun view, reload and a brief ready pulse. Incoming-fire
+cues and repair notices remain readable while sighting. There are no idle target marks.
 The lighthouse's stone silhouette can be glimpsed in the distance; its warm lantern
 and sweeping beam activate on the final approach. There is no waypoint arrow or
 progress readout. Actual entry into its broad harbour region is required to win.
@@ -118,7 +124,7 @@ and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
 ## Quick UI review
 
 Open `ldjam_60/tests/ui_review.tscn` in Godot and press **F6**. The review scene
-freezes 34 presentation states from the existing game; no sailing is required.
+freezes 39 presentation states from the existing game; no sailing is required.
 
 - **← / →** or the dropdown: browse states (wraps at either end).
 - **Home / End:** first / last state. **H:** hide the review panel.
@@ -126,10 +132,13 @@ freezes 34 presentation states from the existing game; no sailing is required.
 - **Esc:** quit. Normal gameplay inputs are disabled in this test scene.
 
 Coverage: title/controls, casting off, sailing/drift, searching and all three star
-halos, off-screen glimmers, cutter/target/incoming cues, gun view/reload, damage,
+halos, off-screen glimmers, cutter/incoming cues, gun view/reload, damage,
 critical hull, repair, discoveries/salvage, boundary, storm, victory and defeat.
-Four authored tooltip states enable hover **in the test only** (normal gauges
-ignore mouse input). The last state is the development-only chart.
+Two authored tooltip states enable hover **in the test only** (normal gauges
+ignore mouse input). Former heading/idle-cannon tooltip slots check the visible
+horizon and immediate release instead. Added states cover off-centre stars,
+partial focus, sighting repairs and fading discovery. The last state is the
+development-only chart.
 
 Capture all states with the real renderer and create a clickable screenshot gallery:
 
@@ -175,7 +184,7 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
 - `--script res://tests/ship_smoke.gd`: moving AI, incoming shots, warned evasion,
   two actual projectile hits, sinking and reset.
 - `--script res://tests/hud_smoke.gd`: menu actions, responsive bounds,
-  heading, reload/damage feedback, sighting priorities and result screens.
+  minimal sailing HUD, reload/damage feedback, sighting priorities and result screens.
 - `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
   repeated checks, live-star/edge projection across headings/window sizes, text-free
   focus stages, active enemy fire, camera precedence and vulnerability.
@@ -197,7 +206,7 @@ review; broader human timing and difficulty feedback remains useful.
 
 UI fixtures: `--script res://tests/ui_previews.gd -- --size=1440x900 --output=/tmp/last-bearing-ui`.
 Use the real renderer with `--fixed-fps 60`; repeat with `1920x1080`, `1280x720`,
-and `960x540`. Each run captures thirteen menu/sailing/sighting/combat/repair/result states.
+and `960x540`. Each run captures 39 menu/sailing/sighting/combat/repair/result states.
 These staged fixtures include repair progress and restored hull, and are separate
 from the complete scripted voyage below.
 

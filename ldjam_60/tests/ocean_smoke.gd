@@ -97,7 +97,7 @@ func _run() -> void:
 	for time in [4.0, 4.5, 5.0]:
 		game.sea_time = time
 		game._update_view(0.5)
-	check(game.cannon.shot_origin().is_equal_approx(origin), "boat rocking leaves the established cannon shot origin unchanged")
+	check(not game.cannon.shot_origin().is_equal_approx(origin) and game.cannon.shot_origin().is_equal_approx(game.cannon.muzzle.global_position), "rocking cannon shot origin follows the visible muzzle exactly")
 	var slow = Motion.new()
 	var fast = Motion.new()
 	ocean.update_surface(game.boat.position, 1.0, 0.0, 0.0, game.heading)

@@ -1,5 +1,5 @@
 extends Node3D
-## One manually aimed starboard cannon. Projectiles sweep against the same hazard bodies as the boat.
+## One sweeping starboard cannon. Sailing and gun view share the existing weapon.
 
 const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const RELOAD_SECONDS: float = 1.5
@@ -8,22 +8,30 @@ signal aiming_started
 signal aiming_ended
 signal fired(direction: Vector3)
 
-@export_group("Broadside aiming")
-@export_range(1.0, 30.0, 1.0) var max_aim_degrees: float = 20.0
-@export_range(20.0, 100.0, 1.0) var aim_speed_degrees: float = 55.0
-@export_range(0.1, 1.2, 0.05) var visual_charge_seconds: float = 0.6
+@export_group("Automatic broadside sweep")
+@export_range(1.0, 45.0, 1.0) var max_aim_degrees: float = 30.0
+@export_range(1.5, 6.0, 0.1) var sweep_period: float = 3.0
+## 1 is sinusoidal; higher values linger longer at each end, with continuous velocity.
+@export_range(1.0, 2.5, 0.1) var sweep_easing: float = 1.0
+@export_enum("Toward bow", "Toward stern") var initial_sweep_direction: int = 0
+const STEERING_NEUTRAL: float = 0.18
+const STEERING_PRESS: float = 0.55
 @export_group("Firing feedback")
 @export_range(0.0, 0.5, 0.01) var recoil_strength: float = 0.3
 @export_range(0.0, 0.15, 0.005) var camera_shake_strength: float = 0.055
 
 var aiming: bool = false
 var aim_degrees: float = 0.0
-var preparation: float = 0.0
+var sweep_elapsed: float = 0.0
+var mode_seconds: float = 0.0
+var entries: int = 0
 var indicator_alpha: float = 0.0
 var _fire_held: bool = false
 var _recoil_left: float = 0.0
+var _fire_presses: int = 0
+var _steering_armed: bool = false
+var _steer_pressed: bool = false
 var yaw_pivot: Node3D
-var fuse: MeshInstance3D
 var game: Node3D
 var cooldown: float = 0.0
 var feedback: String = ""
@@ -59,7 +67,7 @@ func _ready() -> void:
 	barrel.add_child(cannon_model)
 	muzzle = Marker3D.new()
 	muzzle.position = Vector3(1.22, 0.0, 0.0)
-	yaw_pivot.add_child(muzzle)
+	barrel.add_child(muzzle)
 	var spark := SphereMesh.new()
 	spark.radius = 0.26
 	spark.height = 0.52
@@ -74,11 +82,6 @@ func _ready() -> void:
 	flash_light.omni_range = 9.0
 	flash_light.visible = false
 	muzzle.add_child(flash_light)
-	var fuse_shape := SphereMesh.new()
-	fuse_shape.radius = 0.075
-	fuse_shape.height = 0.15
-	fuse = game._mesh(barrel, fuse_shape, Vector3(0.05, 0.3, 0), game._material(Color("ffcf82"), 2.0))
-	fuse.visible = false
 	if DisplayServer.get_name() != "headless":
 		_shot_audio = _audio(68.0, 0.8, -13.0)
 		_impact_audio = _audio(135.0, 0.9, -17.0)
@@ -91,53 +94,79 @@ func starboard_direction() -> Vector3:
 
 
 func aimed_direction() -> Vector3:
-	# Yaw is relative to the planar hull. Cosmetic roll/heave never changes ballistics.
-	return starboard_direction().rotated(Vector3.UP, deg_to_rad(aim_degrees))
+	# The same world-space barrel axis drives visuals, sight and projectile physics,
+	# including hull yaw, wave pitch/roll and heave. Camera transforms never enter it.
+	return yaw_pivot.global_basis.x.normalized()
 
 
 func shot_origin() -> Vector3:
-	var local_muzzle := Vector3(0.8, 1.17, -2.6) + Vector3(1.22, 0, 0).rotated(Vector3.UP, deg_to_rad(aim_degrees))
-	return game.boat.to_global(local_muzzle)
+	return muzzle.global_position
 
 
 func set_fire_held(pressed: bool) -> void:
-	# Both real events and the physics polling path use this edge latch. Sub-tick
-	# taps are handled immediately; repeats/echoes cannot create another cycle.
-	if pressed == _fire_held:
-		return
+	# Buffer edges until the physics tick so Space > steering > fire has the same
+	# result in either event order. A release never shoots, and held F never repeats.
+	if pressed and not _fire_held:
+		_fire_presses += 1
 	_fire_held = pressed
-	if pressed:
-		if game.state == game.State.SAILING and not game.reading and not Input.is_action_pressed("astrolabe"):
-			aiming = true
-			aim_degrees = 0.0
-			preparation = 0.0
-			yaw_pivot.rotation.y = 0.0
-			aiming_started.emit()
-	elif aiming:
-		fire()
-		cancel_aim()
+
+
+func note_steering_event(strength: float) -> void:
+	# Keep even a press/release shorter than a physics tick. Held steering on entry
+	# is ignored until both actions are neutral, including opposing A + D inputs.
+	if not aiming:
+		return
+	if maxf(Input.get_action_strength("steer_port"), Input.get_action_strength("steer_starboard")) <= STEERING_NEUTRAL:
+		_steering_armed = true
+	elif _steering_armed and strength >= STEERING_PRESS:
+		_steer_pressed = true
 
 
 func cancel_aim() -> void:
+	_fire_presses = 0
+	_steer_pressed = false
+	_steering_armed = false
 	if not aiming:
 		return
 	aiming = false
-	preparation = 0.0
-	fuse.visible = false
+	# Leave the barrel at its last angle while the camera returns. Every entry
+	# starts at centre, so no hidden sweep phase carries over between attempts.
 	aiming_ended.emit()
 
 
-func update_aim(delta: float, horizontal_input: float) -> void:
-	if game.reading or game.state != game.State.SAILING:
+func update_aim(delta: float) -> void:
+	var presses: int = _fire_presses
+	_fire_presses = 0
+	var steering: float = maxf(Input.get_action_strength("steer_port"), Input.get_action_strength("steer_starboard"))
+	if game.reading or Input.is_action_pressed("astrolabe") or game.state != game.State.SAILING:
 		cancel_aim()
-	if aiming:
-		# From the starboard shoulder, port/A moves the sight to screen left
-		# (toward the bow), starboard/D to screen right (toward the stern).
-		aim_degrees = clampf(aim_degrees - horizontal_input * aim_speed_degrees * delta, -max_aim_degrees, max_aim_degrees)
-		preparation = minf(1.0, preparation + delta / visual_charge_seconds)
-		yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
-		fuse.visible = true
-		fuse.scale = Vector3.ONE * (0.45 + preparation * 0.55 + sin(game.sea_time * 25.0) * 0.08)
+	elif aiming and (_steer_pressed or (_steering_armed and steering >= STEERING_PRESS)):
+		# Steering wins over a simultaneous fire press; the crossing applies this
+		# very input to the rudder on this tick, independently of camera blending.
+		cancel_aim()
+	else:
+		for i in range(presses):
+			if aiming:
+				fire()
+			else:
+				aiming = true
+				entries += 1
+				mode_seconds = 0.0
+				sweep_elapsed = 0.0
+				aim_degrees = 0.0
+				yaw_pivot.rotation.y = 0.0
+				_steering_armed = steering <= STEERING_NEUTRAL
+				aiming_started.emit()
+		if aiming:
+			if steering <= STEERING_NEUTRAL:
+				_steering_armed = true
+			mode_seconds += delta
+			sweep_elapsed = fposmod(sweep_elapsed + delta, sweep_period)
+			var wave: float = sin(sweep_elapsed * TAU / sweep_period)
+			var eased: float = signf(wave) * (1.0 - pow(1.0 - absf(wave), sweep_easing))
+			aim_degrees = max_aim_degrees * eased * (1.0 if initial_sweep_direction == 0 else -1.0)
+			yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
+	_steer_pressed = false
 	indicator_alpha = move_toward(indicator_alpha, 1.0 if aiming else 0.0, delta * (10.0 if aiming else 5.0))
 
 
@@ -158,7 +187,7 @@ func fire() -> bool:
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
 	projectiles.append({"node": ball, "velocity": aimed_direction() * SHOT_SPEED + Vector3.UP * 0.35, "ttl": 1.8,
-		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin(), "trail_clock": 0.0})
+		"physics_position": shot_origin(), "trail_clock": 0.0})
 	# Existing effect lifetime system also owns the short muzzle smoke burst.
 	for i in range(5):
 		var smoke_shape := SphereMesh.new()
@@ -211,7 +240,7 @@ func advance(delta: float) -> void:
 			projectiles.remove_at(i)
 		else:
 			shot.physics_position = to
-			ball.global_position = to + shot.visual_offset
+			ball.global_position = to
 			shot.trail_clock += delta
 			if shot.trail_clock >= 0.055:
 				shot.trail_clock = 0.0
@@ -316,6 +345,9 @@ func reset() -> void:
 	cancel_aim()
 	_fire_held = Input.is_action_pressed("fire_starboard")
 	aim_degrees = 0.0
+	sweep_elapsed = 0.0
+	mode_seconds = 0.0
+	entries = 0
 	indicator_alpha = 0.0
 	yaw_pivot.rotation.y = 0.0
 	_recoil_left = 0.0

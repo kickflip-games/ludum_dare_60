@@ -52,7 +52,7 @@ func _run() -> void:
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
 	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing shows anchored instruments")
-	check(hud.hull_gauge.status.text == "Hull" and hud.cannon_gauge.status.text == "Hold F · aim", "healthy hull and loaded cannon use compact status text")
+	check(hud.hull_gauge.status.text == "Hull" and hud.cannon_gauge.status.text == "F · Enter Gun View", "healthy hull and loaded cannon use compact status text")
 	var old_heading: float = hud.compass.heading
 	game.heading += 0.6
 	hud._process(0.1)
@@ -67,7 +67,7 @@ func _run() -> void:
 	check(hud.cannon_gauge.status.text == "Reloading" and hud.cannon_gauge.pulse == 0, "shot displays real reload state without a false ready flash")
 	game.cannon.advance(game.cannon.RELOAD_SECONDS)
 	hud._process(0.1)
-	check(hud.cannon_gauge.status.text == "Hold F · aim" and hud.cannon_gauge.pulse > 0, "reload completion gives a brief ready pulse")
+	check(hud.cannon_gauge.status.text == "F · Enter Gun View" and hud.cannon_gauge.pulse > 0, "reload completion gives a brief ready pulse")
 	game.take_damage(1, "UI regression hit")
 	hud._process(0.1)
 	check(hud.hull_gauge.pulse > 0 and hud.hull_gauge.status.text.contains("%d/%d" % [game.hull, game.hull_capacity]), "actual damage animates hull icons and reports accurate capacity")

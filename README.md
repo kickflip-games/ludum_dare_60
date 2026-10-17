@@ -10,7 +10,8 @@ The astrolabe is a game abstraction rather than a historical simulator.
 - **A / D or arrows:** steer. Current changes travel direction independently of the bow.
 - **Hold Space:** raise the sextant; search briefly, then hold to focus. Movement and danger continue.
 - **Hold E:** glance starboard while steering; release to watch the bow.
-- **Hold F:** aim the starboard cannon; **A / D or arrows** fine-tune yaw while the boat keeps sailing. **Release F:** fire. A quick tap fires promptly when loaded.
+- **F:** enter the starboard gun view; press **F again** to shoot. The cannon sweeps automatically. **A / D or arrows** immediately return to steering on that same input. Shots require separate presses; holding/releasing F never shoots again.
+- Steering held on entry is ignored until neutral, then a fresh press exits. **Space** cancels gun view; releasing Space returns to sailing.
 - **R / Try again / Sail again:** retry. **M:** mute. **Esc:** quit.
 
 The small heading rose follows the bow. Sextant assistance begins after 0.95 seconds;
@@ -46,9 +47,10 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   Optional **Extended text → Course hint** restores the existing coarse channel
   correction after 2.6 s. Each release resets the hold. Sky mode suppresses the
   combat glance and damps wave/shock motion without changing sailing or damage.
-- **Cannon camera:** aim enter/return 0.3/0.5 s, FOV 78°, aim offset (2.4, 5.2, 9.5),
-  combat offset (2.8, 6.0, 10.5), target bias 0.1. Offsets are relative to the hull.
-  Priority: stargazing → manual aiming → nearby-hostile combat → sailing.
+- **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-2.8, 1.9, 0)
+  from the existing starboard mount. The level camera tracks 15% of sweep yaw.
+  Priority: stargazing → gun view → nearby-hostile combat → sailing. Active
+  steering suppresses automatic combat framing while the camera returns.
 - **Ocean:** authoritative shared wave resource and quality. See
   [ocean tuning](ldjam_60/game/ocean/README.md).
 
@@ -62,16 +64,18 @@ the split reef remain open. Four distance phases are 0–20%, 20–50%, 50–85%
 turning 0.85 rad/s, hull 2, firing range 62 m, reload 3.8 s, telegraph 1.65 s,
 projectile speed 24 m/s and encounter duration 24 s. Interception distances 178 m
 and 438 m are in `game/enemy_encounters.gd`. Ships yield before predicted close
-passes. The player's single starboard cannon fires along its manually selected yaw;
-there is no automatic launch correction or target tracking. Reload remains 1.5 seconds.
+passes. The player's single starboard cannon fires along its visible barrel;
+there is no launch correction or target tracking. Reload remains 1.5 seconds.
 
-Open `game/broadside_cannon.tscn` to tune the cannon in the Inspector: ±20° yaw,
-55°/s aim speed, 0.6 s visual preparation, 0.3 m recoil, and 0.055 camera shake.
-Projectile speed (55 m/s), gravity (0.9 m/s²), initial lift (0.35 m/s), lifetime,
-and damage are unchanged. Preparation adds no damage or delay. The small sight shows
-direction, not an impact prediction. Holding during reload permits aiming; release
-fires only if loaded. Space, focus loss, retry, and sinking cancel pending shots.
-After stargazing, release F and press again to begin a fresh shot.
+Open `game/broadside_cannon.tscn` to tune the Inspector exports: ±30° sweep,
+3-second full cycle, sinusoidal easing (1.0), initially toward the bow. Every
+entry restarts at centre and moves immediately. The sweep continues through
+reload and firing. Recoil is 0.3 m and camera shake 0.055. Projectile speed
+(55 m/s), gravity (0.9 m/s²), initial lift (0.35 m/s), lifetime and damage are
+retained. Launch position/direction now follow the actual rocking muzzle, so
+visible and physical cannonballs coincide. The small sight indicates direction;
+it does not predict impact. Space, focus loss, retry and sinking clear gun mode
+and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
 
 ## Validation
 
@@ -81,11 +85,11 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   across three seeds, both duels, four phases, arrival and retry.
 - `--script res://tests/sailing_smoke.gd`: isolated currents/encounters, constant
   heading and active sailing. `voyage_pilot.gd` is test-only; the game never loads it.
-- `--script res://tests/cannon_aim_smoke.gd`: 55 checks for actual input edges,
-  quick taps, reload, yaw/steering separation, camera priorities, terrain, aspect
-  ratios, frame-independent blending, wave roll, moving hits and sinking.
+- `--script res://tests/cannon_aim_smoke.gd`: input edges, held/analog steering,
+  simultaneous presses, reload, camera priorities, terrain, aspect ratios,
+  frame independence, wave-aligned launches, moving hits, damage, sinking and retry.
 - `--script res://tests/cannon_aim_battles.gd`: three staged moving AI duels using
-  hold/release input, with current/gust variations; results saved under `/tmp`.
+  timed presses and steering exits, with current/gust variations; results in `/tmp`.
 - `--script res://tests/combat_smoke.gd`: collision damage, immunity, sinking,
   broadside timber hits, water feedback, and retry.
 - `--script res://tests/ship_smoke.gd`: moving AI, incoming shots, warned evasion,
@@ -97,14 +101,17 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   text stages, active enemy fire, camera precedence and vulnerability.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
 
-Aiming fixtures: run the real renderer with `--fixed-fps 60 --script
-res://tests/cannon_aim_previews.gd -- --output=/tmp/cannon-aim-review`. Ten PNGs cover
-sailing, broadside aim, both yaw limits, firing, camera return, sky cancellation,
-a live moving duel and sinking. A bounded `clip/` sequence encodes at 20 fps;
-`--no-clip` skips it and `--size=960x540` changes window size. The first visual pass
-left the deck out of frame; moving aft and bringing the focus closer restored it.
-The aim hint was moved above the compass. These are scripted captures and duels;
-human difficulty, audio feel and release satisfaction still need playtesting.
+Gunner fixtures: use the real renderer with `--fixed-fps 60 --script
+res://tests/cannon_aim_previews.gd -- --output=/tmp/cannon-sweep-review`.
+PNG captures cover sailing, elevated gun view, both automatic limits, firing,
+steering return, stargazing, three moving AI duels and sinking. The bounded
+`clip/` sequence encodes at 20 fps; `--no-clip` skips it and `--size=960x540`
+changes window size. `--views-only` captures just the control/camera sequence.
+The final tuning pass cleared the compass from the barrel
+and moved the transient controls above it. `--script res://tests/cannon_playground.gd`
+stages an interactive open-water duel using normal game controls; R restages it.
+Scripted battle outcomes and real keyboard checks are recorded separately in the
+review; broader human timing and difficulty feedback remains useful.
 
 UI fixtures: `--script res://tests/ui_previews.gd -- --size=1440x900 --output=/tmp/last-bearing-ui`.
 Use the real renderer with `--fixed-fps 60`; repeat with `1920x1080`, `1280x720`,

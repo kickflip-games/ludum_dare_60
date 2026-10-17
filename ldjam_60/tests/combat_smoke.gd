@@ -25,8 +25,10 @@ func _run() -> void:
 	game.current_strength = 0.0
 	game.gust_strength = 0.0
 	game.heading = game.TARGET_HEADING
-	var rock: Dictionary = game.obstacles[0]
-	game.boat.position = rock.position - game.course_forward() * (rock.radius + 3.0)
+	# Isolate collision damage from navigation landmarks and arrival triggers.
+	game._add_hazard(Vector3(400, 0, 360), 3.0, "rock")
+	var rock: Dictionary = game.obstacles.back()
+	game.boat.position = rock.position - Vector3(sin(game.heading), 0, -cos(game.heading)) * (rock.radius + 3.0)
 	await physics_frame
 	game.advance_sailing(1.0, 0.0)
 	check(game.hull == 2 and game.state == game.State.SAILING, "actual rock collision damages but does not instantly sink")

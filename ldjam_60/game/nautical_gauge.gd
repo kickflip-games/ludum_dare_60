@@ -38,9 +38,9 @@ func update_presentation(delta: float) -> void:
 		status.text = "SPACE · sight star"
 		tooltip_text = "Bow heading. The rose turns against fixed north. Hold Space to use the astrolabe."
 	else:
-		status.text = "Reloading" if game.cannon.cooldown > 0 else "Release F · fire" if game.cannon.aiming else "Hold F · aim"
+		status.text = "Reloading" if game.cannon.cooldown > 0 else "F · Shoot" if game.cannon.aiming else "F · Enter Gun View" if game.cannon.entries == 0 else "F · Cannon"
 		status.modulate = GOLD if game.cannon.cooldown == 0 else CREAM
-		tooltip_text = "Starboard cannon: %.1f seconds to reload" % game.cannon.cooldown if game.cannon.cooldown > 0 else "Hold F to aim; A/D adjusts the cannon; release F to fire. Hold E to glance right."
+		tooltip_text = "Starboard cannon: %.1f seconds to reload" % game.cannon.cooldown if game.cannon.cooldown > 0 else "F enters gun view; press F again to shoot. A/D returns to steering. Hold Space to sight the stars."
 	queue_redraw()
 
 

@@ -76,6 +76,8 @@ func _run() -> void:
 	game = await make_game()
 	ship = game.enemy_encounters.ship
 	game.enemy_encounters.enabled = false
+	# Synchronize the teleported fixture before using the real barrel transform.
+	game._update_view(1.0 / 60.0)
 	ship.begin()
 	ship.position = game.cannon.shot_origin() + game.cannon.starboard_direction() * 28.0
 	ship.position.y = 0.0

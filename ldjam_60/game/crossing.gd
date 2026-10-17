@@ -61,12 +61,14 @@ const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 @export_enum("Keep focus text", "Course hint") var extended_text: int = 0
 
 @export_group("Cannon camera")
-@export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.3
-@export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.5
-@export var aim_camera_offset := Vector3(2.4, 5.2, 9.5)
+@export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.4
+@export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.4
+## Offset from the existing cannon mount, in hull coordinates (X is starboard).
+@export var aim_camera_offset := Vector3(-2.8, 1.9, 0.0)
 @export var combat_camera_offset := Vector3(2.8, 6.0, 10.5)
 @export_range(0.0, 0.25, 0.01) var camera_target_bias: float = 0.1
-@export_range(70.0, 90.0, 1.0) var aim_camera_fov: float = 78.0
+@export_range(60.0, 90.0, 1.0) var aim_camera_fov: float = 76.0
+@export_range(0.0, 0.2, 0.01) var cannon_camera_tracking: float = 0.15
 
 @export_group("Ocean")
 @export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
@@ -116,7 +118,7 @@ var focus_elapsed: float = 0.0
 var focus_strength: float = 0.0
 var look_blend: float = 0.0
 var starboard_look: bool = false
-enum CameraMode { SAILING, COMBAT, AIMING, STARGAZING }
+enum CameraMode { SAILING, COMBAT, CANNON, STARGAZING }
 var camera_mode: CameraMode = CameraMode.SAILING
 var aim_camera_blend: float = 0.0
 var combat_camera_blend: float = 0.0
@@ -242,6 +244,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		start_crossing()
 	elif event.is_action("fire_starboard") and not event.is_echo():
 		cannon.set_fire_held(event.is_pressed())
+	elif (event.is_action("steer_port") or event.is_action("steer_starboard")) and not event.is_echo():
+		cannon.note_steering_event(maxf(event.get_action_strength("steer_port"), event.get_action_strength("steer_starboard")))
 	elif event.is_action_pressed("astrolabe"):
 		cannon.cancel_aim()
 	elif event.is_action_pressed("mute_sea"):
@@ -359,7 +363,7 @@ func _physics_process(delta: float) -> void:
 	if reading or state != State.SAILING:
 		cannon.cancel_aim()
 	cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
-	cannon.update_aim(delta, Input.get_axis("steer_port", "steer_starboard"))
+	cannon.update_aim(delta)
 	if state == State.SAILING:
 		starboard_look = Input.is_action_pressed("watch_starboard") and not reading
 		turn_input = 0.0 if cannon.aiming else Input.get_axis("steer_port", "steer_starboard")
@@ -523,12 +527,12 @@ func _update_view(delta: float) -> void:
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	# Compose poses for the single transform writer in _update_view; never change gun yaw.
 	var ship = enemy_encounters.ship
-	var combat: bool = enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
-	camera_mode = CameraMode.STARGAZING if reading else CameraMode.AIMING if cannon.aiming else CameraMode.COMBAT if combat else CameraMode.SAILING
-	var aiming: bool = camera_mode == CameraMode.AIMING
+	var combat: bool = is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
+	camera_mode = CameraMode.STARGAZING if reading else CameraMode.CANNON if cannon.aiming else CameraMode.COMBAT if combat else CameraMode.SAILING
+	var aiming: bool = camera_mode == CameraMode.CANNON
 	var seconds: float = aim_camera_seconds if aiming else camera_return_seconds
-	aim_camera_blend = lerpf(aim_camera_blend, 1.0 if aiming else 0.0, 1.0 - exp(-3.0 * delta / seconds))
-	combat_camera_blend = lerpf(combat_camera_blend, 1.0 if combat else 0.0, 1.0 - exp(-5.0 * delta))
+	aim_camera_blend = move_toward(aim_camera_blend, 1.0 if aiming else 0.0, delta / seconds)
+	combat_camera_blend = lerpf(combat_camera_blend, 1.0 if combat and not cannon.aiming and not reading else 0.0, 1.0 - exp(-5.0 * delta))
 	_camera_aim_degrees = lerpf(_camera_aim_degrees, cannon.aim_degrees, 1.0 - exp(-12.0 * delta))
 	var orientation := Basis(Vector3.UP, -heading)
 	var enemy_offset: Vector3 = orientation.inverse() * (ship.position - boat.position)
@@ -540,9 +544,13 @@ func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	var combat_focus := boat.position + orientation * (Vector3(12, 1.4, -4) + _camera_target_offset)
 	var combat_pose := Transform3D(Basis.looking_at(combat_focus - combat_at), combat_at)
 	var sailing_pose := helm_pose.interpolate_with(combat_pose, smoothstep(0, 1, combat_camera_blend))
-	var aim_at := boat.position + orientation * aim_camera_offset
-	var aim_direction := Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(_camera_aim_degrees * 0.3))
-	var aim_focus := boat.position + orientation * (Vector3(0.8, 1.3, -2.6) + aim_direction * 12.0 + _camera_target_offset)
+	# Close elevated gunner view anchored to the real mount. Keep a level horizon
+	# and only 15% yaw tracking: the barrel sweeps visibly across a stable sea.
+	# Enemy bias is intentionally confined to the automatic combat pose above.
+	var mount: Vector3 = cannon.global_position
+	var aim_at := mount + orientation * aim_camera_offset
+	var aim_direction := Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(_camera_aim_degrees * cannon_camera_tracking))
+	var aim_focus := mount + orientation * (aim_direction * 22.0 + Vector3.UP * 0.5)
 	var aim_pose := Transform3D(Basis.looking_at(aim_focus - aim_at), aim_at)
 	var result := sailing_pose.interpolate_with(aim_pose, smoothstep(0, 1, aim_camera_blend))
 	if state == State.SAILING and maxf(aim_camera_blend, combat_camera_blend) > 0.01:

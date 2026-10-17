@@ -142,7 +142,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["Hold F · A / D · release", "Aim starboard / fire"]]:
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["F · press again to fire", "Cannon view / shoot"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -276,7 +276,7 @@ func _process(delta: float) -> void:
 	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0
 	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.64 + _combat_blend * 0.25, 0.0, _reading_alpha)
 	cannon_gauge.modulate.a = lerpf(0.5 + _combat_blend * 0.5, 0.0, _reading_alpha)
-	compass.modulate.a = 1.0 - _reading_alpha
+	compass.modulate.a = (1.0 - _reading_alpha) * (1.0 - smoothstep(0.0, 0.75, game.aim_camera_blend))
 	for gauge: Control in [hull_gauge, compass, cannon_gauge]:
 		gauge.update_presentation(delta)
 	instrument.modulate.a = _reading_alpha
@@ -465,13 +465,15 @@ func _draw_cannon_sight() -> void:
 		_line(at + Vector2(side * 6, 0), at + Vector2(side * 13, 0), color, 1.2)
 		_line(at + Vector2(0, side * 6), at + Vector2(0, side * 10), color, 1.2)
 	# A tiny yaw tick makes the limited arc readable without covering the target.
-	var center := Vector2(size.x * 0.5, size.y - 171)
+	var center := Vector2(size.x * 0.5, size.y * 0.62)
 	_line(center + Vector2(-34, 0), center + Vector2(34, 0), Color(INK, alpha * 0.35), 1)
 	for side in [-1, 1]:
 		_line(center + Vector2(side * 34, -3), center + Vector2(side * 34, 3), Color(INK, alpha * 0.5), 1)
 	var tick: float = -game.cannon.aim_degrees / game.cannon.max_aim_degrees * 34.0
 	_line(center + Vector2(tick, -5), center + Vector2(tick, 5), color, 2)
-	_text(center + Vector2(0, -15), "A / D · aim   Release F · fire", 14, Color(INK, alpha * 0.8), true)
+	var hint_alpha: float = alpha * (1.0 - smoothstep(4.0, 7.0, game.cannon.mode_seconds)) if game.cannon.entries <= 2 else 0.0
+	if hint_alpha > 0.01:
+		_text(center + Vector2(0, -15), "F — Shoot     A/D — Steer", 14, Color(INK, hint_alpha * 0.8), true)
 
 
 func _draw_target() -> void:

@@ -2,9 +2,13 @@ extends Node3D
 ## A hand-placed, short crossing. All gameplay distances are in metres.
 
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
-const SEA_SHADER = preload("res://game/sea.gdshader")
+const OceanController = preload("res://game/ocean/ocean_controller.gd")
+const WaveSettings = preload("res://game/ocean/wave_settings.gd")
+const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCRIPT = preload("res://game/broadside_cannon.gd")
+const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
+const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const CREATURE_SCRIPT = preload("res://game/sea_creatures.gd")
 const SPEED: float = 6.3
 const TURN_SPEED: float = 0.48
@@ -14,6 +18,18 @@ const ARRIVAL_RADIUS: float = 58.0
 const BEACON_REVEAL_DISTANCE: float = 150.0
 const START_HEADING: float = PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
+
+@export_group("Ocean")
+@export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
+	set(value):
+		ocean_settings = value
+		if is_instance_valid(ocean):
+			ocean.configure(value)
+@export_enum("Low", "Standard", "High") var ocean_quality: int = 1:
+	set(value):
+		ocean_quality = value
+		if is_instance_valid(ocean):
+			ocean.set_quality(value)
 
 enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
@@ -39,6 +55,8 @@ var beacon_lamp: MeshInstance3D
 var hud: Control
 var cannon: Node3D
 var sea_creatures: Node3D
+var ocean: Node3D
+var boat_motion := BoatWaveMotion.new()
 var water_material: ShaderMaterial
 var sky_material: ShaderMaterial
 var obstacles: Array[Dictionary] = []
@@ -146,6 +164,8 @@ func restart() -> void:
 	boat.position = Vector3.ZERO
 	boat.velocity = Vector3.ZERO
 	heading = START_HEADING
+	boat_motion.reset()
+	ocean.reset_wake(heading)
 	elapsed = 0.0
 	sea_creatures.reset()
 	reading = false
@@ -217,12 +237,14 @@ func advance_sailing(delta: float, steering: float) -> void:
 func _update_view(delta: float) -> void:
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	boat.rotation.y = -heading
-	boat_visual.position.y = sin(sea_time * 1.55) * 0.07
-	boat_visual.rotation.z = sin(sea_time * 1.05) * 0.012 - turn_input * 0.035
+	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
+	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
+	boat_motion.update_motion(ocean, boat, boat_visual, delta)
+	sea_creatures.update_ocean_visuals()
 	var helm_pose := Transform3D(Basis.from_euler(Vector3(
 		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading,
-		sin(sea_time * 1.05) * 0.005)),
-		boat.position + Vector3(0.0, 2.55 + sin(sea_time * 1.55) * 0.06, 0.0))
+		0.0)),
+		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18), 0.0))
 	camera.h_offset = 0.0
 	camera.fov = 74.0
 	if state == State.READY:
@@ -245,7 +267,6 @@ func _update_view(delta: float) -> void:
 	else:
 		camera.transform = helm_pose
 	sky_root.position = camera.position
-	water_material.set_shader_parameter("visual_time", sea_time)
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
@@ -331,15 +352,11 @@ func _build_world() -> void:
 	moon.light_color = Color("a4c6d4")
 	moon.light_energy = 0.85
 	add_child(moon)
-	var ocean := PlaneMesh.new()
-	ocean.size = Vector2(3200.0, 3200.0)
-	# One bounded draw with low-amplitude vertex swells; collision stays flat.
-	ocean.subdivide_width = 320
-	ocean.subdivide_depth = 320
-	water_material = ShaderMaterial.new()
-	water_material.shader = SEA_SHADER
-	var water_mesh := _mesh(self, ocean, Vector3(0.0, -0.12, 0.0), water_material)
-	water_mesh.extra_cull_margin = 1.0
+	ocean = OceanController.new()
+	ocean.name = "Ocean"
+	add_child(ocean)
+	ocean.initialize(ocean_settings, ocean_quality)
+	water_material = ocean.material
 	sky_root = Node3D.new()
 	sky_root.name = "FixedCelestialSky"
 	add_child(sky_root)
@@ -393,32 +410,16 @@ func _build_boat() -> void:
 	collision.position = Vector3(0.0, 0.4, -0.5)
 	boat.add_child(collision)
 	boat_visual = Node3D.new()
+	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
-	var timber := _material(Color("4b3026"))
-	var trim := _material(Color("947144"))
+	var ship: Node3D = PIRATE_SHIP.instantiate()
+	ship.name = "PirateKitPlayerShip"
+	ship.rotation.y = -PI / 2.0
+	ship.scale = Vector3(1.15, 0.8, 0.8)
+	ship.position = Vector3(0.0, -0.10, -1.8)
+	boat_visual.add_child(ship)
 	var dark := _material(Color("211e1d"))
-	_box(boat_visual, Vector3(2.65, 0.45, 4.8), Vector3(0.0, 0.22, -1.7), timber)
-	# Separate planks are readable from the helm and keep the silhouette handmade.
-	for i in range(9):
-		_box(boat_visual, Vector3(0.25, 0.09, 4.65), Vector3(-1.12 + i * 0.28, 0.49, -1.7), trim)
-	for side in [-1.0, 1.0]:
-		_box(boat_visual, Vector3(0.15, 0.65, 4.9), Vector3(side * 1.35, 0.75, -1.6), timber)
-		_box(boat_visual, Vector3(0.2, 0.09, 5.0), Vector3(side * 1.35, 1.1, -1.6), trim)
-	var bow := _cylinder(boat_visual, 1.5, 1.1, 0.5, Vector3(0.0, 0.38, -4.0), timber)
-	bow.scale = Vector3(0.87, 1.0, 1.15)
-	_box(boat_visual, Vector3(0.15, 1.4, 0.15), Vector3(0.0, 1.2, -4.4), trim)
-	_box(boat_visual, Vector3(0.24, 1.1, 0.24), Vector3(0.0, 0.9, -0.65), timber)
-	# Helm wheel, oriented toward the player.
-	var wheel := TorusMesh.new()
-	wheel.inner_radius = 0.36
-	wheel.outer_radius = 0.46
-	wheel.rings = 20
-	wheel.ring_segments = 6
-	var rim := _mesh(boat_visual, wheel, Vector3(0.0, 1.48, -0.75), trim)
-	rim.rotation.x = PI / 2.0
-	for i in range(6):
-		var spoke := _box(boat_visual, Vector3(0.055, 0.86, 0.055), Vector3(0.0, 1.48, -0.75), timber)
-		spoke.rotation.z = i * PI / 3.0
+	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
 	var brass := _material(Color("e4b96f"), 1.0)
 	_box(boat_visual, Vector3(0.22, 0.32, 0.22), Vector3(-1.05, 1.3, -2.9), brass)
 	_box(boat_visual, Vector3(0.34, 0.08, 0.34), Vector3(-1.05, 1.51, -2.9), dark)
@@ -428,11 +429,6 @@ func _build_boat() -> void:
 	lamp.light_energy = 2.0
 	lamp.omni_range = 7.0
 	boat_visual.add_child(lamp)
-	var foam := _material(Color("6a9396"), 1.0)
-	for side in [-1.0, 1.0]:
-		for i in range(5):
-			var wake := _box(boat_visual, Vector3(0.08, 0.015, 1.1), Vector3(side * (1.6 + i * 0.1), 0.0, -1.5 + i * 0.9), foam)
-			wake.rotation.y = side * -0.18
 
 
 func _build_hazards() -> void:
@@ -472,37 +468,38 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 	collision.shape = sphere
 	body.add_child(collision)
 	obstacles.append({"position": at, "radius": radius, "kind": kind, "body": body})
-	var stone := _material(Color("34454b"))
+	var visual := Node3D.new()
+	visual.name = "HazardVisual"
+	body.add_child(visual)
 	var timber := _material(Color("564c3c"))
 	var edge := _material(Color("798a83"))
 	if kind == "rock":
-		var rock := _cylinder(body, radius, radius * 0.22, radius * 1.2, Vector3(0.0, radius * 0.35, 0.0), stone)
-		rock.rotation.z = 0.12
+		var rock: Node3D = PIRATE_ROCK.instantiate()
+		rock.name = "PirateKitRock"
+		rock.scale = Vector3.ONE * radius * 2.65
 		rock.rotation.y = at.x
-		_cylinder(body, radius * 0.45, 0.0, radius * 0.8, Vector3(radius * 0.45, radius * 0.1, radius * 0.25), edge)
+		visual.add_child(rock)
 	elif kind == "wreck":
 		body.rotation.y = -0.7 + at.x * 0.03
-		var hull := _box(body, Vector3(radius * 1.4, 2.0, radius * 1.25), Vector3(0.0, 0.45, 0.0), timber)
+		var hull: Node3D = PIRATE_SHIP.instantiate()
+		hull.name = "PirateKitWreckHull"
+		hull.scale = Vector3(radius * 0.25, radius * 0.10, radius * 0.26)
+		hull.position.y = -0.2
 		hull.rotation.z = 0.23
-		_box(body, Vector3(0.35, 8.5, 0.35), Vector3(0.7, 3.2, 0.0), timber).rotation.z = -0.34
-		_box(body, Vector3(5.0, 0.2, 0.2), Vector3(1.5, 5.1, 0.0), edge).rotation.z = -0.34
+		visual.add_child(hull)
+		_box(visual, Vector3(0.35, 8.5, 0.35), Vector3(0.7, 3.2, 0.0), timber).rotation.z = -0.34
+		_box(visual, Vector3(5.0, 0.2, 0.2), Vector3(1.5, 5.1, 0.0), edge).rotation.z = -0.34
 		for i in range(4):
-			_box(body, Vector3(0.35, 2.7, 0.28), Vector3(-radius * 0.6, 1.4, -2.0 + i * 1.4), edge).rotation.z = 0.3
+			_box(visual, Vector3(0.35, 2.7, 0.28), Vector3(-radius * 0.6, 1.4, -2.0 + i * 1.4), edge).rotation.z = 0.3
 	else:
 		timber = _material(Color("8f7350"))
 		for i in range(5):
-			var plank := _box(body, Vector3(0.7, 0.9, radius * 1.6), Vector3(-radius * 0.65 + i * radius * 0.32, 0.5, sin(i * 2.0)), timber)
+			var plank := _box(visual, Vector3(0.7, 0.9, radius * 1.6), Vector3(-radius * 0.65 + i * radius * 0.32, 0.5, sin(i * 2.0)), timber)
 			plank.rotation.y = sin(i * 3.0) * 0.3
 		# A pale crossbeam distinguishes shootable timber from permanent rocks/wrecks.
-		_box(body, Vector3(radius * 1.4, 0.22, 0.4), Vector3(0.0, 1.05, 0.0), _material(Color("bda778")))
-	# Pale waterline gives dark hazards a legible silhouette in fog.
-	var ring := TorusMesh.new()
-	ring.inner_radius = radius * 0.96
-	ring.outer_radius = radius * 1.04
-	ring.rings = 24
-	ring.ring_segments = 4
-	var waterline := _mesh(body, ring, Vector3(0.0, 0.02, 0.0), _material(Color("789497"), 1.0))
-	waterline.scale.y = 0.1
+		_box(visual, Vector3(radius * 1.4, 0.22, 0.4), Vector3(0.0, 1.05, 0.0), _material(Color("bda778")))
+	if kind != "rock":
+		ocean.register_float_visual(visual)
 
 
 func _build_destination() -> void:

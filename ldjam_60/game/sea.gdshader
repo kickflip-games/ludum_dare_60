@@ -1,62 +1,51 @@
 shader_type spatial;
-render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
+render_mode unshaded, world_vertex_coords, cull_disabled, shadows_disabled, fog_disabled;
 
-uniform vec4 deep_color : source_color = vec4(0.018, 0.075, 0.10, 1.0);
-uniform vec4 crest_color : source_color = vec4(0.10, 0.25, 0.27, 1.0);
-uniform float visual_time = 0.0;
-varying vec3 sea_world;
+#include "res://game/ocean/waves.gdshaderinc"
 
-float hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
+uniform vec4 trough_color : source_color;
+uniform vec4 main_color : source_color;
+uniform vec4 slope_color : source_color;
+uniform vec3 sun_direction;
+uniform float band_softness = 0.035;
+uniform float foam_threshold = 0.42;
+uniform float foam_softness = 0.12;
+uniform float foam_intensity = 0.88;
+uniform float crest_scale = 1.0;
+// Same linear horizon color as the existing night-sky shader, without extra fog.
+uniform vec3 horizon_color = vec3(0.075, 0.13, 0.17);
 
-float noise(vec2 p) {
-	vec2 cell = floor(p);
-	vec2 f = fract(p);
-	f = f * f * (3.0 - 2.0 * f);
-	return mix(mix(hash(cell), hash(cell + vec2(1.0, 0.0)), f.x),
-		mix(hash(cell + vec2(0.0, 1.0)), hash(cell + vec2(1.0)), f.x), f.y);
-}
+varying vec3 surface_world;
+varying vec3 surface_normal;
+varying float crest_fraction;
+varying float cap_foam;
 
 void vertex() {
-	vec2 p = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
-	float swell = sin(dot(p, vec2(0.65, 0.76)) * 0.14 - visual_time * 0.85);
-	float cross_wave = sin(dot(p, vec2(-0.91, 0.41)) * 0.22 - visual_time * 1.12);
-	VERTEX.y += swell * 0.19 + cross_wave * 0.09;
-	sea_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec2 p = VERTEX.xz;
+	vec3 wave = surface_sample(p);
+	VERTEX.y = sea_level + wave.x;
+	surface_world = VERTEX;
+	surface_normal = normalize(vec3(-wave.y, 1.0, -wave.z));
+	NORMAL = surface_normal;
+	crest_fraction = wave.x / crest_scale;
+	// Two incommensurate travelling variations break caps, entirely per vertex.
+	float breakup = 0.5 + 0.25 * sin(dot(p, vec2(0.37, 0.53)) + wave_time * 0.35)
+		+ 0.25 * sin(dot(p, vec2(-0.83, 0.27)) - wave_time * 0.21);
+	float cap = smoothstep(foam_threshold, foam_threshold + foam_softness, crest_fraction);
+	cap_foam = cap * smoothstep(0.52, 0.82, breakup);
 }
 
 void fragment() {
-	vec2 p = sea_world.xz;
-	float t = visual_time;
-	vec2 a = vec2(0.65, 0.76);
-	vec2 b = vec2(-0.91, 0.41);
-	vec2 c = vec2(0.28, 0.96);
-	float phase_a = dot(p, a) * 0.14 - t * 0.85;
-	float phase_b = dot(p, b) * 0.22 - t * 1.12;
-	float phase_c = dot(p, c) * 1.05 - t * 2.0;
-	float wave_a = sin(phase_a);
-	float wave_b = sin(phase_b);
-	// Fine surface detail fades with distance, avoiding horizon sparkle.
-	float distance_to_eye = distance(sea_world, CAMERA_POSITION_WORLD);
-	float close_detail = 1.0 - smoothstep(35.0, 160.0, distance_to_eye);
-	vec2 gradient = a * cos(phase_a) * 0.19 * 0.14
-		+ b * cos(phase_b) * 0.09 * 0.22
-		+ c * cos(phase_c) * 0.055 * close_detail;
-	vec3 world_normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
-	NORMAL = normalize((VIEW_MATRIX * vec4(world_normal, 0.0)).xyz);
-	float patches = noise(p * 0.23 + vec2(t * 0.07, -t * 0.10));
-	float crest = smoothstep(0.70, 0.98, wave_a * 0.65 + wave_b * 0.35);
-	float foam = crest * smoothstep(0.48, 0.75, patches) * close_detail;
-	float threads = smoothstep(0.88, 0.99, sin(phase_c + patches * 3.0))
-		* smoothstep(0.66, 0.88, patches) * close_detail * 0.13;
-	vec3 view_direction = normalize(CAMERA_POSITION_WORLD - sea_world);
-	float fresnel = pow(1.0 - max(dot(world_normal, view_direction), 0.0), 4.0);
-	float shade = 0.35 + wave_a * 0.16 + wave_b * 0.12;
-	vec3 water = mix(deep_color.rgb, crest_color.rgb, shade);
-	// A restrained cool horizon reflection; no screen-space/depth dependencies.
-	water = mix(water, vec3(0.18, 0.29, 0.32), fresnel * 0.35);
-	ALBEDO = mix(water, vec3(0.40, 0.57, 0.56), clamp(foam * 0.6 + threads, 0.0, 0.65));
-	ROUGHNESS = mix(0.43, 0.78, foam);
-	SPECULAR = 0.28;
+	vec3 n = normalize(surface_normal);
+	float illumination = dot(n, normalize(sun_direction));
+	float main_band = smoothstep(0.43 - band_softness, 0.43 + band_softness, illumination);
+	float bright_band = smoothstep(0.76 - band_softness, 0.76 + band_softness, illumination);
+	vec3 water = mix(trough_color.rgb, main_color.rgb, main_band);
+	water = mix(water, slope_color.rgb, bright_band);
+	float valley = (1.0 - smoothstep(-0.10, 0.18, crest_fraction)) * 0.32;
+	water = mix(water, trough_color.rgb, valley);
+	water = mix(water, foam_color.rgb, clamp(cap_foam * foam_intensity, 0.0, 1.0));
+	float distance_to_eye = distance(surface_world, CAMERA_POSITION_WORLD);
+	float haze = smoothstep(48.0, 180.0, distance_to_eye);
+	ALBEDO = mix(water, horizon_color, haze);
 }

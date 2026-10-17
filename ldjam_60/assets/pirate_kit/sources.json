@@ -1,0 +1,31 @@
+{
+  "bundle": "https://poly.pizza/bundle/Pirate-kit-0q5ulmIYqQ",
+  "retrieved": "2026-10-17",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "models": [
+    {
+      "file": "small_ship.glb",
+      "creator": "Quaternius",
+      "source_page": "https://poly.pizza/m/W2vMzztgIi",
+      "download_url": "https://static.poly.pizza/2a2bdc9c-2123-4506-9847-330c734e79ac.glb",
+      "license": "CC0-1.0",
+      "sha256": "0a0ba5eb7c7bb2fb2a1ab3eed13c81d3f2970a1a591b28b35529add7fca01711"
+    },
+    {
+      "file": "cannon.glb",
+      "creator": "Quaternius",
+      "source_page": "https://poly.pizza/m/J15vlPVvKK",
+      "download_url": "https://static.poly.pizza/6d76c733-c77c-46f5-9d4f-af847d4052b3.glb",
+      "license": "CC0-1.0",
+      "sha256": "13ecd509b2e36cfcf934e84c30f6a946b6a892166a75e553613123217703cef0"
+    },
+    {
+      "file": "rock.glb",
+      "creator": "Quaternius",
+      "source_page": "https://poly.pizza/m/beP0850ESv",
+      "download_url": "https://static.poly.pizza/20532d7c-3439-4b4b-8593-96f3f3d2eeaf.glb",
+      "license": "CC0-1.0",
+      "sha256": "36671374f0c72e04197fcfe9143c14422511289966c59b67c431f84f36668cb0"
+    }
+  ]
+}

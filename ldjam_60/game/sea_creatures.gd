@@ -71,7 +71,6 @@ func update_creatures() -> void:
 		var phase: float = game.elapsed * 0.22 + creature.phase
 		var lateral: float = creature.lane + sin(phase) * creature.sweep
 		creature.body.position = game.course_forward() * creature.course + game.course_right() * lateral
-		creature.visual.position.y = sin(game.sea_time * 1.5 + creature.phase) * 0.10
 		# Face the player side of the crossing so the head/eyes stay readable.
 		creature.body.rotation.y = -game.TARGET_HEADING + PI
 
@@ -95,3 +94,11 @@ func approach_warning() -> String:
 		if offset.length() < 95.0 and offset.dot(forward) > 0.0:
 			return "REEF SERPENT AHEAD  /  DODGE OR TURN BROADSIDE"
 	return ""
+
+
+func update_ocean_visuals() -> void:
+	for creature: Dictionary in creatures:
+		if creature.body.get_meta("destroyed"):
+			continue
+		var at: Vector3 = creature.body.global_position
+		creature.visual.position.y = game.ocean.height_at(Vector2(at.x, at.z)) - game.ocean_settings.sea_level

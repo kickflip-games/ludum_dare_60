@@ -19,6 +19,11 @@ func check(condition: bool, message: String) -> void:
 func _run() -> void:
 	var game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--ocean-preset="):
+			var preset := argument.trim_prefix("--ocean-preset=")
+			if preset in ["calm", "choppy", "stormy"]:
+				game.ocean_settings = load("res://game/ocean/presets/" + preset + ".tres")
 	await physics_frame
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

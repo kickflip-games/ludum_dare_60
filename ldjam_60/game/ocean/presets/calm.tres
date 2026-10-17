@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/ocean/wave_settings.gd" id="1"]
+
+[resource]
+resource_name = "Calm"
+script = ExtResource("1")
+height_multiplier = 0.22
+speed_multiplier = 0.6
+foam_threshold = 0.68
+foam_intensity = 0.2
+bob_strength = 0.85
+pitch_strength = 0.35
+roll_strength = 0.3
+motion_damping = 8.0
+camera_bob_strength = 0.12

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/ocean/wave_settings.gd" id="1"]
+
+[resource]
+resource_name = "Stormy"
+script = ExtResource("1")
+height_multiplier = 1.02
+speed_multiplier = 1.23
+foam_threshold = 0.32
+foam_intensity = 1.0
+bob_strength = 1.0
+pitch_strength = 1.08
+roll_strength = 1.05
+motion_damping = 6.0
+camera_bob_strength = 0.22

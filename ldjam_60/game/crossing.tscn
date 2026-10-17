@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/crossing.gd" id="1_game"]
 
+[ext_resource type="Resource" path="res://game/ocean/presets/choppy.tres" id="2_ocean"]
+
 [node name="TheLastBearing" type="Node3D"]
 script = ExtResource("1_game")
+ocean_settings = ExtResource("2_ocean")

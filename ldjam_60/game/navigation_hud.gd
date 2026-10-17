@@ -114,6 +114,7 @@ func _draw_intro() -> void:
 	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    ~90 seconds", 14, muted)
 	_text(Vector2(872, 651), "Trust the star.", 30, brass, true)
 	_text(Vector2(872, 681), "Watch the water.", 24, ink, true)
+	_text(Vector2(74, 704), "Pirate kit models by Quaternius · CC0 · poly.pizza", 12, muted)
 
 
 func _draw_sailing() -> void:

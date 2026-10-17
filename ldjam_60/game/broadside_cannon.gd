@@ -1,6 +1,7 @@
 extends Node3D
 ## One fixed starboard cannon. Projectiles sweep against the same hazard bodies as the boat.
 
+const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
 var game: Node3D
@@ -20,22 +21,14 @@ var _impact_audio: AudioStreamPlayer
 
 func _ready() -> void:
 	position = Vector3(0.8, 1.17, -2.6)
-	var iron = game._material(Color("25343a"))
-	var brass = game._material(Color("b79a62"))
-	var wood = game._material(Color("69503b"))
-	game._box(self, Vector3(1.35, 0.25, 0.7), Vector3(-0.12, -0.24, 0.0), wood)
-	for side in [-1.0, 1.0]:
-		var wheel = game._cylinder(self, 0.22, 0.22, 0.12, Vector3(-0.4, -0.35, side * 0.4), iron)
-		wheel.rotation.x = PI / 2.0
 	barrel = Node3D.new()
 	add_child(barrel)
-	var tube = game._cylinder(barrel, 0.25, 0.19, 1.65, Vector3(0.25, 0.0, 0.0), iron)
-	tube.rotation.z = -PI / 2.0
-	for x in [-0.3, 0.65]:
-		var band = game._cylinder(barrel, 0.265, 0.265, 0.09, Vector3(x, 0.0, 0.0), brass)
-		band.rotation.z = -PI / 2.0
-	var bore = game._cylinder(barrel, 0.15, 0.15, 0.02, Vector3(1.08, 0.0, 0.0), game._material(Color("080e11")))
-	bore.rotation.z = -PI / 2.0
+	var cannon_model: Node3D = PIRATE_CANNON.instantiate()
+	cannon_model.name = "PirateKitStarboardCannon"
+	cannon_model.rotation.y = PI / 2.0
+	cannon_model.scale = Vector3.ONE * 1.1
+	cannon_model.position = Vector3(0.25, -0.63, 0.0)
+	barrel.add_child(cannon_model)
 	muzzle = Marker3D.new()
 	muzzle.position = Vector3(1.22, 0.0, 0.0)
 	add_child(muzzle)
@@ -62,6 +55,11 @@ func starboard_direction() -> Vector3:
 	return Vector3(cos(game.heading), 0.0, sin(game.heading))
 
 
+func shot_origin() -> Vector3:
+	# Cosmetic pitch/heave must not change the established planar firing rules.
+	return game.boat.to_global(Vector3(2.02, 1.17, -2.6))
+
+
 func fire() -> bool:
 	if game.state != game.State.SAILING or cooldown > 0.0 or game.reading:
 		return false
@@ -75,7 +73,8 @@ func fire() -> bool:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
-	projectiles.append({"node": ball, "velocity": starboard_direction() * SHOT_SPEED, "ttl": 1.8})
+	projectiles.append({"node": ball, "velocity": starboard_direction() * SHOT_SPEED, "ttl": 1.8,
+		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin()})
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
 	if is_instance_valid(_shot_audio) and game._sound_enabled:
@@ -101,7 +100,7 @@ func advance(delta: float) -> void:
 	for i in range(projectiles.size() - 1, -1, -1):
 		var shot: Dictionary = projectiles[i]
 		var ball: MeshInstance3D = shot.node
-		var from: Vector3 = ball.global_position
+		var from: Vector3 = shot.physics_position
 		var to: Vector3 = from + shot.velocity * delta
 		var ray := PhysicsRayQueryParameters3D.create(from, to, 1)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
@@ -116,7 +115,8 @@ func advance(delta: float) -> void:
 			ball.queue_free()
 			projectiles.remove_at(i)
 		else:
-			ball.global_position = to
+			shot.physics_position = to
+			ball.global_position = to + shot.visual_offset
 	for i in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[i]
 		effect.ttl -= delta
@@ -152,7 +152,7 @@ func aim_target() -> Dictionary:
 	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
 		if body.get_meta("destroyed", false):
 			continue
-		var offset: Vector3 = body.global_position - muzzle.global_position
+		var offset: Vector3 = body.global_position - shot_origin()
 		var right: float = offset.dot(starboard_direction())
 		var ahead: float = offset.dot(forward)
 		var distance: float = Vector2(right, ahead).length()

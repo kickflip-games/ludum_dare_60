@@ -136,7 +136,7 @@ func update_ship(delta: float) -> void:
 	timer += delta
 	hit_reaction = maxf(0, hit_reaction - delta)
 	if mode == Mode.SINKING:
-		visual.position.y -= delta * 1.2
+		visual.position.y -= delta * 2.5
 		visual.rotation.z += delta * 0.18
 		if timer >= 3.5:
 			mode = Mode.ESCAPED

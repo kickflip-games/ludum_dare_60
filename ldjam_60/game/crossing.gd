@@ -19,6 +19,7 @@ const ARRIVAL_RADIUS: float = 58.0
 const BEACON_REVEAL_DISTANCE: float = 110.0
 const START_HEADING: float = PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
+const NORTH_STAR_DIRECTION := Vector3(0.0, 0.8290376, -0.5591929)
 
 @export_group("Sailing difficulty")
 @export var encounter_seed: int = 60
@@ -36,6 +37,22 @@ const CAST_OFF_SECONDS: float = 1.25
 
 @export_group("Voyage presentation")
 @export var weather_enabled: bool = true
+
+@export_group("Stargazing sky")
+@export_range(0.0, 1.0, 0.05) var star_density: float = 0.72
+@export_range(0.0, 0.5, 0.01) var twinkle_strength: float = 0.16
+@export_range(0.0, 1.0, 0.05) var cloud_density: float = 0.42
+@export_range(0.0, 3.0, 0.05) var cloud_speed: float = 0.7
+@export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
+
+@export_group("Sextant assistance")
+@export_range(0.2, 2.5, 0.05) var focus_delay: float = 0.95
+@export_range(0.2, 1.2, 0.05) var focus_duration: float = 0.65
+@export_range(0.0, 1.0, 0.05) var target_highlight_strength: float = 0.65
+@export_range(1.8, 5.0, 0.1) var extended_focus_delay: float = 2.6
+@export_enum("None", "Hold to focus") var search_text: int = 1
+@export_enum("None", "Star name", "Name and bearing") var focused_text: int = 2
+@export_enum("Keep focus text", "Course hint") var extended_text: int = 0
 
 @export_group("Ocean")
 @export var ocean_settings: WaveSettings = preload("res://game/ocean/presets/choppy.tres"):
@@ -76,6 +93,8 @@ var elapsed: float = 0.0
 var sea_time: float = 0.0
 var reading: bool = false
 var read_blend: float = 0.0
+var focus_elapsed: float = 0.0
+var focus_strength: float = 0.0
 var look_blend: float = 0.0
 var starboard_look: bool = false
 var turn_input: float = 0.0
@@ -231,6 +250,8 @@ func restart() -> void:
 	enemy_encounters.reset()
 	reading = false
 	read_blend = 0.0
+	focus_elapsed = 0.0
+	focus_strength = 0.0
 	look_blend = 0.0
 	starboard_look = false
 	turn_input = 0.0
@@ -336,6 +357,13 @@ func _update_view(delta: float) -> void:
 	_update_weather(delta)
 	look_blend = move_toward(look_blend, 1.0 if starboard_look and not reading and state == State.SAILING else 0.0, delta * 5.0)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
+	# A fresh, uninterrupted hold is required every time; lowering erases assistance.
+	if reading and state == State.SAILING:
+		focus_elapsed += delta
+		focus_strength = smoothstep(focus_delay, focus_delay + focus_duration, focus_elapsed)
+	else:
+		focus_elapsed = 0.0
+		focus_strength = 0.0
 	boat.rotation.y = -heading
 	var speed_factor := boat.velocity.length() / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
@@ -344,12 +372,13 @@ func _update_view(delta: float) -> void:
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
 		boat_visual.rotation.z += end_view_blend * 0.32
+	var sky_blend := smoothstep(0.0, 1.0, read_blend)
 	var helm_pose := Transform3D(Basis.from_euler(Vector3(
-		lerpf(deg_to_rad(-6.0), deg_to_rad(56.0), read_blend), -heading - deg_to_rad(75.0) * look_blend,
+		lerpf(deg_to_rad(-6.0), deg_to_rad(78.0), sky_blend), -heading - deg_to_rad(75.0) * look_blend * (1.0 - sky_blend),
 		0.0)),
-		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18), 0.0))
+		boat.position + Vector3(0.0, 2.55 + clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18) * lerpf(1.0, 0.15, sky_blend), 0.0))
 	camera.h_offset = 0.0
-	camera.fov = 74.0
+	camera.fov = lerpf(74.0, stargazing_fov, sky_blend)
 	if state == State.READY:
 		camera.transform = _title_camera_pose()
 		camera.h_offset = -4.2
@@ -370,10 +399,16 @@ func _update_view(delta: float) -> void:
 	else:
 		camera.transform = helm_pose
 	if state == State.SAILING:
-		camera.position += camera.basis.x * sin(sea_time * 73.0) * shake_strength
-		camera.position.y += cos(sea_time * 91.0) * shake_strength * 0.5
+		var sight_shake := shake_strength * lerpf(1.0, 0.15, sky_blend)
+		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
+		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
 	sky_root.position = camera.position
 	sky_material.set_shader_parameter("visual_time", sea_time)
+	sky_material.set_shader_parameter("star_density", star_density)
+	sky_material.set_shader_parameter("twinkle_strength", twinkle_strength)
+	sky_material.set_shader_parameter("cloud_density", cloud_density)
+	sky_material.set_shader_parameter("cloud_speed", cloud_speed)
+	sky_material.set_shader_parameter("target_focus", focus_strength * target_highlight_strength)
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
 
@@ -466,35 +501,8 @@ func _build_world() -> void:
 	sky_root = Node3D.new()
 	sky_root.name = "FixedCelestialSky"
 	add_child(sky_root)
-	var star_mat := _material(Color("91aab3"), 1.0)
-	star_mat.no_depth_test = true
-	star_mat.disable_fog = true
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 60
-	for i in range(110):
-		var azimuth := rng.randf_range(-PI, PI)
-		var altitude := rng.randf_range(0.24, 1.5)
-		var sphere := SphereMesh.new()
-		sphere.radius = rng.randf_range(0.25, 0.6)
-		sphere.height = sphere.radius * 2.0
-		sphere.radial_segments = 4
-		sphere.rings = 2
-		var direction := Vector3(sin(azimuth) * cos(altitude), sin(altitude), -cos(azimuth) * cos(altitude))
-		_mesh(sky_root, sphere, direction * 700.0, star_mat)
-	# The navigation star stays at world north, 56 degrees above the horizon.
-	var north_material := _material(Color("fff0be"), 2.0)
-	north_material.no_depth_test = true
-	north_material.disable_fog = true
-	var north_direction := Vector3(0.0, sin(deg_to_rad(56.0)), -cos(deg_to_rad(56.0)))
-	var north_star := SphereMesh.new()
-	north_star.radius = 2.0
-	north_star.height = 4.0
-	_mesh(sky_root, north_star, north_direction * 700.0, north_material)
-	# A cross silhouette makes the reference star distinct from background stars.
-	var cross := _box(sky_root, Vector3(7.0, 0.6, 0.6), north_direction * 699.0, north_material)
-	cross.look_at(Vector3.ZERO)
-	var vertical := _box(sky_root, Vector3(0.6, 7.0, 0.6), north_direction * 699.0, north_material)
-	vertical.look_at(Vector3.ZERO)
+	# Stars and clouds share the world-direction sky shader, including partial
+	# cloud occlusion. The HUD projects the same fixed north / 56 degree direction.
 	camera = Camera3D.new()
 	camera.current = true
 	camera.fov = 74.0

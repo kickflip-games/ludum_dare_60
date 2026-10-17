@@ -2,22 +2,31 @@ extends SceneTree
 ## Reproducible UI fixtures rendered by Godot. Not a human playthrough.
 var game
 var output := "/tmp/last-bearing-ui/before"
+var requested_size := Vector2i(1280, 720)
 
 
 func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--output="):
 			output = arg.trim_prefix("--output=")
+		if arg.begins_with("--size="):
+			var dimensions := arg.trim_prefix("--size=").split("x")
+			requested_size = Vector2i(int(dimensions[0]), int(dimensions[1]))
 	_run.call_deferred()
 
 
 func capture(label: String) -> void:
-	for frame in range(4):
+	for frame in range(24):
 		game.hud.queue_redraw()
 		await process_frame
-	await RenderingServer.frame_post_draw
-	var result := root.get_texture().get_image().save_png(output.path_join(label + ".png"))
-	print("UI CAPTURE %s: %d (%s)" % [label, result, root.get_texture().get_size()])
+	# Explicit drawing also works while another review window covers this one.
+	RenderingServer.force_draw(true, 1.0 / 60.0)
+	var pixels := root.get_texture().get_image()
+	var result := pixels.save_png(output.path_join(label + ".png"))
+	print("UI CAPTURE %s: %d (%s)" % [label, result, pixels.get_size()])
+	if pixels.get_size() != requested_size or result != OK:
+		push_error("UI capture did not match the requested window size.")
+		quit(1)
 
 
 func _run() -> void:
@@ -26,6 +35,9 @@ func _run() -> void:
 		quit(1)
 		return
 	DirAccess.make_dir_recursive_absolute(output)
+	root.size = requested_size
+	await process_frame
+	print("UI WINDOW: pixels=%s logical=%s" % [root.size, root.get_visible_rect()])
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
@@ -39,7 +51,7 @@ func _run() -> void:
 	game._update_view(1.0)
 	await capture("02-sailing")
 	Input.action_press("astrolabe")
-	game._physics_process(0.3)
+	game._physics_process(1.8)
 	Input.action_release("astrolabe")
 	await capture("03-astrolabe")
 	game._physics_process(0.3)
@@ -63,11 +75,11 @@ func _run() -> void:
 	game._update_view(0.7)
 	await capture("07-low-hull")
 	game.reading = true
-	game._update_view(0.3)
+	game._update_view(1.8)
 	await capture("08-astrolabe-danger")
 	game.reading = false
 	ship.reset()
-	game.boat.position = game.target
+	game.boat.position = game.target - game.course_forward() * 42.0
 	game.advance_sailing(0.001, 0.0)
 	game._update_view(1.0)
 	await capture("09-victory")

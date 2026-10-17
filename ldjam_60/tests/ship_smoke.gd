@@ -92,6 +92,7 @@ func _run() -> void:
 	check(ship.collision_layer == 0 and ship.get_meta("destroyed"), "sinking immediately removes attack and target collision")
 	for frame in range(240):
 		ship.update_ship(1.0 / 60.0)
+	check(ship.visual.position.y < -7.5, "enemy mast descends below the sea before the visual is removed")
 	check(not ship.visible and ship.mode == ship.Mode.ESCAPED, "defeated cutter tilts and descends before removal")
 	game.restart()
 	check(game.enemy_encounters.encounter_index == 0 and ship.projectiles.is_empty(), "retry resets both interceptions and enemy cannonballs")

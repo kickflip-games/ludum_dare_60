@@ -1,9 +1,29 @@
 extends Node3D
-## One fixed starboard cannon. Projectiles sweep against the same hazard bodies as the boat.
+## One manually aimed starboard cannon. Projectiles sweep against the same hazard bodies as the boat.
 
 const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
+signal aiming_started
+signal aiming_ended
+signal fired(direction: Vector3)
+
+@export_group("Broadside aiming")
+@export_range(1.0, 30.0, 1.0) var max_aim_degrees: float = 20.0
+@export_range(20.0, 100.0, 1.0) var aim_speed_degrees: float = 55.0
+@export_range(0.1, 1.2, 0.05) var visual_charge_seconds: float = 0.6
+@export_group("Firing feedback")
+@export_range(0.0, 0.5, 0.01) var recoil_strength: float = 0.3
+@export_range(0.0, 0.15, 0.005) var camera_shake_strength: float = 0.055
+
+var aiming: bool = false
+var aim_degrees: float = 0.0
+var preparation: float = 0.0
+var indicator_alpha: float = 0.0
+var _fire_held: bool = false
+var _recoil_left: float = 0.0
+var yaw_pivot: Node3D
+var fuse: MeshInstance3D
 var game: Node3D
 var cooldown: float = 0.0
 var feedback: String = ""
@@ -25,8 +45,12 @@ var targets_hit: int = 0
 
 func _ready() -> void:
 	position = Vector3(0.8, 1.17, -2.6)
+	_fire_held = Input.is_action_pressed("fire_starboard")
+	yaw_pivot = Node3D.new()
+	yaw_pivot.name = "AimYaw"
+	add_child(yaw_pivot)
 	barrel = Node3D.new()
-	add_child(barrel)
+	yaw_pivot.add_child(barrel)
 	var cannon_model: Node3D = PIRATE_CANNON.instantiate()
 	cannon_model.name = "PirateKitStarboardCannon"
 	cannon_model.rotation.y = PI / 2.0
@@ -35,7 +59,7 @@ func _ready() -> void:
 	barrel.add_child(cannon_model)
 	muzzle = Marker3D.new()
 	muzzle.position = Vector3(1.22, 0.0, 0.0)
-	add_child(muzzle)
+	yaw_pivot.add_child(muzzle)
 	var spark := SphereMesh.new()
 	spark.radius = 0.26
 	spark.height = 0.52
@@ -50,6 +74,11 @@ func _ready() -> void:
 	flash_light.omni_range = 9.0
 	flash_light.visible = false
 	muzzle.add_child(flash_light)
+	var fuse_shape := SphereMesh.new()
+	fuse_shape.radius = 0.075
+	fuse_shape.height = 0.15
+	fuse = game._mesh(barrel, fuse_shape, Vector3(0.05, 0.3, 0), game._material(Color("ffcf82"), 2.0))
+	fuse.visible = false
 	if DisplayServer.get_name() != "headless":
 		_shot_audio = _audio(68.0, 0.8, -13.0)
 		_impact_audio = _audio(135.0, 0.9, -17.0)
@@ -61,17 +90,64 @@ func starboard_direction() -> Vector3:
 	return Vector3(cos(game.heading), 0.0, sin(game.heading))
 
 
+func aimed_direction() -> Vector3:
+	# Yaw is relative to the planar hull. Cosmetic roll/heave never changes ballistics.
+	return starboard_direction().rotated(Vector3.UP, deg_to_rad(aim_degrees))
+
+
 func shot_origin() -> Vector3:
-	# Cosmetic pitch/heave must not change the established planar firing rules.
-	return game.boat.to_global(Vector3(2.02, 1.17, -2.6))
+	var local_muzzle := Vector3(0.8, 1.17, -2.6) + Vector3(1.22, 0, 0).rotated(Vector3.UP, deg_to_rad(aim_degrees))
+	return game.boat.to_global(local_muzzle)
+
+
+func set_fire_held(pressed: bool) -> void:
+	# Both real events and the physics polling path use this edge latch. Sub-tick
+	# taps are handled immediately; repeats/echoes cannot create another cycle.
+	if pressed == _fire_held:
+		return
+	_fire_held = pressed
+	if pressed:
+		if game.state == game.State.SAILING and not game.reading and not Input.is_action_pressed("astrolabe"):
+			aiming = true
+			aim_degrees = 0.0
+			preparation = 0.0
+			yaw_pivot.rotation.y = 0.0
+			aiming_started.emit()
+	elif aiming:
+		fire()
+		cancel_aim()
+
+
+func cancel_aim() -> void:
+	if not aiming:
+		return
+	aiming = false
+	preparation = 0.0
+	fuse.visible = false
+	aiming_ended.emit()
+
+
+func update_aim(delta: float, horizontal_input: float) -> void:
+	if game.reading or game.state != game.State.SAILING:
+		cancel_aim()
+	if aiming:
+		# From the starboard shoulder, port/A moves the sight to screen left
+		# (toward the bow), starboard/D to screen right (toward the stern).
+		aim_degrees = clampf(aim_degrees - horizontal_input * aim_speed_degrees * delta, -max_aim_degrees, max_aim_degrees)
+		preparation = minf(1.0, preparation + delta / visual_charge_seconds)
+		yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
+		fuse.visible = true
+		fuse.scale = Vector3.ONE * (0.45 + preparation * 0.55 + sin(game.sea_time * 25.0) * 0.08)
+	indicator_alpha = move_toward(indicator_alpha, 1.0 if aiming else 0.0, delta * (10.0 if aiming else 5.0))
 
 
 func fire() -> bool:
-	if game.state != game.State.SAILING or cooldown > 0.0 or game.reading:
+	if game.state != game.State.SAILING or cooldown > 0.0 or game.reading or Input.is_action_pressed("astrolabe"):
 		return false
 	shots_fired += 1
-	game.shake(0.055)
+	game.shake(camera_shake_strength)
 	cooldown = RELOAD_SECONDS
+	_recoil_left = 0.24
 	flash_time = 0.14
 	flash.visible = true
 	flash_light.visible = true
@@ -81,8 +157,16 @@ func fire() -> bool:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
-	projectiles.append({"node": ball, "velocity": _launch_direction() * SHOT_SPEED + Vector3.UP * 0.35, "ttl": 1.8,
+	projectiles.append({"node": ball, "velocity": aimed_direction() * SHOT_SPEED + Vector3.UP * 0.35, "ttl": 1.8,
 		"physics_position": shot_origin(), "visual_offset": muzzle.global_position - shot_origin(), "trail_clock": 0.0})
+	# Existing effect lifetime system also owns the short muzzle smoke burst.
+	for i in range(5):
+		var smoke_shape := SphereMesh.new()
+		smoke_shape.radius = 0.22 + i * 0.07
+		smoke_shape.height = smoke_shape.radius * 2.0
+		var smoke = game._mesh(game, smoke_shape, muzzle.global_position + aimed_direction() * i * 0.3, game._material(Color("aab7b2")))
+		effects.append({"node": smoke, "ttl": 0.6 + i * 0.04, "velocity": aimed_direction() * (1.5 + i * 0.3) + Vector3.UP * 1.4, "smoke": true})
+	fired.emit(aimed_direction())
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
 	if is_instance_valid(_shot_audio) and game._sound_enabled:
@@ -101,7 +185,8 @@ func advance(delta: float) -> void:
 	flash_time = maxf(0.0, flash_time - delta)
 	flash.visible = flash_time > 0.0
 	flash_light.visible = flash_time > 0.0
-	barrel.position.x = -0.24 * clampf((cooldown - RELOAD_SECONDS + 0.22) / 0.22, 0.0, 1.0)
+	_recoil_left = maxf(0.0, _recoil_left - delta)
+	barrel.position.x = -recoil_strength * sin(PI * clampf(_recoil_left / 0.24, 0.0, 1.0))
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if feedback_time <= 0.0:
 		feedback = ""
@@ -144,8 +229,11 @@ func advance(delta: float) -> void:
 				effect.node.scale = Vector3(growth, 0.15, growth)
 			else:
 				effect.node.position += effect.velocity * delta
-				effect.velocity.y -= delta * 2.0
-				effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
+				if effect.get("smoke", false):
+					effect.node.scale += Vector3.ONE * delta * 1.5
+				else:
+					effect.velocity.y -= delta * 2.0
+					effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
 
 
 func _impact(body: Object, at: Vector3) -> void:
@@ -172,22 +260,10 @@ func _impact(body: Object, at: Vector3) -> void:
 		audio.play()
 
 
-func _launch_direction() -> Vector3:
-	var exact := starboard_direction()
-	var target: Dictionary = aim_target()
-	if not target.is_empty() and target.body.get_meta("target_kind", "") == "ship" and target.aligned:
-		var offset: Vector3 = target.aim_point - shot_origin()
-		offset.y = 0
-		# Forgive at most 8 degrees, at launch only. The ball never tracks after firing.
-		if exact.dot(offset.normalized()) > cos(deg_to_rad(8.0)):
-			return offset.normalized()
-	return exact
-
-
 func aim_target() -> Dictionary:
 	var selected: Dictionary = {}
 	var best_score: float = INF
-	var forward := Vector3(sin(game.heading), 0.0, -cos(game.heading))
+	var forward := aimed_direction().rotated(Vector3.UP, PI / 2.0)
 	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
 		if body.get_meta("destroyed", false):
 			continue
@@ -197,13 +273,13 @@ func aim_target() -> Dictionary:
 			aim_point = body.to_global(Vector3(0, 1.0, -1.8))
 			aim_point += body.velocity * (aim_point.distance_to(shot_origin()) / SHOT_SPEED)
 		var offset: Vector3 = aim_point - shot_origin()
-		var right: float = offset.dot(starboard_direction())
+		var right: float = offset.dot(aimed_direction())
 		var ahead: float = offset.dot(forward)
 		var distance: float = Vector2(right, ahead).length()
 		if right < 2.0 or distance > 75.0:
 			continue
 		var radius: float = body.get_meta("target_radius", 3.0)
-		var aligned: bool = absf(ahead) < maxf(0.5, radius - 0.6) or (ship and absf(atan2(ahead, right)) < deg_to_rad(8.0))
+		var aligned: bool = absf(ahead) < maxf(0.5, radius - 0.6)
 		var score: float = distance + absf(ahead) * 2.0 - (80.0 if aligned else 0.0)
 		if score < best_score:
 			best_score = score
@@ -237,6 +313,13 @@ func _splinters(at: Vector3, timber: bool) -> void:
 
 
 func reset() -> void:
+	cancel_aim()
+	_fire_held = Input.is_action_pressed("fire_starboard")
+	aim_degrees = 0.0
+	indicator_alpha = 0.0
+	yaw_pivot.rotation.y = 0.0
+	_recoil_left = 0.0
+	barrel.position = Vector3.ZERO
 	for shot: Dictionary in projectiles:
 		shot.node.queue_free()
 	for effect: Dictionary in effects:

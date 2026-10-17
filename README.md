@@ -6,17 +6,20 @@ lighthouse by checking the fixed North Star and recovering your course after ree
 current, gusts and two optional cutter duels. The initial reference is **30° to port**.
 The astrolabe is a game abstraction rather than a historical simulator.
 
-- **Start / Enter:** cast off; forward motion is automatic.
+- **Play / Enter:** cast off; forward motion is automatic.
 - **A / D or arrows:** steer. Current changes travel direction independently of the bow.
-- **Hold Space:** raise the astrolabe; movement and danger continue. Lower it quickly.
+- **Hold Space:** raise the sextant; search briefly, then hold to focus. Movement and danger continue.
 - **Hold E:** glance starboard while steering; release to watch the bow.
 - **F:** fire the right-side cannon. Lower the astrolabe first. Turn to line up a broadside.
-- **R / Try Again / Play Again:** retry. **M:** mute. **Esc:** quit.
+- **R / Try again / Sail again:** retry. **M:** mute. **Esc:** quit.
 
-The helm retains only your last sighting. Live bearing and a coarse correction back
-to the channel are available inside the instrument. There is no waypoint arrow.
-The lighthouse appears on the final approach. Progress measures distance along the
-crossing; actual entry into its broad harbour region is required to win.
+The small heading rose follows the bow. Sextant assistance begins after 0.95 seconds;
+the North Star and one live bearing cue become readable by 1.6 seconds. Releasing
+Space immediately clears the highlight and text: remember the bearing while you sail.
+The open instrument has no instant bearing needle or course bubble. Hull icons and the starboard
+reload ring stay quiet until needed; incoming-fire cues remain visible while sighting.
+The lighthouse appears on the final approach, without a waypoint arrow or progress
+readout. Actual entry into its broad harbour region is required to win.
 
 Three significant hits sink the player. Glancing contacts slide and a 2.2-second
 immunity window prevents per-frame damage. Pale timber can be shattered; rocks and
@@ -34,6 +37,14 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   1.8-second gust warning, 2-second push. Steering is 0.64 rad/s.
 - **Hull:** capacity 3, contact damage 1, immunity 2.2 seconds.
 - **Voyage presentation:** disable weather to inspect a water preset unchanged.
+- **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
+  and sky FOV (94°). Moonlit cloud lobes veil stars; a small feathered opacity limit
+  keeps the reference readable even in storm weather.
+- **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65),
+  and text at each stage. Default: a quiet search prompt, then name + bearing.
+  Optional **Extended text → Course hint** restores the existing coarse channel
+  correction after 2.6 s. Each release resets the hold. Sky mode suppresses the
+  combat glance and damps wave/shock motion without changing sailing or damage.
 - **Ocean:** authoritative shared wave resource and quality. See
   [ocean tuning](ldjam_60/game/ocean/README.md).
 
@@ -62,7 +73,24 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   broadside timber hits, water feedback, and retry.
 - `--script res://tests/ship_smoke.gd`: moving AI, incoming shots, warned evasion,
   two actual projectile hits, sinking and reset.
+- `--script res://tests/hud_smoke.gd`: 44 checks for menu actions, responsive bounds,
+  heading, reload/damage feedback, sighting priorities and result screens.
+- `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
+  repeated checks, fixed-north visibility across headings/window sizes, optional
+  text stages, active enemy fire, camera precedence and vulnerability.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
+
+UI fixtures: `--script res://tests/ui_previews.gd -- --size=1440x900 --output=/tmp/last-bearing-ui`.
+Use the real renderer with `--fixed-fps 60`; repeat with `1920x1080`, `1280x720`,
+and `960x540`. Each run captures ten menu/sailing/sighting/combat/damage/result states.
+These staged fixtures are separate from the complete scripted voyage below.
+
+Stargazing fixtures: run the real renderer with `--fixed-fps 60 --script
+res://tests/stargazing_previews.gd -- --output=/tmp/stargazing-review`. Nine images
+cover initial search, mid-focus, lock, sailing/combat return and drifting storm
+clouds. The bounded `clip/` PNG sequence encodes at 20 fps. Use `--no-clip` for
+screenshots only, or `--size=960x540` for small-window review. Input is scripted;
+weather and the combat encounter are staged, so these do not establish human balance.
 
 Real-renderer captures: `--script res://tests/gameplay_previews.gd -- --output=/tmp/last-bearing-gameplay`.
 Run captures with `--fixed-fps 60`; the harness also saves a bounded 15 fps PNG

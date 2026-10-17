@@ -1,14 +1,43 @@
 extends Control
-## A deliberately abstract astrolabe: readings are available only while raised.
-
+## Presentation only. Reads the crossing's authoritative state; never steers it.
+const Gauge = preload("res://game/nautical_gauge.gd")
+const INK := Color("f5efdc")
+const MUTED := Color("d1ded7")
+const BRASS := Color("e6bf7c")
+const CORAL := Color("ff9e99")
+const DARK := Color("173e48")
 var game: Node3D
-var ink := Color("e5e3cf")
-var muted := Color("9aafb0")
-var brass := Color("e2b873")
-var dark := Color("09151b")
 var serif: SystemFont
 var sans: Font
 var action_button: Button
+var menu: MarginContainer
+var menu_shade: TextureRect
+var menu_title: Label
+var menu_kicker: Label
+var menu_body: Label
+var menu_reference: Label
+var menu_controls: GridContainer
+var menu_details: Label
+var menu_footer: Label
+var hull_gauge: Control
+var compass: Control
+var cannon_gauge: Control
+var gameplay_hud: Control
+var threat_label: Label
+var wind_label: Label
+var notice: Label
+var instrument: Control
+var bearing_label: Label
+var alignment_label: Label
+var release_label: Label
+var _last_state: int = -1
+var _last_hull: int = -1
+var _last_cooldown: float = 0.0
+var _combat_blend: float = 0.0
+var _reading_alpha: float = 0.0
+var _threat_direction: float = 1.0
+var _has_threat: bool = false
+var _menu_alpha: float = 1.0
 
 
 func _ready() -> void:
@@ -16,39 +45,198 @@ func _ready() -> void:
 	serif = SystemFont.new()
 	serif.font_names = PackedStringArray(["Georgia", "Times New Roman"])
 	sans = ThemeDB.fallback_font
+	theme = Theme.new()
+	theme.default_font = sans
+	theme.default_font_size = 17
+	theme.set_color("font_color", "Label", INK)
+	theme.set_color("font_shadow_color", "Label", Color(DARK, 0.8))
+	theme.set_constant("shadow_offset_y", "Label", 1)
+	theme.set_color("font_outline_color", "Label", Color(DARK, 0.75))
+	theme.set_constant("outline_size", "Label", 2)
+	_build_menu()
+	gameplay_hud = Control.new()
+	gameplay_hud.name = "SailingHUD"
+	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(gameplay_hud)
+	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hull_gauge = _gauge("Hull", Gauge.Kind.HULL, Control.PRESET_BOTTOM_LEFT, Rect2(32, -102, 200, 72))
+	compass = _gauge("HeadingCompass", Gauge.Kind.COMPASS, Control.PRESET_CENTER_BOTTOM, Rect2(-85, -142, 170, 122))
+	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-206, -108, 174, 78))
+	compass.heading = game.heading
+	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
+	wind_label = _label(gameplay_hud, "Gust", "", 14, INK)
+	wind_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	wind_label.offset_left = -320
+	wind_label.offset_right = -82
+	wind_label.offset_top = 34
+	wind_label.offset_bottom = 60
+	wind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	notice = _label(gameplay_hud, "ContextNotice", "", 19)
+	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	notice.offset_left = -300
+	notice.offset_right = 300
+	notice.offset_top = 52
+	notice.offset_bottom = 88
+	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_build_instrument()
+	_sync_button()
+	_process(0.0)
+
+
+func _label(parent: Node, node_name: String, value: String, point_size: int = 17, color: Color = INK, elegant: bool = false) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.text = value
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", point_size)
+	label.add_theme_color_override("font_color", color)
+	if elegant:
+		label.add_theme_font_override("font", serif)
+	parent.add_child(label)
+	return label
+
+
+func _build_menu() -> void:
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	gradient.colors = PackedColorArray([Color(DARK, 0.72), Color(DARK, 0.36), Color(DARK, 0.0)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.width = 512
+	texture.height = 1
+	texture.fill_from = Vector2(0, 0)
+	texture.fill_to = Vector2(1, 0)
+	menu_shade = TextureRect.new()
+	menu_shade.name = "MenuTint"
+	menu_shade.texture = texture
+	menu_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_shade.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(menu_shade)
+	menu_shade.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	menu_shade.offset_right = 820
+	menu = MarginContainer.new()
+	menu.name = "VoyageMenu"
+	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(menu)
+	menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	menu.offset_left = 58
+	menu.offset_right = 538
+	menu.offset_top = -314
+	menu.offset_bottom = 314
+	var column := VBoxContainer.new()
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_theme_constant_override("separation", 18)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(column)
+	menu_kicker = _label(column, "Kicker", "A CROSSING BY STARLIGHT", 13, BRASS)
+	menu_title = _label(column, "Title", "THE LAST\nBEARING", 61, INK, true)
+	menu_title.add_theme_constant_override("line_spacing", -8)
+	menu_title.add_theme_constant_override("outline_size", 0)
+	menu_body = _label(column, "Subtitle", "A short crossing. A fixed star.\nFind your way to the lighthouse.", 18, MUTED)
+	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	menu_reference = _label(column, "StarReference", "Keep the North Star 30° to port (left).", 17, BRASS)
+	menu_controls = GridContainer.new()
+	menu_controls.name = "Controls"
+	menu_controls.columns = 2
+	menu_controls.add_theme_constant_override("h_separation", 24)
+	menu_controls.add_theme_constant_override("v_separation", 9)
+	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(menu_controls)
+	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold SPACE", "Sight the star"], ["Hold E  /  F", "Glance right / fire"]]:
+		_label(menu_controls, "Key", pair[0], 16, INK)
+		_label(menu_controls, "Action", pair[1], 16, MUTED)
+	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
+	menu_details.visible = false
 	action_button = Button.new()
 	action_button.name = "StartOrReplay"
-	action_button.pressed.connect(_on_action_pressed)
-	action_button.add_theme_color_override("font_color", dark)
-	action_button.add_theme_color_override("font_hover_color", dark)
-	action_button.add_theme_color_override("font_pressed_color", dark)
+	action_button.custom_minimum_size = Vector2(252, 52)
+	action_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	action_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	action_button.add_theme_font_size_override("font_size", 19)
+	for slot: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		action_button.add_theme_color_override(slot, DARK)
 	for kind: String in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color("e3c38a") if kind == "hover" else Color("c5a168")
+		style.bg_color = INK if kind == "hover" else BRASS if kind == "pressed" else Color("ebd6aa")
+		style.set_corner_radius_all(14)
+		style.content_margin_left = 24
+		style.content_margin_right = 24
 		if kind == "focus":
-			style.bg_color = Color(0, 0, 0, 0)
-			style.border_color = ink
+			style.bg_color = Color.TRANSPARENT
+			style.border_color = INK
 			style.set_border_width_all(2)
+			style.set_expand_margin_all(4)
 		action_button.add_theme_stylebox_override(kind, style)
-	add_child(action_button)
-	_sync_button()
+	action_button.pressed.connect(_on_action_pressed)
+	column.add_child(action_button)
+	menu_footer = _label(column, "Footer", "Automatic sailing · avoid reefs · 3 hits sink\nR retry     M mute     Esc quit", 14, MUTED)
 
 
-func _process(_delta: float) -> void:
-	_sync_button()
+func _gauge(node_name: String, kind: int, preset: int, rect: Rect2) -> Control:
+	var gauge := Control.new()
+	gauge.set_script(Gauge)
+	gauge.kind = kind
+	gauge.game = game
+	gauge.name = node_name
+	gameplay_hud.add_child(gauge)
+	gauge.set_anchors_and_offsets_preset(preset)
+	gauge.offset_left = rect.position.x
+	gauge.offset_top = rect.position.y
+	gauge.offset_right = rect.end.x
+	gauge.offset_bottom = rect.end.y
+	return gauge
+
+
+func _build_instrument() -> void:
+	instrument = Control.new()
+	instrument.name = "Astrolabe"
+	instrument.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gameplay_hud.add_child(instrument)
+	instrument.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bearing_label = _label(instrument, "Bearing", "", 21, INK, true)
+	bearing_label.size = Vector2(190, 30)
+	alignment_label = _label(instrument, "Alignment", "", 17, BRASS)
+	alignment_label.size = Vector2(190, 26)
+	release_label = _label(instrument, "ReleaseHint", "Hold to focus", 14, MUTED)
+	release_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	release_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	release_label.offset_left = -250
+	release_label.offset_right = 250
+	release_label.offset_top = -37
+	release_label.offset_bottom = -13
 
 
 func _sync_button() -> void:
-	var show_button: bool = game.state in [game.State.READY, game.State.LOST, game.State.ARRIVED]
-	action_button.visible = show_button
-	if not show_button:
+	var show_menu: bool = game.state in [game.State.READY, game.State.LOST, game.State.ARRIVED]
+	menu.visible = show_menu
+	menu_shade.visible = show_menu
+	action_button.visible = show_menu
+	gameplay_hud.visible = game.state == game.State.SAILING
+	if game.state == _last_state:
 		return
-	var factor := get_viewport_rect().size / Vector2(1280, 720)
+	_last_state = game.state
+	if not show_menu:
+		action_button.release_focus()
+		if game.state == game.State.CASTING_OFF:
+			hull_gauge.pulse = 0.0
+			cannon_gauge.pulse = 0.0
+			compass.heading = game.heading
+			_combat_blend = 0.0
+		return
 	var intro: bool = game.state == game.State.READY
-	action_button.position = (Vector2(74, 598) if intro else Vector2(90, 450)) * factor
-	action_button.size = (Vector2(576, 49) if intro else Vector2(420, 52)) * factor
-	action_button.text = "START CROSSING  /  ENTER" if intro else "PLAY AGAIN  /  R" if game.state == game.State.ARRIVED else "TRY AGAIN  /  R"
-	action_button.add_theme_font_size_override("font_size", int(20 * minf(factor.x, factor.y)))
+	var won: bool = game.state == game.State.ARRIVED
+	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "THE LAST BEARING"
+	menu_title.text = "THE LAST\nBEARING" if intro else "Safe harbour." if won else "Lost at sea."
+	menu_title.add_theme_font_size_override("font_size", 61 if intro else 51)
+	menu_body.text = "A short crossing. A fixed star.\nFind your way to the lighthouse." if intro else "The light has brought you home." if won else game.failure_reason
+	menu_reference.visible = intro
+	menu_controls.visible = intro
+	menu_details.visible = won
+	menu_details.text = "Voyage time   %02d:%02d\nHull remaining   %d / %d" % [int(game.elapsed) / 60, int(game.elapsed) % 60, game.hull, game.hull_capacity]
+	action_button.text = "Play   ·   Enter" if intro else "Sail again   ·   R" if won else "Try again   ·   R"
+	menu_footer.text = "Automatic sailing · %d hull · avoid reefs\nR retry     M mute     Esc quit" % game.hull_capacity if intro else "Trust the star. Watch the water.\nM mute     Esc quit" if won else "The sea gives you another chance.\nM mute     Esc quit"
+	action_button.grab_focus()
+	_menu_alpha = 0.0 if not intro else 1.0
 
 
 func _on_action_pressed() -> void:
@@ -58,207 +246,247 @@ func _on_action_pressed() -> void:
 		game.restart()
 
 
-func _text(at: Vector2, value: String, size_value: int = 20, color: Color = ink, elegant: bool = false) -> void:
-	draw_string(serif if elegant else sans, at, value, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size_value, color)
+func _process(delta: float) -> void:
+	if not is_instance_valid(game) or not is_instance_valid(gameplay_hud):
+		return
+	_sync_button()
+	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
+	menu.modulate.a = _menu_alpha
+	if game.state != game.State.SAILING:
+		_reading_alpha = 0.0
+		instrument.visible = false
+		bearing_label.text = ""
+		alignment_label.text = ""
+		_last_hull = game.hull
+		_last_cooldown = game.cannon.cooldown
+		queue_redraw()
+		return
+	var ship = game.enemy_encounters.ship
+	var combat: bool = ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING]
+	_combat_blend = move_toward(_combat_blend, 1.0 if combat or game.cannon.cooldown > 0 or game.look_blend > 0.1 else 0.0, delta * 5.0)
+	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend)
+	if _last_hull >= 0 and game.hull < _last_hull:
+		hull_gauge.pulse = 0.65
+	if _last_cooldown > 0.0 and game.cannon.cooldown == 0.0:
+		cannon_gauge.pulse = 0.5
+	_last_hull = game.hull
+	_last_cooldown = game.cannon.cooldown
+	# Aim queries are made once per frame and shared by the ring and world marks.
+	cannon_gauge.target = game.cannon.aim_target() if _reading_alpha < 0.9 else {}
+	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0
+	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.64 + _combat_blend * 0.25, 0.0, _reading_alpha)
+	cannon_gauge.modulate.a = lerpf(0.5 + _combat_blend * 0.5, 0.0, _reading_alpha)
+	compass.modulate.a = 1.0 - _reading_alpha
+	for gauge: Control in [hull_gauge, compass, cannon_gauge]:
+		gauge.update_presentation(delta)
+	instrument.modulate.a = _reading_alpha
+	instrument.visible = _reading_alpha > 0.01
+	_update_sighting_text()
+	_update_threat()
+	wind_label.visible = game.voyage.gust_warning > 0.0 or game.voyage.gust_left > 0.0
+	wind_label.text = "Gust from port" if game.voyage.gust_direction > 0 else "Gust from starboard"
+	wind_label.modulate.a = minf(1.0, maxf(game.voyage.gust_warning, game.voyage.gust_left) * 3.0)
+	_update_notice()
+	queue_redraw()
 
 
-func _center(at: Vector2, value: String, size_value: int = 20, color: Color = ink, elegant: bool = false) -> void:
+func _star_screen_position() -> Vector2:
+	var point: Vector3 = game.sky_root.global_position + game.NORTH_STAR_DIRECTION * 700.0
+	return game.camera.unproject_position(point)
+
+
+func _update_sighting_text() -> void:
+	var active: bool = game.reading and game.state == game.State.SAILING
+	var focus: float = game.focus_strength if active else 0.0
+	var named: bool = active and focus > 0.55 and game.focused_text >= 1
+	var bearing: bool = active and focus > 0.85 and game.focused_text >= 2
+	var extended: bool = active and focus >= 1.0 and game.focus_elapsed >= game.extended_focus_delay and game.extended_text == 1
+	bearing_label.text = "North Star" if named else ""
+	alignment_label.text = _course_hint() if extended else _bearing_text(game.heading) if bearing else ""
+	bearing_label.visible = named
+	alignment_label.visible = bearing or extended
+	bearing_label.modulate.a = smoothstep(0.55, 0.95, focus)
+	alignment_label.modulate.a = smoothstep(0.85, 1.0, focus)
+	release_label.visible = active and game.search_text == 1 and focus < 0.3
+	release_label.modulate.a = 0.65 * (1.0 - smoothstep(0.0, 0.3, focus))
+	if named or bearing or extended:
+		var at := _star_screen_position() + Vector2(25, -21)
+		at.x = clampf(at.x, 24, size.x - 214)
+		at.y = clampf(at.y, 24, size.y - 200)
+		bearing_label.position = at
+		alignment_label.position = at + Vector2(0, 29)
+
+
+func _update_notice() -> void:
+	var value := ""
+	var alpha: float = 1.0
+	if game.elapsed < 6.0 and not game.has_reading:
+		value = "Hold SPACE · sight the North Star"
+		alpha = clampf(6.0 - game.elapsed, 0.0, 1.0)
+	elif game.phase_banner_left > 0.0 and game.elapsed > 8.0:
+		value = game.phase_name()
+		alpha = minf(1.0, game.phase_banner_left)
+	notice.text = value
+	notice.modulate.a = alpha * (1.0 - _reading_alpha)
+	notice.visible = not value.is_empty()
+
+
+func _update_threat() -> void:
+	var ship = game.enemy_encounters.ship
+	_has_threat = game.enemy_encounters.enabled and (ship.mode == ship.Mode.TELEGRAPH or not ship.projectiles.is_empty())
+	threat_label.visible = _has_threat
+	if not _has_threat:
+		return
+	var from: Vector3 = ship.global_position
+	if not ship.projectiles.is_empty():
+		from = ship.projectiles[0].position
+	var offset: Vector3 = from - game.boat.global_position
+	_threat_direction = signf(offset.dot(game.cannon.starboard_direction()))
+	var right: bool = _threat_direction >= 0
+	threat_label.text = "Incoming · starboard" if right else "Incoming · port"
+	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right else HORIZONTAL_ALIGNMENT_LEFT
+	threat_label.position = Vector2(size.x - 300 if right else 76.0, size.y * 0.33 - 13)
+	threat_label.size = Vector2(224, 30)
+
+
+func _bearing_text(angle: float) -> String:
+	var degrees: float = rad_to_deg(wrapf(angle, -PI, PI))
+	if absf(degrees) < 0.5:
+		return "Dead ahead"
+	return "%d° %s" % [roundi(absf(degrees)), "port" if degrees > 0.0 else "starboard"]
+
+
+func _course_error() -> float:
+	# Preserve the existing coarse channel correction, only inside the astrolabe.
+	var lane: float = game.boat.position.dot(game.course_right())
+	var corrected: float = game.TARGET_HEADING - clampf(lane * 0.008, -0.35, 0.35)
+	return wrapf(game.heading - corrected, -PI, PI)
+
+
+func _course_hint() -> String:
+	var error: float = _course_error()
+	if absf(error) < deg_to_rad(3.0):
+		return "Channel aligned"
+	return "Adjust to port" if error > 0.0 else "Adjust to starboard"
+
+
+func _text(at: Vector2, value: String, point_size: int = 16, color: Color = INK, centered: bool = false, elegant: bool = false) -> void:
 	var font: Font = serif if elegant else sans
-	var width := font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size_value).x
-	_text(at - Vector2(width * 0.5, 0.0), value, size_value, color, elegant)
+	if centered:
+		at.x -= font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, point_size).x * 0.5
+	draw_string_outline(font, at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, point_size, 3, Color(DARK, color.a * 0.8))
+	draw_string(font, at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, point_size, color)
 
 
-func _line(a: Vector2, b: Vector2, color: Color = muted, width: float = 1.0) -> void:
+func _line(a: Vector2, b: Vector2, color: Color = INK, width: float = 1.5) -> void:
+	draw_line(a, b, Color(DARK, color.a * 0.7), width + 2.5, true)
 	draw_line(a, b, color, width, true)
 
 
 func _draw() -> void:
 	if not is_instance_valid(game) or serif == null:
 		return
-	var factor := get_viewport_rect().size / Vector2(1280.0, 720.0)
-	draw_set_transform(Vector2.ZERO, 0.0, factor)
-	if game.state == game.State.READY:
-		_draw_intro()
+	if game.state in [game.State.READY, game.State.ARRIVED, game.State.LOST]:
 		return
 	if game.state == game.State.CASTING_OFF:
-		draw_rect(Rect2(390, 615, 500, 78), Color(0.025, 0.06, 0.08, 0.9))
-		_center(Vector2(640, 647), "CASTING OFF", 24, brass, true)
-		_center(Vector2(640, 677), "Take a bearing when the helm is yours.", 17, ink)
+		_text(Vector2(size.x * 0.5, size.y - 65), "Casting off…", 25, INK, true, true)
 		return
-	if game.state == game.State.LOST or game.state == game.State.ARRIVED:
-		_draw_end()
-		return
-	_draw_sailing()
+	_draw_weather()
 	if game.hit_flash > 0.0:
-		draw_rect(Rect2(0, 0, 1280, 720), Color(0.65, 0.12, 0.06, game.hit_flash * 0.2))
-	if game.read_blend > 0.05:
+		_draw_damage_edges()
+	if _has_threat:
+		var at := Vector2(size.x - 48 if _threat_direction >= 0 else 48.0, size.y * 0.33)
+		var side: float = 1 if _threat_direction >= 0 else -1
+		var color := Color(CORAL, 0.8 + sin(game.sea_time * 14) * 0.2)
+		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
+		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
+	if wind_label.visible:
+		_draw_wind(Vector2(size.x - 55 + sin(game.sea_time * 6.0) * 2, 47), wind_label.modulate.a)
+	if _reading_alpha > 0.01:
 		_draw_instrument()
+	elif _combat_blend > 0.1:
+		_draw_target()
 
 
-func _draw_intro() -> void:
-	draw_rect(Rect2(36, 36, 654, 648), Color(0.025, 0.06, 0.08, 0.96))
-	_line(Vector2(64, 68), Vector2(660, 68), brass)
-	_text(Vector2(74, 108), "LUDUM DARE 60   /   OLD TECH", 16, brass)
-	_text(Vector2(70, 182), "The Last", 62, ink, true)
-	_text(Vector2(70, 246), "Bearing", 72, ink, true)
-	_text(Vector2(74, 287), "A short crossing. A fixed star. No compass.", 20, muted)
-	_line(Vector2(74, 316), Vector2(650, 316), Color("35494d"))
-	_text(Vector2(74, 351), "REACH THE LIGHTHOUSE", 15, brass)
-	_text(Vector2(74, 383), "Keep the North Star 30° to PORT (your left).", 22)
-	_text(Vector2(74, 414), "The light only appears near the far shore.", 20, muted)
-	_text(Vector2(74, 463), "A / D  or  ← / →", 21, brass)
-	_text(Vector2(340, 463), "Steer the boat", 20)
-	_text(Vector2(74, 502), "HOLD SPACE", 21, brass)
-	_text(Vector2(340, 502), "Raise the astrolabe", 20)
-	_text(Vector2(74, 540), "F  /  FIRE STARBOARD", 20, brass)
-	_text(Vector2(340, 540), "E glance right · F fire", 19)
-	_text(Vector2(74, 568), "Boat never stops. Dodge rocks; shoot timber or cutters.", 18, muted)
-	_text(Vector2(74, 670), "R restart    ·    M mute    ·    Esc quit    /    90–120 seconds", 14, muted)
-	_text(Vector2(872, 651), "Trust the star.", 30, brass, true)
-	_text(Vector2(872, 681), "Watch the water.", 24, ink, true)
-	_text(Vector2(74, 704), "Pirate kit models by Quaternius · CC0 · poly.pizza", 12, muted)
+func _draw_damage_edges() -> void:
+	for i in range(16):
+		var alpha: float = game.hit_flash * 0.32 * (1.0 - i / 16.0)
+		var color := Color(CORAL, alpha)
+		draw_rect(Rect2(i * 2, 0, 2, size.y), color)
+		draw_rect(Rect2(size.x - i * 2 - 2, 0, 2, size.y), color)
+		draw_rect(Rect2(0, i, size.x, 1), color)
+		draw_rect(Rect2(0, size.y - i - 1, size.x, 1), color)
 
 
-func _draw_sailing() -> void:
-	# The sea gets the screen. Bearing is live only inside the raised instrument.
-	draw_rect(Rect2(0, 0, 1280, 60), Color(0.02, 0.05, 0.07, 0.86))
-	_text(Vector2(24, 25), game.phase_name(), 13, brass)
-	draw_rect(Rect2(24, 38, 260, 5), Color("263b43"))
-	draw_rect(Rect2(24, 38, 260 * game.journey_progress(), 5), brass)
-	_text(Vector2(306, 43), "%d%%" % roundi(game.journey_progress() * 100), 15, muted)
-	_text(Vector2(1010, 38), "HULL " + "● ".repeat(game.hull) + "○ ".repeat(game.hull_capacity - game.hull), 20, ink)
-	_text(Vector2(876, 38), "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60], 19, muted)
+func _draw_weather() -> void:
 	if game.storm_blend > 0.6:
 		for i in range(16):
-			var x: float = fmod(i * 91.0 + game.sea_time * 95.0, 1300.0)
-			var y: float = 140.0 + fmod(i * 133.0 + game.sea_time * 410.0, 430.0)
-			_line(Vector2(x, y), Vector2(x - 6.0, y + 24.0), Color(0.65, 0.8, 0.81, 0.11))
-	if game.voyage.gust_warning > 0.0 or game.voyage.gust_left > 0.0:
+			var at := Vector2(fmod(i * 91.0 + game.sea_time * 95.0, size.x + 20), 140 + fmod(i * 133.0 + game.sea_time * 410.0, size.y * 0.6))
+			draw_line(at, at + Vector2(-6, 24), Color(0.65, 0.8, 0.81, 0.11), 1, true)
+	if game.voyage.gust_warning > 0 or game.voyage.gust_left > 0:
 		for i in range(5):
-			var x: float = fmod(i * 260.0 + game.sea_time * game.voyage.gust_direction * 480.0 + 12800, 1280)
-			var y: float = 210.0 + i * 61.0
-			_line(Vector2(x, y), Vector2(x + game.voyage.gust_direction * 95, y - 8), Color(0.8, 0.9, 0.85, 0.22))
-	var warning: String = ""
-	if game.hit_message_left > 0.0:
-		warning = game.hit_message + "  ·  %d HULL LEFT" % game.hull
-	elif game.enemy_encounters.ship.mode == game.enemy_encounters.ship.Mode.TELEGRAPH:
-		warning = game.enemy_encounters.approach_warning()
-	elif game.voyage.force_warning() != "":
-		warning = game.voyage.force_warning()
-	elif game.cannon.feedback_time > 0.0:
-		warning = game.cannon.feedback
-	elif game.enemy_encounters.approach_warning() != "":
-		warning = game.enemy_encounters.approach_warning()
-	elif absf(game.boat.position.dot(game.course_right())) > 65.0:
-		warning = "WIDE OF THE CHANNEL  ·  TAKE A BEARING TO RETURN"
-	elif game.elapsed < 8.0:
-		warning = "HOLD SPACE FOR A BEARING  ·  KEEP THE STAR 30° TO PORT"
-	elif game.phase == 3 and game.phase_banner_left > 0.0:
-		warning = "LIGHTHOUSE SIGHTED  ·  ONE LAST REEF"
-	if warning != "":
-		draw_rect(Rect2(210, 76, 860, 37), Color(0.025, 0.06, 0.08, 0.92))
-		_center(Vector2(640, 101), warning, 17, brass)
-	if game.phase_banner_left > 0.0 and game.read_blend < 0.05 and game.elapsed > 8:
-		_center(Vector2(640, 154), game.phase_name(), 26, ink, true)
-	if game.read_blend < 0.05:
-		draw_rect(Rect2(24, 606, 390, 65), Color(0.025, 0.06, 0.08, 0.90))
-		_text(Vector2(40, 630), "LAST SIGHT  ·  SPACE TO CHECK", 12, muted)
-		_text(Vector2(40, 656), _bearing_text(game.last_reading) if game.has_reading else "No bearing taken", 18, ink)
-		if game.has_reading:
-			_text(Vector2(274, 631), "%ds ago" % int(game.elapsed - game.last_sighting_time), 12, muted)
-		_draw_cannon_target()
-	draw_rect(Rect2(0, 687, 1280, 33), Color(0.025, 0.06, 0.08, 0.92))
-	_center(Vector2(640, 710), "A / D  steer     ·     HOLD SPACE  sight the star     ·     E  glance right     ·     F  cannon     ·     R  retry", 14, muted)
+			var at := Vector2(fposmod(i * size.x / 5 + game.sea_time * game.voyage.gust_direction * 480, size.x), size.y * 0.3 + i * 61)
+			draw_line(at, at + Vector2(game.voyage.gust_direction * 95, -8), Color(0.8, 0.9, 0.85, 0.16), 1, true)
 
 
-func _draw_cannon_target() -> void:
-	var target: Dictionary = game.cannon.aim_target()
-	draw_rect(Rect2(968, 606, 288, 65), Color(0.025, 0.06, 0.08, 0.90))
-	var status: String = "F  ·  STARBOARD READY"
-	if game.cannon.cooldown > 0.0:
-		status = "RELOADING  %.1fs" % game.cannon.cooldown
-	elif not target.is_empty() and target.aligned:
-		status = "ABEAM  ·  F TO FIRE"
-	_text(Vector2(984, 631), status, 15, brass)
-	draw_rect(Rect2(984, 647, 254, 5), Color("263b43"))
-	draw_rect(Rect2(984, 647, 254 * (1.0 - game.cannon.cooldown / game.cannon.RELOAD_SECONDS), 5), brass)
-	if target.is_empty():
+func _draw_wind(at: Vector2, alpha: float) -> void:
+	var color := Color(INK, alpha * 0.8)
+	for i in range(3):
+		var y: float = (i - 1) * 7.0
+		_line(at + Vector2(-15, y), at + Vector2(8 - i * 4, y), color)
+		draw_arc(at + Vector2(8 - i * 4, y - 3), 3, -PI / 2, PI / 2, 12, color, 1.5, true)
+
+
+func _draw_target() -> void:
+	var target: Dictionary = cannon_gauge.target
+	if target.is_empty() or not target.aligned:
 		return
-	var point: Vector3 = target.body.global_position + Vector3.UP * 5.0
-	if not game.camera.is_position_behind(point):
-		var at: Vector2 = game.camera.unproject_position(point) / (get_viewport_rect().size / Vector2(1280, 720))
-		if at.x > 30 and at.x < 1250 and at.y > 175 and at.y < 575:
-			var label: String = "CUTTER  " + "● ".repeat(maxi(0, target.body.hull)) if target.body.get_meta("target_kind", "") == "ship" else "TIMBER"
-			_center(at, label, 14, brass)
-
-
-func _bearing_text(angle: float) -> String:
-	var degrees := rad_to_deg(wrapf(angle, -PI, PI))
-	if absf(degrees) < 0.5:
-		return "Star dead ahead · 000°"
-	return "Star %03d° to %s" % [roundi(absf(degrees)), "PORT" if degrees > 0.0 else "STARBOARD"]
+	var point: Vector3 = target.body.global_position + Vector3.UP * 5.8
+	if game.camera.is_position_behind(point):
+		return
+	var at: Vector2 = game.camera.unproject_position(point)
+	if not Rect2(Vector2(36, 120), size - Vector2(72, 290)).has_point(at):
+		return
+	var color := Color(BRASS, _combat_blend * (1.0 - _reading_alpha))
+	for side in [-1, 1]:
+		_line(at + Vector2(side * 17, -8), at + Vector2(side * 24, -8), color)
+		_line(at + Vector2(side * 24, -8), at + Vector2(side * 24, 4), color)
+	if target.body.get_meta("target_kind", "") == "ship":
+		for i in range(target.body.hull_capacity):
+			draw_circle(at + Vector2((i - (target.body.hull_capacity - 1) * 0.5) * 9, 0), 2.5, color if i < target.body.hull else Color(color, 0.2))
 
 
 func _draw_instrument() -> void:
-	var alpha: float = game.read_blend
-	# Readout and sea view never coexist; the camera is tilted into the sky.
-	draw_rect(Rect2(345, 119, 590, 110), Color(0.025, 0.06, 0.08, 0.94 * alpha))
-	_center(Vector2(640, 147), "ASTROLABE  /  FIXED STAR SIGHT", 14, brass)
-	_center(Vector2(640, 185), _bearing_text(game.heading).to_upper(), 29, ink)
-	_center(Vector2(640, 213), "REFERENCE 30° TO PORT   ·   " + _course_hint(), 16, brass)
-	var center := Vector2(640, 497)
+	var alpha: float = _reading_alpha
+	var center := Vector2(size.x * 0.5, size.y - 168 + (1.0 - alpha) * 28)
 	var radius := 112.0
-	draw_circle(center, radius + 8.0, Color(0.07, 0.09, 0.09, alpha))
-	draw_circle(center, radius, Color(0.15, 0.17, 0.15, alpha))
-	draw_arc(center, radius, 0.0, TAU, 96, brass, 4.0, true)
-	draw_arc(center, radius - 14.0, 0.0, TAU, 96, Color("8d7955"), 1.0, true)
-	for tick in range(72):
-		var angle := tick * TAU / 72.0
-		var direction := Vector2(sin(angle), -cos(angle))
-		var length_value := 18.0 if tick % 6 == 0 else 8.0
-		_line(center + direction * (radius - length_value), center + direction * (radius - 3.0), brass)
-	_center(center + Vector2(0, -76), "BOW", 13, muted)
-	_center(center + Vector2(0, 83), "STERN", 12, muted)
-	_text(center + Vector2(-105, 6), "P", 17, brass, true)
-	_text(center + Vector2(91, 6), "S", 17, brass, true)
-	var target_direction := Vector2(sin(-game.TARGET_HEADING), -cos(-game.TARGET_HEADING))
-	_line(center + target_direction * 35.0, center + target_direction * 108.0, Color("6ca7a5"), 4.0)
-	var star_direction := Vector2(sin(-game.heading), -cos(-game.heading))
-	_line(center - star_direction * 32.0, center + star_direction * 100.0, brass, 3.0)
-	draw_circle(center + star_direction * 100.0, 5.0, ink)
-	draw_circle(center, 10.0, brass)
-	draw_circle(center, 4.0, dark)
-	# Label the actual world-space star if it falls inside the raised view.
-	var direction := Vector3(0.0, sin(deg_to_rad(56.0)), -cos(deg_to_rad(56.0)))
-	var star_at: Vector3 = game.sky_root.global_position + direction * 700.0
-	if not game.camera.is_position_behind(star_at):
-		var at: Vector2 = game.camera.unproject_position(star_at) / (get_viewport_rect().size / Vector2(1280, 720))
-		if at.x > 40 and at.x < 1240 and at.y > 235 and at.y < 375:
-			draw_arc(at, 13.0, 0.0, TAU, 32, Color("dec995"), 1.0, true)
-			_text(at + Vector2(23, 5), "NORTH STAR", 12, brass)
-	draw_rect(Rect2(345, 577, 590, 39), Color(0.025, 0.06, 0.08, 0.95))
-	_center(Vector2(640, 603), "STILL MOVING  /  RELEASE SPACE TO WATCH THE WATER", 16, brass)
-
-
-func _course_hint() -> String:
-	var lane: float = game.boat.position.dot(game.course_right())
-	var corrected: float = game.TARGET_HEADING - clampf(lane * 0.008, -0.35, 0.35)
-	var error: float = wrapf(game.heading - corrected, -PI, PI)
-	if absf(error) < deg_to_rad(3.0):
-		return "CHANNEL COURSE"
-	return "STEER PORT" if error > 0.0 else "STEER STARBOARD"
-
-
-func _draw_end() -> void:
-	var won: bool = game.state == game.State.ARRIVED
-	draw_rect(Rect2(0, 0, 1280, 720), Color(0.02, 0.05, 0.07, 0.22))
-	draw_rect(Rect2(42, 150, 516, 396), Color(0.025, 0.06, 0.08, 0.96))
-	_line(Vector2(74, 180), Vector2(526, 180), brass)
-	_center(Vector2(300, 226), "THE CROSSING IS OVER", 15, brass)
-	_center(Vector2(300, 293), "Safe harbour." if won else "Lost at sea.", 48, ink, true)
-	var detail: String = "You reached the light in %d seconds." % int(game.elapsed) if won else game.failure_reason
-	_center(Vector2(300, 341), detail, 18, muted)
-	_center(Vector2(300, 382), "Hull %d / %d  ·  Cutters sunk %d" % [game.hull, game.hull_capacity, game.enemy_encounters.ships_sunk] if won else "Dodge, take a sight, and try again.", 19, ink)
-	if won:
-		draw_rect(Rect2(90, 409, 420, 7), brass)
-	_center(Vector2(300, 528), "660 m crossing complete" if won else "The sea gives you another chance.", 14, muted)
+	var brass := Color(BRASS, alpha * 0.65)
+	# An open sextant frame leaves the sky visible. No live needle or course
+	# bubble gives away the solution during the searching stage.
+	var a := PI * 0.20
+	var b := PI * 0.80
+	draw_arc(center, radius, a, b, 48, brass, 3, true)
+	draw_arc(center, radius - 12, a, b, 48, Color(BRASS, alpha * 0.25), 1, true)
+	for tick in range(25):
+		var angle := lerpf(a, b, tick / 24.0)
+		var direction := Vector2(cos(angle), sin(angle))
+		var length_value: float = 12 if tick % 4 == 0 else 5
+		draw_line(center + direction * (radius - length_value), center + direction * radius, brass, 1, true)
+	for angle: float in [a, b]:
+		_line(center, center + Vector2(cos(angle), sin(angle)) * radius, brass, 2.0)
+	_line(center + Vector2(-18, -4), center + Vector2(18, -4), brass, 4)
+	draw_circle(center, 4, brass)
+	# A quiet central sight is present from the start; it never points north.
+	var sight := size * Vector2(0.5, 0.44)
+	for side in [-1, 1]:
+		draw_line(sight + Vector2(side * 7, 0), sight + Vector2(side * 13, 0), Color(INK, alpha * 0.32), 1, true)
+		draw_line(sight + Vector2(0, side * 7), sight + Vector2(0, side * 13), Color(INK, alpha * 0.32), 1, true)
+	if not game.reading or game.focus_strength <= 0.0:
+		return
+	var focus: float = game.focus_strength
+	var at := _star_screen_position()
+	var ring := lerpf(29.0, 13.0, focus) + sin(game.sea_time * 2.0) * 0.8
+	var glint := Color(BRASS, alpha * focus * game.target_highlight_strength)
+	for side in range(3):
+		var angle: float = side * TAU / 3.0 + sin(game.sea_time * 0.4) * 0.08
+		draw_arc(at, ring, angle, angle + TAU / 3.0 - 0.45, 16, glint, 1.2, true)

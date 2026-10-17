@@ -6,10 +6,13 @@ var output: String = "/tmp/last-bearing-gameplay"
 var captured: Dictionary = {}
 var glance_left: float = 0.0
 var clip_frame: int = 0
+var clip_enabled: bool = true
 
 
 func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--no-clip":
+			clip_enabled = false
 		if arg.begins_with("--output="):
 			output = arg.trim_prefix("--output=")
 	_run.call_deferred()
@@ -20,6 +23,7 @@ func capture(label: String) -> void:
 		return
 	captured[label] = true
 	game.hud.queue_redraw()
+	RenderingServer.force_draw(true, 1.0 / 60.0)
 	var result: int = root.get_texture().get_image().save_png(output.path_join(label + ".png"))
 	print("CAPTURE %s: %s" % [label, result])
 
@@ -52,7 +56,7 @@ func _run() -> void:
 		Input.action_release("steer_starboard")
 		if absf(steer) > 0.01:
 			Input.action_press("steer_port" if steer < 0 else "steer_starboard", absf(steer))
-		if fmod(game.elapsed, 11.0) < 0.4:
+		if fmod(game.elapsed, 11.0) < 1.8:
 			Input.action_press("astrolabe")
 		else:
 			Input.action_release("astrolabe")
@@ -78,13 +82,13 @@ func _run() -> void:
 		previous = now
 		if frame % 300 == 0:
 			print("RENDER PROGRESS: frame=%d t=%.1f course=%.1f" % [frame, game.elapsed, game.journey_distance()])
-		if game.enemy_encounters.encounter_index == 1 and ship.age > 2 and ship.age < 18 and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED] and clip_frame < 240 and frame % 4 == 0:
+		if clip_enabled and game.enemy_encounters.encounter_index == 1 and ship.age > 2 and ship.age < 18 and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED] and clip_frame < 240 and frame % 4 == 0:
 			root.get_texture().get_image().save_png(output.path_join("clip/frame-%04d.png" % clip_frame))
 			clip_frame += 1
 		var progress: float = game.journey_progress()
 		if progress > 0.18 and game.look_blend < 0.1 and not game.reading:
 			capture("02-rock-gate")
-		if game.reading and progress > 0.2 and game.read_blend > 0.9:
+		if game.reading and progress > 0.2 and game.focus_strength >= 1.0:
 			capture("03-astrolabe")
 		if ship.mode == ship.Mode.TELEGRAPH and game.look_blend > 0.9:
 			capture("04-cutter-broadside-warning")

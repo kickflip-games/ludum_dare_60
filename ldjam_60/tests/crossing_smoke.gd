@@ -94,7 +94,7 @@ func voyage(seed_value: int, strategy: String) -> void:
 		Input.action_release("steer_starboard")
 		if absf(steering) > 0.01:
 			Input.action_press("steer_port" if steering < 0 else "steer_starboard", absf(steering))
-		var sight: bool = strategy != "straight" and fmod(game.elapsed, 5.0 if strategy == "frequent_sights" else 11.0) < (0.65 if strategy == "frequent_sights" else 0.4)
+		var sight: bool = strategy != "straight" and fmod(game.elapsed, 5.0 if strategy == "frequent_sights" else 11.0) < 1.8
 		if sight:
 			Input.action_press("astrolabe")
 			reads += 1

@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Work in progress: Development Tools `+` (Shift+= / numpad +) releases the
+  current wave's queued ships, bypassing stagger and the ordinary ship cap.
+  Preserves safe placement, survivors, timers and wave/defeat accounting;
+  blocked arrivals retry, and restart removes temporary extra slots.
+  Enable Development Tools in the inspector or launch with `--debug-tools`.
+  306 checks pass across debug, survival, flagship and control suites; native
+  nine-ship fleet frame inspected. Human playtesting and Web remain untested.
+
 - Merged nautical UI into main while preserving the flagship encounter. Final
   fleet icons include the flagship and queued escorts; its health bar sits
   between the fleet counter and launch announcement. Victory uses the shared

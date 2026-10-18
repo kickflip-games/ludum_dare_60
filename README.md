@@ -33,6 +33,12 @@ earlier survivors alive. Entering the old harbour never wins.
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
+- **Debug `+` (Shift+= or numpad +):** with **Development → Development Tools**
+  enabled on the crossing, spawn all remaining ships for the current wave.
+  This skips arrival delays and the ordinary ship cap; survivors, wave timers
+  and defeat counts stay intact. If safe spawn positions are occupied, arrivals
+  retry as space opens. Retry removes temporary extra ship slots. Enable from
+  the command line with `godot --path ldjam_60 -- --debug-tools`.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
   and three low islets offer alternate routes. Main rock gaps exceed 30 m;
   the outer ring remains open for broad combat turns. Both sides' shots stop on
@@ -142,6 +148,7 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_c
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/cannon_arc_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/debug_wave_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/storm_boundary_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/night_boost_wave_smoke.gd

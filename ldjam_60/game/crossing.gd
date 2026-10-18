@@ -328,6 +328,8 @@ func _ready() -> void:
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_title("Latitude Lines")
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--debug-tools":
+			development_tools = true
 		if arg == "--layout-debug":
 			development_tools = true
 			archipelago.toggle_debug()
@@ -376,6 +378,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			archipelago.debug_wave_zone()
 		elif event.keycode == KEY_F7 and arena_mode and state == State.SAILING:
 			enemy_encounters.debug_cutter()
+		elif event.keycode in [KEY_PLUS, KEY_KP_ADD] or event.unicode == KEY_PLUS or (event.shift_pressed and event.keycode == KEY_EQUAL):
+			if not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
+				enemy_encounters.debug_release_wave()
+				get_viewport().set_input_as_handled()
+				return
 	if event.is_action("restart_crossing") and not event.is_echo():
 		if not event.is_pressed():
 			restart_elapsed = 0.0

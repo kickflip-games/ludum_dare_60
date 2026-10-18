@@ -30,6 +30,7 @@ var clock := 0.0
 var sector_index := 1
 var announcement_left := 0.0
 var announcement := ""
+var _debug_release_wave := 0
 var _focus: CharacterBody3D
 var _focus_until := 0.0
 @export var focus_hold_seconds := 2.5
@@ -41,19 +42,23 @@ func _ready() -> void:
 	survival_settings = survival_settings.duplicate(true)
 	director.manager = self
 	for i in (POOL_SIZE if game.arena_mode else 1):
-		var cutter: CharacterBody3D = SHIP.instantiate()
-		cutter.game = game
-		cutter.director = director
-		add_child(cutter)
-		ships.append(cutter)
-		if game.arena_mode:
-			cutter.collision_mask = 7
+		_add_ship()
 	if game.arena_mode:
 		boss = BOSS.instantiate()
 		boss.game = game
 		add_child(boss)
 	ship = ships.front() # Compatibility for the explicit single-cutter voyage fixture.
 	reset()
+
+func _add_ship() -> CharacterBody3D:
+	var cutter: CharacterBody3D = SHIP.instantiate()
+	cutter.game = game
+	cutter.director = director
+	add_child(cutter)
+	ships.append(cutter)
+	if game.arena_mode:
+		cutter.collision_mask = 7
+	return cutter
 
 func update_encounters(delta: float) -> void:
 	if not enabled:
@@ -115,6 +120,9 @@ func reset() -> void:
 		game._wave_audio.stop()
 	for cutter in ships:
 		cutter.reset()
+	# Debug releases may exceed the normal pool; retry restores its original size.
+	while ships.size() > POOL_SIZE:
+		ships.pop_back().queue_free()
 	if is_instance_valid(boss):
 		boss.reset()
 	boss_spawn_pending = false
@@ -137,6 +145,7 @@ func reset() -> void:
 	phase = Phase.PREPARING
 	announcement = ""
 	announcement_left = 0.0
+	_debug_release_wave = 0
 
 func debug_cutter() -> void:
 	if not game.development_tools or not game.arena_mode or not enabled:
@@ -144,6 +153,27 @@ func debug_cutter() -> void:
 	# Use the normal queue/accounting instead of inventing an untracked enemy.
 	if phase == Phase.PREPARING:
 		next_wave_in = 0.0
+
+func debug_release_wave() -> void:
+	if not game.development_tools or not game.arena_mode or not enabled or game.state != game.State.SAILING or game.hull <= 0:
+		return
+	if not game._window_focused or game.walkthrough.active or game.hud.settings_open:
+		return
+	if phase == Phase.PREPARING:
+		_begin_wave()
+	if phase != Phase.ACTIVE:
+		return
+	_debug_release_wave = wave_number
+	_drain_debug_wave()
+
+func _drain_debug_wave() -> void:
+	# Bypass only arrival stagger/capacity. Keep terrain, separation and records.
+	var index := spawn_queue.find(_debug_release_wave)
+	while index >= 0:
+		if not _spawn_queued(index, true):
+			return # Retry on following ticks if safe water is temporarily occupied.
+		index = spawn_queue.find(_debug_release_wave)
+	_debug_release_wave = 0
 
 func stop() -> void:
 	if is_instance_valid(game._wave_audio):
@@ -158,6 +188,7 @@ func stop() -> void:
 	_focus = null
 	_focus_until = 0.0
 	spawn_queue.clear()
+	_debug_release_wave = 0
 	announcement = ""
 	announcement_left = 0.0
 	if phase != Phase.COMPLETE:
@@ -293,23 +324,28 @@ func _update_arena(delta: float) -> void:
 			records.back().expired = true
 			_begin_wave() # Old living ships, health, projectiles and queue survive.
 	if boss_spawn_pending: _spawn_boss()
+	if _debug_release_wave > 0:
+		_drain_debug_wave()
 	if phase == Phase.ACTIVE and not spawn_queue.is_empty() and spawn_remaining <= 0.0:
 		_spawn_queued()
 
-func _spawn_queued() -> void:
-	if living_ships().filter(func(cutter): return cutter != boss).size() >= clampi(survival_settings.maximum_living, 1, ships.size()):
-		return
+func _spawn_queued(queue_index := 0, debug_release := false) -> bool:
+	if not debug_release and living_ships().filter(func(cutter): return cutter != boss).size() >= clampi(survival_settings.maximum_living, 1, ships.size()):
+		return false
 	var available: CharacterBody3D = null
 	for cutter in ships:
 		if cutter.mode in [cutter.Mode.DORMANT, cutter.Mode.ESCAPED] and cutter.projectiles.is_empty():
 			available = cutter
 			break
-	if available == null:
-		return
+	if available == null and not debug_release:
+		return false
 	var at := arena_spawn()
 	if not at.is_finite():
-		return
-	var id: int = spawn_queue.pop_front()
+		return false
+	if available == null:
+		available = _add_ship()
+	var id: int = spawn_queue[queue_index]
+	spawn_queue.remove_at(queue_index)
 	var ordinal: int = records[id-1].spawned
 	var kind: String = survival_settings.wave_rosters[id-1][ordinal]
 	available.configure_archetype(survival_settings.ARCHETYPES[kind])
@@ -326,6 +362,7 @@ func _spawn_queued() -> void:
 	encounter_index += 1
 	records[id-1].spawned += 1
 	spawn_remaining = maxf(0.05, survival_settings.spawn_interval)
+	return true
 
 func arena_spawn() -> Vector3:
 	var sectors: Array[Node] = game.archipelago.arena_layout.get_node("EnemySectors").get_children()
@@ -404,6 +441,7 @@ func _complete_boss_encounter() -> void:
 	victory_transitions += 1
 	game.state = game.State.ARRIVED
 	spawn_queue.clear()
+	_debug_release_wave = 0
 	boss_spawn_pending = false
 	boss.clear_hazards()
 	for cutter in ships: cutter.reset()

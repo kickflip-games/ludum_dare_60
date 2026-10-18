@@ -161,6 +161,8 @@ func duel(kind: String, choppy: bool) -> void:
 	var maximum_jump := 0.0
 	var locked := true
 	var nonhoming := true
+	var maximum_wave_yaw := 0.0
+	var maximum_drift := 0.0
 	for frame in 60 * 60:
 		if ship.hull <= 0 or game.state != game.State.SAILING:
 			break
@@ -176,6 +178,8 @@ func duel(kind: String, choppy: bool) -> void:
 		maximum_turn = maxf(maximum_turn, absf(ship.turn_rate))
 		maximum_acceleration = maxf(maximum_acceleration, absf(ship.turn_rate - rate) * 60.0)
 		maximum_jump = maxf(maximum_jump, ship.position.distance_to(previous))
+		maximum_wave_yaw = maxf(maximum_wave_yaw, absf(game.wave_sailing.yaw_rate))
+		maximum_drift = maxf(maximum_drift, game.wave_sailing.drift.length())
 		if was_telling and ship.mode == ship.Mode.TELEGRAPH:
 			locked = locked and ship.locked_point == point
 		if old_velocity != Vector3.ZERO and not ship.projectiles.is_empty():
@@ -185,7 +189,8 @@ func duel(kind: String, choppy: bool) -> void:
 	var result := {"kind": kind, "choppy": choppy, "seconds": snappedf(game.elapsed, 0.01),
 		"shots": game.cannon.shots_fired, "hits": game.cannon.targets_hit, "enemy_hull": ship.hull,
 		"player_hull": game.hull, "passes": ship.passes, "helm_exits": pilot.steering_exits,
-		"max_turn": maximum_turn, "max_acceleration": maximum_acceleration, "max_step": maximum_jump}
+		"max_turn": maximum_turn, "max_acceleration": maximum_acceleration, "max_step": maximum_jump,
+		"max_wave_yaw": maximum_wave_yaw, "max_drift": maximum_drift}
 	results.append(result)
 	print("DUEL " + JSON.stringify(result))
 	check(ship.hull == 0 and game.hull > 0 and game.cannon.targets_hit >= ship.hull_capacity,
@@ -194,6 +199,9 @@ func duel(kind: String, choppy: bool) -> void:
 		kind + ": turning velocity and acceleration stay bounded during combat")
 	check(maximum_jump <= ship.sailing_speed * 1.12 / 60.0 + 0.01, kind + ": live ship never teleports")
 	check(locked and nonhoming, kind + ": warnings stay locked and cannonballs never home")
+	if choppy:
+		check(maximum_wave_yaw > 0.03 and maximum_drift > 0.2,
+			"skiff: successful aiming follows a real crest-induced yaw/drift disturbance, not a calm fixture")
 	pilot.release()
 	game.queue_free()
 	await process_frame
@@ -204,7 +212,69 @@ func _run() -> void:
 	await duel("cutter", false)
 	await duel("skiff", true)
 	await duel("heavy", false)
+	rudder_response()
+	await combat_crests()
 	var output := FileAccess.open("/tmp/latitude-combat-duels.json", FileAccess.WRITE)
 	output.store_string(JSON.stringify(results, "\t"))
 	print("COMBAT FEEL: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+func rudder_response() -> void:
+	var sailing = load("res://game/ocean/wave_sailing.gd").new()
+	var baseline = load("res://game/ocean/wave_sailing.gd").new()
+	var field = load("res://game/ocean/wave_field.gd").new()
+	sailing.rudder_response = 9.0
+	var heading := 0.0
+	var old_heading := 0.0
+	for frame in 12:
+		heading = sailing.step(field, Vector2.ZERO, heading, 1.0, (frame + 1.0) / 60.0, 1.0 / 60.0)
+		old_heading = baseline.step(field, Vector2.ZERO, old_heading, 1.0, (frame + 1.0) / 60.0, 1.0 / 60.0)
+	check(sailing.rudder_rate > baseline.rudder_rate + 0.04 and sailing.rudder_rate < 0.72,
+		"arena rudder responds sooner without changing maximum turn authority or adding instant rotation")
+	for frame in 30:
+		heading = sailing.step(field, Vector2.ZERO, heading, 0.0, 0.2 + (frame + 1.0) / 60.0, 1.0 / 60.0)
+	check(sailing.rudder_rate > 0.0 and sailing.rudder_rate < 0.01 and sailing.drift == Vector2.ZERO and sailing.yaw_rate == 0.0,
+		"released helm settles smoothly with no hidden drift, yaw or current")
+	field.add_wave(Vector2(-24, 0), Vector2.RIGHT, 0.9, 4.5, 24.0, 8.0, 0.0, 8.0)
+	sailing.reset()
+	baseline.reset()
+	sailing.wave_response = 0.75
+	sailing._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
+	baseline._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
+	check(absf(sailing.drift.length() / baseline.drift.length() - 0.75) < 0.001
+		and absf(sailing.yaw_rate / baseline.yaw_rate - 0.75) < 0.001,
+		"arena hull response reduces drift and yaw together without altering the authoritative sampled crest")
+
+func combat_crests() -> void:
+	var game = await make_game()
+	var ship = game.enemy_encounters.ship
+	game.boat.position = game.arena_center() + Vector3(0, 0, 150)
+	game.boat.velocity = Vector3.FORWARD * game.SPEED
+	ship.begin(game.arena_center() + Vector3(90, 0, 80))
+	game.wave_encounters.enabled = true
+	game.wave_encounters.next_event = 0.0
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
+	game.wave_encounters.update(game, 1.0 / 60.0)
+	check(game.ocean.wave_field.waves.is_empty(), "held cannon view never launches a new combat crest")
+	game.cannon.set_aim_held(false)
+	game.wave_encounters.next_event = 0.0
+	game.wave_encounters.update(game, 1.0 / 60.0)
+	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.waves.front().height <= 0.6,
+		"active combat outside shelter can launch one small, visible, seeded crest instead of suppressing the sea")
+	var wave: Dictionary = game.ocean.wave_field.waves.front()
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
+	game.sea_time = 2.0
+	game.wave_encounters.update(game, 1.0 / 60.0)
+	var crest: Vector2 = wave.origin + wave.direction * wave.speed * 2.0
+	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.sample(crest, 2.0).x > 0.2,
+		"entering gun view never erases or freezes an already visible wave")
+	game.ocean.wave_field.clear()
+	game.cannon.set_aim_held(false)
+	game.boat.position = game.arena_center() + Vector3(0, 0, 75)
+	game.wave_encounters.next_event = 0.0
+	game.wave_encounters.update(game, 1.0 / 60.0)
+	check(game.ocean.wave_field.waves.is_empty(), "inner lighthouse shelter stays calm even during combat")
+	game.queue_free()
+	await process_frame

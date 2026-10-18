@@ -1,6 +1,23 @@
 extends Resource
-## Exactly five waves; arena scale/art and the existing cutter remain shared.
-@export var enemy_counts := PackedInt32Array([1, 2, 4, 6, 8])
+## Exactly five waves; the shared ship scene reads the selected profile at spawn.
+const ARCHETYPES := {
+	"cutter": preload("res://game/enemies/cutter.tres"),
+	"skiff": preload("res://game/enemies/skiff.tres"),
+	"heavy": preload("res://game/enemies/heavy.tres")
+}
+@export var wave_rosters: Array[PackedStringArray] = [
+	PackedStringArray(["cutter"]),
+	PackedStringArray(["cutter", "cutter"]),
+	PackedStringArray(["cutter", "skiff"]),
+	PackedStringArray(["cutter", "skiff", "heavy"]),
+	PackedStringArray(["heavy", "cutter", "cutter"])
+]
+var enemy_counts: PackedInt32Array:
+	get:
+		var counts := PackedInt32Array()
+		for roster in wave_rosters:
+			counts.append(roster.size())
+		return counts
 @export var deadlines := PackedFloat32Array([40.0, 50.0, 65.0, 80.0, 0.0])
 @export_range(0.05, 15.0, 0.05) var spawn_interval := 8.0
 @export_range(1, 3, 1) var maximum_living := 3

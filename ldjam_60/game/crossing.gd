@@ -44,6 +44,7 @@ const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 @export_range(0.75, 0.8, 0.01) var arena_soft_fraction: float = 0.78
 @export_range(0.25, 0.7, 0.05) var arena_inward_bias: float = 0.5
 @export_range(7.0, 12.0, 0.5) var arena_rudder_response: float = 9.0
+@export_range(0.5, 1.0, 0.05) var arena_wave_response: float = 0.75
 # Legacy fixture properties; no invisible current or gust forces in gameplay.
 var current_strength := 0.0
 var gust_strength := 0.0
@@ -573,6 +574,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	wave_sailing.rudder_response = arena_rudder_response if arena_mode else 7.0
+	wave_sailing.wave_response = arena_wave_response if arena_mode else 1.0
 	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)

@@ -30,13 +30,18 @@ Normal inner sailing stays manual. Movement is bounded **before** collision
 sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
 including while E is held. No boundary collider or teleport is used.
 
-Three reusable cutters target the player and stay until sunk. The data-driven
-scheduler queues 1/2/4/6/8 arrivals, caps living combatants at three and normally
+Three reusable hulls target the player and stay until sunk. Data-driven
+cutter/skiff/heavy profiles supply two/one/three-hit hulls, different sail bands,
+size, speed, turn acceleration, approach and warned broadside timing. The
+scheduler queues 1/2/2/3/3 arrivals, caps living combatants at three and normally
 staggers spawns eight seconds apart. Deadlines 40/50/65/80 start overlapping waves
 without resetting survivors. A safe early all-clear gives one capped hull repair
-and a three-second pause; final victory waits for all 21 kills, sinking and
+and a three-second pause; final victory waits for all 11 kills, sinking and
 incoming shots. Old harbour victory remains disabled. Settings are authored in
-`game/survival_settings.tres`; see the [current review](../../../artifacts/timed_survival_review.md). Original territories/discoveries stay inactive;
+`game/survival_settings.tres`; archetypes are in `game/enemies/`. Long blocked
+approaches use cached, terrain-clear outer detours; local hull-width probes and
+predictive lateral yielding still govern the actual bounded rudder. See the
+[combat review](../../../artifacts/combat_feel_review.md). Original territories/discoveries stay inactive;
 the old journey remains accessible through `tests/legacy_voyage.tscn`.
 
 Separate resources preserve the original voyage terrain and foam:

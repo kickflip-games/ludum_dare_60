@@ -133,7 +133,7 @@ func update(game: Node3D, _delta: float) -> void:
 				return
 	if time >= next_event:
 		next_event = time + rng.randf_range(25.0, 45.0)
-		if not quiet_water and not combat and not game.cannon.aiming and field.waves.is_empty():
+		if not quiet_water and (not combat or game.arena_mode) and not game.cannon.aiming and field.waves.is_empty():
 			var forward := Vector2(sin(game.heading), -cos(game.heading))
 			spawn(game, [-2, -1, 0, 1, 2][rng.randi_range(0, 4)], rng.randf_range(0.32, 0.6), forward, rng.randf_range(-12.0, 12.0))
 

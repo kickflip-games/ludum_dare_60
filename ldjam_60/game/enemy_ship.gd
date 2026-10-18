@@ -211,7 +211,10 @@ func display_name() -> String:
 
 
 func set_aim_highlight(enabled: bool) -> void:
-	aim_highlight = enabled and visible and not get_meta("destroyed", true)
+	var highlighted: bool = enabled and visible and not get_meta("destroyed", true)
+	if highlighted == aim_highlight:
+		return
+	aim_highlight = highlighted
 	_update_cloth()
 
 
@@ -476,6 +479,11 @@ func _hold_avoidance(direction: Vector3, seconds: float) -> void:
 		_change(Mode.REPOSITION)
 
 
+func _separation_course(away: Vector3) -> Vector3:
+	var side := 1.0 if away.dot(_run_right()) >= 0.0 else -1.0
+	return (away.normalized() * 0.45 + _run_right() * side + _run_forward() * 0.25).normalized()
+
+
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
 	_avoid_left = maxf(0.0, _avoid_left - delta)
 	if game.arena_mode:
@@ -484,9 +492,10 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 				continue
 			var relative: Vector3 = global_position-other.global_position
 			var motion_delta: Vector3 = forward()*_speed-other.velocity
-			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,3)
-			if relative.length()<16 or (relative.length()<34 and (relative+motion_delta*closest).length()<12):
-				var away := (relative.normalized()+_run_forward()*0.4).normalized()
+			var horizon := clampf(1.2 / turning_speed, 3.0, 5.0)
+			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,horizon)
+			if relative.length()<17 or (relative.length()<50 and (relative+motion_delta*closest).length()<15):
+				var away := _separation_course(relative)
 				_hold_avoidance(away if _path_clear(away) else _clear_course(),1.5)
 				break
 	if _avoid_left > 0.0:
@@ -496,9 +505,10 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 	else:
 		var relative := -to_player
 		var motion_delta: Vector3 = forward() * _speed - game.boat.velocity
-		var closest_time := clampf(-relative.dot(motion_delta) / maxf(0.01, motion_delta.length_squared()), 0.0, 3.0)
-		if to_player.length() < 20.0 or (to_player.length() < 42.0 and (relative + motion_delta * closest_time).length() < 15.0):
-			var away := (-to_player.normalized() + _run_forward() * 0.7).normalized()
+		var horizon := clampf(1.2 / turning_speed, 3.0, 5.0) if game.arena_mode else 3.0
+		var closest_time := clampf(-relative.dot(motion_delta) / maxf(0.01, motion_delta.length_squared()), 0.0, horizon)
+		if to_player.length() < (24.0 if game.arena_mode else 20.0) or (to_player.length() < (60.0 if game.arena_mode else 42.0) and (relative + motion_delta * closest_time).length() < 15.0):
+			var away := _separation_course(relative) if game.arena_mode else (-to_player.normalized() + _run_forward() * 0.7).normalized()
 			_hold_avoidance(away if _path_clear(away) else _clear_course(), 2.0)
 	return _direction(_avoid_heading) if _avoid_left > 0.0 else desired
 

@@ -137,7 +137,56 @@ func _run() -> void:
 	var dodged := await broadside("heavy", true)
 	check(stationary.hits > 0 and dodged.hits < stationary.hits,
 		"heavy: steering away from the longer warned line avoids real incoming fire")
+	await multi_approach()
 	var output := FileAccess.open("/tmp/latitude-naval-ai.json", FileAccess.WRITE)
 	output.store_string(JSON.stringify(results, "\t"))
 	print("NAVAL AI: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+func multi_approach() -> void:
+	var game = await make_game()
+	var ships: Array = game.enemy_encounters.ships
+	var kinds := ["cutter", "skiff", "heavy"]
+	var offsets := [Vector3(143, 0, 0), Vector3(0, 0, -143), Vector3(-143, 0, 0)]
+	for index in 3:
+		ships[index].configure_archetype(load("res://game/enemies/" + kinds[index] + ".tres"), index * 10.0)
+		ships[index].begin(game.arena_center() + offsets[index])
+		var toward: Vector3 = game.boat.position - ships[index].position
+		ships[index].heading = atan2(toward.x, -toward.z)
+		ships[index].rotation.y = -ships[index].heading
+	await physics_frame
+	var minimum_separation := INF
+	var maximum_step := 0.0
+	var longest_stop := 0
+	var stopped := [0, 0, 0]
+	var closest := [INF, INF, INF]
+	var grounded := false
+	for frame in 70 * 60:
+		game.sea_time += 1.0 / 60.0
+		for index in 3:
+			var ship = ships[index]
+			var previous: Vector3 = ship.position
+			ship.update_ship(1.0 / 60.0)
+			maximum_step = maxf(maximum_step, ship.position.distance_to(previous))
+			closest[index] = minf(closest[index], ship.position.distance_to(game.boat.position))
+			stopped[index] = stopped[index] + 1 if ship.velocity.length() < 0.7 else 0
+			longest_stop = maxi(longest_stop, stopped[index])
+			grounded = grounded or game.archipelago.get_node("Terrain").terrain_height_at(ship.position) > -1.0
+		for first_index in 3:
+			for second_index in range(first_index + 1, 3):
+				minimum_separation = minf(minimum_separation, ships[first_index].position.distance_to(ships[second_index].position))
+		await physics_frame
+	print("MULTI APPROACH " + JSON.stringify({"minimum_separation": minimum_separation,
+		"longest_stop": longest_stop / 60.0, "maximum_step": maximum_step, "closest": closest}))
+	check(minimum_separation > 10.0, "three different approach directions yield instead of stacking or colliding")
+	check(longest_stop / 60.0 < 2.5 and not grounded, "multi-ship blocked paths recover while all hulls stay in water")
+	check(closest.all(func(distance): return distance < 80.0), "all three archetypes physically close from separate sectors")
+	check(maximum_step < 0.18 and ships.all(func(ship): return ship.visible and ship.hull == ship.hull_capacity),
+		"simultaneous AI never teleports, silently despawns or takes time-based damage")
+	game.restart()
+	check(ships.all(ship_is_reset), "multi-ship retry clears detours, glow, shots and every pooled hull")
+	game.queue_free()
+	await process_frame
+
+func ship_is_reset(ship) -> bool:
+	return ship.mode == ship.Mode.DORMANT and ship.projectiles.is_empty() and not ship.aim_highlight and ship._route_point == Vector3.INF

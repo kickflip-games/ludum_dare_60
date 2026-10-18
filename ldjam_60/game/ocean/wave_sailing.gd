@@ -5,6 +5,7 @@ var yaw_rate := 0.0
 var rudder_rate := 0.0
 var displacement := Vector2.ZERO
 var rudder_response := 7.0
+var wave_response := 1.0
 const DRAG := 0.85
 const YAW_DRAG := 2.1
 # The wave's centre of pressure is forward of the hull's lateral resistance.
@@ -41,7 +42,7 @@ func _integrate_forces(field: RefCounted, center: Vector2, heading: float, steer
 	var acceleration := Vector2.ZERO
 	var torque := 0.0
 	for arm: Vector2 in [Vector2.ZERO, forward * 2.1, -forward * 2.1, right * 1.05, -right * 1.05]:
-		var force: Vector2 = field.push_at(center + arm, heading, time)
+		var force: Vector2 = field.push_at(center + arm, heading, time) * wave_response
 		acceleration += force / 5.0
 		torque += (arm + forward * WAVE_PRESSURE_LEVER).cross(force) / 5.0 * 0.75
 	var drag_decay := exp(-DRAG * delta)

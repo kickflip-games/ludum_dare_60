@@ -3,6 +3,7 @@ extends SceneTree
 var game
 var output := "/tmp/latitude-combat/after"
 var ships: Array[Node3D] = []
+const Pilot = preload("res://tests/cannon_sweep_pilot.gd")
 
 func _initialize() -> void:
 	for argument in OS.get_cmdline_user_args():
@@ -11,11 +12,12 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 func capture(label: String) -> void:
+	DirAccess.make_dir_recursive_absolute(output.path_join(label).get_base_dir())
 	game.hud._process(0.0)
 	game.hud.queue_redraw()
 	await process_frame
 	RenderingServer.force_draw(true, 1.0 / 60.0)
-	root.get_texture().get_image().save_png(output.path_join(label + ".png"))
+	assert(root.get_texture().get_image().save_png(output.path_join(label + ".png")) == OK)
 	print("CAPTURE " + label)
 
 func stage() -> void:
@@ -92,6 +94,60 @@ func _run() -> void:
 	for attacker in ships:
 		attacker.update_visuals(0.0)
 	await capture("04-three-silhouettes")
+	for attacker in ships:
+		if attacker != ship:
+			attacker.queue_free()
+	await process_frame
+	await encounter("skiff", true)
+	await encounter("heavy", false)
 	game.queue_free()
 	await process_frame
 	quit()
+
+func encounter(kind: String, choppy: bool) -> void:
+	stage()
+	game.sea_time = 0.0
+	game.ocean.wave_time = 0.0
+	game.enemy_encounters.enabled = true
+	game.enemy_encounters.phase = game.enemy_encounters.Phase.STOPPED
+	var ship = game.enemy_encounters.ship
+	ship.configure_archetype(load("res://game/enemies/" + kind + ".tres"))
+	if kind == "heavy":
+		game.boat.position = Vector3(260, 0, 355)
+	ship.begin(game.boat.position + Vector3(ship.broadside_separation, 0, -4))
+	if kind == "heavy":
+		ship.heading = 0.0
+		ship.rotation.y = 0.0
+	if choppy:
+		game.ocean.wave_field.add_wave(Vector2(286, 323), Vector2.RIGHT, 0.85, 4.5, 35.0, 8.0, 0.0, 9.0)
+	await physics_frame
+	var pilot := Pilot.new()
+	var warned := false
+	var fired := false
+	var hit := false
+	for frame in 720 if choppy else 480:
+		if choppy and frame >= 300:
+			pilot.update(game, 1.0 / 60.0)
+		elif not choppy:
+			pilot.action("watch_starboard", true)
+		game._physics_process(1.0 / 60.0)
+		game.cannon.advance(1.0 / 60.0)
+		game.hud._process(1.0 / 60.0)
+		if frame % 6 == 0:
+			await capture("%s-sequence/frame-%03d" % [kind, frame / 6])
+		if choppy and frame == 180:
+			await capture("05-skiff-crest")
+		if not warned and ship.mode == ship.Mode.TELEGRAPH:
+			warned = true
+			await capture(kind + "-warning")
+		if not fired and ship.shots_fired > 0:
+			fired = true
+			await capture(kind + "-firing")
+		if not hit and ship.hull <= 0:
+			hit = true
+			await capture(kind + "-confirmed-sink")
+		await physics_frame
+	print("RENDERED ENCOUNTER " + JSON.stringify({"kind": kind, "hull": game.hull, "enemy_hull": ship.hull,
+		"shots": game.cannon.shots_fired, "hits": game.cannon.targets_hit, "enemy_shots": ship.shots_fired,
+		"warned": warned, "fired": fired, "wave_yaw": game.wave_sailing.yaw_rate}))
+	pilot.release()

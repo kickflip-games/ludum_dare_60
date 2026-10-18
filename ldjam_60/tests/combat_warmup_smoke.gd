@@ -37,7 +37,7 @@ func run() -> void:
 		warm_frame += 1
 	check(warmup.complete,"Warm-up completes from home menu")
 	await process_frame
-	check(warmup.get_child_count() == 0,"Temporary viewport and sample nodes released")
+	check(warmup.get_child_count() == 0,"Temporary warm-up nodes released")
 	check(game.state == state and game.hull == hull,"Menu state and hull retained")
 	check(game.cannon.shots_fired == 0 and game.cannon.projectiles.is_empty(),"No weapon fired during warm-up")
 	check(game.cannon.projectile_visuals.leased.is_empty(),"No projectile lease consumed")

@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Home-menu combat warm-up now exercises the real viewport with invisible
+  clipped copies and isolated lighting. Matched Web first-shot frame: 17.7→8.4 ms;
+  three new shot-phase maxima stay below 11.1 ms. Native checks confirm no visible
+  effects or gameplay/audio changes; warm-up takes about 0.2 s in tested browser runs.
+  See [first-shot validation](artifacts/first_shot/report.md).
+
 - Work in progress: restored Roman numerals (WAVE I–V) on wave banners; kept
   the navy/brass palette, brief timing and simple wording.
 

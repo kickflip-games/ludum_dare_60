@@ -2,7 +2,7 @@ extends Resource
 
 @export var display_name := "Cutter"
 @export var hull := 2
-@export var speed := 7.0
+@export var speed := 10.0
 @export var turn_speed := 0.42
 @export var turn_acceleration := 0.65
 @export var acceleration := 1.2

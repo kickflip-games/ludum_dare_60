@@ -8,12 +8,23 @@ and arena return feeds a blended rudder into the unchanged `wave_sailing.step()`
 The field, shader, hull sampler and cannon-water authority remain shared.
 Only the static coastal foam texture changes to match the isolated island.
 The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.
+The arena player cruises at 9 m/s; the retained voyage fixture explicitly uses
+6.3 m/s. Both pass their configured speed into the same movement integrator;
+the arena return also uses that speed when measuring outward motion.
 
 `game/crossing.tscn` uses `presets/calm.tres`: gentle rolling swells, no ambient foam and negligible uncommanded horizontal motion. Weather changes lighting/clouds, not wave height. Choppy/stormy presets retain stronger surfaces for stress checks.
 
-## Deck camera and turbulence — 18 October 2026
+## Chase camera restoration — 18 October 2026
 
-The normal view now stands on the deck. `HelmEye` is a marker on the same visual
+Normal play again uses the elevated chase framing from `534b021`, with the visible
+35° sail, a level horizon and lightly filtered heave. Hull rocking and all planar
+wave forces are unchanged. `deck_camera_response.gd` still detects actual crest
+contacts for spray/audio; its head pose is used only by the opt-in Inspector deck
+rig (`sailing_camera_rig = DECK`). Final shore and water guards protect both rigs.
+
+## Earlier deck camera and turbulence — 18 October 2026
+
+The optional deck view stands on the deck. `HelmEye` is a marker on the same visual
 pivot as the fitted wooden floor, lantern and real cannon. `deck_camera_response.gd`
 uses its complete world transform, including the hull-centre rotation lever.
 Heave has at most 14 cm of relative lag; wave pitch/roll use 0.78/0.52 gains,

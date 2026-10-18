@@ -101,8 +101,29 @@ func _run() -> void:
 	game.wave_encounters.enabled = false
 	game.start_crossing()
 	game._physics_process(game.CAST_OFF_SECONDS)
-	sail(12, 60)
-	check(game.hits_taken == 0 and game.state == game.State.SAILING, "initial combat course sails 75 m without unavoidable collision")
+	sail(75.0 / game.SPEED, 60)
+	check(game.hits_taken == 0 and game.state == game.State.SAILING, "initial combat course sails 75 m at the faster pace without unavoidable collision")
+	# Measure real swept movement, not only the tuning property. Aiming must keep
+	# the same automatic speed, and frame rate must not change distance travelled.
+	for hz in [30,60,120]:
+		for aiming in [false,true]:
+			stage(Vector2(75,0),0)
+			await physics_frame
+			var start: Vector3 = game.boat.position
+			action("watch_starboard",aiming)
+			for frame in hz*3:
+				game._physics_process(1.0/hz)
+			check(absf(start.distance_to(game.boat.position)-27.0)<0.025 and absf(game.actual_speed-9.0)<0.01
+				and is_zero_approx(game.heading) and game.hits_taken==0,
+				"%d Hz aiming=%s: three seconds travels 27 m at 9 m/s without hidden yaw" % [hz,aiming])
+			action("watch_starboard",false)
+	game.restart()
+	await physics_frame
+	var resting: Vector3 = game.boat.position
+	game.state=game.State.READY
+	game._physics_process(0.5)
+	check(game.boat.position.is_equal_approx(resting) and game.actual_speed==0,
+		"ready state remains stationary despite the faster cruise setting")
 	# All important gaps within each rocky cluster exceed 30 m, using authored
 	# normalized mesh footprints; additionally sweep a 30 m diameter clearance.
 	for name in ["JaggedReef", "LowIslets"]:

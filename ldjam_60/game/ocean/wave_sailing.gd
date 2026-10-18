@@ -5,7 +5,6 @@ var yaw_rate := 0.0
 var rudder_rate := 0.0
 var displacement := Vector2.ZERO
 var rudder_response := 7.0
-var wave_response := 1.0
 const DRAG := 0.85
 const YAW_DRAG := 2.1
 # The wave's centre of pressure is forward of the hull's lateral resistance.
@@ -19,20 +18,20 @@ func reset() -> void:
 	rudder_rate = 0.0
 	displacement = Vector2.ZERO
 
-func step(field: RefCounted, center: Vector2, heading: float, steering: float, time: float, delta: float) -> float:
+func step(field: RefCounted, center: Vector2, heading: float, steering: float, time: float, delta: float, forward_speed: float = 6.3) -> float:
 	# Resolve the crest crossing at up to 120 Hz, including movement within a tick.
 	# Otherwise stronger turning changes time spent on the crest differently at 30/120 Hz.
 	displacement = Vector2.ZERO
 	var steps := maxi(1, ceili(delta * 120.0 - 0.00001))
 	var dt := delta / steps
 	for i in range(steps):
-		var old_velocity := Vector2(sin(heading), -cos(heading)) * 6.3 + drift
+		var old_velocity := Vector2(sin(heading), -cos(heading)) * forward_speed + drift
 		var old_turn := rudder_rate + yaw_rate
 		var mid_heading := heading + old_turn * dt * 0.5
 		var mid_center := center + displacement + old_velocity * dt * 0.5
 		_integrate_forces(field, mid_center, mid_heading, steering, time - delta + (i + 0.5) * dt, dt)
 		heading = wrapf(heading + (old_turn + rudder_rate + yaw_rate) * 0.5 * dt, -PI, PI)
-		var new_velocity := Vector2(sin(heading), -cos(heading)) * 6.3 + drift
+		var new_velocity := Vector2(sin(heading), -cos(heading)) * forward_speed + drift
 		displacement += (old_velocity + new_velocity) * 0.5 * dt
 	return heading
 
@@ -42,7 +41,7 @@ func _integrate_forces(field: RefCounted, center: Vector2, heading: float, steer
 	var acceleration := Vector2.ZERO
 	var torque := 0.0
 	for arm: Vector2 in [Vector2.ZERO, forward * 2.1, -forward * 2.1, right * 1.05, -right * 1.05]:
-		var force: Vector2 = field.push_at(center + arm, heading, time) * wave_response
+		var force: Vector2 = field.push_at(center + arm, heading, time)
 		acceleration += force / 5.0
 		torque += (arm + forward * WAVE_PRESSURE_LEVER).cross(force) / 5.0 * 0.75
 	var drag_decay := exp(-DRAG * delta)

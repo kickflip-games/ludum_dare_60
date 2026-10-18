@@ -4,3 +4,5 @@
 
 [node name="LegacyVoyage" instance=ExtResource("1")]
 arena_mode = false
+sailing_speed = 6.3
+sailing_follow_smoothing = 7.0

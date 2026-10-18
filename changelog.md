@@ -11,6 +11,25 @@ recorded evidence and limitations.
   feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;
   preserved physical cannon fire and wave forces. Initial combat/naval checks
   pass; timed-roster integration and final rendered evidence remain pending.
+- Raised player cruise from 6.3 to 9 m/s (43% faster), including
+  while aiming. Movement and arena return share the configurable speed; tighter
+  chase follow keeps the boat readable. Retained voyage fixtures explicitly
+  keep their original pace. 454 checks across seven suites pass, including
+  measured 27 m travel in three seconds at 30/60/120 Hz, steering, boundary
+  return, firing and retry. Import and native sailing/gun views pass inspection;
+  human combat balance remains open.
+
+- Restored `534b021`'s elevated chase camera and visible 35° sail so the whole
+  player boat and its turns are readable again. Kept current arena rules,
+  E/F gun controls, wave forces, contact spray/audio and camera safety; the
+  deck rig remains available in the Inspector. 631 checks across ten suites
+  pass, with native sailing, gun view, damage, cutter combat and endings
+  inspected. Human balance and Web/mobile remain untested. See the
+  [camera restoration review](artifacts/chase_camera_review.md).
+
+- In progress: Simplified `AGENTS.md` to a local-first workflow, removing mandatory
+  branches, draft PRs and screenshot uploads. Retained gameplay safeguards and
+  relevant validation; documentation edits need only diff/formatting checks.
 
 - Replaced the pending lighthouse-defence design and single-cutter scheduler
   with player-only timed survival: configurable 1/2/4/6/8 waves, 40/50/65/80 s

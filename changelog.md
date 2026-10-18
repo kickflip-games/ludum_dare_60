@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Naval AI stage 1 separates navigation from cannon readiness,
+  warning, fire and reload. Interception commits to a predicted course; straight
+  passes end in bounded forward turns, with terrain-first steering and explicit
+  blocked-route recovery. 62 single-ship checks pass, including physical two-shot
+  sinking, dodging, persistence and 30/60 Hz motion. Native approach/run/turn
+  frames and a 22-second sequence were inspected; fleet coordination is next.
+
 - Added readable cutter/skiff/heavy profiles (2/1/3 hits), aim-only occlusion-checked
   sail illumination, confirmed hit/sinking feedback and exact 1/2/2/3/3 rosters.
   Fixed remote approaches and reciprocal yielding; quicker helm response retains

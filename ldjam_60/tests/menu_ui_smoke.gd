@@ -55,10 +55,11 @@ func _run() -> void:
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
-		for control: Control in [hud.menu_title, hud.action_button, hud.quit_button]:
+		for control: Control in [hud.menu_title, hud.action_button, hud.walkthrough_button, hud.quit_button]:
 			check(inside(control), "title %s fits %s" % [control.name, dimensions])
 		click(hud.settings_button)
 		await settle()
+		check(not hud.walkthrough_button.is_visible_in_tree(), "Settings hides Walkthrough launch")
 		check(hud.settings_open and hud.motion_choice.has_focus(), "Settings click moves keyboard focus")
 		for control: Control in [hud.menu_title, hud.motion_choice, hud.settings_back]:
 			check(inside(control), "settings %s fits %s" % [control.name, dimensions])

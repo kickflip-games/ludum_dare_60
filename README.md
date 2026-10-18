@@ -7,7 +7,12 @@ waves** of cutters, fast skiffs and heavy attackers. Enemies attack the player; 
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
-- **Play / Enter:** cast off; forward sailing is automatic at **7.5 m/s**.
+- **Set Sail / Enter:** start the game directly; forward sailing is automatic at **7.5 m/s**.
+- **Walkthrough:** the button beneath Set Sail opens guided practice for steering, boost, mouse
+  look, firing and the camera toggle before enemies arrive. Cards wait for real
+  input; Continue/Enter moves on, and Skip begins the voyage immediately.
+  Finish or Skip starts a fresh game, clearing practice time, shots and rewards.
+  The Walkthrough button is always available on the start menu for replay.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
@@ -35,8 +40,9 @@ enemy to win; entering the old harbour never wins.
   archipelago style. Their shores sit beyond the combat boundary; the inner
   sailing routes and enemy sectors remain clear.
 - A red **storm warning circle**, 170 m from the lighthouse, fades in across the
-  final 38 m of approach. **STORMY AHEAD** warns against crossing; beyond the line,
-  **RETURN TO THE LIGHTHOUSE** stays visible with a slow red screen pulse and
+  final 38 m of approach. Only after crossing, **STORMY AHEAD / RETURN TO THE
+  LIGHTHOUSE** appears once per voyage, for at most 10 seconds or until returning
+  inside. It does not repeat on later crossings. Beyond the line, a slow red screen pulse and
   stormier lighting. Reduced motion uses a steady tint. The player can sail
   freely across the line: no automatic rudder, wall, speed clamp or storm damage.
 - Waves contain **2 / 3 / 4 / 5 / 6** ships (compositions below). The next wave begins after
@@ -47,8 +53,10 @@ enemy to win; entering the old harbour never wins.
   never grants repair. Original automatic repair remains during safe periods.
   The final wave has no victory timer: all **20** enemies, sinking animations and
   incoming shots must resolve while the player remains alive.
-- A small top-centre wave label, final-15-second countdown and brief announcements
-  carry progress. A faint starboard cone, incoming-fire warning and visible damage remain;
+- A large three-second upper-screen fleet announcement marks each launch. A bold top-centre
+  `I / V` Roman-numeral counter sits beside one enemy ship icon per undefeated ship, including
+  survivors and queued arrivals; each defeat removes one icon. A final-15-second
+  countdown signals the next fleet. A faint starboard cone, incoming-fire warning and visible damage remain;
   no hull bar, lighthouse health or navigation overlay is added.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
@@ -371,6 +379,14 @@ Generated captures stay in the ignored `build/` folder.
 ## Validation
 
 Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps 60`:
+
+`res://tests/walkthrough_smoke.gd` checks both menu launch buttons, guided practice,
+replay and the transition into a fresh game. Normal gameplay starts without practice.
+Native card/menu captures: `--script res://tests/walkthrough_previews.gd --
+--output=res://../build/walkthrough/review`; add `--size=900x506` for the small view.
+Fleet progress checks: `--script res://tests/fleet_hud_smoke.gd`.
+Native fleet captures: `--script res://tests/fleet_hud_previews.gd --`;
+add `--size=900x506` for the small view.
 
 - `--script res://tests/crossing_smoke.gd`: movement and collisions
   through both complete archipelago routes, discoveries, arrival and retry.

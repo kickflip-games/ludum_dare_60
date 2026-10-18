@@ -56,10 +56,16 @@ func _run() -> void:
 	await capture("06-reduced")
 	root.size = Vector2i(900,506)
 	await capture("07-small-window")
+	game.hud._process(10.01)
+	await capture("08-message-expired")
+	pose(165)
+	await capture("09-inside-after-notice")
+	pose(195)
+	await capture("10-no-repeat")
 	game.motion_setting = 0
 	game.restart()
 	game._physics_process(game.CAST_OFF_SECONDS)
-	await capture("08-retry")
+	await capture("11-retry")
 	game.queue_free()
 	await process_frame
 	quit()

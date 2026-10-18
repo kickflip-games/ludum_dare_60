@@ -7,7 +7,7 @@ The Barlow Project Authors, are bundled unmodified from the
 [Google Fonts repository](https://github.com/google/fonts) under the SIL Open
 Font License 1.1. Font files and both licenses: `ldjam_60/assets/ui/fonts/`.
 
-The small lighthouse mark and engraved wave divider in `ldjam_60/assets/ui/`
+The small lighthouse mark, enemy ship icon and engraved wave divider in `ldjam_60/assets/ui/`
 are original SVG source graphics for Latitude Lines. The supplied menu image
 was used as a visual reference; it is not bundled as a game background.
 

@@ -6,6 +6,29 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- The storm message appears only after crossing the border,
+  once per voyage for at most 10 seconds, ending early on return inside. Later
+  crossings do not repeat it; retry resets the notice. All 121 border/HUD/fleet/
+  walkthrough checks pass, including exact timeout at 30/60/120 Hz; native
+  approach, crossing and expired-message frames inspected.
+- Walkthrough is now a direct launch button beneath Set Sail.
+  Set Sail begins normal gameplay; Walkthrough opens guided practice, then Finish
+  or Skip starts a fresh game. Removed the On/Off toggle and saved preference.
+  Mouse and focused Enter launches verified; 237 walkthrough/menu/control/fleet
+  checks pass. Desktop and 900×506 menu renders inspected.
+- Large fleet launch announcements and a bold Roman-numeral fleet
+  counter with one ship icon per remaining enemy. Defeats remove icons immediately;
+  survivors and queued arrivals remain counted across fleet launches. All 276
+  focused fleet/HUD/menu/survival/walkthrough checks pass; desktop and 900×506
+  native renders inspected, including overlapping storm and launch messages.
+- Guided practice for steering, Shift boost,
+  mouse look, physical cannon fire and E camera switching. Fleets and encounter
+  waves wait; reading pauses travel and exercises have bounded movement. Finish
+  or Skip resets into a fresh voyage. The start-menu Walkthrough action supports
+  replay. Cards use small bottom-centred keycaps with no helper text below,
+  following user feedback. All 286 focused walkthrough/menu/control/survival
+  checks pass, with desktop and small-window renders inspected. One existing
+  arcade ballistic check still fails.
 - Issue #13 validation: 270 focused menu/HUD/survival checks
   and three native cloth comparisons pass. Inspected desktop/small menus and
   combat/Reduced/crest views. Thirteen failures across broader existing suites

@@ -17,6 +17,8 @@ const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 ## Retained for enemy navigation bounds; never applied to the player.
 const ArenaReturn = preload("res://game/arena_return.gd")
 const FlowZones = preload("res://game/flow_zones.gd")
+const Walkthrough = preload("res://game/walkthrough.gd")
+var walkthrough := Walkthrough.new()
 var flow_zones := FlowZones.new()
 var arena_return := ArenaReturn.new()
 var wave_sailing := WaveSailing.new()
@@ -355,9 +357,12 @@ func _configure_inputs() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if arena_mode and event is InputEventMouseMotion:
 		if state == State.SAILING and _window_focused:
+			walkthrough.note_mouse(event.relative)
 			look_target = clampf(look_target - event.relative.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
 			if not event.relative.is_zero_approx():
 				look_idle = 0.0
+		return
+	if walkthrough.active and (walkthrough.step != Walkthrough.Step.FIRE or walkthrough.practiced) and (event.is_action("fire_starboard") or event.is_action("fire_mouse")):
 		return
 	if development_tools and event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode == KEY_F2:
@@ -375,7 +380,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and not hud.settings_open:
 			restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY and not hud.settings_open:
-		start_crossing()
+		# Preserve the focused launch action when Enter reaches the global shortcut.
+		start_crossing(hud.walkthrough_button.has_focus() and hud.walkthrough_button.is_visible_in_tree())
 	elif (event.is_action("fire_starboard") or (arena_mode and event.is_action("fire_mouse"))) and not event.is_echo():
 		if not arena_mode:
 			cannon.set_fire_held(event.is_pressed())
@@ -459,9 +465,10 @@ func _on_cannon_fired(_direction: Vector3) -> void:
 	_cannon_impulse = 1.0
 
 
-func start_crossing() -> void:
+func start_crossing(with_walkthrough: bool = false) -> void:
 	if state != State.READY:
 		return
+	walkthrough.pending = arena_mode and with_walkthrough
 	restart_elapsed = 0.0
 	_restart_consumed = Input.is_action_pressed("restart_crossing")
 	transition_elapsed = 0.0
@@ -525,6 +532,8 @@ func journey_progress() -> float:
 
 
 func restart(to_menu: bool = false) -> void:
+	walkthrough.cancel()
+	hud.reset_storm_notice()
 	combat_particles.reset()
 	_clear_player_controls()
 	flow_zones.reset()
@@ -601,6 +610,9 @@ func restart(to_menu: bool = false) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_restart_hold(delta)
+	if walkthrough.active and state == State.SAILING:
+		_physics_walkthrough(delta)
+		return
 	boosting = state == State.SAILING and Input.is_action_pressed("boost_sailing")
 	if state != State.SAILING:
 		sea_time += delta
@@ -626,6 +638,8 @@ func _physics_process(delta: float) -> void:
 		transition_elapsed = minf(CAST_OFF_SECONDS, transition_elapsed + delta)
 		if transition_elapsed >= CAST_OFF_SECONDS:
 			state = State.SAILING
+			if walkthrough.pending:
+				walkthrough.begin(self)
 	else:
 		reading = false
 		turn_input = 0.0
@@ -633,6 +647,33 @@ func _physics_process(delta: float) -> void:
 	if arena_mode:
 		cannon.update_cone_feedback()
 	hud.queue_redraw()
+
+
+func _physics_walkthrough(delta: float) -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	boosting = walkthrough.step == Walkthrough.Step.BOOST and walkthrough.moving(self)
+	var fire: bool = walkthrough.step == Walkthrough.Step.FIRE and not walkthrough.practiced and _window_focused
+	cannon.set_fire_held(fire and _fire_armed and (Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")))
+	cannon.update_aim(delta)
+	if walkthrough.moving(self):
+		turn_input = Input.get_axis("steer_port", "steer_starboard")
+		advance_sailing(minf(delta, maxf(0.0, 0.5 - walkthrough.held_seconds)), turn_input)
+	else:
+		turn_input = 0
+		actual_speed = 0
+		boat.velocity = Vector3.ZERO
+		wave_sailing.reset()
+	walkthrough.update(self, delta)
+	_update_view(delta)
+	cannon.update_cone_feedback()
+	hud.queue_redraw()
+
+
+func finish_walkthrough() -> void:
+	if not walkthrough.active: return
+	walkthrough.finish()
+	# Begin a clean scored voyage: no practice time, shots, boosts or scenery damage.
+	restart()
 
 
 func advance_sailing(delta: float, steering: float) -> void:
@@ -648,9 +689,11 @@ func advance_sailing(delta: float, steering: float) -> void:
 	elapsed += delta
 	sea_time += delta
 	damage_immunity = maxf(0.0, damage_immunity - delta)
-	wave_encounters.update(self, delta)
+	if not walkthrough.active:
+		wave_encounters.update(self, delta)
 	ocean.wave_time = sea_time
-	enemy_encounters.update_encounters(delta)
+	if not walkthrough.active:
+		enemy_encounters.update_encounters(delta)
 	if state != State.SAILING:
 		_clear_player_controls()
 		cannon.reset()
@@ -777,6 +820,7 @@ func _constrain_sailing_area() -> void:
 
 
 func take_damage(amount: int, reason: String) -> bool:
+	if walkthrough.active: return false
 	if state != State.SAILING or damage_immunity > 0.0 or amount <= 0:
 		return false
 	hull = maxi(0, hull - amount)

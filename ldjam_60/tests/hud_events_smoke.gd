@@ -27,12 +27,12 @@ func _run() -> void:
 	waves.announcement_left = 1
 	waves.next_wave_in = 20
 	hud._process(0)
-	check(hud.wave_label.text == "FLEETS 4 / V" and not hud.wave_countdown.visible, "quiet progress has requested fleet label and no permanent countdown")
-	check(hud.wave_announcement.text == "WAVE IV" and hud.wave_announcement_detail.text == "FIVE SHIPS APPROACH", "announcement reads actual fourth-wave count")
+	check(hud.wave_label.text == "IV / V" and not hud.wave_countdown.visible, "quiet progress has compact Roman fleet number and no permanent countdown")
+	check(hud.wave_announcement.text == "FLEET IV", "launch announcement reads the fourth fleet")
 	waves.next_wave_in = 12
 	hud._process(0)
 	check(hud.wave_countdown.visible and hud.wave_countdown.text.contains("00:12"), "countdown retains actual final 15 seconds")
-	waves.announcement_left = 0
+	hud._process(3.1)
 	var zone: Dictionary = game.flow_zones.zones[0]
 	game.boat.position = Vector3(zone.center.x, 0, zone.center.y)
 	game.advance_sailing(0.001, 0)
@@ -46,11 +46,12 @@ func _run() -> void:
 	ship.mode = ship.Mode.TELEGRAPH
 	waves.enabled = true
 	waves.announcement_left = 1
+	waves.wave_number = 5
 	hud._process(0)
-	check(hud.threat_label.visible and not hud.wave_announcement.visible and not hud.wave_announcement_detail.visible, "incoming danger takes precedence over wave decoration")
+	check(hud.threat_label.visible and hud.wave_announcement.visible, "new fleet announcement remains visible alongside lateral danger warning")
 	game.boat.position = game.arena_center() + Vector3(180, 0, 0)
 	hud._process(0)
-	check(hud.storm_warning.visible and not hud.notice.visible and not hud.wave_announcement.visible, "storm message has a clear centre")
+	check(hud.storm_warning.visible and not hud.notice.visible and hud.storm_warning.offset_top > hud.wave_announcement.offset_bottom, "storm message stays below the fleet announcement")
 	for ending in [game.State.LOST, game.State.ARRIVED]:
 		game.state = ending
 		hud._process(0)

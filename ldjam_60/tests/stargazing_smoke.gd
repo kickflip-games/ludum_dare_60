@@ -195,7 +195,7 @@ func _run() -> void:
 	ship.timer = 0
 	ship.locked_point = game.boat.position
 	game.hud._process(0.1)
-	check(hud.threat_label.visible and not game.cannon.fire(), "incoming threat stays visible while the raised instrument gates cannon fire")
+	check(hud.threat_icon.visible and not game.cannon.fire(), "incoming threat stays visible while the raised instrument gates cannon fire")
 	var ship_at: Vector3 = ship.position
 	step(2.0)
 	check(ship.shots_fired > 0 and ship.position.distance_to(ship_at) > 1, "enemy movement and real cannon fire continue during focus")

@@ -62,9 +62,10 @@ func _run() -> void:
 		game.take_damage(1, "immune contact")
 	check(game.hull == 2 and game.hits_taken == 1 and visuals.flash_strength == faded, "rapid immune contacts cannot accumulate damage or retrigger the flash")
 	game._update_view(0.1)
-	check(visuals.flash_strength == 0.0 and visuals.wood[0].emission_energy_multiplier == 0.0 and visuals.light_marks.visible, "flash clears within 0.2 seconds while scratches persist")
+	check(visuals.flash_strength == 0.0 and visuals.red_strength >= 0.18 and visuals.wood[0].emission_energy_multiplier > 0.0 and visuals.light_marks.visible, "impact clears within 0.2 seconds while damaged red warning and scratches persist")
 	sail(game.hit_immunity_seconds + 0.01)
 	check(game.take_damage(1, "second hit") and game.hull == 1 and visuals.heavy_marks.visible and visuals.light_marks.visible, "a second hit after immunity adds heavy damage without losing the stern marks")
+	check(visuals.red_strength >= 0.78, "critical hull stays strongly red between pulses")
 	var before: Vector3 = game.boat.position
 	var heading: float = game.heading
 	Input.action_press("steer_starboard")
@@ -86,11 +87,33 @@ func _run() -> void:
 	for fixture in [[100, 67, 0], [100, 66, 1], [100, 34, 1], [100, 33, 2], [3, 2, 1], [3, 1, 2], [6, 6, 0], [6, 4, 1], [6, 2, 2], [1, 1, 0], [1, 0, 2]]:
 		visuals.update(fixture[1], fixture[0], 0.0)
 		check(visuals.severity == fixture[2], "health percentage drives severity at %d/%d" % [fixture[1], fixture[0]])
+	check(visuals.red_strength >= 0.78, "zero hull retains the critical tint")
+	var canvas := (game.boat_visual.get_node("SailBoatPlayer/RootNode/Sail") as MeshInstance3D).get_active_material(1) as ShaderMaterial
 	for fps in [30, 60, 120]:
 		reset_voyage()
 		game.take_damage(1, "flash cadence")
 		sail(0.2, fps)
 		check(visuals.flash_strength == 0.0 and visuals.severity == 1, "short flash expires and marks remain at %d Hz" % fps)
+		var peak := 0.0
+		var trough := 1.0
+		for frame in fps * 2:
+			game._update_view(1.0 / fps)
+			peak = maxf(peak, visuals.red_strength)
+			trough = minf(trough, visuals.red_strength)
+		check(peak > 0.54 and trough < 0.19, "damaged hull visibly pulses at %d Hz" % fps)
+		var frozen: float = visuals.red_strength
+		game._update_view(0.0)
+		check(is_equal_approx(frozen, visuals.red_strength), "zero simulation delta freezes pulse")
+		check(canvas.get_shader_parameter("damage_glow") > 0.0, "sail shares the hull warning")
+		game.restore_hull(99)
+		check(visuals.red_strength == 0.0 and canvas.get_shader_parameter("damage_glow") == 0.0 and visuals.wood[0].albedo_color == visuals._wood_colors[0] and canvas.get_shader_parameter("canvas_color") == visuals._canvas_color, "full repair restores original wood and canvas")
+		game.damage_immunity = 0.0
+		game.take_damage(2, "critical pulse")
+		var critical_trough := 1.0
+		for frame in fps * 2:
+			game._update_view(1.0 / fps)
+			critical_trough = minf(critical_trough, visuals.red_strength)
+		check(critical_trough >= 0.78 and critical_trough > peak, "critical pulse always stays redder than ordinary damage at %d Hz" % fps)
 	reset_voyage()
 	# Real ballistic path and physics raycast, no direct damage call in this fixture.
 	var ship = game.enemy_encounters.ship
@@ -114,7 +137,7 @@ func _run() -> void:
 	retry.action = "restart_crossing"
 	retry.pressed = true
 	game._unhandled_input(retry)
-	check(game.state == game.State.CASTING_OFF and game.hull == 3 and visuals.severity == 0 and visuals.flash_strength == 0.0 and not visuals.light_marks.visible and not visuals.heavy_marks.visible, "real retry input clears all persistent and transient damage effects")
+	check(game.state == game.State.CASTING_OFF and game.hull == 3 and visuals.severity == 0 and visuals.flash_strength == 0.0 and visuals.red_strength == 0.0 and visuals.pulse_time == 0.0 and not visuals.light_marks.visible and not visuals.heavy_marks.visible, "real retry input clears all persistent and transient damage effects")
 	game.hud._process(0.0)
 	check(game.hud.gameplay_hud.get_node_or_null("Hull") == null and not game.hud.menu_details.text.contains("Hull"), "neither gameplay nor result UI contains a hull indicator")
 	print("DAMAGE CHECK: %d checks, %d failures" % [checks, failures])

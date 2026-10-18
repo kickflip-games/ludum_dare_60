@@ -1,8 +1,13 @@
 extends RefCounted
-## Cosmetic scratches on the existing hull; health and hit timing belong to crossing.
+## Cosmetic hull/sail warning; health and hit timing belong to crossing.
 var light_marks: MeshInstance3D
 var heavy_marks: MeshInstance3D
 var wood: Array[StandardMaterial3D] = []
+var _wood_colors: Array[Color] = []
+var _canvas: ShaderMaterial
+var _canvas_color: Color
+var pulse_time := 0.0
+var red_strength := 0.0
 var severity := 0
 var flash_strength := 0.0
 
@@ -15,10 +20,13 @@ func configure(pivot: Node3D, ship: Node3D) -> void:
 		# The helm now sees the inside of the existing open hull while banking.
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		material.emission_enabled = true
-		material.emission = Color("d68b67")
+		material.emission = Color("ff1810")
 		material.emission_energy_multiplier = 0.0
 		hull.set_surface_override_material(surface, material)
 		wood.append(material)
+		_wood_colors.append(material.albedo_color)
+	_canvas = (ship.get_node("RootNode/Sail") as MeshInstance3D).get_active_material(1) as ShaderMaterial
+	_canvas_color = _canvas.get_shader_parameter("canvas_color")
 	# Two small splintered cuts on the transom, visible from the normal helm.
 	light_marks = _marks(pivot, "HullScratches", [
 		PackedVector3Array([Vector3(-0.82, 0.94, 0.94), Vector3(-0.57, 0.83, 0.94), Vector3(-0.67, 0.76, 0.94), Vector3(-0.39, 0.60, 0.94)]),
@@ -34,16 +42,31 @@ func configure(pivot: Node3D, ship: Node3D) -> void:
 	update(1, 1, 0.0)
 
 
-func update(hull: int, capacity: int, hit_flash: float) -> void:
+func update(hull: int, capacity: int, hit_flash: float, delta: float = 0.0) -> void:
 	var fraction := clampf(float(hull) / maxf(1.0, capacity), 0.0, 1.0)
 	# Exact thirds put the default three-point hull into three distinct conditions.
 	severity = 0 if fraction > 2.0 / 3.0 else 1 if fraction > 1.0 / 3.0 else 2
 	light_marks.visible = severity >= 1
 	heavy_marks.visible = severity == 2
-	# First 0.18 seconds of the existing 0.8-second impact state; no new timer.
+	# Health owns the warning, so it persists after immunity expires and clears on repair.
+	# Start bright on a hit; use simulation delta so pause freezes the pulse.
+	if severity == 0:
+		pulse_time = 0.0
+	else:
+		pulse_time = fmod(pulse_time + delta, 1.2)
 	flash_strength = clampf((hit_flash - 0.62) / 0.18, 0.0, 1.0)
-	for material in wood:
-		material.emission_energy_multiplier = flash_strength * 0.65
+	var pulse := 0.5 + 0.5 * cos(TAU * pulse_time / 1.2)
+	red_strength = 0.0
+	if severity == 1:
+		red_strength = maxf(lerpf(0.18, 0.55, pulse), flash_strength)
+	elif severity == 2:
+		red_strength = maxf(lerpf(0.78, 0.98, pulse), flash_strength)
+	var glow := red_strength * (0.85 if severity == 2 else 0.45)
+	for i in wood.size():
+		wood[i].albedo_color = _wood_colors[i].lerp(Color("ff1810"), red_strength)
+		wood[i].emission_energy_multiplier = glow
+	_canvas.set_shader_parameter("canvas_color", _canvas_color.lerp(Color("ff1810"), red_strength))
+	_canvas.set_shader_parameter("damage_glow", glow)
 
 
 func _marks(parent: Node3D, node_name: String, cuts: Array, normal: Vector3) -> MeshInstance3D:

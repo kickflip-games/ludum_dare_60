@@ -13,9 +13,12 @@ func check(value: bool, label: String) -> void:
 	print(("PASS: " if value else "FAIL: ") + label)
 
 func shift(pressed: bool, echo: bool = false) -> void:
+	key(KEY_SHIFT, pressed, echo)
+
+func key(code: int, pressed: bool, echo: bool = false) -> void:
 	var event := InputEventKey.new()
-	event.physical_keycode = KEY_SHIFT
-	event.keycode = KEY_SHIFT
+	event.physical_keycode = code
+	event.keycode = code
 	event.pressed = pressed
 	event.echo = echo
 	Input.parse_input_event(event)
@@ -59,6 +62,37 @@ func _run() -> void:
 		check(not game.boosting and is_equal_approx(game.actual_speed,7.5), "%d Hz release immediately restores cruise" % hz)
 		step(0.1,hz)
 		check(not game.boost_wind.visible, "%d Hz released wind indicator fades completely" % hz)
+	# Both physical bindings share one multiplier and survive either release order.
+	for first in [KEY_W, KEY_SHIFT]:
+		fresh()
+		var second: int = KEY_SHIFT if first == KEY_W else KEY_W
+		key(first, true)
+		step(0.1)
+		check(game.boosting and is_equal_approx(game.propulsion_speed(), 11.25), "physical %s activates boost" % OS.get_keycode_string(first))
+		key(second, true)
+		step(0.1)
+		check(is_equal_approx(game.propulsion_speed(), 11.25), "W plus Shift never stacks boost")
+		key(first, false)
+		step(0.1)
+		check(game.boosting, "releasing %s keeps the other boost key active" % OS.get_keycode_string(first))
+		key(second, false)
+		step(0.2)
+		check(not game.boosting and is_equal_approx(game.propulsion_speed(), 7.5), "releasing both boost keys restores cruise")
+	fresh()
+	key(KEY_W, true)
+	Input.action_press("steer_starboard")
+	step(0.3)
+	check(game.heading > 0.05 and game.boosting, "W boost preserves steering")
+	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	step(0.1)
+	check(not game.boosting and not Input.is_action_pressed("boost_sailing"), "focus loss clears W boost")
+	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+	key(KEY_W, false)
+	key(KEY_W, true)
+	step(0.1)
+	game.restart()
+	check(not game.boosting and not Input.is_action_pressed("boost_sailing"), "retry clears W boost")
+	key(KEY_W, false)
 	fresh()
 	for zone: Dictionary in game.flow_zones.zones: game.flow_zones.collect_at(zone.center)
 	shift(true)

@@ -1,6 +1,7 @@
 shader_type spatial;
 
 uniform vec4 canvas_color : source_color;
+uniform float damage_glow = 0.0;
 uniform float roughness = 0.95;
 uniform float specular = 0.5;
 uniform float sway_angle = 0.0;
@@ -18,6 +19,7 @@ void vertex() {
 
 void fragment() {
 	ALBEDO = canvas_color.rgb;
+	EMISSION = vec3(1.0, 0.015, 0.005) * damage_glow;
 	ROUGHNESS = roughness;
 	SPECULAR = specular;
 }

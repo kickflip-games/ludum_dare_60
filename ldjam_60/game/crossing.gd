@@ -137,7 +137,8 @@ enum SailingCameraRig { CHASE, DECK }
 @export_range(0.0, 10.0, 0.5) var sailing_look_ahead: float = 5.0
 ## Hull-local eye position, authored against the existing six-metre boat.
 @export var helm_eye := Vector3(0.0, 2.05, 0.45)
-@export_enum("Full", "Reduced") var motion_setting: int = 0
+## Full motion in normal play; retained internally for legacy regression fixtures.
+var motion_setting: int = 0
 @export_range(0.0, 6.0, 0.25) var sailing_speed_fov: float = 3.0
 
 @export_group("Arcade chase look")
@@ -362,7 +363,7 @@ func _configure_inputs() -> void:
 		"astrolabe": [] if arena_mode else [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
 		"fire_starboard": [KEY_SPACE] if arena_mode else [KEY_F], "watch_starboard": [KEY_E], "fire_mouse": [],
-		"boost_sailing": [KEY_SHIFT],
+		"boost_sailing": [KEY_SHIFT, KEY_W],
 	}
 	for action: String in bindings:
 		if not InputMap.has_action(action):
@@ -404,7 +405,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			archipelago.debug_wave_zone()
 		elif event.keycode == KEY_F7 and arena_mode and state == State.SAILING:
 			enemy_encounters.debug_cutter()
-		elif event.keycode in [KEY_PLUS, KEY_KP_ADD] or event.unicode == KEY_PLUS or (event.shift_pressed and event.keycode == KEY_EQUAL):
+	# Hidden wave-arrival shortcut is available in normal and exported play.
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		if event.keycode in [KEY_EQUAL, KEY_PLUS, KEY_KP_ADD] or event.unicode == KEY_PLUS:
 			if not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
 				enemy_encounters.debug_release_wave()
 				get_viewport().set_input_as_handled()
@@ -931,7 +934,7 @@ func _update_view(delta: float) -> void:
 	water_material.set_shader_parameter("storm_boundary", Vector4(light.x, light.z, arena_radius, storm_warning_strength()))
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
-	boat_damage.update(hull, hull_capacity, hit_flash)
+	boat_damage.update(hull, hull_capacity, hit_flash, delta)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	damage_shake_left = maxf(0.0, damage_shake_left - delta)
 	_update_weather(delta)
@@ -1527,7 +1530,7 @@ func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
 		# A pale crossbeam distinguishes shootable timber from permanent rocks/wrecks.
 		_box(visual, Vector3(radius * 1.4, 0.22, 0.4), Vector3(0.0, 1.05, 0.0), _material(Color("bda778")))
 	if kind != "rock":
-		ocean.register_float_visual(visual)
+		ocean.register_float_visual(visual, 0.35 if kind in ["debris", "barrels"] else 0.0)
 
 
 func _build_destination() -> void:

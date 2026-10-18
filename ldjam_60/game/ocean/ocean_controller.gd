@@ -240,9 +240,20 @@ func normal_at(p: Vector2, time: float = -1.0) -> Vector3:
 	return Vector3(-sample_value.y, 1.0, -sample_value.z).normalized()
 
 
-func register_float_visual(visual: Node3D) -> void:
+func register_float_visual(visual: Node3D, draft: float = 0.0) -> void:
 	# Preserve the authored waterline in world space, even under offset parents.
-	floating_visuals.append({"visual": visual, "base_y": visual.global_position.y - settings.sea_level})
+	floating_visuals.append({"visual": visual, "base_y": visual.global_position.y - settings.sea_level - draft,
+		"base_basis": visual.global_basis})
+
+
+func floating_basis(at: Vector3, authored_basis: Basis) -> Basis:
+	# Tilt the visual with the actual local wave face, retaining its yaw and scale.
+	var normal := normal_at(Vector2(at.x, at.z))
+	var tilt := Quaternion(Vector3.UP, normal)
+	var angle := tilt.get_angle()
+	if angle > deg_to_rad(18.0):
+		tilt = Quaternion.IDENTITY.slerp(tilt, deg_to_rad(18.0) / angle)
+	return Basis(tilt) * authored_basis
 
 
 func _update_floating_visuals(_delta: float) -> void:
@@ -254,6 +265,7 @@ func _update_floating_visuals(_delta: float) -> void:
 		var world: Vector3 = visual.global_position
 		# Use the rendered surface's full height without lagging beneath a crest.
 		visual.global_position.y = height_at(Vector2(world.x, world.z)) + item.base_y
+		visual.global_basis = floating_basis(world, item.base_basis)
 
 
 func _build_wake() -> void:

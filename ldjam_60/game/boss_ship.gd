@@ -13,13 +13,12 @@ enum Pattern { ROLLING, DOUBLE, SCATTER }
 @export var volley_reload := 3.0
 @export var double_reload := 3.4
 @export_group("Flagship mines")
-@export var mine_interval := 6.0
-@export var phase_two_mine_interval := 4.5
+@export var mine_interval := 2.2
+@export var phase_two_mine_interval := 1.8
 @export var maximum_mines := 6:
 	set(value):
 		maximum_mines = value
 		if is_node_ready(): _build_mine_pool()
-@export var mine_lifetime := 18.0
 @export var mine_trigger_radius := 7.0
 @export var mine_arming_delay := 0.8
 var phase_two := false
@@ -159,11 +158,16 @@ func _update_mines(delta: float) -> void:
 			mines.remove_at(i)
 		else:
 			mine.update_mine(delta)
+	# Existing hazards keep ticking, but new mines belong to the cannon attack.
+	# Reload is a real opening: neither battery nor minelayer starts an attack.
+	if weapon_state not in [Weapon.TELEGRAPH, Weapon.FIRE] or safety_priority >= 2:
+		mine_clock = 0.0
+		return
 	mine_clock += delta
 	var interval := phase_two_mine_interval if phase_two else mine_interval
 	if mine_clock >= interval:
-		mine_clock = fmod(mine_clock, interval)
-		deploy_mine()
+		# A blocked stern retries once space opens without stacking delayed drops.
+		mine_clock = fmod(mine_clock, interval) if deploy_mine() else interval
 
 func _change_navigation(value: Navigation) -> void:
 	super._change_navigation(value)
@@ -191,7 +195,7 @@ func _update_weapon(delta: float) -> void:
 	match weapon_state:
 		Weapon.READY:
 			var offset: Vector3 = game.boat.position - global_position
-			if cooldown > 0.0 or safety_priority >= 2 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN]: return
+			if cooldown > 0.0 or safety_priority >= 2 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN, Navigation.TURN_AWAY, Navigation.REPOSITION]: return
 			if offset.length() < minimum_attack_distance or offset.length() > firing_range: return
 			if absf(port_direction().dot(offset.normalized())) < 0.78 or absf(turn_rate) > 0.12: return
 			if not game.enemy_encounters.director.request_boss_warning(telegraph_seconds + 1.2): return
@@ -252,6 +256,9 @@ func _prepare_volley(seconds: float) -> bool:
 		passes += 1
 		_change_navigation(Navigation.ATTACK_RUN)
 	_change_weapon(Weapon.TELEGRAPH)
+	# Start laying with the first warning; the double salvo shares one mine clock.
+	if salvo == 0:
+		mine_clock = phase_two_mine_interval if phase_two else mine_interval
 	game.cue_sound("warning")
 	return true
 
@@ -374,8 +381,7 @@ func deploy_mine() -> bool:
 	var at := position - forward() * 12.5
 	if not mine_position_valid(at): return false
 	mines = mines.filter(func(mine): return is_instance_valid(mine) and not mine.spent)
-	while mines.size() >= maxi(1, maximum_mines):
-		mines.pop_front().expire()
+	if mines.size() >= maxi(1, maximum_mines): return false
 	var mine: Node3D = null
 	for candidate in mine_pool:
 		if candidate.spent:
@@ -393,7 +399,6 @@ func _build_mine_pool() -> void:
 		mine.pooled = true
 		mine.trigger_radius = mine_trigger_radius
 		mine.arming_delay = mine_arming_delay
-		mine.lifetime = mine_lifetime
 		# Fixed world-space sibling; moving the ship never moves an active mine.
 		game.enemy_encounters.add_child(mine)
 		mine_pool.append(mine)

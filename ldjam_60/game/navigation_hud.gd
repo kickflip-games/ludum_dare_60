@@ -5,6 +5,8 @@ const NauticalTheme = preload("res://game/nautical_theme.gd")
 const WalkthroughCard = preload("res://game/walkthrough_card.gd")
 const FLEET_BANNER_SECONDS := 2.4
 const FLEET_COMPLETE_SECONDS := 1.0
+const BOSS_HIT_SECONDS := 0.3
+const BOSS_HEALTH_COLOR := Color("c78d70")
 const WAVE_RIBBON = preload("res://assets/ui/kenney_adventure/banner_classic_curtain.png")
 const WAVE_RIBBON_PALETTE = preload("res://game/wave_ribbon.gdshader")
 const STORM_NOTICE_SECONDS := 10.0
@@ -34,7 +36,6 @@ var settings_button: Button
 var main_menu_button: Button
 var settings_frame: PanelContainer
 var credits_frame: PanelContainer
-var motion_selector: OptionButton
 var settings_panel: VBoxContainer
 var settings_back: Button
 var menu_spacer: Control
@@ -47,13 +48,15 @@ var wave_countdown: Label
 var wave_announcement: Label
 var boss_label: Label
 var boss_health: ProgressBar
+var _boss_last_hull := -1
+var _boss_hit_left := 0.0
 var fleet_status: CenterContainer
 var fleet_circles: FleetCircles
 var _fleet_group_total := 0
 var _fleet_complete_left := 0.0
 var _announced_fleet := 0
 var _fleet_banner_left := 0.0
-var threat_label: Label
+var threat_icon: ThreatIcon
 var storm_warning: VBoxContainer
 var storm_title: Label
 var storm_instruction: Label
@@ -67,7 +70,18 @@ var _last_cooldown: float = 0.0
 var _reading_alpha: float = 0.0
 var _threat_direction: float = 1.0
 var _has_threat: bool = false
+var _threat_pulse := 0.0
 var _menu_alpha: float = 1.0
+
+
+class ThreatIcon extends Control:
+	const MARK = preload("res://assets/ui/kenney_adventure/originals/minimap_icon_exclamation_red.svg")
+
+	func _draw() -> void:
+		var triangle := PackedVector2Array([Vector2(24, 3), Vector2(46, 43), Vector2(2, 43)])
+		draw_colored_polygon(triangle, Color("102838ed"))
+		draw_polyline(PackedVector2Array([triangle[0], triangle[1], triangle[2], triangle[0]]), Color("e2665b"), 2.0, true)
+		draw_texture_rect(MARK, Rect2(20, 18, 8, 16), false)
 
 
 class FleetCircles extends Control:
@@ -130,7 +144,7 @@ func _ready() -> void:
 	boss_health.offset_bottom = 90
 	for style_name in ["background", "fill"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color("263a42") if style_name == "background" else Color("c78d70")
+		style.bg_color = Color("263a42") if style_name == "background" else BOSS_HEALTH_COLOR
 		boss_health.add_theme_stylebox_override(style_name, style)
 	wave_countdown = _label(gameplay_hud,"WaveCountdown","",13,MUTED)
 	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",24,INK,true)
@@ -155,7 +169,12 @@ func _ready() -> void:
 	ribbon.show_behind_parent = true
 	wave_announcement.add_child(ribbon)
 	ribbon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
+	threat_icon = ThreatIcon.new()
+	threat_icon.name = "IncomingThreat"
+	threat_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	threat_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	threat_icon.size = Vector2(48, 48)
+	gameplay_hud.add_child(threat_icon)
 	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	notice.offset_left = -300
@@ -294,7 +313,7 @@ func _build_menu() -> void:
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_column.add_child(menu_controls)
 	if not game.arena_mode:
-		for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold Shift", "Speed +50%"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
+		for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold W / Shift", "Speed +50%"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
 			_label(menu_controls, "Key", pair[0], 16)
 			_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_footer = _label(menu_column, "Footer", "", 16, NauticalTheme.SEA_GLASS)
@@ -318,9 +337,9 @@ func _build_menu() -> void:
 	controls.add_theme_constant_override("h_separation", 14)
 	controls.add_theme_constant_override("v_separation", 6)
 	settings_panel.add_child(controls)
-	var bindings := [["A / D or arrows", "Steer"], ["Shift", "Boost while held"], ["Mouse", "Look around"], ["Click / Space", "Fire"], ["E", "Switch camera"], ["Hold R", "Restart game"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
+	var bindings := [["A / D or arrows", "Steer"], ["W / Shift", "Boost while held"], ["Mouse", "Look around"], ["Click / Space", "Fire"], ["E", "Switch camera"], ["Hold R", "Restart game"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
 	if not game.arena_mode:
-		bindings = [["A / D", "Steer"], ["Shift", "Boost while held"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"], ["Hold R", "Restart game"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
+		bindings = [["A / D", "Steer"], ["W / Shift", "Boost while held"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"], ["Hold R", "Restart game"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
 	for index in bindings.size():
 		var cap := PanelContainer.new()
 		cap.name = "Key%d" % index
@@ -333,21 +352,6 @@ func _build_menu() -> void:
 		key.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var action := _label(controls, "Action%d" % index, bindings[index][1], 17, INK)
 		action.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var motion_row := HBoxContainer.new()
-	motion_row.add_theme_constant_override("separation", 16)
-	settings_panel.add_child(motion_row)
-	var motion_label := _label(motion_row, "MotionLabel", "MOTION", 13, BRASS)
-	motion_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	motion_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	motion_selector = OptionButton.new()
-	motion_selector.name = "MotionPreference"
-	motion_selector.custom_minimum_size = Vector2(158, 32)
-	motion_selector.add_theme_font_size_override("font_size", 16)
-	motion_selector.add_item("Full")
-	motion_selector.add_item("Reduced")
-	motion_selector.select(game.motion_setting)
-	motion_selector.item_selected.connect(func(index: int): game.motion_setting = index)
-	motion_row.add_child(motion_selector)
 	settings_back = _menu_button(settings_panel, "SettingsBack", "BACK")
 	settings_back.custom_minimum_size.x = 160
 	settings_back.pressed.connect(func(): _show_settings(false))
@@ -388,7 +392,6 @@ func _show_settings(open: bool) -> void:
 	settings_open = open
 	if open:
 		credits_open = false
-		motion_selector.select(game.motion_setting)
 	_refresh_menu_copy()
 	if open:
 		settings_back.grab_focus()
@@ -420,14 +423,21 @@ func _input(event: InputEvent) -> void:
 func _layout_menu() -> void:
 	if not is_instance_valid(menu) or size.x < 1.0 or size.y < 1.0: return
 	var subpage_open := settings_open or credits_open
-	var width := minf(480, size.x - 48)
-	var left := clampf(size.x * 0.05, 24, 80)
+	var centered_title: bool = game.state == game.State.READY and not subpage_open and not game.paused
+	var width := minf(760 if centered_title else 480, size.x - 48)
+	var left := (size.x - width) * 0.5 if centered_title else clampf(size.x * 0.05, 24, 80)
+	menu_shade.self_modulate.a = 0.0 if centered_title else 1.0
+	menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if centered_title else HORIZONTAL_ALIGNMENT_LEFT
+	menu_actions.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if centered_title else Control.SIZE_SHRINK_BEGIN
+	for button: Button in [action_button, walkthrough_button, settings_button, credits_button, main_menu_button]:
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if centered_title else Control.SIZE_SHRINK_BEGIN
+	menu_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL if centered_title else Control.SIZE_FILL
 	menu_actions.custom_minimum_size.x = minf(300, width)
 	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	menu_column.add_theme_constant_override("separation", 12)
 	menu_actions.add_theme_constant_override("separation", 10)
 	menu_spacer.visible = not subpage_open
-	var title_size := 68 if game.state == game.State.READY else 48
+	var title_size := 92 if centered_title else 68 if game.state == game.State.READY else 48
 	if subpage_open: title_size = 42
 	var widest := 1.0
 	for line: String in menu_title.text.split("\n"):
@@ -440,10 +450,10 @@ func _layout_menu() -> void:
 	settings_panel.add_theme_constant_override("separation", 12)
 	credits_panel.add_theme_constant_override("separation", 6)
 	var needed := menu_column.get_combined_minimum_size().y
-	var preferred_top := 48.0 if subpage_open else size.y * 0.14
+	var preferred_top := 28.0 if centered_title else 48.0 if subpage_open else size.y * 0.14
 	var top := minf(preferred_top, maxf(20, size.y - needed - 24))
 	menu.position = Vector2(left, top)
-	menu.size = Vector2(width, maxf(needed, size.y - top - 24))
+	menu.size = Vector2(width, maxf(needed, size.y - top - (32 if centered_title else 24)))
 	menu.queue_sort()
 	menu_column.queue_sort()
 
@@ -462,7 +472,7 @@ func _refresh_menu_copy() -> void:
 	main_menu_button.visible = not intro
 	walkthrough_button.visible = intro and game.arena_mode
 	menu_controls.visible = intro and not game.arena_mode and not subpage_open
-	menu_footer.text = "A/D steer · Shift boost · Mouse look\nClick/Space fire · Enter play" if intro and game.arena_mode else "Enter play · M mute · Esc pause / resume" if intro else "R retry · M mute · Esc pause / resume"
+	menu_footer.text = "A/D steer · W/Shift boost · Mouse look\nClick/Space fire · Enter play" if intro and game.arena_mode else "Enter play · M mute · Esc pause / resume" if intro else "R retry · M mute · Esc pause / resume"
 	settings_frame.visible = settings_open
 	settings_panel.visible = settings_open
 	credits_frame.visible = credits_open
@@ -506,16 +516,20 @@ func _sync_button() -> void:
 	if not gameplay_hud.visible and not game.paused:
 		boss_label.visible = false
 		boss_health.visible = false
+		_update_boss_feedback(0)
 		fleet_status.visible = false
 		_announced_fleet = 0
 		_fleet_banner_left = 0.0
 		_sync_fleet_circles(0)
 		_fleet_group_total = 0
 		_fleet_complete_left = 0.0
-		for label: Label in [notice, threat_label, wave_countdown, wave_announcement]:
+		for label: Label in [notice, wave_countdown, wave_announcement]:
 			label.text = ""
 			label.visible = false
 		_has_threat = false
+		threat_icon.visible = false
+		_threat_pulse = 0.0
+		threat_icon.modulate.a = 1.0
 	if game.state == _last_state and game.paused == _last_paused:
 		return
 	_last_state = game.state
@@ -557,7 +571,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 		return
 	if game.state == game.State.SAILING:
-		_update_threat()
+		_update_threat(delta)
 	_update_wave_ui(delta)
 	_update_storm_warning(delta)
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
@@ -683,22 +697,28 @@ func _update_notice() -> void:
 	notice.visible = not value.is_empty()
 
 
-func _update_threat() -> void:
+func _update_threat(delta: float = 0.0) -> void:
 	var ship = game.enemy_encounters.focus_ship(true)
+	var was_active := _has_threat
 	_has_threat = game.enemy_encounters.enabled and (ship.mode == ship.Mode.TELEGRAPH or not ship.projectiles.is_empty())
-	threat_label.visible = _has_threat
+	threat_icon.visible = _has_threat
 	if not _has_threat:
+		_threat_pulse = 0.0
+		threat_icon.modulate.a = 1.0
 		return
 	var from: Vector3 = ship.global_position
 	if not ship.projectiles.is_empty():
 		from = ship.projectiles[0].position
 	var offset: Vector3 = from - game.boat.global_position
-	_threat_direction = signf(offset.dot(game.cannon.starboard_direction()))
+	var direction := signf(offset.dot(game.cannon.starboard_direction()))
+	if not was_active or direction != _threat_direction:
+		_threat_pulse = 0.0
+	else:
+		_threat_pulse += maxf(0.0, delta)
+	_threat_direction = direction
 	var right: bool = _threat_direction >= 0
-	threat_label.text = "Incoming · right" if right else "Incoming · left"
-	threat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT if right else HORIZONTAL_ALIGNMENT_LEFT
-	threat_label.position = Vector2(size.x - 272 if right else 48.0, size.y * 0.33 - 13)
-	threat_label.size = Vector2(224, 30)
+	threat_icon.position = Vector2(size.x - 64 if right else 16.0, size.y * 0.33 - 24)
+	threat_icon.modulate.a = 1.0 if game.motion_setting == 1 else 0.85 + 0.15 * cos(_threat_pulse * TAU / 0.9)
 
 
 func _text(at: Vector2, value: String, point_size: int = 16, color: Color = INK, centered: bool = false, elegant: bool = false) -> void:
@@ -726,12 +746,6 @@ func _draw() -> void:
 	_draw_storm_warning()
 	if game.hit_flash > 0.0:
 		_draw_damage_edges()
-	if _has_threat:
-		var at := Vector2(size.x - 24 if _threat_direction >= 0 else 24.0, size.y * 0.33)
-		var side: float = 1 if _threat_direction >= 0 else -1
-		var color := Color(CORAL, 0.9 if game.motion_setting == 1 else 0.8 + sin(game.sea_time * 14) * 0.2)
-		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
-		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
 	if game.reading and _reading_alpha > 0.01:
 		_draw_instrument()
 	elif not game.arena_mode:
@@ -858,11 +872,36 @@ func star_horizon_line() -> Dictionary:
 	return {"from": at + Vector2(0, 13), "to": Vector2(at.x, end_y)}
 
 
+func _update_boss_feedback(delta: float) -> void:
+	_boss_hit_left = maxf(0.0, _boss_hit_left - maxf(0.0, delta))
+	if boss_health.visible:
+		var hull: int = game.enemy_encounters.boss.hull
+		if _boss_last_hull >= 0 and hull < _boss_last_hull:
+			_boss_hit_left = BOSS_HIT_SECONDS
+		_boss_last_hull = hull
+	else:
+		_boss_last_hull = -1
+		_boss_hit_left = 0.0
+	var strength := _boss_hit_left / BOSS_HIT_SECONDS
+	var elapsed := BOSS_HIT_SECONDS - _boss_hit_left
+	var shake := Vector2.ZERO
+	if _boss_hit_left > 0 and game.motion_setting != 1:
+		shake = Vector2(sin(elapsed * 80.0) * 2.5, sin(elapsed * 54.0) * 1.5) * strength
+	boss_health.offset_left = -120 + shake.x
+	boss_health.offset_right = 120 + shake.x
+	boss_health.offset_top = 84 + shake.y
+	boss_health.offset_bottom = 90 + shake.y
+	var fill: StyleBoxFlat = boss_health.get_theme_stylebox("fill")
+	fill.bg_color = BOSS_HEALTH_COLOR.lerp(INK, strength)
+
+
 func _update_wave_ui(delta: float = 0.0) -> void:
 	var waves = game.enemy_encounters
 	var active: bool = game.arena_mode and game.state == game.State.SAILING
 	boss_label.visible = active and waves.boss_active()
 	boss_health.visible = boss_label.visible
+	boss_label.text = "FLAGSHIP · RELOADING" if boss_label.visible and waves.boss.weapon_state == waves.boss.Weapon.RELOAD else "FLAGSHIP"
+	_update_boss_feedback(delta)
 	if boss_health.visible:
 		boss_health.max_value = waves.boss.hull_capacity
 		boss_health.value = waves.boss.hull
@@ -890,7 +929,7 @@ func _update_wave_ui(delta: float = 0.0) -> void:
 		if remaining == 0 and fleet_circles.remaining > 0:
 			_fleet_complete_left = FLEET_COMPLETE_SECONDS
 	_sync_fleet_circles(remaining, _fleet_group_total)
-	fleet_status.visible = _fleet_group_total > 0 and (remaining > 0 or _fleet_complete_left > 0.0)
+	fleet_status.visible = not boss_health.visible and _fleet_group_total > 0 and (remaining > 0 or _fleet_complete_left > 0.0)
 	if waves.phase == waves.Phase.EARLY_CLEAR:
 		_fleet_banner_left = 0.0
 		wave_countdown.text = "WAVE CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)

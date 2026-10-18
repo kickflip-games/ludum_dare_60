@@ -40,7 +40,7 @@ accessor for existing cutter tuning; `propulsion_speed()` drives the player
 integrator. No flow multiplier is applied to
 enemies, projectiles, reloads or survival timers.
 
-Holding Shift multiplies the player's earned propulsion by **1.5 continuously**:
+Holding W or Shift multiplies the player's earned propulsion by **1.5 continuously**:
 11.25 m/s from base, up to 21.97265625 m/s with all three flow rewards. Release
 removes only this multiplier, immediately. There is no duration limit, cooldown
 or resource. Focus loss, retry and endings clear the held state. `boost_wind.gd`

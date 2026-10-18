@@ -7,7 +7,9 @@ Unmodified `PNG/Double/banner_classic_curtain.png` (512 × 128) is displayed at
 original red cloth and cream trim separately to navy `#243746` and brass
 `#B99B65`, retaining their shade weights and original alpha. The PNG is unchanged.
 
-The three SVGs in `originals/` are unmodified `Vector/` files from that archive.
+The SVGs in `originals/` are unmodified `Vector/` files from that archive.
+`minimap_icon_exclamation_red.svg` supplies the pulsing incoming-threat mark;
+its surrounding triangle is drawn by the HUD.
 `blackwater/` contains palette-only derivatives, rasterized by Godot:
 - `button_brown.svg` → `button_primary.svg`: warm parchment and brass.
 - `button_grey.svg` → `button_secondary.svg`: secondary navy and muted brass.

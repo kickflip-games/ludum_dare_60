@@ -20,7 +20,7 @@ func _initialize() -> void:
 
 func capture(label: String, storm: bool = false) -> void:
 	# Match boat, camera, sea and light across health states without changing hull.
-	game.boat.position = Vector3(400, 0, -360)
+	game.boat.position = game.arena_center() + Vector3(0, 0, 100)
 	game.heading = 0.0
 	game.sea_time = 14.0
 	game.ocean.wave_time = game.sea_time
@@ -42,8 +42,11 @@ func capture(label: String, storm: bool = false) -> void:
 
 func sail(seconds: float) -> void:
 	for frame in range(roundi(seconds * 60.0)):
-		game._physics_process(1.0 / 60.0)
-		game.cannon.advance(1.0 / 60.0)
+		# Hold the comparison pose clear of terrain while advancing real repair/view paths.
+		game.elapsed += 1.0 / 60.0
+		game.damage_immunity = maxf(0.0, game.damage_immunity - 1.0 / 60.0)
+		game._update_hull_recovery(1.0 / 60.0)
+		game._update_view(1.0 / 60.0)
 
 
 func _run() -> void:
@@ -53,7 +56,7 @@ func _run() -> void:
 		return
 	DirAccess.make_dir_recursive_absolute(output)
 	root.size = requested_size
-	game = load("res://tests/legacy_voyage.tscn").instantiate()
+	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

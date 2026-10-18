@@ -3,7 +3,7 @@ extends PanelContainer
 const Palette = preload("res://game/nautical_theme.gd")
 const Guide = preload("res://game/walkthrough.gd")
 const TITLES := ["STEER", "BOOST", "LOOK", "FIRE", "CAMERA", "READY"]
-const INSTRUCTIONS := ["Use A / D or the arrow keys to turn.", "Hold Shift to move faster.", "Move the mouse to look around.", "Press Space or click to fire.", "Press E to switch camera views.", "Press Play to start the game."]
+const INSTRUCTIONS := ["Use A / D or the arrow keys to turn.", "Hold W or Shift to move faster.", "Move the mouse to look around.", "Press Space or click to fire.", "Press E to switch camera views.", "Press Play to start the game."]
 var game: Node3D
 var column: VBoxContainer
 var progress: Label
@@ -108,7 +108,7 @@ func _rebuild_keys(step: int) -> void:
 		Guide.Step.STEER:
 			_cap("A / LEFT", "steer_port", 112)
 			_cap("D / RIGHT", "steer_starboard", 112)
-		Guide.Step.BOOST: _cap("SHIFT", "boost_sailing", 112)
+		Guide.Step.BOOST: _cap("W / SHIFT", "boost_sailing", 112)
 		Guide.Step.LOOK: _cap("MOVE MOUSE", "mouse", 200)
 		Guide.Step.FIRE:
 			_cap("LMB", "fire_mouse", 84)

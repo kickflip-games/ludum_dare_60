@@ -243,6 +243,10 @@ func _build_presentation() -> void:
 
 
 func reset() -> void:
+	_reset_ship(true)
+
+
+func _reset_ship(clear_mines: bool) -> void:
 	if is_instance_valid(sea_effects): sea_effects.reset()
 	if has_meta("wave_id"):
 		remove_meta("wave_id")
@@ -269,7 +273,8 @@ func reset() -> void:
 	for mount in gun_mounts:
 		mount.flash.visible = false
 	if mine_layer != null:
-		mine_layer.reset()
+		if clear_mines: mine_layer.reset()
+		else: mine_layer.clock = 0.0
 	shots_hit = 0
 	velocity = Vector3.ZERO
 	hull = hull_capacity
@@ -335,7 +340,7 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	firing_range = profile.firing_range
 	_build_armament(profile.broadside_guns, profile.both_sides, profile.bow_gun)
 	if mine_layer != null:
-		mine_layer.reset()
+		mine_layer.clock = 0.0
 		mine_layer.enabled = profile.lays_mines
 		mine_layer.prepare()
 	presentation.scale = Vector3.ONE
@@ -369,7 +374,9 @@ func _update_cloth() -> void:
 
 
 func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
-	reset()
+	# Ordinary pooled hulls retain trails; the flagship keeps its specialised reset.
+	if mine_layer != null: _reset_ship(false)
+	else: reset()
 	managed_by_director = coordinated
 	run_heading = game.heading
 	position = at if at.is_finite() else game.boat.position + _run_forward() * 16.0 + _run_right() * 60.0
@@ -417,6 +424,10 @@ func update_ship(delta: float) -> void:
 	_advance_shots(delta)
 	if game.arena_mode and game.state != game.State.SAILING:
 		return
+	# Trails keep arming, hitting and expiring after sinking or pool reuse.
+	if mine_layer != null:
+		mine_layer.update(delta)
+		if game.arena_mode and game.state != game.State.SAILING: return
 	if navigation_state in [Navigation.DORMANT, Navigation.ESCAPED]:
 		return
 	navigation_time += delta
@@ -552,8 +563,6 @@ func update_ship(delta: float) -> void:
 	sea_effects.apply_arrival()
 	if gun_mounts.is_empty() or sea_effects.arrival_age >= SeaEffects.ARRIVAL_SECONDS or weapon_state != Weapon.READY:
 		_update_weapon(delta)
-	if mine_layer != null:
-		mine_layer.update(delta)
 	_update_tell()
 
 
@@ -950,8 +959,6 @@ func take_hit() -> void:
 		flash.visible = false
 		for mount in gun_mounts:
 			mount.flash.visible = false
-		if mine_layer != null:
-			mine_layer.reset()
 		_change_navigation(Navigation.SINKING)
 		_change_weapon(Weapon.READY)
 		set_aim_highlight(false)

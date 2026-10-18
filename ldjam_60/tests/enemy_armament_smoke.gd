@@ -139,24 +139,60 @@ func _run() -> void:
 	check(not ship.mine_layer.deploy() and ship.mine_layer.mines.size() == 3, "ordinary trail is capped at three live mines")
 	ship.mine_layer.mines[0].update_mine(16)
 	ship.mine_layer.update(0)
-	check(ship.mine_layer.deploy(), "expiry frees a trail slot")
+	check(not ship.mine_layer.deploy(), "time cannot expire a mine or free a full trail slot")
+	game.cannon._impact(ship.mine_layer.mines[0], ship.mine_layer.mines[0].model.global_position)
+	check(ship.mine_layer.deploy(), "shooting a mine frees a trail slot")
 	var trail: Array = ship.mine_layer.mines.duplicate()
 	for i in ship.hull_capacity: ship.take_hit()
-	check(ship.mine_layer.mines.is_empty() and trail.all(func(mine): return mine.spent), "sinking clears every ordinary mine")
+	check(ship.mine_layer.mines.size() == 3 and trail.all(func(mine): return not mine.spent and mine.visible), "sinking leaves every ordinary mine in the water")
+	check(not ship.mine_layer.deploy(), "sunk minelayer cannot lay new mines")
+	ship.update_ship(1.3)
+	check(trail.all(func(mine): return mine.armed()), "sunk ship's mines continue arming")
+	ship.update_ship(2.3)
+	check(ship.navigation_state == ship.Navigation.ESCAPED and trail.all(func(mine): return not mine.spent), "mines outlive the sinking hull")
+	ship.configure_archetype(load("res://game/enemies/cutter.tres"))
+	ship.begin(game.arena_center() + Vector3(80, 0, 90))
+	check(ship.mine_layer.mines.size() == 3 and trail.all(func(mine): return not mine.spent), "reusing the hull as a cutter preserves its old trail")
+	game.boat.position = trail[0].position
+	game.damage_immunity = 0.0
+	var hull_before: int = game.hull
+	ship.update_ship(0.01)
+	check(trail[0].spent and game.hull == hull_before - 1, "orphaned armed mine still damages the player")
+	game.boat.position = game.arena_center() + Vector3(-60, 0, 110)
+	ship.navigation_state = ship.Navigation.DORMANT
+	ship.update_ship(3600.0)
+	check(not trail[1].spent and not trail[2].spent, "remaining mines persist for an hour while their pooled hull is dormant")
 	fresh("heavy")
 	ship.position = game.arena_center() + Vector3(40, 0, 95)
 	game.boat.position = game.arena_center() + Vector3(-60, 0, 110)
 	check(ship.mine_layer.deploy(), "live trail exists before retry")
+	var retry_mine = ship.mine_layer.mines[0]
+	for i in ship.hull_capacity: ship.take_hit()
 	game.restart()
-	check(ship.mine_layer.mines.is_empty() and ship.mine_layer.clock == 0 and ship.projectiles.is_empty() and ship.salvos_fired == 0, "retry clears mines, clocks, volleys and shots")
+	check(retry_mine.spent and ship.mine_layer.mines.is_empty() and ship.mine_layer.clock == 0 and ship.projectiles.is_empty() and ship.salvos_fired == 0, "retry clears a sunk ship's mines, clocks, volleys and shots")
 	for ending in [game.State.LOST, game.State.ARRIVED]:
 		fresh("heavy")
 		ship.position = game.arena_center() + Vector3(40, 0, 95)
 		game.boat.position = game.arena_center() + Vector3(-60, 0, 110)
 		check(ship.mine_layer.deploy(), "live trail exists before ending")
+		var ending_mine = ship.mine_layer.mines[0]
+		for i in ship.hull_capacity: ship.take_hit()
 		game.state = ending
 		game.enemy_encounters.stop()
-		check(ship.mine_layer.mines.is_empty() and ship.projectiles.is_empty(), "loss/victory cancels ordinary hazards")
+		check(ending_mine.spent and ship.mine_layer.mines.is_empty() and ship.projectiles.is_empty(), "loss/victory cancels sunk ships' hazards")
+	fresh("heavy")
+	game.boat.position = game.arena_center() + Vector3(-60, 0, 110)
+	for x in [20, 40, 60]:
+		ship.position = game.arena_center() + Vector3(x, 0, 100)
+		check(ship.mine_layer.deploy(), "fatal-contact trail deploys")
+	var fatal_trail: Array = ship.mine_layer.mines.duplicate()
+	for i in ship.hull_capacity: ship.take_hit()
+	game.hull = 1
+	game.damage_immunity = 0.0
+	game.boat.position = fatal_trail.back().position
+	game.enemy_encounters.enabled = true
+	game.enemy_encounters.update_encounters(1.3)
+	check(game.state == game.State.LOST and ship.mine_layer.mines.is_empty() and fatal_trail.all(func(mine): return mine.spent), "fatal orphaned mine safely clears the whole trail during its update")
 	fresh("cutter")
 	check(not ship.mine_layer.deploy() and ship.gun_mounts.size() == 4, "pool reuse replaces heavy armament and disables mine laying")
 	game.queue_free()

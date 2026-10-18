@@ -52,7 +52,11 @@ func _run() -> void:
 	check(hud.menu_column.get_node_or_null("Kicker") == null and hud.menu_column.get_node_or_null("WaveRule") == null
 		and not hud.menu_body.visible and hud.menu_body.text.is_empty(), "title has no decorative slogans or divider")
 	check(not hud.settings_panel.is_visible_in_tree() and not hud.main_menu_button.visible, "settings hidden on title; no Continue or result action")
-	check(hud.motion_selector.item_count == 2 and hud.motion_selector.get_item_text(0) == "Full" and hud.motion_selector.get_item_text(1) == "Reduced", "Settings exposes the existing two motion preferences")
+	check(hud.settings_panel.find_children("*", "OptionButton", true, false).is_empty(), "Settings has no motion options")
+	check(game.motion_setting == 0 and game.motion_amount() == 1.0, "normal play starts with full motion")
+	for property in game.get_property_list():
+		if property.name == "motion_setting":
+			check((property.usage & PROPERTY_USAGE_EDITOR) == 0, "motion preference is not exposed in the editor")
 	check(hud.action_button.get_theme_stylebox("normal") is StyleBoxTexture and hud.settings_frame.get_theme_stylebox("panel") is StyleBoxTexture, "buttons and panels use scalable Kenney textures")
 	check(not hud.menu_footer.is_visible_in_tree(), "arena menu has no bottom instructions; full controls remain in Settings")
 	for font: Font in [hud.serif, hud.sans]:
@@ -63,7 +67,7 @@ func _run() -> void:
 		await settle()
 		for control: Control in [hud.menu_title, hud.action_button, hud.walkthrough_button, hud.settings_button, hud.credits_button]:
 			check(inside(control), "title %s fits %s" % [control.name, dimensions])
-		check(hud.menu_title.global_position.x < dimensions.x * 0.1 and hud.action_button.size.x == 300 and hud.settings_button.size.x == 260, "left composition retains primary/secondary hierarchy at %s" % dimensions)
+		check(is_equal_approx(hud.menu_title.get_global_rect().get_center().x, hud.size.x * 0.5) and is_equal_approx(hud.action_button.get_global_rect().get_center().x, hud.size.x * 0.5) and is_equal_approx(hud.settings_button.get_global_rect().get_center().x, hud.size.x * 0.5) and hud.action_button.size.x == 300 and hud.settings_button.size.x == 260, "centered title and buttons retain primary/secondary hierarchy at %s" % dimensions)
 		click(hud.settings_button)
 		await settle()
 		check(not hud.walkthrough_button.is_visible_in_tree(), "Settings hides Walkthrough launch")
@@ -71,10 +75,7 @@ func _run() -> void:
 		for control: Control in [hud.menu_title, hud.settings_panel.get_node("FullControls"), hud.settings_back]:
 			check(inside(control), "settings %s fits %s" % [control.name, dimensions])
 		check(hud.settings_panel.get_node("FullControls/Action7").text == "Pause / resume", "Escape reference describes Web pause")
-		# Headless windows cannot route native popup keys; exercise its selection signal.
-		hud.motion_selector.get_popup().index_pressed.emit(1)
-		await settle()
-		check(game.motion_setting == 1 and hud.motion_selector.selected == 1, "Reduced popup selection updates the existing motion system")
+		check(game.motion_amount() == 1.0, "Settings navigation keeps full motion")
 		# Even a stray unhandled Enter cannot start a run behind settings.
 		var begin := InputEventAction.new()
 		begin.action = "begin_crossing"
@@ -140,6 +141,7 @@ func _run() -> void:
 	await settle()
 	check(game.state == game.State.READY and hud.action_button.has_focus() and hud.menu_title.text == "BLACKWATER", "Main Menu restores Blackwater and focuses Set Sail without casting off")
 	check(game.hull == game.hull_capacity and game.elapsed == 0 and game.enemy_encounters.wave_number == 0 and game.sea_time == 0, "Main Menu resets hull, clock, waves and sea")
+	check(game.motion_amount() == 1.0, "returning to Main Menu retains full motion")
 	check(game.cannon.shots_fired == 0 and not game.cannon._fire_held and not game.boosting and game.failure_reason.is_empty(), "Main Menu clears input, shots and failure text")
 	key(KEY_ENTER, true)
 	key(KEY_ENTER, false)
@@ -157,6 +159,7 @@ func _run() -> void:
 	click(hud.action_button)
 	await settle()
 	check(game.state == game.State.CASTING_OFF and game.hull == game.hull_capacity and game.enemy_encounters.wave_number == 0, "Sail Again fully resets and casts off")
+	check(game.motion_amount() == 1.0, "retry retains full motion")
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	check(not game.cannon._fire_held and not game.boosting, "focus loss keeps controls cleared after menu navigation")
 	print("MENU UI: %d checks, %d failures" % [checks, failures])

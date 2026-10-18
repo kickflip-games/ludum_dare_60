@@ -22,9 +22,9 @@ earlier survivors alive. Entering the old harbour never wins.
 - **E:** toggle close cannon / chase view; bounded mouse look remains active in both.
 - **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
   together share one reload. Steering, camera look and firing are independent.
-- **Hold Shift:** sail **50% faster for the entire hold** (11.25 m/s from base).
+- **Hold W or Shift:** sail **50% faster for the entire hold** (11.25 m/s from base).
   Pale tailwind streaks stream around the ship while active and fade on release.
-  No timeout, fuel or cooldown. Release restores earned cruising speed; Shift
+  No timeout, fuel or cooldown. Release restores earned cruising speed; W or Shift
   multiplies permanent flow rewards without consuming or duplicating them.
 - Three bright cyan flow ribbons each grant **25% more current forward speed
   once per run**: **9.375 / 11.719 / 14.648 m/s** after one/two/three. Rewards
@@ -35,15 +35,15 @@ earlier survivors alive. Entering the old harbour never wins.
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute, including background music; **Esc:** pause / resume. The pause menu offers Resume, Settings, Credits and Main Menu;
-  Esc in Settings returns to the previous menu. Settings shows the control reference,
-  existing Full/Reduced motion preference and Back. Menus share recoloured Kenney
+  Esc in Settings returns to the previous menu. Settings shows the control reference
+  and Back. Motion is always Full. Menus share recoloured Kenney
   Adventure buttons; the compact practice card sits at bottom right.
-- **Debug `+` (Shift+= or numpad +):** with **Development → Development Tools**
-  enabled on the crossing, spawn all remaining ships for the current wave.
+- **Hidden developer `=` / `+` (plain =, Shift+= or numpad +):** available during normal play
+  without enabling Development Tools; spawn all remaining ships for the current wave.
   This skips arrival delays and the ordinary ship cap; survivors, wave timers
   and defeat counts stay intact. If safe spawn positions are occupied, arrivals
-  retry as space opens. Retry removes temporary extra ship slots. Enable from
-  the command line with `godot --path ldjam_60 -- --debug-tools`.
+  retry as space opens. Retry removes temporary extra ship slots. The shortcut
+  stays hidden from in-game control hints and menus.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
   and three low islets offer alternate routes. Main rock gaps exceed 30 m;
   the outer ring remains open for broad combat turns. Both sides' shots stop on
@@ -55,7 +55,7 @@ earlier survivors alive. Entering the old harbour never wins.
   final 38 m of approach. Only after crossing, **STORM AHEAD / RETURN TO THE
   LIGHTHOUSE** appears once per voyage, for at most 10 seconds or until returning
   inside. It does not repeat on later crossings. Beyond the line, a slow red screen pulse and
-  stormier lighting. Reduced motion uses a steady tint. The player can sail
+  stormier lighting. The player can sail
   freely across the line: no automatic rudder, wall, speed clamp or storm damage.
 - Waves contain **2 / 3 / 4 / 5** ordinary ships, then a **flagship + two escorts** (below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
@@ -67,12 +67,13 @@ earlier survivors alive. Entering the old harbour never wins.
   when the ordinary pool is full. Its defeat cancels enemy volleys, shots and
   mines immediately; already fatal player damage retains loss priority.
 - A small Kenney Adventure ribbon announces each wave for two seconds, then fades
-  over 0.4 seconds (stationary and instant dismissal in Reduced Motion). During
-  combat, only a centred row of small coral circles tracks outstanding enemies,
-  including survivors, queued arrivals and the flagship. Defeats leave hollow
+  over 0.4 seconds. During
+  combat, only a centred row of small gold circles tracks outstanding enemies,
+  including survivors and queued arrivals. Once the flagship is active, its HP
+  bar replaces the circles and briefly flashes/shakes when hit. Defeats leave hollow
   circles until the next wave rebuilds the group; an all-hollow row hides after
-  one second. A final-15-second countdown signals the next wave. Incoming-fire
-  and storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
+  one second. A final-15-second countdown signals the next wave. A pulsing warning
+  triangle marks incoming fire on the left or right; storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
   The existing player hull-damage presentation remains.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
@@ -90,7 +91,7 @@ earlier survivors alive. Entering the old harbour never wins.
 | Wave | Ships |
 | --- | --- |
 | 1 | Cutter + skiff |
-| 2 | Two cutters + skiff |
+| 2 | Cutter + skiff + heavy minelayer |
 | 3 | Cutter + two skiffs + heavy |
 | 4 | Two cutters + two skiffs + heavy |
 | 5 | Flagship + skiff + cutter (escorts use the staggered ordinary queue) |
@@ -108,9 +109,11 @@ the lane is clear. Every volley still receives its full warning. Cutters and ski
 cannons per side; heavies carry three per side. Only the battery facing the player
 fires, using one shared reload. Skiffs also have a forward cannon for targets off
 the bow. Heavies leave up to three stationary mines astern while pursued: a
-5 m warning ring, 1.2 s arming delay, 16 s lifetime and at least 8 s between drops.
-Drops require clear water and a safe player gap; sinking, retry and endings clear
-the ordinary ship's mines.
+5 m warning ring, 1.2 s arming delay and at least 8 s between drops.
+Drops require clear water and a safe player gap. Mines remain after their ship
+sinks, until triggered or shot by the player; retry and endings clear them.
+Mines can be acquired and destroyed by the normal cannon inside its firing cone.
+Full trails wait for a mine to be destroyed or triggered before dropping another.
 
 All enemies, including the flagship, arrive through a **0.9 s fade-in** with a
 small water-spray cue. Moving hulls leave curved foam wakes and pale stern spray;
@@ -138,7 +141,7 @@ and recheck the lane at launch. Their glow is visible throughout the warning,
 and acquisition waits until the arrival fade completes. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
 out; blocked routes recover visibly, and retry clears the fleet and its shots.
-Waves 1–4 keep their existing rosters, deadlines and ship types. The flagship
+Wave 2 introduces the heavy minelayer; wave counts and deadlines remain unchanged. The flagship
 uses no director slot, but reserves warning spacing for its whole volley.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
 See [enemy cannon accuracy, pressure and acceptance evidence](artifacts/enemy_cannon_review.md).
@@ -192,6 +195,7 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_gunne
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/fleet_smoke.gd -- --pressure
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_cadence_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_armament_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/mine_persistence_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_sea_effects_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_previews.gd -- --output=/tmp/latitude-arcade-rendered
 ```
@@ -258,12 +262,17 @@ spawning, targeting, victory and cleanup; the six ordinary slots remain availabl
   volley. Amber/gold/coral distinguish patterns and the second salvo; the area
   stays fixed while the ships move and clears when the volley ends. Real shells
   retain gaps inside this danger envelope; the fill itself deals no damage.
-- Mines drop astern every **6 s**, or **4.5 s** in phase two: **six** active,
-  **18 s** lifetime, **0.8 s** arming delay, **7 m** trigger radius. Unsafe drops
-  are skipped; reaching the cap harmlessly expires the oldest. They stay fixed
+- Mines drop astern throughout cannon warnings and fire, starting with the first
+  warning, then every **2.2 s**, or **1.8 s** in phase two: **six** active,
+  no timeout, **0.8 s** arming delay, **7 m** trigger radius. Unsafe drops
+  are skipped; reaching the cap pauses drops until a mine is shot or triggered. They stay fixed
   horizontally and bob with the real sea. The thin coral ring pulses in opacity
   at its actual fixed trigger radius. A detonation consumes one mine and calls
-  normal one-hit damage, respecting immunity. Mines never become cannon targets.
+  normal one-hit damage, respecting immunity. The player cannon can target and destroy mines.
+- During the **3 / 3.4 s reload** (10% shorter in phase two), the health bar reads
+  **FLAGSHIP · RELOADING** and no new shells or mines launch. Existing hazards
+  remain dangerous: steer around the mine trail and approach during this opening.
+  Clear, steady broadsides can also start on turn-away and reposition legs.
 - Boss defeat starts sinking and wins immediately. Escort kills alone never win.
   Victory/defeat/retry clear all hazards; retry restores health, phases and HUD.
 
@@ -376,8 +385,10 @@ briefly acknowledge the place found for 2.8 seconds. See the world documentation
 for the shared bearing convention and scripted navigation checks.
 The open instrument has no instant bearing needle or course bubble. Hull damage
 appears on the boat: two small stern scratches after one hit, with extra gunwale
-splintering at one remaining hull point. A brief warm wood flash and the existing
-hit sound/edge tint acknowledge accepted hits. There are no hull icons, health
+splintering at one remaining hull point. Accepted hits flash the hull and sail red;
+a slow red pulse persists while damaged, becoming strongly red at critical health.
+Repair reduces the warning and full repair restores the normal palette. The existing
+hit sound/edge tint remain. There are no hull icons, health
 numbers or repair bars. The cannon ring appears only during gun view, reload and
 a brief ready pulse. Incoming-fire cues remain readable while sighting. There are
 no idle target marks.

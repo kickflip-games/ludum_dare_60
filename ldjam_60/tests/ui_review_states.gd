@@ -218,14 +218,14 @@ func problem(index: int) -> String:
 		"star-wreck", "star-peaks", "star-harbour", "sighting-danger", "star-left", "star-right", "star-horizon", "sighting-repair":
 			ok = game.focus_strength == 1.0 and hud.star_guidance().get("visible", false) and not hud.star_horizon_line().is_empty()
 			if id == "sighting-danger":
-				ok = ok and hud.threat_label.visible and game.boat_damage.severity == 2
+				ok = ok and hud.threat_icon.visible and game.boat_damage.severity == 2
 		"star-port", "star-starboard":
 			var cue: Dictionary = hud.star_guidance()
 			ok = not cue.is_empty() and not cue.visible and hud.star_horizon_line().is_empty()
 			if ok:
 				ok = cue.position.x < hud.size.x * 0.5 if id == "star-port" else cue.position.x > hud.size.x * 0.5
 		"cutter": ok = hud.notice.visible and not hud.cannon_gauge.visible and not game.cannon.aiming
-		"incoming-port", "incoming-starboard": ok = hud.threat_label.visible and hud.threat_label.text.contains("port" if id == "incoming-port" else "starboard")
+		"incoming-port", "incoming-starboard": ok = hud.threat_icon.visible and ((hud.threat_icon.position.x < hud.size.x * 0.5) == (id == "incoming-port"))
 		"cannon": ok = game.cannon.aiming and game.cannon.indicator_alpha == 1.0 and hud.cannon_gauge.status.text == "F · Fire"
 		"reload", "tooltip-reload": ok = game.cannon.cooldown > 0 and hud.cannon_gauge.status.text == "Reloading"
 		"reloaded": ok = hud.cannon_gauge.pulse > 0 and hud.cannon_gauge.visible and hud.cannon_gauge.status.text == "Ready"

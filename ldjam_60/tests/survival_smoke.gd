@@ -75,6 +75,8 @@ func _run() -> void:
 	enemies=game.enemy_encounters
 	await physics_frame
 	var config=enemies.survival_settings
+	check(not config.wave_rosters[0].has("heavy") and config.wave_rosters[1] == PackedStringArray(["cutter", "skiff", "heavy"]),
+		"minelayer first arrives in wave two alongside a cutter and skiff")
 	check(config.enemy_counts==PackedInt32Array([2,3,4,5,2]) and config.deadlines==PackedFloat32Array([40,50,65,80,0]), "authored defaults are exactly five waves: 2/3/4/5 then two escorts plus flagship at 40/50/65/80/final")
 	check(config.maximum_living==6 and config.spawn_interval==2.5 and config.early_clear_pause==3
 		and config.attack_slots==PackedInt32Array([1,1,2,2,2]),
@@ -245,7 +247,7 @@ func _projectile_and_multi_ship_checks() -> void:
 	check(enemies.battle_active() and not game.is_repairing_hull() and enemies.focus_ship()==second,
 		"non-primary active cutter owns camera focus and blocks safe-period repair")
 	game.hud._process(0)
-	check(game.hud._has_threat and game.hud.threat_label.visible,
+	check(game.hud._has_threat and game.hud.threat_icon.visible,
 		"incoming-fire warning sees a non-primary cutter telegraph")
 	second.heading=0
 	second.position=game.arena_center()+Vector3(34,0,110)

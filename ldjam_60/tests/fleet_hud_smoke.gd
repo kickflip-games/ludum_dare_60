@@ -133,18 +133,45 @@ func _run() -> void:
 	check(dots() == 17 and not hud.boss_health.visible, "pending flagship is counted without a premature health bar")
 	enemies._spawn_boss()
 	hud._process(0)
-	check(dots() == 17 and hud.boss_health.visible and hud.boss_health.value == enemies.boss.hull, "activated flagship keeps its one circle and gains health display")
+	check(dots() == 17 and not hud.fleet_status.visible and hud.boss_health.visible and hud.boss_health.value == enemies.boss.hull, "active flagship replaces all dots with its health display without changing counts")
+	var normal_fill: Color = hud.boss_health.get_theme_stylebox("fill").bg_color
+	check(hud._boss_hit_left == 0 and hud.boss_health.offset_left == -120, "first flagship appearance does not flash or shake")
+	enemies.living_ships()[0].take_hit()
+	hud._process(0.1)
+	check(hud._boss_hit_left == 0, "ordinary enemy damage does not trigger flagship feedback")
 	enemies.boss.take_hit()
 	hud._process(0)
-	check(dots() == 17 and hud.boss_health.value == enemies.boss.hull, "nonlethal flagship damage changes health only")
+	check(hud._boss_hit_left > 0 and hud.boss_health.get_theme_stylebox("fill").bg_color != normal_fill, "actual flagship damage immediately flashes its HP fill")
+	hud._process(0.025)
+	check(absf(hud.boss_health.offset_left + 120) > 0 and absf(hud.boss_health.offset_left + 120) <= 2.5 and absf(hud.boss_health.offset_top - 84) <= 1.5, "HP shake is visible and stays within 2.5 by 1.5 pixels")
+	var frozen_left: float = hud.boss_health.offset_left
+	var frozen_timer: float = hud._boss_hit_left
+	game.set_paused(true)
+	hud._process(1)
+	check(hud._boss_hit_left == frozen_timer and hud.boss_health.offset_left == frozen_left, "pause freezes the HP hit effect")
+	game.set_paused(false)
+	enemies.boss.take_hit()
+	hud._process(0)
+	check(is_equal_approx(hud._boss_hit_left, hud.BOSS_HIT_SECONDS), "another damaging hit restarts the brief feedback")
+	for hz in [30, 60, 120]:
+		enemies.boss.take_hit()
+		hud._process(0)
+		for tick in ceili(0.35 * hz): hud._process(1.0 / hz)
+		check(hud._boss_hit_left == 0 and hud.boss_health.offset_left == -120 and hud.boss_health.offset_top == 84 and hud.boss_health.get_theme_stylebox("fill").bg_color == normal_fill, "%d Hz restores the exact resting bar and colour" % hz)
+	check(dots() == 17 and hud.boss_health.value == enemies.boss.hull, "damage feedback preserves enemy counts and authoritative HP")
 	check(hud.boss_label.offset_top >= hud.fleet_status.offset_bottom and hud.wave_announcement.offset_top > hud.boss_health.offset_bottom, "flagship health and final ribbon do not overlap")
-	for dimensions in [Vector2i(1920,1080), Vector2i(1280,720), Vector2i(900,506)]:
+	for dimensions in [Vector2i(1920,1080), Vector2i(1280,720), Vector2i(960,540), Vector2i(900,506)]:
 		root.size = dimensions
 		await settle()
 		var bounds := Rect2(Vector2.ZERO, hud.size).grow(1)
-		check(bounds.encloses(hud.fleet_circles.get_global_rect()) and bounds.encloses(hud.wave_announcement.get_global_rect()) and bounds.encloses(hud.boss_health.get_global_rect()), "17 circles, boss health and ribbon fit %s" % dimensions)
-		check(absf(hud.fleet_circles.get_global_rect().get_center().x - hud.size.x / 2) < 1, "17-circle row stays centred at %s" % dimensions)
+		check(bounds.encloses(hud.boss_label.get_global_rect()) and bounds.encloses(hud.wave_announcement.get_global_rect()) and bounds.encloses(hud.boss_health.get_global_rect()), "boss label, health and ribbon fit %s" % dimensions)
+		check(not hud.fleet_status.visible and absf(hud.boss_health.get_global_rect().get_center().x - hud.size.x / 2) < 1, "boss bar stays centred with dots hidden at %s" % dimensions)
 	game.motion_setting = 1
+	enemies.boss.take_hit()
+	hud._process(0)
+	hud._process(0.025)
+	check(hud._boss_hit_left > 0 and hud.boss_health.get_theme_stylebox("fill").bg_color != normal_fill and hud.boss_health.offset_left == -120 and hud.boss_health.offset_top == 84, "legacy Reduced Motion retains the damage cue without movement")
+	hud._process(0.35)
 	hud._fleet_banner_left = 0.1
 	var banner_y: float = hud.wave_announcement.offset_top
 	hud._process(0)
@@ -155,6 +182,7 @@ func _run() -> void:
 	check(not hud.wave_announcement.visible and dots() == 17, "expired final ribbon does not replay")
 	while enemies.boss.hull > 0: enemies.boss.take_hit()
 	hud._process(0)
+	check(hud._boss_hit_left == 0 and hud._boss_last_hull == -1 and hud.boss_health.offset_left == -120, "victory clears all HP feedback state")
 	check(game.state == game.State.ARRIVED and not hud.fleet_status.visible and not hud.boss_health.visible and dots() == 0 and not hud.wave_announcement.visible, "actual flagship victory clears circles, health and ribbon even with surviving escorts")
 	begin()
 	game.hull = 1
@@ -165,7 +193,7 @@ func _run() -> void:
 	hud._process(0)
 	check(enemies.records.is_empty() and hud._announced_fleet == 0 and dots() == 0, "menu reset clears fleet presentation and records")
 	begin()
-	check(dots() == 2 and empty_circles() == 0 and hud.wave_announcement.text == "WAVE I", "retry rebuilds first wave without stale hollows")
+	check(dots() == 2 and empty_circles() == 0 and hud.fleet_status.visible and hud._boss_hit_left == 0 and hud._boss_last_hull == -1 and hud.wave_announcement.text == "WAVE I", "retry restores dots without stale hollows or HP feedback")
 	game.walkthrough.active = true
 	hud._process(0)
 	check(not hud.fleet_status.visible and dots() == 0 and empty_circles() == 0, "walkthrough hides and clears combat tracker")

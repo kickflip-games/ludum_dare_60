@@ -93,7 +93,7 @@ geometry, lighthouse, and remaining primitive props were created for this protot
 ## Adventure interface and wave ribbon
 
 **UI Pack – Adventure** by **Kenney**, [official source](https://kenney.nl/assets/ui-pack-adventure).
-CC0. The wave ribbon and three original button/panel SVGs are bundled with the
-original licence in `ldjam_60/assets/ui/kenney_adventure/`. Recoloured navy, brass
+CC0. The original wave ribbon, button/panel SVGs and warning SVG are bundled
+with the original licence in `ldjam_60/assets/ui/kenney_adventure/`. Recoloured navy, brass
 and parchment copies are kept separately in `blackwater/`; see
 [SOURCE.md](ldjam_60/assets/ui/kenney_adventure/SOURCE.md) for exact pack filenames.

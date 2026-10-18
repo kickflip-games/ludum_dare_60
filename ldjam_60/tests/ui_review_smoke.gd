@@ -39,7 +39,7 @@ func _run() -> void:
 		check(viewer.game.elapsed == before and viewer.game.hit_flash == flash, "simulation/feedback stay frozen: " + States.CASES[index][0])
 	viewer.show_state(0)
 	await process_frame
-	check(viewer.game.hull == 3 and not viewer.game.hud.threat_label.is_visible_in_tree() and not viewer.game.archipelago.debug_layer.visible, "title after danger/chart clears transient state")
+	check(viewer.game.hull == 3 and not viewer.game.hud.threat_icon.is_visible_in_tree() and not viewer.game.archipelago.debug_layer.visible, "title after danger/chart clears transient state")
 	key(viewer, KEY_LEFT)
 	check(viewer.index == States.CASES.size() - 1, "previous wraps to last state")
 	key(viewer, KEY_RIGHT)

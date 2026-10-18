@@ -6,6 +6,64 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: added plain `=` to the hidden wave-arrival shortcut alongside
+  `+`. Starting wave one retains its banner; releasing an active wave keeps its
+  current timer and does not replay the banner.
+
+- Work in progress: floating timber, barrels and mines now pitch and roll with
+  the local wave slope as well as bobbing. Debris sits 35 cm deeper so its
+  waterline intersects the surface; visual tilt is capped at 18 degrees.
+  Six relevant suites pass; matched six-second native motion sequence reviewed.
+  Headless shutdown still reports resource warnings; Web/human play untested.
+
+- Work in progress: replaced incoming left/right text and chevrons with a pulsing
+  warning triangle using the supplied Kenney exclamation SVG. Kept threat
+  detection and side placement; pause freezes the pulse and endings/retry clear it.
+  All 397 checks in six relevant suites pass. Native left/right and pulse frames
+  reviewed at 1280×720 and 900×506; local Web export rebuilt.
+
+- Work in progress: removed ordinary and flagship mine timeouts and flagship
+  oldest-mine replacement. Mines persist until shot or triggered; full trails
+  pause new drops. Player cannon shots acquire and destroy mines in the usual
+  cone, with explosion feedback. Retry and endings clear all mines.
+  Seven focused suites pass (3,128 checks); native mine/destruction frames
+  reviewed. Cannon arc's warning-flash failure also reproduces before this change.
+
+- Work in progress: flagship lays mines alongside cannon warnings/fire every
+  2.2 s (1.8 s below half health), and can fire on clear, steady return legs.
+  Reload stops new shells and mine drops, with a RELOADING health-bar cue;
+  existing hazards, warning times, steering and reset rules remain.
+
+- Work in progress: player hull and sail now flash red on damage and pulse red
+  while damaged, with a strong red tint at critical health. Repair reduces the
+  warning; full repair and retry restore the normal palette. Kept scratches,
+  immunity, sailing and repair timing.
+
+- Work in progress: kept ordinary mines active after their ship sinks or its
+  pool slot is reused, until contact or the existing 16 s expiry. Retry and
+  endings still clear them. Wave 2 now has a cutter, skiff and heavy minelayer.
+
+- Work in progress: made the hidden `+` wave-arrival shortcut available without
+  Development Tools, including exports. Kept spawn safety, wave accounting and
+  gameplay/menu guards; no in-game hint was added.
+
+- Work in progress: hid enemy dots while the flagship is active. Its HP bar now
+  flashes ivory and shakes by up to 2.5 px for 0.3 s after damage; pause freezes
+  the effect, and retry/end states reset it. Kept wave timing and enemy accounting.
+  All 261 checks in four relevant suites pass; native captures reviewed at
+  1280×720 and 900×506, with unchanged ordinary-wave dots.
+
+- Work in progress: added W alongside Shift for held speed boost; updated the
+  control reference and tutorial hints.
+
+- Work in progress: removed the Motion selector from Settings and the editor;
+  normal play always uses Full motion. Kept the control reference and Back.
+
+- Work in progress: restored a centred title-screen composition with the current
+  Kenney buttons and plain labels. Kept Settings, Credits, pause, result and
+  tutorial layouts unchanged. All 187 menu checks pass; reviewed native title
+  frames at 1920×1080, 1280×720, 960×540 and 900×506.
+
 - Page update: published itch.io description, controls, credits and five-wave
   tagline; saved matching Ludum Dare draft copy. Retained existing itch artwork.
   Uploaded the gameplay cover and three screenshots to the Ludum draft;

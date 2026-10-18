@@ -39,7 +39,7 @@ func _run() -> void:
 	var controls: Array[String] = []
 	for label: Label in hud.menu_controls.get_children():
 		controls.append(label.text)
-	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold Shift", "Speed +50%", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists the current controls including held Shift boost")
+	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold W / Shift", "Speed +50%", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists the current controls including held Shift boost")
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
@@ -111,18 +111,18 @@ func _run() -> void:
 	ship.begin()
 	ship.mode = ship.Mode.TELEGRAPH
 	hud._process(0.2)
-	check(hud.threat_label.visible and hud.threat_label.text.contains("Incoming"), "incoming broadside remains readable during a sighting")
-	check_inside(hud.threat_label, "incoming threat text stays within the small window")
+	check(hud.threat_icon.visible, "incoming broadside remains readable during a sighting")
+	check_inside(hud.threat_icon, "incoming threat icon stays within the small window")
 	ship.reset()
 	hud._process(0.1)
-	check(not hud.threat_label.visible, "threat cue disappears when the threat clears")
+	check(not hud.threat_icon.visible, "threat cue disappears when the threat clears")
 	game.reading = false
 	hud._process(0.0)
 	check(not hud.instrument.visible and hud.star_horizon_line().is_empty(), "release hides the whole instrument immediately, despite residual camera blend")
 	game.damage_immunity = 0.0
 	game.take_damage(1, "UI regression hit")
 	await settle()
-	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_title.text == "Lost at sea.", "sinking replaces every gameplay element with the defeat menu")
+	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_title.text == "SUNK", "sinking replaces every gameplay element with the defeat menu")
 	var retry := InputEventAction.new()
 	retry.action = "restart_crossing"
 	retry.pressed = true

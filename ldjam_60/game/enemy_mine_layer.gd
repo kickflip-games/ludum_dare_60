@@ -18,7 +18,6 @@ func prepare() -> void:
 		mine.pooled = true
 		mine.trigger_radius = RADIUS
 		mine.arming_delay = 1.2
-		mine.lifetime = 16.0
 		ship.game.enemy_encounters.add_child(mine)
 		pool.append(mine)
 
@@ -41,7 +40,9 @@ func update(delta: float) -> void:
 			mines.remove_at(i)
 		else:
 			mine.update_mine(delta)
-	if not enabled or not ship.game.arena_mode or ship.game.state != ship.game.State.SAILING:
+			# Fatal damage can clear this entire trail during the callback.
+			if ship.game.state != ship.game.State.SAILING: return
+	if not enabled or ship.hull <= 0 or ship.get_meta("destroyed", true) or not ship.game.arena_mode or ship.game.state != ship.game.State.SAILING:
 		return
 	clock = minf(INTERVAL, clock + delta)
 	var pursuit: Vector3 = ship.game.boat.position - ship.position

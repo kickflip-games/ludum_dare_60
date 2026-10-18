@@ -68,8 +68,10 @@ func run() -> void:
 		mine.activate(game.boat.position+Vector3(35,0,0))
 		check(not mine.spent and mine.age == 0 and not mine.armed(), "Recycled mine starts unarmed")
 		mine.age = mine.arming_delay
-		mine.update_mine(mine.lifetime)
-		check(mine.spent and not mine.visible and not mine.is_processing(), "Expired mine returns to inactive state")
+		mine.update_mine(3600.0)
+		check(not mine.spent and mine.visible, "Mine persists without a timeout")
+		mine.take_hit()
+		check(mine.spent and not mine.visible and not mine.is_processing(), "Shot mine returns to inactive state")
 		check(mine.model.get_instance_id() == model_id and mine.material.get_instance_id() == material_id and mine.ring.mesh.get_instance_id() == ring_id, "Mine activation allocates no model/material/ring")
 	check(get_node_count() == baseline_nodes, "100 mine cycles keep node count fixed")
 	var hull: int = game.hull

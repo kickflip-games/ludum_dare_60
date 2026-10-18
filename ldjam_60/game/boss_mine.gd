@@ -1,25 +1,38 @@
-extends Node3D
+extends StaticBody3D
 ## Stationary planar hazard. The ring samples the same ocean as the visible mine.
 const MODEL = preload("res://assets/optimized/spike_mine.glb")
 const RING = preload("res://game/boss_mine_ring.gdshader")
 @export var trigger_radius := 7.0
 @export var arming_delay := 0.8
-@export var lifetime := 18.0
 static var _rings: Dictionary = {}
 var pooled := false
 var game: Node3D
 var age := 0.0
 var spent := false
 var model: Node3D
+var _model_basis: Basis
 var ring: MeshInstance3D
 var material: ShaderMaterial
+var collision_shape: CollisionShape3D
 var _settings: Resource
 var _settings_dirty := true
 
 func _ready() -> void:
+	collision_layer = 8 # Player cannon only; boats and enemy shells pass through.
+	collision_mask = 0
+	set_meta("target_kind", "mine")
+	set_meta("destroyed", false)
+	set_meta("target_radius", 1.8)
+	add_to_group("cannon_targets")
+	collision_shape = CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 1.8
+	collision_shape.shape = shape
+	add_child(collision_shape)
 	model = MODEL.instantiate()
 	model.scale = Vector3.ONE * 16.0
 	add_child(model)
+	_model_basis = model.global_basis
 	if not _rings.has(trigger_radius):
 		var mesh := ImmediateMesh.new()
 		mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
@@ -45,6 +58,8 @@ func activate(at: Vector3) -> void:
 	position = at
 	age = 0.0
 	spent = false
+	set_meta("destroyed", false)
+	collision_layer = 8
 	visible = true
 	set_process(true)
 	update_visuals()
@@ -63,9 +78,6 @@ func update_mine(delta: float) -> void:
 		expire()
 		return
 	age += delta
-	if age >= lifetime:
-		expire()
-		return
 	var offset: Vector3 = game.boat.global_position - global_position
 	offset.y = 0.0
 	if armed() and offset.length_squared() <= trigger_radius * trigger_radius:
@@ -81,9 +93,11 @@ func update_visuals() -> void:
 		return
 	var water: float = game.ocean.height_at(Vector2(global_position.x, global_position.z))
 	model.global_position.y = water + 0.65
+	model.global_basis = game.ocean.floating_basis(global_position, _model_basis)
+	collision_shape.global_position = model.global_position
 	ring.global_position.y = water + 0.10
 	material.set_shader_parameter("clock", age)
-	material.set_shader_parameter("strength", (1.0 if armed() else 0.25) * clampf((lifetime - age) / 0.7, 0.0, 1.0))
+	material.set_shader_parameter("strength", 1.0 if armed() else 0.25)
 	material.set_shader_parameter("wave_time", game.ocean.wave_time)
 	# Follow the real surface around the full circumference, including travelling crests.
 	if _settings != game.ocean.settings:
@@ -100,8 +114,17 @@ func update_visuals() -> void:
 	material.set_shader_parameter("fade_start", game.ocean.fade_start)
 	material.set_shader_parameter("fade_end", game.ocean.fade_end)
 
+func take_hit() -> void:
+	if spent: return
+	var at := model.global_position
+	expire()
+	game.combat_particles.impact(at, true, true)
+	game.cannon.water_splash(at)
+
 func expire() -> void:
 	spent = true
+	set_meta("destroyed", true)
+	collision_layer = 0
 	visible = false
 	set_process(false)
 	if not pooled: queue_free()

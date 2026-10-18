@@ -155,7 +155,7 @@ func debug_cutter() -> void:
 		next_wave_in = 0.0
 
 func debug_release_wave() -> void:
-	if not game.development_tools or not game.arena_mode or not enabled or game.state != game.State.SAILING or game.hull <= 0:
+	if not game.arena_mode or not enabled or game.state != game.State.SAILING or game.hull <= 0:
 		return
 	if not game._window_focused or game.walkthrough.active or game.hud.settings_open:
 		return

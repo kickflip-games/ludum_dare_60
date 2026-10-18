@@ -3,7 +3,7 @@ extends "res://tests/arcade_controls_smoke.gd"
 
 func prepare() -> void:
 	fresh()
-	game.development_tools = true
+	game.development_tools = false
 	game.enemy_encounters.enabled = true
 
 func plus(code: Key = KEY_PLUS, shift := false, echo := false, pressed := true, control := false) -> void:
@@ -32,33 +32,38 @@ func _run() -> void:
 	game.hud.set_process(false)
 	var e = game.enemy_encounters
 	prepare()
-	game.development_tools = false
-	plus()
-	e.debug_release_wave()
-	check(e.wave_number == 0 and e.living_ships().is_empty(), "shortcut and direct call are inert with development tools disabled")
-	for code in [KEY_PLUS, KEY_KP_ADD, KEY_EQUAL]:
+	check(not game.development_tools, "hidden shortcut suite runs with development tools disabled")
+	for binding in [[KEY_EQUAL, false], [KEY_EQUAL, true], [KEY_PLUS, false], [KEY_KP_ADD, false]]:
+		var code: Key = binding[0]
+		var shift: bool = binding[1]
 		prepare()
 		e._update_arena(0.0)
 		var remaining: float = e.wave_remaining
 		check(e.records[0].spawned == 1 and e.spawn_queue.size() == 1, "normal arrival still staggers before debug input")
-		plus(code, code == KEY_EQUAL)
+		plus(code, shift)
 		check(e.wave_number == 1 and e.spawn_queue.is_empty() and e.records[0].spawned == 2,
 			"key %d releases all current-wave ships immediately" % code)
 		check(e.wave_remaining == remaining and e.ships_sunk == 0 and e.records[0].defeated == 0,
 			"debug release preserves deadline, wave number and defeat accounting")
-		plus(code, code == KEY_EQUAL, false, false)
-		plus(code, code == KEY_EQUAL)
+		plus(code, shift, false, false)
+		plus(code, shift)
 		check(e.records[0].spawned == 2 and e.wave_number == 1, "repeated press on a fully spawned wave cannot duplicate ships or advance")
 	prepare()
 	e._begin_wave()
 	plus(KEY_PLUS, false, true)
 	plus(KEY_PLUS, false, false, false)
 	plus(KEY_PLUS, false, false, true, true)
-	plus(KEY_EQUAL)
-	check(e.records[0].spawned == 0, "key repeat, release, Ctrl+plus and bare equals do not release ships")
+	plus(KEY_EQUAL, false, true)
+	plus(KEY_EQUAL, false, false, false)
+	plus(KEY_EQUAL, false, false, true, true)
+	check(e.records[0].spawned == 0, "key repeat, release and Ctrl shortcuts do not release ships")
 	prepare()
-	plus()
-	check(e.wave_number == 1 and e.records[0].spawned == 2, "plus before the first arrival starts and releases wave one")
+	plus(KEY_EQUAL)
+	check(e.wave_number == 1 and e.records[0].spawned == 2, "plain equals before the first arrival starts and releases wave one")
+	check(e.announcement == "WAVE 1" and e.announcement_left == 2.0, "shortcut-started wave retains its normal banner")
+	e.announcement_left = 0.0
+	plus(KEY_EQUAL)
+	check(e.announcement_left == 0.0 and e.wave_number == 1, "releasing an existing wave does not replay its banner or advance waves")
 	prepare()
 	e._begin_wave()
 	e._begin_wave()
@@ -120,6 +125,11 @@ func _run() -> void:
 	plus()
 	check(e.wave_number == 0, "walkthrough practice blocks debug spawns")
 	game.walkthrough.active = false
+	prepare()
+	game.paused = true
+	plus()
+	check(e.wave_number == 0, "pause blocks the hidden shortcut")
+	game.paused = false
 	prepare()
 	e.phase = e.Phase.EARLY_CLEAR
 	plus()

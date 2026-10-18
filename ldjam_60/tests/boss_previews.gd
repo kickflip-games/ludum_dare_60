@@ -61,6 +61,7 @@ func _run() -> void:
 		boss.hit_reaction = 0.0
 		boss._update_cloth()
 		assert(boss._prepare_volley(1.6))
+		boss._update_mines(0.0)
 		boss.weapon_time = 0.8
 		await capture("%02d-warning" % (2 + kind * 2))
 		if kind == boss.Pattern.SCATTER:
@@ -71,6 +72,7 @@ func _run() -> void:
 		for i in (99 if kind == boss.Pattern.DOUBLE else 119):
 			boss.position += boss.forward() * boss._speed / 60
 			boss._update_weapon(1.0 / 60)
+			boss._update_mines(1.0 / 60)
 			boss._advance_shots(1.0 / 60)
 			game.combat_particles.advance(1.0 / 60)
 		await capture("%02d-fire" % (3 + kind * 2))
@@ -85,6 +87,25 @@ func _run() -> void:
 				boss._update_weapon(1.0 / 60)
 				boss._advance_shots(1.0 / 60)
 			await capture("double-second-fire")
+	stage()
+	game.enemy_encounters.announcement_left = 0
+	boss.pattern = boss.Pattern.ROLLING
+	assert(boss._prepare_volley(1.6))
+	boss._update_mines(0.0)
+	for i in 145:
+		boss.position += boss.forward() * boss._speed / 60
+		boss._update_weapon(1.0 / 60)
+		boss._update_mines(1.0 / 60)
+		boss._advance_shots(1.0 / 60)
+	await capture("attack-with-mines")
+	for i in 5:
+		boss.position += boss.forward() * boss._speed / 60
+		boss._update_weapon(1.0 / 60)
+		boss._update_mines(1.0 / 60)
+	await capture("reload-opening")
+	root.size = Vector2i(900, 506)
+	await capture("reload-small")
+	root.size = Vector2i(1280, 720)
 	stage()
 	game.enemy_encounters.announcement_left = 0
 	boss.position = game.boat.position + Vector3(22, 0, 28)

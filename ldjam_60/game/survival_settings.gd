@@ -7,7 +7,7 @@ const ARCHETYPES := {
 }
 @export var wave_rosters: Array[PackedStringArray] = [
 	PackedStringArray(["cutter", "skiff"]),
-	PackedStringArray(["cutter", "skiff", "cutter"]),
+	PackedStringArray(["cutter", "skiff", "heavy"]),
 	PackedStringArray(["cutter", "skiff", "heavy", "skiff"]),
 	PackedStringArray(["skiff", "cutter", "heavy", "skiff", "cutter"]),
 	PackedStringArray(["skiff", "cutter"])

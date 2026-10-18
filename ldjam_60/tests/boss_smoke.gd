@@ -70,6 +70,8 @@ func _run() -> void:
 			setup_guns(kind)
 			await physics_frame
 			check(boss._prepare_volley(1.6), "%d Hz pattern %d commits clear ballistic lanes" % [hz, kind])
+			boss._update_mines(0.0)
+			check(boss.mines.size() == 1, "attack warning starts concurrent mine laying")
 			var snapshot: Array = boss.volley.duplicate(true)
 			boss._update_tell()
 			check(boss.warnings.size() == 1 and boss.warnings[0].visible and boss.warnings[0].mesh is ImmediateMesh, "whole volley uses one filled triangular warning")
@@ -82,13 +84,17 @@ func _run() -> void:
 					var along: float = offset.dot(geometry.direction)
 					contained = contained and along > 0 and along <= geometry.length + 0.001 and absf(offset.dot(side)) <= geometry.half_width * along / geometry.length
 			check(contained, "filled warning contains every committed muzzle-to-endpoint lane")
+			var overlapped := false
 			var previous: Vector3 = boss.position
 			var frames := roundi((2.6 if kind != boss.Pattern.DOUBLE else 3.1) * hz)
 			for tick in frames:
 				boss.position += boss.forward() * boss._speed / hz
 				game.boat.position += game.boat.velocity / hz
 				boss._update_weapon(1.0 / hz)
+				boss._update_mines(1.0 / hz)
+				overlapped = overlapped or (boss.mines.any(func(hazard): return hazard.armed()) and boss.shots_fired > 0 and boss.weapon_state in [boss.Weapon.TELEGRAPH, boss.Weapon.FIRE])
 			check(boss.shots_fired == (4 if kind == boss.Pattern.DOUBLE else 5), "%d Hz pattern %d launches intended physical projectile count" % [hz, kind])
+			check(overlapped, "%d Hz pattern %d has armed mines while cannon sequence is firing" % [hz, kind])
 			check(boss.weapon_state == boss.Weapon.RELOAD and boss.position.distance_to(previous) > 10, "pattern completes and recovers while sailing")
 			boss._update_tell()
 			check(not boss.warnings[0].visible and boss.cooldown <= (boss.double_reload if kind == boss.Pattern.DOUBLE else boss.volley_reload), "completed volley clears its cone and uses the shorter reload")
@@ -134,7 +140,7 @@ func _run() -> void:
 	game.ocean.wave_time = game.sea_time
 	mine.update_visuals()
 	check(is_equal_approx(mine.model.position.y, game.ocean.height_at(Vector2(fixed.x, fixed.z)) + 0.65), "mine bobs with actual ocean height; ring uses shared wave shader")
-	check(not mine.is_in_group("cannon_targets"), "mines never compete for player cannon acquisition")
+	check(mine.is_in_group("cannon_targets"), "mines can be acquired by the player cannon")
 	game.boat.position = mine.position + Vector3(7.1, 0, 0)
 	mine.update_mine(0.01)
 	check(not mine.spent, "outside the advertised trigger ring is safe")
@@ -161,10 +167,12 @@ func _run() -> void:
 	await physics_frame
 	for i in 3:
 		boss.position = game.arena_center() + Vector3(-35 + i * 22, 0, 100)
-		check(boss.deploy_mine(), "separated mine %d deploys" % i)
-	check(boss.mines.size() == 2, "active cap expires oldest mine")
-	boss.mines[0].update_mine(19)
-	check(boss.mines[0].spent, "lifetime expiry is harmless")
+		check(boss.deploy_mine() == (i < 2), "separated mine %d respects the active cap" % i)
+	check(boss.mines.size() == 2, "active cap preserves existing mines")
+	boss.mines[0].update_mine(3600)
+	check(not boss.mines[0].spent, "flagship mines have no lifetime expiry")
+	game.cannon._impact(boss.mines[0], boss.mines[0].model.global_position)
+	check(boss.deploy_mine(), "destroying a flagship mine permits a replacement drop")
 	boss.maximum_mines = 6
 
 	setup_guns(boss.Pattern.ROLLING)
@@ -183,24 +191,72 @@ func _run() -> void:
 	boss._update_weapon(0.0)
 	check(boss.pattern == boss.Pattern.SCATTER and boss.weapon_state == boss.Weapon.TELEGRAPH, "production phase-two rotation introduces scatter on next valid attack")
 
-	fresh()
-	game.boat.position += Vector3(65, 0, 0)
-	boss.begin(game.arena_center() + Vector3(-25, 0, 100))
-	boss.heading = PI / 2
-	boss.rotation.y = -boss.heading
-	await physics_frame
-	boss._update_mines(5.99)
-	check(boss.mines.is_empty(), "initial mine interval gives six seconds of grace")
-	boss._update_mines(0.02)
-	check(boss.mines.size() == 1, "first mine drops at six seconds")
-	check(not boss.mine_position_valid(boss.mines[0].position), "overlapping trigger areas reject a repeated drop")
-	boss.phase_two = true
-	boss.mine_clock = 0.0
-	boss.position += Vector3(25, 0, 0)
-	boss._update_mines(4.49)
-	check(boss.mines.size() == 1, "phase two retains its full 4.5-second drop interval")
-	boss._update_mines(0.02)
-	check(boss.mines.size() == 2, "phase two drops a safely separated mine after 4.5 seconds")
+	for second_phase in [false, true]:
+		setup_guns(boss.Pattern.ROLLING)
+		boss.phase_two = second_phase
+		await physics_frame
+		check(boss._prepare_volley(1.6), "mine cadence fixture commits a clear attack")
+		boss._update_mines(0.0)
+		var interval: float = boss.phase_two_mine_interval if second_phase else boss.mine_interval
+		boss.position += Vector3(25, 0, 0)
+		boss._update_mines(interval - 0.01)
+		check(boss.mines.size() == 1, "mine burst respects the phase interval")
+		boss._update_mines(0.02)
+		check(boss.mines.size() == 2, "mine burst lays again during the cannon warning")
+		boss._update_mines(interval)
+		check(boss.mines.size() == 2, "blocked stern skips an overlapping mine")
+		boss.position += Vector3(25, 0, 0)
+		boss._update_mines(0.01)
+		check(boss.mines.size() == 3, "blocked drop retries when safe space opens")
+
+	for hz in [30, 60, 120]:
+		for second_phase in [false, true]:
+			setup_guns(boss.Pattern.ROLLING)
+			boss.phase_two = second_phase
+			await physics_frame
+			check(boss._prepare_volley(1.6), "reload fixture commits a clear attack")
+			boss._update_mines(0.0)
+			manager.phase = manager.Phase.ACTIVE
+			manager.wave_number = 5
+			var reload_mine = boss.mines[0]
+			boss._finish_pattern()
+			var reload_seconds: float = boss.cooldown
+			var mine_count: int = boss.mines.size()
+			var shot_count: int = boss.shots_fired
+			# Approach while the boss is reloading; existing mines still arm.
+			for tick in int((reload_seconds - 0.1) * hz):
+				boss.position += boss.forward() * boss._speed / hz
+				game.boat.position += Vector3(0, 0, -2.0) / hz
+				boss.cooldown = maxf(0.0, boss.cooldown - 1.0 / hz)
+				boss._update_weapon(1.0 / hz)
+				boss._update_mines(1.0 / hz)
+			check(boss.weapon_state == boss.Weapon.RELOAD and boss.mines.size() == mine_count and boss.shots_fired == shot_count, "%d Hz phase %s reload allows approach without new attacks" % [hz, second_phase])
+			check(reload_mine.armed() and reload_mine.age > 2.0, "reload keeps existing mine hazards active")
+			game.hud._process(0.0)
+			check(game.hud.boss_label.text == "FLAGSHIP · RELOADING", "health bar identifies the reload opening")
+			boss.cooldown = 0.0
+			boss._update_weapon(1.0 / hz)
+			check(boss.weapon_state == boss.Weapon.READY, "full reload returns guns to ready")
+			game.hud._process(0.0)
+			check(game.hud.boss_label.text == "FLAGSHIP", "reload cue clears when guns are ready")
+			boss._update_mines(10.0)
+			check(boss.mines.size() == mine_count and boss.mine_clock == 0.0, "ready navigation never lays mines or banks a burst")
+
+	for leg in [boss.Navigation.TURN_AWAY, boss.Navigation.REPOSITION]:
+		setup_guns(boss.Pattern.ROLLING)
+		await physics_frame
+		boss.navigation_state = leg
+		boss.cooldown = 0.0
+		manager.director.clock += 10.0
+		boss._update_weapon(0.0)
+		check(boss.weapon_state == boss.Weapon.TELEGRAPH, "clear steady return leg can start a warned attack")
+		boss._finish_pattern()
+		boss.weapon_state = boss.Weapon.READY
+		boss.cooldown = 0.0
+		boss.turn_rate = 0.3
+		boss._update_weapon(0.0)
+		boss._update_mines(10.0)
+		check(boss.weapon_state == boss.Weapon.READY and boss.mines.is_empty(), "hard turn cannot begin an unsafe volley or mine burst")
 	fresh()
 	boss.begin(game.arena_center() + Vector3(-107, 0, -42))
 	boss.heading = PI
@@ -270,7 +326,7 @@ func _run() -> void:
 	manager.on_ship_sunk(boss)
 	check(game.state == game.State.LOST and manager.victory_transitions == 0, "already fatal player damage takes priority over boss callback")
 	fresh()
-	check(boss.hull == 9 and not boss.phase_two and boss.pattern_index == 0 and boss.volley.is_empty() and boss.mines.is_empty() and boss.navigation_state == boss.Navigation.DORMANT, "retry restores health, phases, weapon sequence, rotation, mines and navigation")
+	check(boss.hull == 9 and not boss.phase_two and boss.pattern_index == 0 and boss.volley.is_empty() and boss.mines.is_empty() and boss.mine_clock == 0.0 and boss.navigation_state == boss.Navigation.DORMANT, "retry restores health, phases, weapon sequence, rotation, mines and navigation")
 	game.hud._process(0)
 	check(not game.hud.boss_health.visible and manager.wave_number == 0, "retry hides boss health and restores wave one scheduler")
 	print("BOSS CHECK: %d checks, %d failures" % [checks, failures])

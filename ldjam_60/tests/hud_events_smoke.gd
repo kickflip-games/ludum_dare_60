@@ -52,14 +52,44 @@ func _run() -> void:
 	waves.announcement_left = 1
 	waves.wave_number = 5
 	hud._process(0)
-	check(hud.threat_label.visible and hud.wave_announcement.visible, "new fleet announcement remains visible alongside lateral danger warning")
+	check(hud.threat_icon.visible and hud.wave_announcement.visible, "new fleet announcement remains visible alongside lateral danger warning")
+	for side in [-1, 1]:
+		ship.position = game.boat.position + game.cannon.starboard_direction() * 24 * side
+		hud._process(0)
+		check(hud.threat_icon.visible and ((hud.threat_icon.position.x > hud.size.x * 0.5) == (side == 1)), "warning icon follows threat side %d" % side)
+		var peak: float = hud.threat_icon.modulate.a
+		hud._process(0.45)
+		check(hud.threat_icon.modulate.a < peak - 0.2 and hud.threat_icon.modulate.a >= 0.69, "warning pulses gently without disappearing")
+		hud._process(0.45)
+		check(is_equal_approx(hud.threat_icon.modulate.a, peak), "pulse returns smoothly after one cycle")
+	var pulse: float = hud.threat_icon.modulate.a
+	var clock: float = hud._threat_pulse
+	game.set_paused(true)
+	hud._process(1)
+	check(hud._threat_pulse == clock and hud.threat_icon.modulate.a == pulse, "pause freezes warning animation")
+	game.set_paused(false)
+	for dimensions in [Vector2i(1280,720), Vector2i(900,506)]:
+		root.size = dimensions
+		for frame in 6: await process_frame
+		hud._process(0)
+		check(Rect2(Vector2.ZERO, hud.size).encloses(hud.threat_icon.get_global_rect()), "warning icon fits %s" % dimensions)
+	ship.mode = ship.Mode.REPOSITION
+	ship.locked_point = game.boat.position
+	ship._launch_ball(ship.position)
+	hud._process(0)
+	check(hud.threat_icon.visible, "a real in-flight projectile retains the warning after telegraph")
+	ship.reset()
+	hud._process(0)
+	check(not hud.threat_icon.visible and hud._threat_pulse == 0, "cleared threat hides the icon and resets its pulse")
+	ship.begin(game.boat.position + Vector3(24,0,-10))
+	ship.mode = ship.Mode.TELEGRAPH
 	game.boat.position = game.arena_center() + Vector3(180, 0, 0)
 	hud._process(0)
 	check(hud.storm_warning.visible and not hud.notice.visible and hud.storm_warning.offset_top > hud.wave_announcement.offset_bottom, "storm message stays below the fleet announcement")
 	for ending in [game.State.LOST, game.State.ARRIVED]:
 		game.state = ending
 		hud._process(0)
-		check(hud.notice.text.is_empty() and hud.wave_announcement.text.is_empty() and hud.wave_countdown.text.is_empty() and hud.threat_label.text.is_empty(), "ending %d clears transient text" % ending)
+		check(hud.notice.text.is_empty() and hud.wave_announcement.text.is_empty() and hud.wave_countdown.text.is_empty() and not hud.threat_icon.visible, "ending %d clears transient text" % ending)
 	game.restart(true)
 	hud._process(0)
 	check(game.discovery_left == 0 and not hud.notice.visible and not hud.gameplay_hud.visible and game.flow_zones.collected.is_empty(), "Main Menu reset clears pickup and all gameplay messages")

@@ -207,7 +207,7 @@ func visible_in_firing_sector(body: Node3D) -> bool:
 		var point := body.to_global(Vector3(0, height, -1.8) * size)
 		if not game.camera.is_position_in_frustum(point):
 			continue
-		var query := PhysicsRayQueryParameters3D.create(game.camera.global_position, point, 5)
+		var query := PhysicsRayQueryParameters3D.create(game.camera.global_position, point, 13)
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if hit.is_empty() or hit.collider == body:
 			return true
@@ -278,7 +278,7 @@ func advance(delta: float) -> void:
 		var ranged: Vector3 = limit_shot_range(from, to, shot.get("range_origin", from), shot.get("range", 0.0))
 		var range_ended := ranged.distance_squared_to(to) > 0.00000001
 		to = ranged
-		var ray := PhysicsRayQueryParameters3D.create(from, to, 5)
+		var ray := PhysicsRayQueryParameters3D.create(from, to, 13)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		var water: Dictionary = game.ocean.water_hit(from, to, delta)
 		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
@@ -333,6 +333,13 @@ func advance_effects(delta: float) -> void:
 
 
 func _impact(body: Object, at: Vector3) -> void:
+	if body.get_meta("target_kind", "") == "mine":
+		if body.get_meta("destroyed", true): return
+		body.take_hit()
+		targets_hit += 1
+		feedback = "MINE DESTROYED"
+		feedback_time = 2.0
+		return
 	var ship: bool = body.get_meta("target_kind", "") == "ship"
 	var destructible: bool = body.get_meta("destructible", false)
 	if (ship or destructible) and body.get_meta("destroyed", false):
@@ -548,7 +555,7 @@ func predict_trajectory() -> Dictionary:
 		var ranged := limit_shot_range(at, next, cone_origin(), cone_range if game.arena_mode else 0.0)
 		var range_ended := ranged.distance_squared_to(next) > 0.00000001
 		next = ranged
-		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(at, next, 5))
+		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(at, next, 13))
 		var water: Dictionary = game.ocean.water_hit(at, next, step, game.ocean.wave_time + time + step)
 		if not water.is_empty() and (hit.is_empty() or at.distance_squared_to(water.position) < at.distance_squared_to(hit.position)):
 			points.append(water.position)
@@ -575,7 +582,7 @@ func cone_point(angle_degrees: float, distance: float) -> Vector3:
 
 
 func cone_candidate(body: Node3D) -> Dictionary:
-	if body.get_meta("target_kind", "") != "ship" or body.get_meta("destroyed", true) or not body.is_visible_in_tree():
+	if body.get_meta("target_kind", "") not in ["ship", "mine"] or body.get_meta("destroyed", true) or not body.is_visible_in_tree():
 		return {}
 	var point: Vector3 = body.collision_shape.global_position
 	var offset := point - cone_origin()
@@ -627,7 +634,7 @@ func _prepare_cone_shot() -> void:
 	if target.is_empty():
 		return
 	var point: Vector3 = target.point
-	var velocity: Vector3 = selected_target.velocity
+	var velocity: Vector3 = selected_target.velocity if selected_target.get_meta("target_kind", "") == "ship" else Vector3.ZERO
 	velocity.y = 0.0
 	# A short intercept iteration is sufficient at the existing ship/shot speeds.
 	# Recompute from the rotated muzzle; clamp lead to the same visible cone.

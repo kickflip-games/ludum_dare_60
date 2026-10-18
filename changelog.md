@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Work in progress: directional warm cannon flashes, delayed smoke, snappy cosmetic
+  recoil and varied wood impacts retain the 192-instance combat batch. Four
+  preallocated splash groups reuse 24 meshes/materials; only actual water hits
+  make full splashes. Reduced motion now scales the existing cannon camera kick.
+  Focused pool/impact/recoil checks pass; rendered and browser review ongoing.
+
 - Work in progress: elevated outboard close-camera framing clears the original
   sail/cannon obstruction without fading meshes. Warm ivory/gold player, class
   sail colors, single-triangle mast pennants and restrained moon/ambient fill

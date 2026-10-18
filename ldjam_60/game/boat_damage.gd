@@ -43,7 +43,7 @@ func update(hull: int, capacity: int, hit_flash: float) -> void:
 	# First 0.18 seconds of the existing 0.8-second impact state; no new timer.
 	flash_strength = clampf((hit_flash - 0.62) / 0.18, 0.0, 1.0)
 	for material in wood:
-		material.emission_energy_multiplier = flash_strength * 0.35
+		material.emission_energy_multiplier = flash_strength * 0.65
 
 
 func _marks(parent: Node3D, node_name: String, cuts: Array, normal: Vector3) -> MeshInstance3D:

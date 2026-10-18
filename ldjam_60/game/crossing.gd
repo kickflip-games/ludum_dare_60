@@ -878,7 +878,7 @@ func _update_view(delta: float) -> void:
 		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend) * motion_amount()
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
-		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
+		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend) * motion_amount()
 	if state == State.SAILING or state == State.LOST:
 		# A separate hit envelope makes hull damage readable in the chase view,
 		# including the killing blow, without amplifying cannon recoil or rolling the horizon.

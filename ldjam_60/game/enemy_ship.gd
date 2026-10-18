@@ -191,10 +191,9 @@ func _ready() -> void:
 	gun.rotation.y = -PI / 2.0
 	gun.scale = Vector3.ONE * 1.1
 	presentation.add_child(gun)
-	var spark := SphereMesh.new()
-	spark.radius = 0.4
-	spark.height = 0.8
-	flash = game._mesh(presentation, spark, Vector3(-2.4, 1.3, -1.8), game._material(Color("ffbe67"), 2.0))
+	flash = game._mesh(presentation, game.combat_particles.flame_mesh(), Vector3(-2.4, 1.3, -1.8), null)
+	flash.rotation.y = PI
+	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	reset()
 
 
@@ -779,7 +778,8 @@ func _lock_shot() -> void:
 
 
 func _update_tell() -> void:
-	flash.visible = weapon_state == Weapon.FIRE or (weapon_state == Weapon.TELEGRAPH and fmod(weapon_time, 0.3) < 0.15)
+	flash.visible = (weapon_state == Weapon.FIRE and weapon_time < 0.11) or (weapon_state == Weapon.TELEGRAPH and fmod(weapon_time, 0.3) < 0.15)
+	flash.scale = Vector3.ONE * (0.45 if weapon_state == Weapon.TELEGRAPH else 0.6 + 0.4 * clampf(1.0 - weapon_time / 0.11, 0.0, 1.0))
 
 
 func _fire() -> void:
@@ -820,8 +820,10 @@ func _advance_shots(delta: float) -> void:
 					shots_hit += 1
 			elif not hit.is_empty() and hit.collider.get_meta("destructible", false):
 				game.cannon._impact(hit.collider, hit.position)
-			if hit.is_empty() or not hit.collider.get_meta("destructible", false):
-				game.cannon.water_splash(hit.position if not hit.is_empty() else water.position if not water.is_empty() else to)
+			elif not hit.is_empty() and hit.collider != game.boat:
+				game.combat_particles.impact(hit.position, false)
+			elif hit.is_empty() and not water.is_empty():
+				game.cannon.water_splash(water.position)
 			shot.node.queue_free()
 			projectiles.remove_at(i)
 		else:
@@ -855,7 +857,7 @@ func update_visuals(delta: float) -> void:
 		return
 	pennant.flutter(game.sea_time)
 	motion.update_motion(game.ocean, self, visual, delta)
-	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.16
+	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.21
 	_update_tell()
 
 

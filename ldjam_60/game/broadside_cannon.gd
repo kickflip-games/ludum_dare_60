@@ -5,6 +5,10 @@ const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const SPLASH_SHADER = preload("res://game/ocean/splash.gdshader")
 var _splash_ring_mesh: TorusMesh
 var _splash_spray_mesh: SphereMesh
+const SPLASH_CAPACITY := 4
+var splash_pool: Array[Array] = []
+var splash_cursor := 0
+var splash_root: Node3D
 const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
 const SHOT_GRAVITY: float = 0.9
@@ -79,21 +83,19 @@ func _ready() -> void:
 	barrel.add_child(cannon_model)
 	muzzle = Marker3D.new()
 	muzzle.position = Vector3(1.22, 0.0, 0.0)
-	barrel.add_child(muzzle)
-	var spark := SphereMesh.new()
-	spark.radius = 0.26
-	spark.height = 0.52
-	spark.radial_segments = 8
-	spark.rings = 4
-	flash = game._mesh(muzzle, spark, Vector3.ZERO, game._material(Color("ffe3a2"), 2.0))
-	flash.scale = Vector3(2.0, 0.8, 0.8)
+	# Resting mount owns the launch marker; cosmetic recoil never moves ballistics.
+	yaw_pivot.add_child(muzzle)
+	flash = game._mesh(muzzle, game.combat_particles.flame_mesh(), Vector3.ZERO, null)
+	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	flash.visible = false
 	flash_light = OmniLight3D.new()
 	flash_light.light_color = Color("ffc078")
 	flash_light.light_energy = 4.0
-	flash_light.omni_range = 9.0
+	flash_light.omni_range = 7.0
+	flash_light.shadow_enabled = false
 	flash_light.visible = false
 	muzzle.add_child(flash_light)
+	_init_splash_pool()
 	if game.arena_mode:
 		cone_visual = load("res://game/firing_cone.gd").new()
 		cone_visual.cannon = self
@@ -214,10 +216,12 @@ func fire() -> bool:
 	shots_fired += 1
 	game.shake(camera_shake_strength)
 	cooldown = RELOAD_SECONDS
-	_recoil_left = 0.24
-	flash_time = 0.14
+	_recoil_left = 0.25
+	flash_time = 0.11
 	flash.visible = true
 	flash_light.visible = true
+	flash_light.light_energy = 5.0
+	flash.scale = Vector3.ONE
 	var shape := SphereMesh.new()
 	shape.radius = 0.32
 	shape.height = 0.64
@@ -247,8 +251,13 @@ func advance(delta: float) -> void:
 	flash_time = maxf(0.0, flash_time - delta)
 	flash.visible = flash_time > 0.0
 	flash_light.visible = flash_time > 0.0
+	var flash_envelope := clampf(flash_time / 0.11, 0.0, 1.0)
+	flash.scale = Vector3.ONE * (0.45 + flash_envelope * 0.55)
+	flash_light.light_energy = 5.0 * flash_envelope * flash_envelope
 	_recoil_left = maxf(0.0, _recoil_left - delta)
-	barrel.position.x = -recoil_strength * sin(PI * clampf(_recoil_left / 0.24, 0.0, 1.0))
+	var age := 0.25 - _recoil_left
+	var kick := sin(clampf(age / 0.045, 0.0, 1.0) * PI * 0.5) if age < 0.045 else 1.0 - smoothstep(0.045, 0.25, age)
+	barrel.position.x = -recoil_strength * kick
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if feedback_time <= 0.0:
 		feedback = ""
@@ -272,8 +281,9 @@ func advance(delta: float) -> void:
 			ball.queue_free()
 			projectiles.remove_at(i)
 		elif shot.ttl <= 0.0 or range_ended or not water.is_empty():
-			water_splash(water.position if not water.is_empty() else to)
-			feedback = "SPLASH  ·  SHOT WIDE"
+			if not water.is_empty():
+				water_splash(water.position)
+			feedback = "SPLASH  ·  SHOT WIDE" if not water.is_empty() else "SHOT WIDE"
 			feedback_time = 0.9
 			ball.queue_free()
 			projectiles.remove_at(i)
@@ -284,17 +294,21 @@ func advance(delta: float) -> void:
 			if shot.trail_clock >= 0.055:
 				shot.trail_clock = 0.0
 				game.combat_particles.trail(ball.global_position)
+	advance_effects(delta)
+
+
+func advance_effects(delta: float) -> void:
 	for i in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[i]
 		effect.ttl -= delta
 		if effect.ttl <= 0.0:
-			effect.node.queue_free()
+			effect.node.visible = false
 			effects.remove_at(i)
 		else:
 			if effect.get("ring", false):
 				var remaining: float = effect.ttl/effect.lifetime
 				var growth: float = 1.0 + (1.0 - remaining) * 3.4
-				effect.node.scale = Vector3(growth, 0.15, growth)
+				effect.node.scale = Vector3(growth, 0.22, growth)
 				effect.node.position.y = game.ocean.height_at(Vector2(effect.node.position.x,effect.node.position.z))+0.045
 				effect.node.material_override.set_shader_parameter("opacity",pow(remaining,1.4))
 			else:
@@ -327,7 +341,8 @@ func _impact(body: Object, at: Vector3) -> void:
 		feedback = "SOLID REEF  ·  STEER AROUND"
 	feedback_time = 2.0
 	_splinters(at, destructible or ship)
-	water_splash(at, false)
+	if destructible or (ship and body.hull <= 0):
+		water_splash(at, false)
 	game.shake(0.04 if ship else 0.025)
 	var audio: AudioStreamPlayer = _ship_audio if ship else _impact_audio
 	if is_instance_valid(audio) and game._sound_enabled:
@@ -367,39 +382,72 @@ func aim_target() -> Dictionary:
 	return selected
 
 
+func _init_splash_pool() -> void:
+	_splash_ring_mesh = TorusMesh.new()
+	_splash_ring_mesh.inner_radius = 0.52
+	_splash_ring_mesh.outer_radius = 0.78
+	_splash_ring_mesh.rings = 24
+	_splash_ring_mesh.ring_segments = 4
+	_splash_spray_mesh = SphereMesh.new()
+	_splash_spray_mesh.radius = 0.16
+	_splash_spray_mesh.height = 0.70
+	_splash_spray_mesh.radial_segments = 7
+	_splash_spray_mesh.rings = 3
+	splash_root = Node3D.new()
+	splash_root.name = "WaterImpacts"
+	game.add_child(splash_root)
+	for slot in SPLASH_CAPACITY:
+		var group: Array = []
+		for index in 6:
+			var material := ShaderMaterial.new()
+			material.shader = SPLASH_SHADER
+			material.set_shader_parameter("splash_color", game.ocean_settings.foam_color)
+			material.set_shader_parameter("foam_ring", index == 0)
+			var node: MeshInstance3D = game._mesh(splash_root, _splash_ring_mesh if index == 0 else _splash_spray_mesh, Vector3.ZERO, material)
+			node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			node.visible = false
+			group.append({"node": node, "ttl": 0.0, "slot": slot, "ring": index == 0, "water_spray": index != 0})
+		splash_pool.append(group)
+
+
 func water_splash(at: Vector3, sound: bool = true) -> void:
-	# Four overlapping splashes maximum; keep the existing wave-following foam.
-	if effects.size() + 6 > 24:
-		return
-	var point := Vector3(at.x, game.ocean.height_at(Vector2(at.x, at.z)) + 0.1, at.z)
-	if _splash_ring_mesh == null:
-		_splash_ring_mesh = TorusMesh.new()
-		_splash_ring_mesh.inner_radius = 0.45
-		_splash_ring_mesh.outer_radius = 0.75
-		_splash_ring_mesh.rings = 16
-		_splash_ring_mesh.ring_segments = 4
-		_splash_spray_mesh = SphereMesh.new()
-		_splash_spray_mesh.radius = 0.16
-		_splash_spray_mesh.height = 0.70
-		_splash_spray_mesh.radial_segments = 7
-		_splash_spray_mesh.rings = 3
-	var material := ShaderMaterial.new()
-	material.shader = SPLASH_SHADER
-	material.set_shader_parameter("splash_color", game.ocean_settings.foam_color)
-	var ring = game._mesh(game, _splash_ring_mesh, point, material)
-	ring.scale.y = 0.15
-	effects.append({"node": ring, "ttl": 0.85, "lifetime":0.85, "velocity": Vector3.ZERO, "ring": true})
-	for i in range(5):
-		var spray_material := ShaderMaterial.new()
-		spray_material.shader = SPLASH_SHADER
-		spray_material.set_shader_parameter("splash_color", game.ocean_settings.foam_color)
-		var spray = game._mesh(game,_splash_spray_mesh,point+Vector3.UP*0.35,spray_material)
-		var direction := Vector3(sin(i*2.4),0,cos(i*2.4))*2.0 if i>0 else Vector3.ZERO
-		spray.rotation.z = 0.55*sin(i*2.4)
-		var life := 0.52 if i==0 else 0.42+i*0.025
-		var spray_scale := Vector3(1.2,1.8,1.2) if i==0 else Vector3(0.8,0.8,0.8)
-		spray.scale = spray_scale
-		effects.append({"node":spray,"ttl":life,"lifetime":life,"spray_scale":spray_scale,"water_spray":true,"velocity":direction+Vector3.UP*(2.0 if i==0 else 1.1)})
+	# Reuse an expired group, otherwise replace the oldest complete splash.
+	var slot := splash_cursor
+	for offset in SPLASH_CAPACITY:
+		var candidate := (splash_cursor + offset) % SPLASH_CAPACITY
+		if splash_pool[candidate][0].ttl <= 0.0:
+			slot = candidate
+			break
+	splash_cursor = (slot + 1) % SPLASH_CAPACITY
+	for index in range(effects.size() - 1, -1, -1):
+		if effects[index].slot == slot:
+			effects[index].node.visible = false
+			effects.remove_at(index)
+	var point := Vector3(at.x, game.ocean.height_at(Vector2(at.x, at.z)) + 0.045, at.z)
+	for index in 6:
+		var effect: Dictionary = splash_pool[slot][index]
+		var node: MeshInstance3D = effect.node
+		node.position = point
+		node.visible = true
+		node.rotation = Vector3.ZERO
+		node.material_override.set_shader_parameter("opacity", 1.0)
+		if index == 0:
+			effect.lifetime = 0.85
+			node.scale = Vector3(1, 0.22, 1)
+		else:
+			var angle := index * 2.39996 + slot * 0.7
+			var radial := Vector3(sin(angle), 0, cos(angle))
+			node.position += Vector3.UP * 0.3
+			node.rotation.z = 0.45 * sin(angle) if index > 1 else 0.0
+			effect.lifetime = 0.58 if index == 1 else 0.42 + index * 0.025
+			effect.velocity = radial * (1.8 + index * 0.35) + Vector3.UP * (4.8 if index == 1 else 2.1 + index * 0.18)
+			if index == 1:
+				effect.velocity.x = 0.0
+				effect.velocity.z = 0.0
+			effect.spray_scale = Vector3(1.3, 3.6, 1.3) if index == 1 else Vector3(0.85, 1.3, 0.85)
+			node.scale = effect.spray_scale
+		effect.ttl = effect.lifetime
+		effects.append(effect)
 	if sound and is_instance_valid(_water_audio) and game._sound_enabled:
 		_water_audio.play()
 
@@ -426,8 +474,11 @@ func reset() -> void:
 	barrel.position = Vector3.ZERO
 	for shot: Dictionary in projectiles:
 		shot.node.queue_free()
-	for effect: Dictionary in effects:
-		effect.node.queue_free()
+	for group in splash_pool:
+		for effect: Dictionary in group:
+			effect.node.visible = false
+			effect.ttl = 0.0
+	splash_cursor = 0
 	projectiles.clear()
 	effects.clear()
 	shots_fired = 0
@@ -438,6 +489,7 @@ func reset() -> void:
 	feedback_time = 0.0
 	flash.visible = false
 	flash_light.visible = false
+	flash_light.light_energy = 0.0
 
 
 func _audio(frequency: float, noise_level: float, volume: float) -> AudioStreamPlayer:

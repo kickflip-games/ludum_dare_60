@@ -196,7 +196,7 @@ func trajectory_cases() -> void:
 	for frame in 120:
 		game.ocean.wave_time += 1.0 / 60
 		game.cannon.advance(1.0 / 60)
-	check(game.cannon.projectiles.is_empty() and game.cannon.feedback.contains("SPLASH"), "untargeted real shot ends in water or at its range limit")
+	check(game.cannon.projectiles.is_empty() and game.cannon.feedback.contains("SHOT WIDE"), "untargeted real shot ends in water or at its range limit")
 	fresh()
 	var ship = game.enemy_encounters.ship
 	ship.begin(game.cannon.cone_point(0, 18))

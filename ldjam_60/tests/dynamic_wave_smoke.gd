@@ -16,13 +16,16 @@ func check(ok: bool, label: String) -> void:
 		failures += 1
 	print(("PASS: " if ok else "FAIL: ")+label)
 
-func trial(height: float, hz: int, preset_path: String = "res://game/ocean/presets/calm.tres") -> Dictionary:
+func trial(height: float, hz: int, preset_path: String = "res://game/ocean/presets/calm.tres", ambient_multiplier: float = 0.095) -> Dictionary:
 	game.restart()
 	game.state = game.State.SAILING
 	game.enemy_encounters.enabled = false
 	game.wave_encounters.enabled = false
 	game.weather_enabled = false
 	game.ocean_settings = load(preset_path).duplicate(true)
+	# Isolate finite-crest lift/roll ratios from background swells. The production
+	# four-times-larger rolling composite is exercised separately below.
+	game.ocean_settings.height_multiplier = ambient_multiplier
 	game.boat.position = ORIGIN
 	game.heading = 0.0
 	game.boat.rotation = Vector3.ZERO
@@ -54,13 +57,18 @@ func trial(height: float, hz: int, preset_path: String = "res://game/ocean/prese
 		var right: Vector3 = game.boat.global_basis.x
 		var mean := 0.0
 		var visible_height := 0.0
+		var highest_edge := -INF
 		var index := 0
 		for at: Vector3 in [center,center+forward*2.1,center-forward*2.1,center+right*1.05,center-right*1.05]:
 			var p := Vector2(at.x,at.z)
 			mean += game.ocean.height_at(p)*(0.5 if index==0 else 0.125)
+			if index > 0: highest_edge = maxf(highest_edge,game.ocean.height_at(p))
 			visible_height = maxf(visible_height,game.ocean.wave_field.sample(p,game.sea_time).x)
 			index += 1
 		var equilibrium: float = game.ocean_settings.sea_level+(mean-game.ocean_settings.sea_level)*game.ocean_settings.bob_strength
+		# The intended flotation target includes bounded visual edge support,
+		# rather than treating that support as a tracking error from the mean.
+		equilibrium = maxf(equilibrium,minf(equilibrium+0.50,highest_edge-0.50))
 		final_error = absf(game.boat_motion.heave-equilibrium)
 		maximum_error = maxf(maximum_error,final_error)
 		squared_error += final_error*final_error
@@ -130,6 +138,10 @@ func _run() -> void:
 		"large encounters keep a bounded, clear deck camera and preserve the 8/12-degree hull limits")
 	check(game.boat.position.y==0 and game.boat.rotation.x==0 and game.boat.rotation.z==0,
 		"wave motion never rotates or lifts the planar collision root")
+	var rolling := await trial(1.85,60,"res://game/ocean/presets/calm.tres",0.88)
+	check(rolling.camera_ok and rolling.limits_ok and rolling.clock_ok and rolling.settled_error_m<0.02,
+		"production 4x rolls plus a large crest preserve camera clearance, hull limits and shared time")
+	results["production_rolling"] = rolling
 	var baseline_path := ProjectSettings.globalize_path("res://../artifacts/water_review/dynamic_toon/baseline/source/ldjam_60/game/ocean/presets/calm.tres")
 	if FileAccess.file_exists(baseline_path):
 		var baseline := await trial(1.85,60,baseline_path)

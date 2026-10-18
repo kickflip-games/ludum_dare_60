@@ -6,6 +6,46 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Integrated PR #9's navy water, 7.5 m/s base cruise, continuous Shift boost,
+  permanent flow-zone rewards and recurring pushing waves with main's current
+  starboard cone, mouse/held-fire controls, damage camera and enemy pressure.
+  Updated input/menu/ballistic-clock fixtures; 805 checks across 15 suites and
+  51,840 native GPU/CPU comparisons pass. Inspected rendered water, flow, boost
+  and menu views. Human balance and Web performance remain untested.
+
+- Darkened the sea, finite crests, wake and splash foam to a navy night palette.
+  Hold Shift now adds 50% to earned propulsion continuously until release, with
+  pale tailwind ribbons around the ship. No timeout/cooldown; release preserves
+  permanent flow rewards, and focus loss/endings/retry clear boost and wind.
+- Arena waves now arrive in finite pairs during combat and aiming: 6–8 s initial
+  grace, 2 s between crests, full expiry then 4–6 s of calm. Retained terrain
+  checks, directional audio, countersteering and four-event cap; shelter is now
+  the actual island's inner 40 m. Reviewed native dark-water, tailwind, crest,
+  cannon and small-window control views. See the
+  [follow-up report](artifacts/night_shift_report.md) for checks and limitations.
+- Validation: 501 checks across nine suites pass, including real Shift input at
+  30/60/120 Hz, a continuous 12 s hold, release/focus/damage/reset, full-speed
+  arena return, real wave contacts and combat/aim scheduling. Human fun/balance
+  and Web profiling remain unverified.
+
+- Implemented night-blue rolling water and matching crest/wake/splash colors on
+  the latest arena/chase-camera baseline. User-requested modulation is 4x the
+  first implementation (0.22 -> 0.88). The final palette is slightly darker and
+  bluer than the initial turquoise pass. Directional wave force is 50% stronger
+  while countersteering, wave yaw limits and shared surface authority remain.
+- Base player cruise is 7.5 m/s. Three visible flow ribbons each compound current
+  forward speed by 25% once per run, retaining rewards after exit and nonfatal
+  damage. Collected IDs prevent repeat rewards; endings and held-R retry reset
+  them. Return/probe lookahead accounts for full stacked speed, and bounded
+  visual hull-edge support keeps the gunwale clear. Preserved current survival,
+  cannon controls and upstream chase camera. Fixed Windows test-report paths.
+- Validation: 640 checks across twelve suites pass; 51,840 GPU comparisons pass
+  with maximum error 0.000198. Inspected native matched water/crest/flow, storm,
+  cannon, Low and Reduced views, plus a real boosted exit. An inherited legacy
+  coastal-mask hash check still fails; native timings are variable, and human
+  balance/comfort plus Web profiling remain open. See the
+  [implementation report](artifacts/turquoise_water_flow_report.md).
+
 - Replaced the active arena cannon sweep and ballistic guide
   with a boat-relative ±25° / 65 m starboard cone. Fire prioritises alignment,
   then distance, rotates the real barrel and applies bounded movement lead;

@@ -19,6 +19,7 @@ void fragment() {
 	float edge = 0.1+0.18*(1.0-fray);
 	float across = smoothstep(edge,0.45,UV.x)*(1.0-smoothstep(0.55,1.0-edge,UV.x));
 	float body = smoothstep(0.25,0.76,fray);
-	ALBEDO = mix(foam_color.rgb,vec3(0.11,0.25,0.29),wake_kind==0 ? 0.12 : 0.24);
-	ALPHA = across*COLOR.a*body*(wake_kind==0 ? 0.42 : 0.50);
+	ALBEDO = foam_color.rgb * (wake_kind==0 ? 0.94 : 0.87);
+	float boost = clamp(strength - 1.0, 0.0, 1.0);
+	ALPHA = across*COLOR.a*body*(wake_kind==0 ? 0.42 : 0.50)*(1.0 + boost*0.35);
 }

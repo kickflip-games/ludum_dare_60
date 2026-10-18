@@ -383,12 +383,14 @@ func water_splash(at: Vector3, sound: bool = true) -> void:
 		_splash_spray_mesh.rings = 3
 	var material := ShaderMaterial.new()
 	material.shader = SPLASH_SHADER
+	material.set_shader_parameter("splash_color", game.ocean_settings.foam_color)
 	var ring = game._mesh(game, _splash_ring_mesh, point, material)
 	ring.scale.y = 0.15
 	effects.append({"node": ring, "ttl": 0.85, "lifetime":0.85, "velocity": Vector3.ZERO, "ring": true})
 	for i in range(5):
 		var spray_material := ShaderMaterial.new()
 		spray_material.shader = SPLASH_SHADER
+		spray_material.set_shader_parameter("splash_color", game.ocean_settings.foam_color)
 		var spray = game._mesh(game,_splash_spray_mesh,point+Vector3.UP*0.35,spray_material)
 		var direction := Vector3(sin(i*2.4),0,cos(i*2.4))*2.0 if i>0 else Vector3.ZERO
 		spray.rotation.z = 0.55*sin(i*2.4)

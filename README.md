@@ -116,6 +116,36 @@ retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 acceptance test. It records a full attempt and exits 1 on defeat; the current
 pilot has not established a complete win. See the combat review for actual results.
 
+## Combat particles
+
+Player/enemy muzzle sparks and smoke, short cannonball trails, timber impacts,
+sinking bursts and player damage spray share **one opaque cube MultiMesh**.
+At most **192 cubes** are drawn in one batch; busy frames replace the oldest
+cosmetic particles. Animation runs in the vertex shader, without particle nodes,
+collisions, textures, lights or shadows. Idle effects stop processing and drawing.
+Particles expire within 1.25 seconds, including after defeat; retry clears the pool.
+The existing wave-following splash rings/spray remain capped at 24 meshes.
+
+```sh
+godot --headless --path ldjam_60 --script res://tests/combat_particles_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/combat_particles_previews.gd -- --output=/tmp/latitude-combat-particles
+godot --path ldjam_60 res://tests/combat_particles_benchmark.tscn
+```
+
+The benchmark alternates three idle/saturated pairs with a fixed gameplay camera,
+10 seconds per phase and three seconds of warmup. It emits 2,450 particles/second,
+well above five-ship combat, and reports frame intervals, emission/update CPU time,
+draw calls and node count. For Web, use its scene as the main scene of a separate
+development export and include its script; release builds exclude `tests/`.
+The Web fixture logs `PARTICLE BENCHMARK` and exposes `window.particleBenchmark`;
+its optional `/result` POST is for a local test server.
+
+[Local Chrome results](artifacts/combat_particles_web.json), 2026-10-18, Apple M4 Pro,
+2253×1047: median **8.3 ms** in every idle/stress phase; stress p95 **9.3–9.4 ms**,
+versus idle **9.4–9.9 ms**. Saturation adds **one draw call**, averages **0.09–0.10 ms**
+of particle CPU work per frame and keeps **486 nodes** throughout. These are
+steady-state desktop measurements; low-end mobile and human playtesting remain open.
+
 ## Retained voyage reference (inactive in normal play)
 
 Open `ldjam_60/tests/legacy_voyage.tscn` in the installed Godot 4.8 to inspect the retained journey.

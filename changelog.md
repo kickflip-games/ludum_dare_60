@@ -6,6 +6,18 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Added blocky muzzle sparks/smoke, enemy shot trails, stronger timber
+  hits/sinking bursts and player damage spray. Replaced individual smoke, trail
+  and splinter nodes with one shader-animated, 192-cube pool; idle effects sleep,
+  all particles expire within 1.25 seconds and retry clears them. Kept water
+  splashes with a 24-mesh cap. Controls, warnings and projectile physics remain.
+  483 checks pass across ten suites; the one coastal-foam metadata failure also
+  occurs on the untouched base. Nine native effect views inspected; Web export
+  passes. Chrome at 2253×1047 holds 8.3 ms median in all three idle/stress pairs;
+  saturation adds one draw call, about 0.09–0.10 ms CPU/frame and no node growth.
+  Low-end mobile and human playtesting remain untested. See
+  [browser measurements](artifacts/combat_particles_web.json).
+
 - Increased arena waves to 2/3/4/5/6 ships (20 total), with five active slots
   and 2.5-second arrivals. Safe spawns favour shorter clear approaches; faster
   cutter/skiff/heavy pursuit, crossing broadsides and shorter return legs keep

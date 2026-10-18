@@ -595,7 +595,8 @@ func _fire() -> void:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, from, game._material(Color("ffad66"), 1.5))
-	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0})
+	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0, "trail_clock": 0.0})
+	game.combat_particles.muzzle(from, launch.normalized(), true)
 	shots_fired += 1
 	cooldown = reload_seconds
 	game.cue_sound("enemy_shot")
@@ -626,6 +627,10 @@ func _advance_shots(delta: float) -> void:
 		else:
 			shot.position = to
 			shot.node.global_position = to
+			shot.trail_clock = shot.get("trail_clock", 0.0) + delta
+			if shot.trail_clock >= 0.07:
+				shot.trail_clock = 0.0
+				game.combat_particles.trail(to, true)
 
 
 func take_hit() -> void:

@@ -25,7 +25,10 @@ const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
 const ARCHIPELAGO = preload("res://game/world/archipelago.tscn")
-const SPEED: float = 6.3
+# Retain the speed accessor used by cutters and existing gameplay fixtures.
+var SPEED: float:
+	get:
+		return sailing_speed
 const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
@@ -37,6 +40,7 @@ const GUIDING_STAR_ELEVATION: float = PI / 3.0
 const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
+@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 9.0
 @export var encounter_seed: int = 60
 @export_group("Lighthouse arena")
 @export var arena_mode: bool = false
@@ -97,6 +101,14 @@ var gust_strength := 0.0
 @export_range(0.0, 1.0, 0.05) var target_highlight_strength: float = 0.65
 
 @export_group("Sailing camera")
+enum SailingCameraRig { CHASE, DECK }
+@export var sailing_camera_rig: SailingCameraRig = SailingCameraRig.CHASE
+## Chase framing restored from 534b021; the deck rig remains available for fixtures.
+@export_range(8.0, 24.0, 0.5) var sailing_follow_distance: float = 11.0
+@export_range(3.0, 12.0, 0.25) var sailing_camera_height: float = 5.5
+@export_range(2.0, 14.0, 0.5) var sailing_follow_smoothing: float = 7.0
+@export_range(2.0, 14.0, 0.5) var sailing_rotation_smoothing: float = 5.5
+@export_range(0.0, 10.0, 0.5) var sailing_look_ahead: float = 5.0
 ## Hull-local eye position, authored against the existing six-metre boat.
 @export var helm_eye := Vector3(0.0, 2.05, 0.45)
 @export_enum("Full", "Reduced") var motion_setting: int = 0
@@ -562,7 +574,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		var was_returning: bool = arena_return.active
 		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
 			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
-			arena_soft_fraction, arena_inward_bias)
+			arena_soft_fraction, arena_inward_bias, SPEED)
 		if arena_return.active:
 			steering = archipelago.safe_return_rudder(steering)
 		if arena_return.active and not was_returning and not _at_sailing_boundary:
@@ -571,7 +583,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		elif not arena_return.active and arena_return.blend == 0.0:
 			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
-	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta)
+	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, SPEED)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position
@@ -727,7 +739,8 @@ func _update_view(delta: float) -> void:
 		boat.position + Basis(Vector3.UP, -heading) * Vector3(0, 2.55, -4.5))
 	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
-	var sailing_fov := lerpf(74.0 + sailing_speed_fov * _sailing_speed * motion_amount(), 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
+	var base_fov := 62.0 if sailing_camera_rig == SailingCameraRig.CHASE else 74.0
+	var sailing_fov := lerpf(base_fov + sailing_speed_fov * _sailing_speed * motion_amount(), 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
 	camera.fov = lerpf(lerpf(sailing_fov, aim_camera_fov, aim_camera_blend), stargazing_fov, sky_blend)
 	if state == State.READY:
 		camera.transform = _title_camera_pose()
@@ -783,24 +796,35 @@ func _update_view(delta: float) -> void:
 
 
 func _normal_sailing_pose(delta: float) -> Transform3D:
-	# One authored marker follows the complete visual-pivot transform, including
-	# the rotation around the hull centre. No second addition of hull heave.
 	helm_anchor.position = helm_eye
-	_sailing_anchor = boat.to_global(BoatWaveMotion.HULL_CENTER)
-	_sailing_heading = heading
+	var center := boat.to_global(BoatWaveMotion.HULL_CENTER)
+	# The chase view follows the planar hull, with only a little filtered heave.
+	# Wave pitch/roll remain visible on the boat without tilting the horizon.
+	center.y += clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18) * motion_amount()
 	var speed := clampf(actual_speed / SPEED, 0.0, 1.15) if state == State.SAILING else 0.0
-	if not _sailing_camera_initialized:
+	if not _sailing_camera_initialized or _sailing_anchor.distance_to(center) > 60.0 or delta > 0.25:
 		deck_response.reset()
+		_sailing_anchor = center
+		_sailing_heading = heading
 		_sailing_speed = speed
 		_sailing_camera_initialized = true
 		_camera_clear_fraction = 1.0
 	else:
+		_sailing_anchor = _sailing_anchor.lerp(center, 1.0 - exp(-sailing_follow_smoothing * delta))
+		_sailing_heading = lerp_angle(_sailing_heading, heading, 1.0 - exp(-sailing_rotation_smoothing * delta))
 		_sailing_speed = lerpf(_sailing_speed, speed, 1.0 - exp(-3.0 * delta))
+	# Continue detecting real crest contacts for spray/audio in either view.
 	var result := deck_response.pose(helm_anchor, boat, boat_motion, ocean, heading, 0.0,
 		delta, motion_amount(), state == State.SAILING)
-	if development_tools and not development_camera_response:
-		return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading,0)),boat.to_global(helm_eye))
-	return result
+	if sailing_camera_rig == SailingCameraRig.DECK:
+		if development_tools and not development_camera_response:
+			return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading,0)),boat.to_global(helm_eye))
+		return result
+	var orientation := Basis(Vector3.UP, -_sailing_heading)
+	var distance := sailing_follow_distance * (1.0 + _sailing_speed * 0.07)
+	var at := _sailing_anchor + orientation * Vector3(0, sailing_camera_height, distance)
+	var focus := _sailing_anchor + orientation * Vector3(0, 0.85, -sailing_look_ahead)
+	return Transform3D(Basis.looking_at(focus - at, Vector3.UP), at)
 
 
 func motion_amount() -> float:
@@ -1011,10 +1035,11 @@ func _build_boat() -> void:
 	ship.position = Vector3(-0.072, 0.0, -2.065)
 	boat_visual.add_child(ship)
 	var sail := ship.get_node("RootNode/Sail") as Node3D
-	# Stow the oversized canvas/boom for the forward deck composition. Retain the
-	# licensed hull, with one fitted planked floor rather than a second ship.
-	sail.visible = false
-	_build_deck_floor()
+	# Restore the visible canvas and boom angle from 534b021 for the chase view.
+	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
+	sail.visible = sailing_camera_rig == SailingCameraRig.CHASE
+	if sailing_camera_rig == SailingCameraRig.DECK:
+		_build_deck_floor()
 	boat_damage.configure(boat_visual, ship)
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)

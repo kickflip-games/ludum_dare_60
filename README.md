@@ -7,7 +7,7 @@ waves** of the existing hostile cutter. Enemies attack the player; the lighthous
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
-- **Play / Enter:** cast off; forward sailing remains automatic.
+- **Play / Enter:** cast off; forward sailing is automatic at **9 m/s**.
 - **A / D or arrows:** steer; **hold E** to aim and **press F** to fire once.
   Release E to return to steering. Cannonballs follow the visible barrel.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
@@ -36,7 +36,8 @@ enemy to win; entering the old harbour never wins.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
-Radius and return settings are exposed on the main crossing. Edit
+Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
+exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five counts/deadlines, spawn interval,
 maximum living enemies (1–3), early-clear pause and spawn separation. Retry
 preserves tuning and resets session progress.
@@ -51,7 +52,7 @@ godot --path ldjam_60 --fixed-fps 60 --script res://tests/survival_previews.gd -
 ```
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
-retaining their original scenarios and acceptance gates.
+retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 
 ## Retained voyage reference (inactive in normal play)
 
@@ -133,14 +134,16 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   `wave_sailing.gd`. Steering smoothly approaches 0.64 rad/s.
 - **Hull:** capacity 3, contact damage 1, immunity 2.2 seconds, repair interval 8 seconds.
 - **Voyage presentation:** weather controls sky/lighting independently of wave encounters.
-- **Sailing camera:** a hull-mounted deck eye at `(0, 2.05, 0.45)` frames the
-  wooden bow, lantern left and actual starboard cannon right. The oversized sail
-  is stowed to keep incoming waves visible. The view follows most deck lift,
-  78% of wave pitch and 52% of wave roll, with bounded head inertia and one
-  compression per descending crest. The menu offers **Motion: Full / Reduced**;
-  Reduced softens angles, impacts and streaks without changing wave forces.
-  Shores and the 1.2 m water guard still protect every final camera pose.
-  See the [deck camera report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md).
+- **Sailing camera:** restored the elevated chase view and visible 35° sail from
+  `534b021`: 11 m behind the hull centre, 5.5 m high, 5 m look-ahead and 62° base
+  FOV. Arena position/heading follow at 10/5.5 per second (7/5.5 in the retained
+  voyage); speed gently extends distance
+  and FOV. The horizon stays level as the whole boat rocks and turns. Shore
+  retraction, the 1.2 m water guard, cannon view and contact-driven spray/audio
+  remain. **Motion: Full / Reduced** still softens presentation without changing
+  physics. The earlier deck rig is available through `sailing_camera_rig` in the
+  Inspector; its [report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md) records
+  that earlier view. See the [restoration checks and captures](artifacts/chase_camera_review.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
   upward pitch (`stargazing_pitch_degrees`, 25°), and sky FOV (94°). The sighting
   camera stays 2.55 m high and 4.5 m toward the bow; an aligned star appears about
@@ -266,9 +269,9 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   repeated checks, live-star/edge projection across headings/window sizes, text-free
   focus stages, star/horizon framing, 30/60/120 Hz camera transitions, active enemy
   fire, camera precedence and vulnerability.
-- `--script res://tests/sailing_camera_smoke.gd`: deck/lantern/real-cannon framing,
-  attachment, steering, wave pitch, and terrain/water clearance in sailing and sighting.
-- `--script res://tests/turbulence_camera_smoke.gd`: front/side/oblique/four-wave
+- `--script res://tests/sailing_camera_smoke.gd`: whole-sailboat chase framing,
+  level horizon, held steering, cannon/return/retry, aspect ratios and terrain/water clearance.
+- `--script res://tests/turbulence_camera_smoke.gd`: retained opt-in deck rig, front/side/oblique/four-wave
   motion, contact deduplication, recovery, Full/Reduced, 30/60/120 Hz, gaps and retry.
 - `--script res://tests/turbulence_effects_smoke.gd`: synchronized event IDs,
   fixed spray capacity, world-anchored water styling, motion selection and reset.

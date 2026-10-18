@@ -13,10 +13,35 @@ recorded evidence and limitations.
   boundaries and eligible-hull highlights. Kept held Space/click fire, steering,
   chase look, reload, damage, effects and non-homing flight. The explicit legacy
   voyage retains its sweep. Updated control/damage fixtures and added cone,
-  ranking, lead, range, reset and camera-independence regressions. Six headless
-  suites pass 452 checks; the native cone run passes 38, including simultaneous
-  steering/look/fire against a moving cutter. Five rendered frames inspected.
+  ranking, lead, range, reset and camera-independence regressions. Initial six
+  headless suites passed 452 checks. Integration with current enemy pressure
+  and particles passes 257 checks across five suites, plus 38 native checks
+  including simultaneous steering/look/fire against a moving cutter. Rendered
+  cone and combined firing effects inspected.
   Human balance and Web remain untested.
+
+- Added blocky muzzle sparks/smoke, enemy shot trails, stronger timber
+  hits/sinking bursts and player damage spray. Replaced individual smoke, trail
+  and splinter nodes with one shader-animated, 192-cube pool; idle effects sleep,
+  all particles expire within 1.25 seconds and retry clears them. Kept water
+  splashes with a 24-mesh cap. Controls, warnings and projectile physics remain.
+  483 checks pass across ten suites; the one coastal-foam metadata failure also
+  occurs on the untouched base. Nine native effect views inspected; Web export
+  passes. Chrome at 2253×1047 holds 8.3 ms median in all three idle/stress pairs;
+  saturation adds one draw call, about 0.09–0.10 ms CPU/frame and no node growth.
+  Low-end mobile and human playtesting remain untested. See
+  [browser measurements](artifacts/combat_particles_web.json).
+
+- Increased arena waves to 2/3/4/5/6 ships (20 total), with five active slots
+  and 2.5-second arrivals. Safe spawns favour shorter clear approaches; faster
+  cutter/skiff/heavy pursuit, crossing broadsides and shorter return legs keep
+  pressure on the player. Crowded hulls yield speed and hold recovery headings.
+  Preserved full warnings, non-homing shots, hull values, player controls and
+  the retained voyage AI. At 30/60/120 Hz, first fire fell from 48.1–48.2 s to
+  9.5–9.6 s; 90-second shots rose from 1–3 to 7–11 in the protected no-input
+  fixture. After integrating the latest arcade controls, all 544 checks across
+  nine suites pass; four native gameplay views were inspected. Human balance
+  and Web/mobile performance remain untested.
 
 - Simplified active arena controls to A/D or arrows, bounded mouse look and
   Space/click held fire. The single starboard cannon sweeps continuously through

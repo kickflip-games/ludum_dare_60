@@ -225,13 +225,7 @@ func fire() -> bool:
 	projectiles.append({"node": ball, "velocity": launch_velocity(), "ttl": SHOT_LIFETIME,
 		"physics_position": shot_origin(), "trail_clock": 0.0,
 		"range_origin": cone_origin(), "range": cone_range if game.arena_mode else 0.0})
-	# Existing effect lifetime system also owns the short muzzle smoke burst.
-	for i in range(5):
-		var smoke_shape := SphereMesh.new()
-		smoke_shape.radius = 0.22 + i * 0.07
-		smoke_shape.height = smoke_shape.radius * 2.0
-		var smoke = game._mesh(game, smoke_shape, muzzle.global_position + aimed_direction() * i * 0.3, game._material(Color("aab7b2")))
-		effects.append({"node": smoke, "ttl": 0.6 + i * 0.04, "velocity": aimed_direction() * (1.5 + i * 0.3) + Vector3.UP * 1.4, "smoke": true})
+	game.combat_particles.muzzle(shot_origin(), aimed_direction())
 	fired.emit(aimed_direction())
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
@@ -287,8 +281,7 @@ func advance(delta: float) -> void:
 			shot.trail_clock += delta
 			if shot.trail_clock >= 0.055:
 				shot.trail_clock = 0.0
-				var trail = game._box(game, Vector3(0.10, 0.10, 0.10), ball.global_position, game._material(Color("f3dcb0"), 1.0))
-				effects.append({"node": trail, "ttl": 0.18, "velocity": Vector3.ZERO, "ring": false})
+				game.combat_particles.trail(ball.global_position)
 	for i in range(effects.size() - 1, -1, -1):
 		var effect: Dictionary = effects[i]
 		effect.ttl -= delta
@@ -309,15 +302,6 @@ func advance(delta: float) -> void:
 					var remaining: float = effect.ttl/effect.lifetime
 					effect.node.scale = effect.spray_scale*(0.55+remaining*0.45)
 					effect.node.material_override.set_shader_parameter("opacity",remaining*remaining)
-				elif effect.get("smoke", false):
-					effect.node.scale += Vector3.ONE * delta * 1.5
-				elif effect.get("impact_smoke", false):
-					var remaining: float = effect.ttl / effect.lifetime
-					effect.node.scale += Vector3.ONE * delta * 0.8
-					effect.node.material_override.albedo_color.a = remaining * 0.45
-				else:
-					effect.velocity.y -= delta * 2.0
-					effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
 
 
 func _impact(body: Object, at: Vector3) -> void:
@@ -349,19 +333,7 @@ func _impact(body: Object, at: Vector3) -> void:
 
 
 func _sinking_burst(at: Vector3) -> void:
-	_splinters(at + Vector3.UP, true)
-	for puff_index in 3:
-		var material = game._material(Color("c6bda6"))
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.albedo_color.a = 0.45
-		var shape := SphereMesh.new()
-		shape.radius = 0.7
-		shape.height = 1.4
-		shape.radial_segments = 8
-		shape.rings = 4
-		var smoke = game._mesh(game, shape, at + Vector3(0, puff_index * 0.5, 0), material)
-		effects.append({"node": smoke, "ttl": 1.2, "lifetime": 1.2,
-			"velocity": Vector3(0.3, 1.4 + puff_index * 0.4, 0.2), "impact_smoke": true})
+	game.combat_particles.impact(at + Vector3.UP, true, true)
 
 
 func aim_target() -> Dictionary:
@@ -394,6 +366,9 @@ func aim_target() -> Dictionary:
 
 
 func water_splash(at: Vector3, sound: bool = true) -> void:
+	# Four overlapping splashes maximum; keep the existing wave-following foam.
+	if effects.size() + 6 > 24:
+		return
 	var point := Vector3(at.x, game.ocean.height_at(Vector2(at.x, at.z)) + 0.1, at.z)
 	if _splash_ring_mesh == null:
 		_splash_ring_mesh = TorusMesh.new()
@@ -426,12 +401,7 @@ func water_splash(at: Vector3, sound: bool = true) -> void:
 
 
 func _splinters(at: Vector3, timber: bool) -> void:
-	var mat = game._material(Color("b08c58") if timber else Color("a1c3c3"), 0.5)
-	for i in range(7):
-		var chip = game._box(game, Vector3(0.15, 0.15, 0.65 if timber else 0.15), at, mat)
-		chip.rotation = Vector3(i * 0.7, i * 1.4, i * 0.3)
-		effects.append({"node": chip, "ttl": 0.8,
-			"velocity": Vector3(sin(i * 2.4) * 3.0, 1.5 + i * 0.12, cos(i * 2.4) * 3.0)})
+	game.combat_particles.impact(at, timber)
 
 
 func reset() -> void:

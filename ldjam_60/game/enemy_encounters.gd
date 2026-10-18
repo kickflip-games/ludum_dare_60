@@ -8,6 +8,7 @@ var ships_sunk: int = 0
 var enabled: bool = true
 var visited: Array[String] = []
 const ARENA_WAVES := 5
+const POOL_SIZE := 5
 @export var survival_settings: Resource = preload("res://game/survival_settings.tres")
 enum Phase { PREPARING, ACTIVE, EARLY_CLEAR, COMPLETE, STOPPED }
 var phase := Phase.PREPARING
@@ -28,7 +29,7 @@ var wave_in_progress: bool:
 
 func _ready() -> void:
 	survival_settings = survival_settings.duplicate(true)
-	for i in (3 if game.arena_mode else 1):
+	for i in (POOL_SIZE if game.arena_mode else 1):
 		var cutter: CharacterBody3D = SHIP.instantiate()
 		cutter.game = game
 		add_child(cutter)
@@ -234,7 +235,7 @@ func _update_arena(delta: float) -> void:
 		_spawn_queued()
 
 func _spawn_queued() -> void:
-	if living_ships().size() >= mini(3, survival_settings.maximum_living):
+	if living_ships().size() >= clampi(survival_settings.maximum_living, 1, POOL_SIZE):
 		return
 	var available: CharacterBody3D = null
 	for cutter in ships:
@@ -249,7 +250,7 @@ func _spawn_queued() -> void:
 	var id: int = spawn_queue.pop_front()
 	var ordinal: int = records[id-1].spawned
 	var kind: String = survival_settings.wave_rosters[id-1][ordinal]
-	available.configure_archetype(survival_settings.ARCHETYPES[kind], ships.find(available) * 10.0)
+	available.configure_archetype(survival_settings.ARCHETYPES[kind], (ships.find(available) % 3) * 4.0)
 	available.begin(at)
 	available.set_meta("wave_id", id)
 	available.territory = game.arena_center()
@@ -262,6 +263,9 @@ func _spawn_queued() -> void:
 
 func arena_spawn() -> Vector3:
 	var sectors: Array[Node] = game.archipelago.arena_layout.get_node("EnemySectors").get_children()
+	var best := Vector3.INF
+	var best_score := INF
+	var best_sector := sector_index
 	for attempt in range(sectors.size()):
 		var index: int = (sector_index + attempt) % sectors.size()
 		var marker: Marker3D = sectors[index]
@@ -279,6 +283,15 @@ func arena_spawn() -> Vector3:
 					occupied = true
 			if occupied:
 				continue
-			sector_index = (index + 1) % sectors.size()
-			return candidate
-	return Vector3.INF
+			# Prefer a short clear approach over alternating to the far side of the island.
+			# Existing sector order breaks ties; occupied hulls spread arrivals naturally.
+			var score := candidate.distance_to(game.boat.global_position)
+			if not ship._water_lane_clear(candidate, game.boat.global_position):
+				score += game.arena_radius
+			if score < best_score:
+				best = candidate
+				best_score = score
+				best_sector = index
+	if best.is_finite():
+		sector_index = (best_sector + 1) % sectors.size()
+	return best

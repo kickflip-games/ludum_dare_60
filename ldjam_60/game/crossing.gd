@@ -9,6 +9,7 @@ const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
 const DeckCameraResponse = preload("res://game/ocean/deck_camera_response.gd")
 const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
+const CombatParticles = preload("res://game/combat_particles.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
@@ -228,6 +229,7 @@ var cannon: Node3D
 var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
+var combat_particles: Node3D
 var boat_damage := BoatDamage.new()
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
@@ -264,6 +266,9 @@ func _ready() -> void:
 	add_child(archipelago)
 	archipelago.configure(self)
 	_place_player()
+	combat_particles = CombatParticles.new()
+	combat_particles.name = "CombatParticles"
+	add_child(combat_particles)
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
@@ -496,6 +501,7 @@ func journey_progress() -> float:
 
 
 func restart() -> void:
+	combat_particles.reset()
 	_clear_player_controls()
 	cannon.reset()
 	wave_sailing.reset()
@@ -750,6 +756,7 @@ func take_damage(amount: int, reason: String) -> bool:
 		state = State.LOST
 		_clear_player_controls()
 		cannon.reset()
+	combat_particles.damage(boat_visual.to_global(Vector3(0, 1.0, -1.8)), hull == 0)
 	return true
 
 

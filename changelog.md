@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Restored `534b021`'s elevated chase camera and visible 35° sail so the whole
+  player boat and its turns are readable again. Kept current arena rules,
+  E/F gun controls, wave forces, contact spray/audio and camera safety; the
+  deck rig remains available in the Inspector. 631 checks across ten suites
+  pass, with native sailing, gun view, damage, cutter combat and endings
+  inspected. Human balance and Web/mobile remain untested. See the
+  [camera restoration review](artifacts/chase_camera_review.md).
+
 - In progress: Simplified `AGENTS.md` to a local-first workflow, removing mandatory
   branches, draft PRs and screenshot uploads. Retained gameplay safeguards and
   relevant validation; documentation edits need only diff/formatting checks.

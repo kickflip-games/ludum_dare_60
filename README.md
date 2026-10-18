@@ -141,7 +141,7 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   remain. **Motion: Full / Reduced** still softens presentation without changing
   physics. The earlier deck rig is available through `sailing_camera_rig` in the
   Inspector; its [report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md) records
-  that earlier view.
+  that earlier view. See the [restoration checks and captures](artifacts/chase_camera_review.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
   upward pitch (`stargazing_pitch_degrees`, 25°), and sky FOV (94°). The sighting
   camera stays 2.55 m high and 4.5 m toward the bow; an aligned star appears about

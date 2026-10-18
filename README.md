@@ -101,11 +101,15 @@ The translucent water sector and two thin boundaries rotate with the boat.
 Each shot selects an eligible hull centre by alignment with starboard first,
 then distance for equal alignment. The barrel rotates before launch and applies
 approximate movement lead, clamped to the cone. With no target it fires straight
-starboard. Cannonballs retain real ballistic collision and never home; moving
+starboard with a shallow upward arc (5° elevation, roughly 1.4 m of rise).
+Targeted shots adjust barrel elevation for gravity and movement lead.
+Cannonballs retain real ballistic collision and never home; moving
 ships, waves and intervening hulls can still make a shot miss. Shots expire at
 the 65 m planar limit measured from the mount at launch. There is no idle sweep.
 Tune `cone_half_angle` and `cone_range` on `game/broadside_cannon.tscn`; the overlay,
 acquisition and projectile range use those same settings.
+Enemy broadsides retain their flashing muzzle and incoming-fire warning, with
+no aiming beam drawn across the water.
 
 Tune **Arcade chase look** on the crossing: yaw limit, degrees per mouse pixel,
 look response, idle delay, recentring rate and port/starboard framing offsets.
@@ -123,6 +127,7 @@ the preserved geometry work. Human combat balance remains untested.
 
 ```sh
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_cone_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/cannon_arc_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd

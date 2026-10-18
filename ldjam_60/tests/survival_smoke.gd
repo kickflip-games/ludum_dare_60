@@ -56,7 +56,7 @@ func clean_retry(label: String) -> void:
 	check(game.state==game.State.CASTING_OFF and enemies.phase==enemies.Phase.PREPARING
 		and enemies.wave_number==0 and enemies.clock==0 and enemies.spawn_queue.is_empty()
 		and enemies.records.is_empty() and enemies.ships.size()==6
-		and enemies.ships.all(func(c):return c.mode==c.Mode.DORMANT and c.projectiles.is_empty() and not c.tell_line.visible)
+		and enemies.ships.all(func(c):return c.mode==c.Mode.DORMANT and c.projectiles.is_empty() and not c.flash.visible)
 		and not enemies.has_projectiles() and enemies.announcement_left==0
 		and game.boat.global_position.is_equal_approx(marker.global_position) and game.hull==game.hull_capacity
 		and game.ocean.wave_field.waves.is_empty() and game.cannon.projectiles.is_empty(),

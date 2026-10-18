@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Work in progress: player arena shots follow a shallow upward arc; targeted
+  shots compensate for gravity while retaining movement lead, range and physical
+  collisions. Removed enemy cannon aiming beams; flashing muzzle and evasive
+  warning remain. 245 checks pass across five suites; four native frames
+  inspected. Human playtesting and Web remain untested.
+
 - Replaced player arena containment and automatic return steering
   with a red storm line that fades in on approach, STORMY AHEAD, and a persistent
   return-to-lighthouse warning beyond 170 m. Slow red screen pulses (steady in

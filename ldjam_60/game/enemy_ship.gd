@@ -36,7 +36,7 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var encounter_seconds: float = 55.0
 @export var escape_distance: float = 135.0
 @export var cleanup_distance: float = 180.0
-## Every other pass aims slightly long; the locked warning still shows the true shot.
+## Every other pass aims slightly long; aim stays fixed during the muzzle warning.
 @export var forgiving_aim_offset: float = 4.5
 @export_group("Night presentation")
 @export var sail_color := Color("e69b79")
@@ -86,8 +86,6 @@ var shots_hit: int = 0
 var visual: Node3D
 var sail_material: StandardMaterial3D
 var flash: MeshInstance3D
-var tell_line: MeshInstance3D
-var tell_mesh: BoxMesh
 var motion := Motion.new()
 var projectiles: Array[Dictionary] = []
 var run_heading: float = 0.0
@@ -191,9 +189,6 @@ func _ready() -> void:
 	spark.radius = 0.4
 	spark.height = 0.8
 	flash = game._mesh(presentation, spark, Vector3(-2.4, 1.3, -1.8), game._material(Color("ffbe67"), 2.0))
-	tell_mesh = BoxMesh.new()
-	tell_line = game._mesh(game, tell_mesh, Vector3.ZERO, game._material(Color("ed9e5c"), 1.0))
-	tell_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	reset()
 
 
@@ -216,7 +211,6 @@ func reset() -> void:
 	visible = false
 	collision_layer = 0
 	set_meta("destroyed", true)
-	tell_line.visible = false
 	flash.visible = false
 	shots_fired = 0
 	shots_hit = 0
@@ -756,7 +750,7 @@ func _change(value: Mode) -> void:
 
 
 func _lock_shot() -> void:
-	# Predict once, then show this fixed world point throughout the warning. No homing.
+	# Predict once and keep this fixed world point throughout the warning. No homing.
 	# The cutter is settling onto its pass, so predict the committed parallel
 	# course rather than extrapolating the last inward approach velocity.
 	var future_origin: Vector3 = muzzle_position() + _run_forward() * (run_speed + 0.15) * telegraph_seconds
@@ -775,17 +769,7 @@ func _lock_shot() -> void:
 
 
 func _update_tell() -> void:
-	tell_line.visible = weapon_state == Weapon.TELEGRAPH
 	flash.visible = weapon_state == Weapon.FIRE or (weapon_state == Weapon.TELEGRAPH and fmod(weapon_time, 0.3) < 0.15)
-	if not tell_line.visible:
-		return
-	var from := muzzle_position()
-	var end := locked_point
-	end.y = from.y
-	var offset := end - from
-	tell_mesh.size = Vector3(0.18, 0.08, offset.length())
-	tell_line.global_position = (from + end) * 0.5
-	tell_line.global_basis = Basis.looking_at(offset)
 
 
 func _fire() -> void:
@@ -847,7 +831,6 @@ func take_hit() -> void:
 	if hull <= 0:
 		set_meta("destroyed", true)
 		collision_layer = 0
-		tell_line.visible = false
 		flash.visible = false
 		_change_navigation(Navigation.SINKING)
 		_change_weapon(Weapon.READY)
@@ -872,7 +855,6 @@ func disengage() -> void:
 	_departure_heading = atan2(away.x, -away.z)
 	_change_navigation(Navigation.RETREAT)
 	_change_weapon(Weapon.READY)
-	tell_line.visible = false
 	flash.visible = false
 
 
@@ -882,13 +864,12 @@ func _finish_escape() -> void:
 	collision_layer = 0
 	set_meta("destroyed", true)
 	velocity = Vector3.ZERO
-	tell_line.visible = false
 	flash.visible = false
 
 
 func warning() -> String:
 	if weapon_state == Weapon.TELEGRAPH:
-		return "ENEMY BROADSIDE  ·  TURN OFF THE AMBER LINE  ·  %.1fs" % maxf(0, telegraph_seconds - weapon_time)
+		return "ENEMY BROADSIDE  ·  TURN TO EVADE  ·  %.1fs" % maxf(0, telegraph_seconds - weapon_time)
 	if navigation_state in [Navigation.APPROACH, Navigation.ATTACK_RUN] and age < 7.0:
 		return "HOSTILE %s  ·  SHOOT OR SAIL CLEAR" % display_name().to_upper()
 	return ""

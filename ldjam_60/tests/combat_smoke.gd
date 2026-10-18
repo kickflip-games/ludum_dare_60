@@ -35,7 +35,7 @@ func _run() -> void:
 	for i in range(60):
 		game.take_damage(1, "repeated contact")
 	check(game.hull == 2, "short immunity rejects per-frame repeated damage")
-	check(game.hit_flash > 0.0 and game.shake_strength > 0.0, "hit gives restrained camera impulse and hull flash")
+	check(game.hit_flash > 0.0 and game.damage_shake_left > 0.0, "hit gives restrained camera impulse and hull flash")
 	game.damage_immunity = 0.0
 	check(game.take_damage(1, "second breach") and game.hull == 1, "second significant hit leaves one hull")
 	game.damage_immunity = 0.0

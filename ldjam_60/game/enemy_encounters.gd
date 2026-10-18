@@ -288,6 +288,8 @@ func _spawn_queued() -> void:
 	available.territory = game.arena_center()
 	var radial: Vector3 = at - game.arena_center()
 	available.heading = atan2(radial.x, -radial.z) + available.holding_direction * PI / 2.0
+	if director.owners.size() < director.slot_limit():
+		available.heading = game.heading
 	available.rotation.y = -available.heading
 	encounter_index += 1
 	records[id-1].spawned += 1
@@ -295,6 +297,20 @@ func _spawn_queued() -> void:
 
 func arena_spawn() -> Vector3:
 	var sectors: Array[Node] = game.archipelago.arena_layout.get_node("EnemySectors").get_children()
+	var forward := Vector3(sin(game.heading), 0, -cos(game.heading))
+	var starboard := Vector3(cos(game.heading), 0, sin(game.heading))
+	var arrival: Vector3 = game.boat.position + forward * 25.0 + starboard * 70.0
+	for lead: float in [25.0, -25.0, 0.0]:
+		var candidate: Vector3 = game.boat.position + forward * lead + starboard * 70.0
+		if candidate.distance_to(game.arena_center()) > game.arena_radius - 20.0:
+			continue
+		if candidate.distance_to(game.boat.position) < survival_settings.player_spawn_separation or not game.archipelago.water_clear(candidate, 12.0):
+			continue
+		if not ship._water_lane_clear(candidate, game.boat.position + starboard * 34.0):
+			continue
+		if ships.any(func(other): return other.visible and other.position.distance_to(candidate) < survival_settings.ship_spawn_separation):
+			continue
+		return candidate
 	var best := Vector3.INF
 	var best_score := INF
 	var best_sector := sector_index
@@ -317,7 +333,7 @@ func arena_spawn() -> Vector3:
 				continue
 			# Prefer a short clear approach over alternating to the far side of the island.
 			# Existing sector order breaks ties; occupied hulls spread arrivals naturally.
-			var score := candidate.distance_to(game.boat.global_position)
+			var score := candidate.distance_to(arrival) + candidate.distance_to(game.boat.global_position) * 0.25
 			if not ship._water_lane_clear(candidate, game.boat.global_position):
 				score += game.arena_radius
 			if score < best_score:

@@ -77,8 +77,9 @@ func _run() -> void:
 			"nearest": nearest, "max_speed": maximum_step, "longest_stop": longest_stop}))
 		if "--measure-only" not in OS.get_cmdline_user_args():
 			check(first_close > 0 and first_close < 8.0, "%d Hz: production arrivals enter gun range within eight seconds" % hz)
-			check(first_shot > 0 and first_shot < 18.0 and shots >= 4, "%d Hz: unsteered player faces early and repeated real broadsides" % hz)
-			check(peak == 5 and maximum_step < 18.0 and longest_stop < 2.5, "%d Hz: five attackers move continuously without teleporting" % hz)
+			check(game.enemy_encounters.director.owners.size() <= game.enemy_encounters.director.slot_limit(),
+				"%d Hz: production approaches respect the limited attack slots" % hz)
+			check(peak == 5 and maximum_step < 18.0 and longest_stop < 5.0, "%d Hz: five arrivals recover within the explicit five-second safety maneuver" % hz)
 			check(game.enemy_encounters.ships_sunk == 0 and game.state == game.State.SAILING, "elapsed time never kills an enemy or awards victory")
 			game.restart()
 			check(game.enemy_encounters.living_ships().is_empty() and not game.enemy_encounters.has_projectiles()
@@ -112,6 +113,7 @@ func crossing_opportunities() -> void:
 			ship.rotation.y = -ship.heading
 			ship.cooldown = 2.0 if blocked else 0.0
 			await physics_frame
+			ship._change_navigation(ship.Navigation.ATTACK_RUN)
 			ship.update_ship(1.0 / 60.0)
 			check((ship.mode == ship.Mode.TELEGRAPH) == not blocked,
 				kind + ": crossing broadside starts promptly only when reloaded")
@@ -126,6 +128,7 @@ func crossing_opportunities() -> void:
 		ship.heading = 0.3
 		ship.rotation.y = -ship.heading
 		await physics_frame
+		ship._change_navigation(ship.Navigation.ATTACK_RUN)
 		ship.update_ship(1.0 / 60.0)
 		check(ship.mode != ship.Mode.TELEGRAPH, kind + ": cannot fire through the wrong side of the hull")
 		ship.reset()

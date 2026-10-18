@@ -14,7 +14,7 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var broadside_separation: float = 34.0
 @export var attack_run_seconds: float = 6.0
 @export var return_seconds: float = 8.5
-@export var approach_timeout: float = 14.0
+@export var approach_timeout: float = 28.0
 @export var turn_away_seconds: float = 4.0
 @export var turn_away_angle: float = 1.05
 @export var player_separation: float = 19.0
@@ -119,6 +119,7 @@ var _route_check_left := 0.0
 var _intercept_origin := Vector3.ZERO
 var _intercept_velocity := Vector3.ZERO
 var _intercept_point := Vector3.ZERO
+var _joined_lane := false
 var _staging_point := Vector3.ZERO
 var _avoid_priority := 0
 var safety_priority := 0
@@ -252,6 +253,7 @@ func reset() -> void:
 	_intercept_origin = Vector3.ZERO
 	_intercept_velocity = Vector3.ZERO
 	_intercept_point = Vector3.ZERO
+	_joined_lane = false
 	_staging_point = Vector3.ZERO
 	_avoid_priority = 0
 	safety_priority = 0
@@ -388,7 +390,8 @@ func update_ship(delta: float) -> void:
 			var along := relative.dot(_run_forward())
 			var lateral := relative.dot(_run_right())
 			var to_join := _intercept_point - global_position
-			if to_join.length() < approach_lead or to_join.dot(_run_forward()) < 0.0:
+			_joined_lane = _joined_lane or to_join.length() < approach_lead
+			if _joined_lane:
 				desired = (_run_forward() * approach_lead + _run_right() * (lane_separation - lateral)).normalized()
 			else:
 				desired = _arena_approach(_intercept_point, delta) if game.arena_mode else to_join.normalized()
@@ -516,6 +519,7 @@ func _start_turn() -> void:
 
 
 func receive_attack_slot() -> void:
+	_pass_fired = false
 	_capture_course()
 	_change_navigation(Navigation.APPROACH)
 
@@ -642,6 +646,7 @@ func _run_right() -> Vector3:
 
 
 func _capture_course() -> void:
+	_joined_lane = false
 	run_heading = game.heading
 	_intercept_origin = game.boat.position
 	_intercept_velocity = game.boat.velocity

@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Naval AI release candidate: committed navigation and independent weapons,
+  six pooled ships, fair slots and staggered warnings preserve the current
+  controls/rosters. Fixed stale interception and latched contact recovery;
+  input-only battles defeat all 20 ships with physical projectiles. Native
+  single/pair/fleet sequences reviewed. Final main integration checks pending.
+
 - In progress: Stage 2 adds a six-hull pool, fair attack slots, independent
   lighthouse holding routes and 1.6-second warning coordination. Physical
   cannon tests sink all six holding hulls; fleet stress exposed contact and

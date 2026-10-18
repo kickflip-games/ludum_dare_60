@@ -65,11 +65,21 @@ spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
 Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
 exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five rosters/deadlines, spawn interval,
-maximum living enemies (1–5), early-clear pause and spawn separation. Retry
+maximum living enemies (1–6), early-clear pause and spawn separation. Retry
 preserves tuning and resets session progress. Archetype resources live in
 `game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
 response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
 wave forces, surface and rocking muzzle. Existing crests keep moving while firing.
+
+Arena enemies use independent navigation and weapon states: a committed approach,
+parallel pass, broad turn and reposition; guns keep sailing through warnings and
+reload. A lightweight director allocates 1/1/2/2/2 attack slots, queues ships fairly,
+and separates warning starts by 1.6 seconds. Waiting ships sail vulnerable routes
+around the lighthouse rather than chasing the player. Living enemies never time
+out; blocked routes recover visibly, and retry clears the fleet and its shots.
+The current 2/3/4/5/6 roster, deadlines and existing ship types are unchanged.
+See [naval AI validation and tuning](artifacts/naval_ai_review.md).
+
 The single starboard cannon uses a **±25° firing cone with a 65 m range**.
 The translucent water sector and two thin boundaries rotate with the boat.
 Each shot selects an eligible hull centre by alignment with starboard first,

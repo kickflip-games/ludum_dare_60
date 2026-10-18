@@ -12,6 +12,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(output.path_join("frames"))
 	root.size = Vector2i(1280, 720)
 	var game = await make_game()
+	game.set_process_unhandled_input(false)
 	game.enemy_encounters.enabled = true
 	game.enemy_encounters.phase = game.enemy_encounters.Phase.STOPPED
 	game.boat.position = Vector3(215, 0, 325)

@@ -134,7 +134,7 @@ func _run() -> void:
 	schedule(2.8)
 	check(enemies.wave_number==1 and game.hull==2, "early-clear pause lasts three seconds without duplicate repair")
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="WAVE CLEARED · NEXT IN 1", "early-clear countdown uses the requested minimal wording")
+	check(game.hud.wave_countdown.text=="FLEET CLEARED · NEXT IN 1", "early-clear countdown uses fleet wording")
 	check(not game.hud.wave_announcement.visible, "early clear suppresses any unfinished incoming-wave banner")
 	clean_retry("early intermission")
 	fresh()
@@ -169,21 +169,20 @@ func _run() -> void:
 	check(not enemies.spawn_queue.is_empty() and enemies.phase==enemies.Phase.ACTIVE and enemies.wave_number==2,
 		"pending queued spawn prevents false early completion even with no living enemy")
 	game.hud._process(0)
-	check(game.hud.wave_label.text=="WAVE 2 / 5" and not game.hud.wave_countdown.visible,
+	check(game.hud.wave_label.text=="II / V" and not game.hud.wave_countdown.visible,
 		"persistent top-centre wave label with no countdown outside last 15 seconds")
 	enemies.wave_remaining=12
 	enemies._update_arena(0)
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="NEXT WAVE IN 00:12", "last 15 seconds use mm:ss approaching-wave countdown")
-	enemies.announcement_left=1
-	game.hud._process(0)
-	check(game.hud.wave_announcement.text=="WAVE 2 INCOMING" and game.hud.wave_announcement.modulate.a==1,
-		"two-second wave banner has a visible plateau")
-	enemies.announcement_left=1.95
+	check(game.hud.wave_countdown.text=="NEXT FLEET IN 00:12", "last 15 seconds use mm:ss approaching-fleet countdown")
+	game.hud._process(0.3)
+	check(game.hud.wave_announcement.text=="FLEET II" and game.hud.wave_announcement.modulate.a==1,
+		"three-second fleet banner has a visible plateau")
+	game.hud._fleet_banner_left=2.95
 	game.hud._process(0)
 	check(game.hud.wave_announcement.modulate.a>0 and game.hud.wave_announcement.modulate.a<0.3,
 		"wave announcement fades in")
-	enemies.announcement_left=0.1
+	game.hud._fleet_banner_left=0.1
 	game.hud._process(0)
 	check(game.hud.wave_announcement.modulate.a>0 and game.hud.wave_announcement.modulate.a<0.3,
 		"wave announcement fades out")
@@ -210,11 +209,12 @@ func _run() -> void:
 	enemies.update_encounters(100)
 	check(enemies.encounter_index==encounters, "defeat immediately prevents further spawns")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="SHIP SUNK", "defeat end screen uses SHIP SUNK")
+	check(game.hud.menu_title.text=="LOST\nAT SEA", "defeat end screen uses LOST AT SEA")
 	clean_retry("defeat")
 	for repeat in 4: clean_retry("repeated session %d"%repeat)
-	DirAccess.make_dir_recursive_absolute("/tmp/latitude-timed-waves")
-	var file:=FileAccess.open("/tmp/latitude-timed-waves/survival.json",FileAccess.WRITE)
+	var report_dir := ProjectSettings.globalize_path("res://../build/latitude-timed-waves")
+	DirAccess.make_dir_recursive_absolute(report_dir)
+	var file:=FileAccess.open(report_dir.path_join("survival.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"max_living":max_living,"timed_records":transitions,"no_input_seconds":no_input_seconds},"\t"))
 	print("SURVIVAL CHECK: %d checks, %d failures"%[checks,failures])
 	game.queue_free()
@@ -314,7 +314,7 @@ func _completion_checks() -> void:
 	while enemies.boss.hull>0: game.cannon._impact(enemies.boss,enemies.boss.position+Vector3.UP)
 	check(game.state==game.State.ARRIVED and not enemies.has_projectiles(), "flagship death immediately wins and clears incoming shots")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="THE SEA IS YOURS", "victory screen uses THE SEA IS YOURS")
+	check(game.hud.menu_title.text=="YOU HELD\nTHE LIGHT", "victory screen uses YOU HELD THE LIGHT")
 	action("restart_crossing",true)
 	await process_frame
 	action("restart_crossing",false)

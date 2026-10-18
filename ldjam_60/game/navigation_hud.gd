@@ -1,13 +1,18 @@
 extends Control
 ## Presentation only. Reads the crossing's authoritative state; never steers it.
 const Gauge = preload("res://game/nautical_gauge.gd")
-const INK := Color("f5efdc")
-const MUTED := Color("d1ded7")
-const BRASS := Color("e6bf7c")
+const NauticalTheme = preload("res://game/nautical_theme.gd")
+const WalkthroughCard = preload("res://game/walkthrough_card.gd")
+const ENEMY_ICON = preload("res://assets/ui/enemy_ship.svg")
+const FLEET_BANNER_SECONDS := 3.0
+const STORM_NOTICE_SECONDS := 10.0
+const INK := Color("f0e5cc")
+const MUTED := Color("a6cac7")
+const BRASS := Color("d6ac68")
 const CORAL := Color("ff9e99")
-const DARK := Color("173e48")
+const DARK := Color("102838")
 var game: Node3D
-var serif: SystemFont
+var serif: Font
 var sans: Font
 var action_button: Button
 var menu: MarginContainer
@@ -19,6 +24,19 @@ var menu_controls: GridContainer
 var menu_details: Label
 var menu_footer: Label
 var motion_choice: OptionButton
+var menu_column: VBoxContainer
+var menu_actions: VBoxContainer
+var settings_button: Button
+var main_menu_button: Button
+var quit_button: Button
+var settings_panel: VBoxContainer
+var settings_back: Button
+var menu_motif: TextureRect
+var menu_rule: TextureRect
+var menu_spacer: Control
+var settings_open := false
+var walkthrough_button: Button
+var walkthrough_card: Control
 var cannon_gauge: Control
 var gameplay_hud: Control
 var wave_countdown: Label
@@ -26,10 +44,18 @@ var wave_announcement: Label
 var boss_label: Label
 var boss_health: ProgressBar
 var wave_label: Label
+var fleet_status: CenterContainer
+var fleet_icons: HBoxContainer
+var fleet_divider: ColorRect
+var _fleet_icon_count := -1
+var _announced_fleet := 0
+var _fleet_banner_left := 0.0
 var threat_label: Label
 var storm_warning: VBoxContainer
 var storm_title: Label
 var storm_instruction: Label
+var _storm_notice_seen := false
+var _storm_notice_left := 0.0
 var notice: Label
 var instrument: Control
 var _last_state: int = -1
@@ -42,38 +68,27 @@ var _menu_alpha: float = 1.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	serif = SystemFont.new()
-	serif.font_names = PackedStringArray(["Georgia", "Times New Roman"])
-	sans = ThemeDB.fallback_font
-	theme = Theme.new()
-	theme.default_font = sans
-	theme.default_font_size = 17
-	theme.set_color("font_color", "Label", INK)
-	theme.set_color("font_shadow_color", "Label", Color(DARK, 0.8))
-	theme.set_constant("shadow_offset_y", "Label", 1)
-	theme.set_color("font_outline_color", "Label", Color(DARK, 0.75))
-	theme.set_constant("outline_size", "Label", 2)
+	serif = NauticalTheme.TITLE.duplicate()
+	serif.fallbacks = [ThemeDB.fallback_font]
+	sans = NauticalTheme.BODY
+	theme = NauticalTheme.make_theme()
 	_build_menu()
+	resized.connect(_layout_menu)
+	menu.minimum_size_changed.connect(_layout_menu.call_deferred)
+	_layout_menu.call_deferred()
 	gameplay_hud = Control.new()
 	gameplay_hud.name = "SailingHUD"
 	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(gameplay_hud)
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cannon_gauge = _gauge("StarboardCannon", Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
-	wave_label = _label(gameplay_hud, "SurvivalWave", "", 16, BRASS)
-	for label: Label in [wave_label]:
-		label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-		label.offset_left=-180
-		label.offset_right=180
-		label.offset_top=20
-		label.offset_bottom=44
-		label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	_build_fleet_status()
 	boss_label = _label(gameplay_hud, "FlagshipTitle", "THE FLAGSHIP", 12, BRASS)
 	boss_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	boss_label.offset_left = -130
 	boss_label.offset_right = 130
-	boss_label.offset_top = 47
-	boss_label.offset_bottom = 64
+	boss_label.offset_top = 60
+	boss_label.offset_bottom = 78
 	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_health = ProgressBar.new()
 	boss_health.name = "FlagshipHealth"
@@ -83,15 +98,15 @@ func _ready() -> void:
 	boss_health.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	boss_health.offset_left = -120
 	boss_health.offset_right = 120
-	boss_health.offset_top = 69
-	boss_health.offset_bottom = 75
+	boss_health.offset_top = 84
+	boss_health.offset_bottom = 90
 	for style_name in ["background", "fill"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color("263a42") if style_name == "background" else Color("c78d70")
 		boss_health.add_theme_stylebox_override(style_name, style)
 	wave_countdown = _label(gameplay_hud,"WaveCountdown","",13,MUTED)
-	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",26,INK,true)
-	for entry in [[wave_countdown,48,72],[wave_announcement,88,126]]:
+	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",52,INK,true)
+	for entry in [[wave_countdown,60,80],[wave_announcement,84,150]]:
 		var label: Label = entry[0]
 		label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 		label.offset_left=-260
@@ -104,8 +119,8 @@ func _ready() -> void:
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	notice.offset_left = -300
 	notice.offset_right = 300
-	notice.offset_top = 142 if game.arena_mode else 40
-	notice.offset_bottom = 180 if game.arena_mode else 90
+	notice.offset_top = 172 if game.arena_mode else 40
+	notice.offset_bottom = 208 if game.arena_mode else 90
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	storm_warning = VBoxContainer.new()
@@ -123,8 +138,65 @@ func _ready() -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_build_instrument()
+	walkthrough_card = WalkthroughCard.new()
+	walkthrough_card.game = game
+	add_child(walkthrough_card)
 	_sync_button()
 	_process(0.0)
+
+
+func _build_fleet_status() -> void:
+	fleet_status = CenterContainer.new()
+	fleet_status.name = "FleetStatus"
+	fleet_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gameplay_hud.add_child(fleet_status)
+	fleet_status.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	fleet_status.offset_left = 16
+	fleet_status.offset_right = -16
+	fleet_status.offset_top = 20
+	fleet_status.offset_bottom = 56
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 16)
+	fleet_status.add_child(row)
+	wave_label = _label(row, "SurvivalWave", "", 26, INK)
+	var bold := FontVariation.new()
+	bold.base_font = sans
+	bold.variation_embolden = 0.8
+	wave_label.add_theme_font_override("font", bold)
+	wave_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	fleet_divider = ColorRect.new()
+	fleet_divider.color = Color(BRASS, 0.65)
+	fleet_divider.custom_minimum_size = Vector2(1, 24)
+	fleet_divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	fleet_divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(fleet_divider)
+	fleet_icons = HBoxContainer.new()
+	fleet_icons.name = "RemainingShips"
+	fleet_icons.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fleet_icons.add_theme_constant_override("separation", 5)
+	row.add_child(fleet_icons)
+
+
+func _sync_fleet_icons(remaining: int) -> void:
+	if remaining == _fleet_icon_count:
+		return
+	_fleet_icon_count = remaining
+	fleet_divider.visible = remaining > 0
+	fleet_icons.visible = remaining > 0
+	# Reuse icons as fleets grow; records include survivors and queued arrivals.
+	while fleet_icons.get_child_count() < remaining:
+		var icon := TextureRect.new()
+		icon.name = "EnemyShip%d" % (fleet_icons.get_child_count() + 1)
+		icon.texture = ENEMY_ICON
+		icon.custom_minimum_size = Vector2(26, 32)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.modulate = CORAL
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fleet_icons.add_child(icon)
+	for index in fleet_icons.get_child_count():
+		fleet_icons.get_child(index).visible = index < remaining
 
 
 func _label(parent: Node, node_name: String, value: String, point_size: int = 17, color: Color = INK, elegant: bool = false) -> Label:
@@ -140,92 +212,209 @@ func _label(parent: Node, node_name: String, value: String, point_size: int = 17
 	return label
 
 
+func _menu_texture(parent: Node, node_name: String, asset: Texture2D, dimensions: Vector2) -> TextureRect:
+	var graphic := TextureRect.new()
+	graphic.name = node_name
+	graphic.texture = asset
+	graphic.custom_minimum_size = dimensions
+	graphic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	graphic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	graphic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(graphic)
+	return graphic
+
+
+func _menu_button(parent: Node, node_name: String, caption: String, primary: bool = false) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.text = caption
+	button.custom_minimum_size.y = 48 if primary else 42
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if primary:
+		for slot: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			button.add_theme_color_override(slot, NauticalTheme.NAVY)
+		for kind: String in ["normal", "hover", "pressed", "focus"]:
+			button.add_theme_stylebox_override(kind, NauticalTheme.button_style(kind, true))
+	parent.add_child(button)
+	return button
+
+
 func _build_menu() -> void:
 	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	gradient.colors = PackedColorArray([Color(DARK, 0.72), Color(DARK, 0.36), Color(DARK, 0.0)])
+	gradient.offsets = PackedFloat32Array([0.0, 0.32, 0.58, 1.0])
+	gradient.colors = PackedColorArray([Color(NauticalTheme.NAVY, 0.65), Color(NauticalTheme.NAVY, 0.28), Color(NauticalTheme.NAVY, 0.0), Color(NauticalTheme.NAVY, 0.4)])
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient
-	texture.width = 512
-	texture.height = 1
-	texture.fill_from = Vector2(0, 0)
-	texture.fill_to = Vector2(1, 0)
+	texture.width = 1
+	texture.height = 512
+	texture.fill_from = Vector2.ZERO
+	texture.fill_to = Vector2.DOWN
 	menu_shade = TextureRect.new()
 	menu_shade.name = "MenuTint"
 	menu_shade.texture = texture
 	menu_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu_shade.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(menu_shade)
-	menu_shade.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	menu_shade.offset_right = 820
+	menu_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu = MarginContainer.new()
 	menu.name = "VoyageMenu"
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(menu)
-	menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	menu.offset_left = 48
-	menu.offset_right = 488
-	menu.offset_top = -270
-	menu.offset_bottom = 270
-	var column := VBoxContainer.new()
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.add_theme_constant_override("separation", 22)
-	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu.add_child(column)
-	menu_kicker = _label(column, "Kicker", "A CROSSING BY STARLIGHT", 13, BRASS)
-	menu_title = _label(column, "Title", "LATITUDE\nLINES", 58, INK, true)
-	menu_title.add_theme_constant_override("line_spacing", -8)
+	menu_column = VBoxContainer.new()
+	menu_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	menu_column.add_theme_constant_override("separation", 12)
+	menu_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(menu_column)
+	menu_motif = _menu_texture(menu_column, "LighthouseMark", preload("res://assets/ui/lighthouse.svg"), Vector2(72, 48))
+	menu_motif.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	menu_kicker = _label(menu_column, "Kicker", "FIVE WAVES AT SEA", 16, NauticalTheme.BRASS)
+	menu_title = _label(menu_column, "Title", "LATITUDE\nLINES", 82, NauticalTheme.IVORY, true)
+	menu_title.add_theme_constant_override("line_spacing", -12)
 	menu_title.add_theme_constant_override("outline_size", 0)
-	menu_body = _label(column, "Subtitle", "Find your way home by starlight.", 18, MUTED)
+	menu_rule = _menu_texture(menu_column, "WaveRule", preload("res://assets/ui/wave_rule.svg"), Vector2(0, 20))
+	menu_body = _label(menu_column, "Subtitle", "Five waves. One last light.", 21, NauticalTheme.SEA_GLASS)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	menu_details = _label(menu_column, "VoyageDetails", "", 18, NauticalTheme.BRASS)
+	menu_details.visible = false
+	for label: Label in [menu_kicker, menu_title, menu_body, menu_details]:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_spacer = Control.new()
+	menu_spacer.name = "LighthouseBreathingRoom"
+	menu_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	menu_column.add_child(menu_spacer)
+	menu_actions = VBoxContainer.new()
+	menu_actions.name = "MenuActions"
+	menu_actions.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	menu_actions.add_theme_constant_override("separation", 10)
+	menu_column.add_child(menu_actions)
+	action_button = _menu_button(menu_actions, "StartOrReplay", "SET SAIL", true)
+	action_button.pressed.connect(_on_action_pressed)
+	walkthrough_button = _menu_button(menu_actions, "Walkthrough", "WALKTHROUGH")
+	walkthrough_button.tooltip_text = "Practise the controls, then begin a fresh voyage."
+	walkthrough_button.pressed.connect(func(): game.start_crossing(true))
+	main_menu_button = _menu_button(menu_actions, "MainMenu", "MAIN MENU")
+	main_menu_button.pressed.connect(func(): game.restart(true))
+	settings_button = _menu_button(menu_actions, "Settings", "SETTINGS")
+	settings_button.pressed.connect(func(): _show_settings(true))
+	quit_button = _menu_button(menu_actions, "Quit", "QUIT")
+	quit_button.pressed.connect(func(): get_tree().quit())
+	# Legacy voyage controls remain available to retained fixtures.
 	menu_controls = GridContainer.new()
-	menu_controls.name = "Controls"
 	menu_controls.columns = 2
 	menu_controls.add_theme_constant_override("h_separation", 24)
-	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(menu_controls)
-	var controls := [["A / D", "Steer"], ["Mouse", "Look around"], ["Space / Click", "Fire"], ["E", "Switch camera"]] if game.arena_mode else [["A / D", "Steer"], ["Hold E", "Aim cannon"], ["F", "Fire"]]
-	controls.insert(1, ["Hold Shift", "Speed +50%"])
+	menu_column.add_child(menu_controls)
 	if not game.arena_mode:
-		controls.insert(1, ["Hold Space", "Find the guiding star"])
-	for pair: Array in controls:
-		_label(menu_controls, "Key", pair[0], 16, INK)
-		_label(menu_controls, "Action", pair[1], 16, MUTED)
-	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
-	menu_details.visible = false
-	action_button = Button.new()
-	action_button.name = "StartOrReplay"
-	action_button.custom_minimum_size = Vector2(180, 46)
-	action_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	action_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	action_button.add_theme_font_size_override("font_size", 19)
-	for slot: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		action_button.add_theme_color_override(slot, DARK)
-	for kind: String in ["normal", "hover", "pressed", "focus"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = INK if kind == "hover" else BRASS if kind == "pressed" else Color("ebd6aa")
-		style.set_corner_radius_all(4)
-		style.content_margin_left = 24
-		style.content_margin_right = 24
-		if kind == "focus":
-			style.bg_color = Color.TRANSPARENT
-			style.border_color = INK
-			style.set_border_width_all(2)
-			style.set_expand_margin_all(4)
-		action_button.add_theme_stylebox_override(kind, style)
-	action_button.pressed.connect(_on_action_pressed)
-	column.add_child(action_button)
-	menu_footer = _label(column, "Footer", "Automatic sailing · avoid reefs · 3 hits sink\nR retry     M mute     Esc quit", 14, MUTED)
+		for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold Shift", "Speed +50%"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
+			_label(menu_controls, "Key", pair[0], 16)
+			_label(menu_controls, "Action", pair[1], 16, MUTED)
+	menu_footer = _label(menu_column, "Footer", "", 16, NauticalTheme.SEA_GLASS)
+	menu_footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	settings_panel = VBoxContainer.new()
+	settings_panel.name = "SettingsAndControls"
+	settings_panel.add_theme_constant_override("separation", 15)
+	settings_panel.visible = false
+	menu_column.add_child(settings_panel)
+	_label(settings_panel, "MotionHeading", "CAMERA MOTION", 15, NauticalTheme.BRASS)
 	motion_choice = OptionButton.new()
 	motion_choice.name = "MotionSetting"
-	motion_choice.add_item("Motion: Full")
-	motion_choice.add_item("Motion: Reduced")
+	motion_choice.add_item("Full")
+	motion_choice.add_item("Reduced")
 	motion_choice.selected = game.motion_setting
-	motion_choice.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	motion_choice.custom_minimum_size.y = 46
 	motion_choice.tooltip_text = "Reduced softens banking and impacts. Waves and steering stay the same."
 	motion_choice.item_selected.connect(func(index: int): game.motion_setting = index)
-	column.add_child(motion_choice)
+	settings_panel.add_child(motion_choice)
+	var motion_note := _label(settings_panel, "MotionNote", "Reduced softens camera banking and impacts.", 17, NauticalTheme.SEA_GLASS)
+	motion_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_label(settings_panel, "ControlsHeading", "AT THE HELM", 15, NauticalTheme.BRASS)
+	var help_text := "A / D or arrows   Steer\nShift   Boost while held\nMouse   Look around\nClick / Space   Fire\nE   Switch camera\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
+	if not game.arena_mode:
+		help_text = "A / D   Steer\nShift   Boost while held\nHold Space   Find the guiding star\nHold E   Aim cannon\nF   Fire\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
+	_label(settings_panel, "FullControls", help_text, 17, NauticalTheme.IVORY)
+	settings_back = _menu_button(settings_panel, "SettingsBack", "BACK")
+	settings_back.pressed.connect(func(): _show_settings(false))
+	_layout_menu()
+
+
+func _show_settings(open: bool) -> void:
+	settings_open = open
+	_refresh_menu_copy()
+	if open:
+		motion_choice.select(game.motion_setting)
+		motion_choice.grab_focus()
+	else:
+		settings_button.grab_focus()
+
+
+func _input(event: InputEvent) -> void:
+	if settings_open and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_show_settings(false)
+		get_viewport().set_input_as_handled()
+
+
+func _layout_menu() -> void:
+	if not is_instance_valid(menu) or size.x < 1.0 or size.y < 1.0: return
+	var compact := size.y < 640
+	var title_screen: bool = game.arena_mode and game.state == game.State.READY and not settings_open
+	var width := minf(560.0, size.x * 0.60) if title_screen else minf(420.0, size.x * 0.43)
+	menu_actions.custom_minimum_size.x = minf(420.0, width)
+	var left := (size.x - width) * 0.5
+	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	menu.position = Vector2(left, 20)
+	var bottom := size.y * 0.84 if game.arena_mode and not settings_open else size.y - 20
+	menu.size = Vector2(width, maxf(maxf(0, bottom - 20), menu_column.get_combined_minimum_size().y))
+	menu_column.add_theme_constant_override("separation", 7 if compact else 10)
+	menu_actions.add_theme_constant_override("separation", 7 if compact else 10)
+	menu_motif.custom_minimum_size.y = 24 if compact else 30
+	menu_motif.visible = game.arena_mode and not settings_open
+	menu_spacer.visible = game.arena_mode and not settings_open
+	# On the title, keep the premise with the action and leave the live light clear.
+	var body_index := menu_actions.get_index() - 1 if game.arena_mode and game.state == game.State.READY and not settings_open else menu_rule.get_index() + 1
+	if menu_body.get_index() != body_index:
+		menu_column.move_child(menu_body, body_index)
+	var title_size := (75 if compact else 93) if game.state == game.State.READY else (48 if compact else 62)
+	if not game.arena_mode: title_size = 48 if compact else 58
+	if settings_open: title_size = 38 if compact else 48
+	var widest := 1.0
+	for line: String in menu_title.text.split("\n"):
+		widest = maxf(widest, serif.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x)
+	title_size = mini(title_size, floori(title_size * width / widest))
+	menu_title.add_theme_font_size_override("font_size", title_size)
+	menu_title.add_theme_constant_override("line_spacing", -12)
+	menu_body.add_theme_font_size_override("font_size", 18 if compact else 21)
+	menu_footer.add_theme_font_size_override("font_size", 15 if compact else 16)
+	settings_panel.add_theme_constant_override("separation", 8 if compact else 15)
+	menu.queue_sort()
+	menu_column.queue_sort()
+
+
+func _refresh_menu_copy() -> void:
+	var intro: bool = game.state == game.State.READY
+	var won: bool = game.state == game.State.ARRIVED
+	menu_kicker.text = "FIVE WAVES AT SEA" if intro and game.arena_mode else "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
+	menu_title.text = "LATITUDE\nLINES" if intro else "YOU HELD\nTHE LIGHT" if won and game.arena_mode else "Safe harbour." if won else "LOST\nAT SEA" if game.arena_mode else "Lost at sea."
+	menu_body.text = "Five waves. One last light." if intro and game.arena_mode else "Find your way home by starlight." if intro else "The flagship is sunk. The light still shines." if won and game.arena_mode else "The light has brought you home." if won else game.failure_reason
+	menu_details.visible = not intro
+	var clock := "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
+	menu_details.text = ("ALL 5 WAVES COMPLETE" if won else "WAVE %d / 5 REACHED" % maxi(1, game.enemy_encounters.wave_number)) + "   ·   " + clock if game.arena_mode else "Voyage time   " + clock
+	action_button.text = "SET SAIL" if intro else "SAIL AGAIN" if won else "RETRY"
+	main_menu_button.visible = not intro
+	quit_button.visible = intro and game.arena_mode
+	walkthrough_button.visible = intro and game.arena_mode
+	menu_controls.visible = intro and not game.arena_mode and not settings_open
+	menu_footer.text = "A/D steer · Shift boost · Mouse look\nClick/Space fire · Enter set sail" if intro and game.arena_mode else "Enter set sail · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
+	settings_panel.visible = settings_open
+	menu_actions.visible = not settings_open
+	menu_footer.visible = not settings_open and not game.arena_mode
+	if settings_open:
+		menu_title.text = "SETTINGS"
+		menu_kicker.text = "LATITUDE LINES"
+		menu_body.text = "A steadier course."
+		menu_details.visible = false
+	_layout_menu()
 
 
 func _gauge(node_name: String, preset: int, rect: Rect2) -> Control:
@@ -255,38 +444,36 @@ func _sync_button() -> void:
 	menu.visible = show_menu
 	menu_shade.visible = show_menu
 	action_button.visible = show_menu
-	gameplay_hud.visible = game.state == game.State.SAILING
+	gameplay_hud.visible = game.state == game.State.SAILING and not game.walkthrough.active
+	if not gameplay_hud.visible:
+		boss_label.visible = false
+		boss_health.visible = false
+		fleet_status.visible = false
+		_announced_fleet = 0
+		_fleet_banner_left = 0.0
+		_sync_fleet_icons(0)
+		for label: Label in [notice, threat_label, wave_label, wave_countdown, wave_announcement]:
+			label.text = ""
+			label.visible = false
+		_has_threat = false
 	if game.state == _last_state:
 		return
 	_last_state = game.state
 	if not show_menu:
-		action_button.release_focus()
+		settings_open = false
+		for control: Control in [action_button, settings_button, main_menu_button, quit_button, motion_choice, settings_back, walkthrough_button]:
+			control.release_focus()
 		if game.state == game.State.CASTING_OFF:
 			cannon_gauge.pulse = 0.0
 		return
-	var intro: bool = game.state == game.State.READY
-	var won: bool = game.state == game.State.ARRIVED
-	menu_kicker.text = "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
-	menu_title.text = "LATITUDE\nLINES" if intro else "Safe harbour." if won else "Lost at sea."
-	menu_title.add_theme_font_size_override("font_size", 58 if intro else 48)
-	menu_body.text = "Find your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
-	if intro and game.arena_mode:
-		menu_kicker.text = "FIVE WAVES AT SEA"
-		menu_body.text = "Survive cutters, skiffs and heavy attackers.\nSail, turn and fire. The light marks the centre."
-	if not intro and game.arena_mode:
-		menu_title.text = "THE SEA IS YOURS" if won else "SHIP SUNK"
-		menu_title.add_theme_font_size_override("font_size",36)
-		menu_body.text = "The flagship is sunk. You survived the night." if won else game.failure_reason
-	menu_controls.visible = intro
-	menu_details.visible = won
-	menu_details.text = ("Survived   %02d:%02d" if game.arena_mode else "Voyage time   %02d:%02d") % [int(game.elapsed) / 60, int(game.elapsed) % 60]
-	action_button.text = "Play" if intro else "Retry"
-	menu_footer.text = "Enter play · Hold R to restart · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
+	settings_open = false
+	_refresh_menu_copy()
 	action_button.grab_focus()
-	_menu_alpha = 0.0 if not intro else 1.0
+	_menu_alpha = 1.0 if game.state == game.State.READY or game.motion_setting == 1 else 0.0
 
 
 func _on_action_pressed() -> void:
+	if settings_open: return
 	if game.state == game.State.READY:
 		game.start_crossing()
 	elif game.state in [game.State.ARRIVED, game.State.LOST]:
@@ -297,8 +484,13 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(game) or not is_instance_valid(gameplay_hud):
 		return
 	_sync_button()
-	_update_wave_ui()
-	_update_storm_warning()
+	if game.walkthrough.active:
+		queue_redraw()
+		return
+	if game.state == game.State.SAILING:
+		_update_threat()
+	_update_wave_ui(delta)
+	_update_storm_warning(delta)
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
 	menu.modulate.a = _menu_alpha
 	if game.state != game.State.SAILING:
@@ -315,7 +507,6 @@ func _process(delta: float) -> void:
 	cannon_gauge.visible = not game.reading and (game.cannon.aiming or game.cannon.cooldown > 0.0 or cannon_gauge.pulse > 0.0)
 	instrument.modulate.a = _reading_alpha
 	instrument.visible = _reading_alpha > 0.01
-	_update_threat()
 	_update_notice()
 	queue_redraw()
 
@@ -358,12 +549,27 @@ func star_guidance() -> Dictionary:
 	return {"visible": false, "position": center + outward * scale_to_edge}
 
 
-func _update_storm_warning() -> void:
-	var strength: float = game.storm_warning_strength()
-	storm_warning.visible = strength > 0.001
-	storm_warning.modulate.a = smoothstep(0.0, 0.18, strength)
-	storm_instruction.text = "RETURN TO THE LIGHTHOUSE" if game.outside_storm_line() else "Do not cross the red line · return to the lighthouse"
-	notice.offset_top = 222 if storm_warning.visible else (142 if game.arena_mode else 40)
+func reset_storm_notice() -> void:
+	_storm_notice_seen = false
+	_storm_notice_left = 0.0
+	storm_warning.visible = false
+
+
+func _update_storm_warning(delta: float = 0.0) -> void:
+	var outside: bool = game.outside_storm_line()
+	if outside and not _storm_notice_seen:
+		_storm_notice_seen = true
+		_storm_notice_left = STORM_NOTICE_SECONDS
+	else:
+		_storm_notice_left = maxf(0.0, _storm_notice_left - maxf(0.0, delta))
+	if not outside or _storm_notice_left < 0.00001:
+		_storm_notice_left = 0.0
+	storm_warning.visible = outside and _storm_notice_left > 0.0
+	storm_warning.offset_top = 180 if wave_announcement.visible else 132
+	storm_warning.offset_bottom = storm_warning.offset_top + 78
+	storm_warning.modulate.a = 1.0
+	storm_instruction.text = "RETURN TO THE LIGHTHOUSE"
+	notice.offset_top = storm_warning.offset_bottom + 12 if storm_warning.visible else (184 if wave_announcement.visible else (142 if game.arena_mode else 40))
 	notice.offset_bottom = notice.offset_top + 48
 
 
@@ -395,6 +601,8 @@ func _update_notice() -> void:
 	elif game.discovery_left > 0:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
+		if game.arena_mode and (wave_announcement.visible or storm_warning.visible):
+			value = ""
 	elif not game.arena_mode and game.enemy_encounters.focus_ship().age < 4.0 and game.enemy_encounters.battle_active():
 		value = "Hostile nearby · Hold E to aim"
 		alpha = clampf(4.0 - game.enemy_encounters.focus_ship().age, 0.0, 1.0)
@@ -449,7 +657,7 @@ func _draw() -> void:
 	if _has_threat:
 		var at := Vector2(size.x - 24 if _threat_direction >= 0 else 24.0, size.y * 0.33)
 		var side: float = 1 if _threat_direction >= 0 else -1
-		var color := Color(CORAL, 0.8 + sin(game.sea_time * 14) * 0.2)
+		var color := Color(CORAL, 0.9 if game.motion_setting == 1 else 0.8 + sin(game.sea_time * 14) * 0.2)
 		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
 	if game.reading and _reading_alpha > 0.01:
@@ -578,7 +786,7 @@ func star_horizon_line() -> Dictionary:
 	return {"from": at + Vector2(0, 13), "to": Vector2(at.x, end_y)}
 
 
-func _update_wave_ui() -> void:
+func _update_wave_ui(delta: float = 0.0) -> void:
 	var waves = game.enemy_encounters
 	var active: bool = game.arena_mode and game.state == game.State.SAILING
 	boss_label.visible = active and waves.boss_active()
@@ -586,21 +794,37 @@ func _update_wave_ui() -> void:
 	if boss_health.visible:
 		boss_health.max_value = waves.boss.hull_capacity
 		boss_health.value = waves.boss.hull
+	fleet_status.visible=active and waves.wave_number > 0
+	wave_announcement.offset_top = 110 if boss_health.visible else 84
+	wave_announcement.offset_bottom = wave_announcement.offset_top + 66
 	wave_label.visible=active
 	wave_countdown.visible=false
 	wave_announcement.visible=false
 	if not active:
 		return
-	wave_label.text="WAVE %d / 5" % maxi(1,waves.wave_number)
+	var roman: String = ["I", "II", "III", "IV", "V"][clampi(waves.wave_number - 1, 0, 4)]
+	wave_label.text=roman + " / V"
+	var remaining := 0
+	for record: Dictionary in waves.records:
+		remaining += maxi(0, int(record.count) - int(record.defeated))
+	if waves.wave_number == waves.ARENA_WAVES and (waves.boss_spawn_pending or waves.boss_active()):
+		remaining += 1
+	_sync_fleet_icons(remaining)
+	if waves.wave_number != _announced_fleet:
+		_announced_fleet = waves.wave_number
+		_fleet_banner_left = FLEET_BANNER_SECONDS if waves.wave_number > 0 else 0.0
+	else:
+		_fleet_banner_left = maxf(0.0, _fleet_banner_left - delta)
 	if waves.phase == waves.Phase.EARLY_CLEAR:
-		wave_countdown.text="WAVE CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
+		_fleet_banner_left = 0.0
+		wave_countdown.text="FLEET CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
 		wave_countdown.visible=true
 	elif waves.wave_number < 5 and waves.next_wave_in>0 and waves.next_wave_in<=15:
 		var seconds := ceili(waves.next_wave_in)
-		wave_countdown.text="NEXT WAVE IN %02d:%02d" % [seconds/60,seconds%60]
+		wave_countdown.text="NEXT FLEET IN %02d:%02d" % [seconds/60,seconds%60]
 		wave_countdown.visible=true
-	if waves.announcement_left>0:
-		wave_announcement.text=waves.announcement
+	if _fleet_banner_left > 0.0:
+		wave_announcement.text = "FLEET " + roman
 		wave_announcement.visible=true
-		var elapsed: float = 2.0-waves.announcement_left
-		wave_announcement.modulate.a=minf(clampf(elapsed/0.25,0,1),clampf(waves.announcement_left/0.5,0,1))
+		var elapsed: float = FLEET_BANNER_SECONDS - _fleet_banner_left
+		wave_announcement.modulate.a = 1.0 if game.motion_setting == 1 else minf(clampf(elapsed/0.2,0,1),clampf(_fleet_banner_left/0.4,0,1))

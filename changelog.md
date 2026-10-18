@@ -12,6 +12,68 @@ recorded evidence and limitations.
   make full splashes. Reduced motion now scales the existing cannon camera kick.
   Focused pool/impact/recoil checks pass; rendered and browser review ongoing.
 
+
+- Merged nautical UI into main while preserving the flagship encounter. Final
+  fleet icons include the flagship and queued escorts; its health bar sits
+  between the fleet counter and launch announcement. Victory uses the shared
+  nautical result menu and flagship-specific text. Shared ship reset and visual
+  updates tolerate the flagship replacing its inherited pennant. All 502 checks
+  across eight UI/walkthrough/border/fleet/survival/flagship/readability/cannon
+  suites pass without script errors; desktop and 900×506 fleet frames inspected.
+- Integrated latest main's joystick support, cannon arc fixes and opaque ship
+  presentation with the nautical UI. Retained the newer outboard camera and
+  pennants in overlapping presentation code. All 384 checks across seven
+  walkthrough/menu/border/fleet/survival/readability/cannon suites pass on the
+  merged defaults; inspected the native fleet gameplay render.
+- The storm message appears only after crossing the border,
+  once per voyage for at most 10 seconds, ending early on return inside. Later
+  crossings do not repeat it; retry resets the notice. All 121 border/HUD/fleet/
+  walkthrough checks pass, including exact timeout at 30/60/120 Hz; native
+  approach, crossing and expired-message frames inspected.
+- Walkthrough is now a direct launch button beneath Set Sail.
+  Set Sail begins normal gameplay; Walkthrough opens guided practice, then Finish
+  or Skip starts a fresh game. Removed the On/Off toggle and saved preference.
+  Mouse and focused Enter launches verified; 237 walkthrough/menu/control/fleet
+  checks pass. Desktop and 900×506 menu renders inspected.
+- Large fleet launch announcements and a bold Roman-numeral fleet
+  counter with one ship icon per remaining enemy. Defeats remove icons immediately;
+  survivors and queued arrivals remain counted across fleet launches. All 276
+  focused fleet/HUD/menu/survival/walkthrough checks pass; desktop and 900×506
+  native renders inspected, including overlapping storm and launch messages.
+- Guided practice for steering, Shift boost,
+  mouse look, physical cannon fire and E camera switching. Fleets and encounter
+  waves wait; reading pauses travel and exercises have bounded movement. Finish
+  or Skip resets into a fresh voyage. The start-menu Walkthrough action supports
+  replay. Cards use small bottom-centred keycaps with no helper text below,
+  following user feedback. All 286 focused walkthrough/menu/control/survival
+  checks pass, with desktop and small-window renders inspected. One existing
+  arcade ballistic check still fails.
+- Issue #13 validation: 270 focused menu/HUD/survival checks
+  and three native cloth comparisons pass. Inspected desktop/small menus and
+  combat/Reduced/crest views. Thirteen failures across broader existing suites
+  reproduce with original scripts and preserved local resources. Web awaits
+  matching 4.8 templates; walkthrough deferred. See the [UI review](artifacts/ui_polish_review.md).
+- Issue #13 combat UI: shared warm ivory/brass/sea-glass type,
+  quiet FLEETS 1 / V progress (user feedback) and brief director-driven wave/count announcements.
+  Danger suppresses decorative banners; pickup feedback is CURRENT CAUGHT · +25%
+  while permanent flow rewards remain unchanged. Endings clear transient text.
+  Reproduced nearby enemy canvas blocking the close view; cloth and sail trim
+  fade within 6–10 m of the camera. Turning on a crest also exposed player
+  canvas/boom occlusion; those private surfaces fade within 3–6 m. Hulls/guns
+  and all camera controls remain unchanged.
+- Menu feedback: enlarged the centred title, raised the button
+  stack and removed bottom instructions. Full controls remain in Settings pending
+  a future in-game walkthrough; adjusted only the title backdrop framing to keep
+  the lighthouse below the lettering. Increased title size by another 25%,
+  keeping two lines and a wider title area above the narrower buttons.
+- Issue #13: nautical UI pass for title, settings and
+  victory/defeat menus. Bundled IM Fell English SC and Barlow Semi Condensed
+  with OFL licenses, original lighthouse/wave SVGs, brass buttons and a navy
+  readability gradient. Centred title and actions after user feedback, with
+  open space for the live lighthouse. Main Menu uses the existing full reset
+  without casting off; Retry and held-R retain their start behaviour. Menu,
+  retained HUD and survival checks pass; native desktop/small frames inspected.
+  Web and the walkthrough remain for later passes.
 - Work in progress: elevated outboard close-camera framing clears the original
   sail/cannon obstruction without fading meshes. Warm ivory/gold player, class
   sail colors, single-triangle mast pennants and restrained moon/ambient fill

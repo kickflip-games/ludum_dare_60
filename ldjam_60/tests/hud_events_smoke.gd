@@ -27,8 +27,8 @@ func _run() -> void:
 	waves.announcement_left = 1
 	waves.next_wave_in = 20
 	hud._process(0)
-	check(hud.wave_label.text == "IV / V" and not hud.wave_countdown.visible, "quiet progress has compact Roman fleet number and no permanent countdown")
-	check(hud.wave_announcement.text == "FLEET IV", "launch announcement reads the fourth fleet")
+	check(hud.wave_label.text == "WAVE 4 / 5" and not hud.wave_countdown.visible, "quiet progress has explicit wave number and no permanent countdown")
+	check(hud.wave_announcement.text == "WAVE 4", "launch announcement reads the fourth fleet")
 	waves.next_wave_in = 12
 	hud._process(0)
 	check(hud.wave_countdown.visible and hud.wave_countdown.text.contains("00:12"), "countdown retains actual final 15 seconds")

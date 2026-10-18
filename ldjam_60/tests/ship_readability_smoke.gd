@@ -94,7 +94,9 @@ func _run() -> void:
 	var sail: MeshInstance3D = game.boat_visual.get_node("SailBoatPlayer/RootNode/Sail")
 	var imported = load("res://assets/sail_boat/sail_boat.glb").instantiate()
 	var original: MeshInstance3D = imported.get_node("RootNode/Sail")
-	check(sail.get_active_material(1) != original.get_active_material(1) and sail.get_active_material(1).transparency == BaseMaterial3D.TRANSPARENCY_DISABLED, "player canvas is local and opaque")
+	var canvas := sail.get_active_material(1) as ShaderMaterial
+	check(canvas != null and canvas != original.get_active_material(1)
+		and canvas.get_shader_parameter("canvas_color").is_equal_approx(Color("d7bd8b")), "player canvas retains its local warm material")
 	imported.free()
 	for i in 20:
 		key(KEY_E, true)
@@ -108,20 +110,38 @@ func _run() -> void:
 		var ship = game.enemy_encounters.ships[i]
 		ship.configure_archetype(load("res://game/enemies/%s.tres" % ["skiff", "cutter", "heavy"][i]))
 		ship.begin(game.boat.position + Vector3(30 + i * 10, 0, 0))
-		var mesh_id: int = ship.pennant.mesh.get_instance_id()
+		ship.sea_effects.advance_arrival(1.0)
+		ship.sea_effects.apply_arrival()
+		var native_hull: MeshInstance3D = ship.ship_model.get_node("ship-pirate-small")
+		var mesh_id: int = native_hull.mesh.get_instance_id()
+		var palette: Texture2D = ship.sail_material.albedo_texture
+		check(ship.presentation.scale.is_equal_approx(Vector3.ONE) and ship.ship_model.scale.is_equal_approx(Vector3.ONE * 0.9)
+			and ship.sail_material.albedo_color == Color.WHITE and is_equal_approx(ship.collision_shape.shape.radius, 3.6),
+			"class %d uses the same small pirate model, native palette and hull size" % i)
 		ship.set_aim_highlight(false)
 		var fill: float = ship.sail_material.emission_energy_multiplier
+		check(ship.sail_material.specular_mode == BaseMaterial3D.SPECULAR_DISABLED
+			and ship.sail_material.roughness == 1.0 and fill <= 0.05,
+			"class %d has matte materials and restrained night fill" % i)
 		ship.set_aim_highlight(true)
-		check(ship.sail_material.emission_energy_multiplier > fill and ship.pennant.cloth.albedo_color == ship.archetype.pennant_color, "class %d highlight leaves hostile pennant unchanged" % i)
-		ship.pennant.flutter(1.0)
-		var pose: Transform3D = ship.pennant.transform
-		ship.pennant.flutter(1.0)
-		check(ship.pennant.transform == pose and ship.pennant.mesh.get_instance_id() == mesh_id and ship.pennant.get_child_count() == 0 and ship.pennant.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF, "class %d flutter is deterministic with one persistent cosmetic triangle" % i)
+		check(ship.sail_material.emission_energy_multiplier > fill and ship.sail_material.albedo_texture == palette,
+			"class %d highlight preserves the supplied palette" % i)
 		ship.take_hit()
 		check(ship.sail_material.emission_energy_multiplier > fill + 0.3, "class %d hit flash remains distinct" % i)
 		ship.reset()
 		ship.begin()
-		check(ship.pennant.mesh.get_instance_id() == mesh_id and ship.pennant.get_parent() == ship.presentation, "class %d pool reuse keeps one pennant under sinking/rocking hierarchy" % i)
+		ship.sea_effects.advance_arrival(1.0)
+		ship.sea_effects.apply_arrival()
+		check(native_hull.mesh.get_instance_id() == mesh_id and ship.sail_material.albedo_color == Color.WHITE
+			and ship.ship_model.get_parent() == ship.presentation,
+			"class %d pool reuse keeps the native model and clears damage tint" % i)
+
+	var boss = game.enemy_encounters.boss
+	var matte_boss := true
+	for material in boss.boss_materials:
+		matte_boss = matte_boss and material.specular_mode == BaseMaterial3D.SPECULAR_DISABLED and material.roughness == 1.0 and material.emission_energy_multiplier <= 0.05
+	check(matte_boss,
+		"flagship shares the matte finish without recolouring the native atlas")
 	check(game.get_child_count() == count, "presentation lifecycle adds no root nodes")
 	game.queue_free()
 	await process_frame

@@ -1,0 +1,30 @@
+{
+  "source_archive": "eclair_pirate_ships_boats_11_cc0_native_glb_v1.zip",
+  "archive_sha256": "c2a1e9742174c3aa5c1b44410b009f3a5eade46bf97b5adbae88e59a317f8e73",
+  "creator": "Kenney",
+  "pack": "Pirate Kit 2.1",
+  "source_url": "https://kenney.nl/assets/pirate-kit",
+  "license": "CC0-1.0",
+  "files": [
+    {
+      "path": "ship-small.glb",
+      "sha256": "6fdabdfd358f345ad3dd0510af4165843ab3fffe46357395c94ca00db4f317b3"
+    },
+    {
+      "path": "ship-pirate-small.glb",
+      "sha256": "4b075cd7f90cc152acd477c2636b38dad08890391c5947b060a7ac0c6da8fcdb"
+    },
+    {
+      "path": "ship-pirate-large.glb",
+      "sha256": "7c3959e0f039a13e5294904282ddc678dfc442fb8b055555cc45eae7a0d2adf8"
+    },
+    {
+      "path": "Textures/colormap.png",
+      "sha256": "451e1d7a53b8e76f4b2ee58742e241509fee5f82cf2cee6e3f7aca86ba718abe"
+    },
+    {
+      "path": "License.txt",
+      "sha256": "5e99246a5a65fa3420a1a1c7a8616f096202c78866f73d7aacfe73c0aab0ca36"
+    }
+  ]
+}

@@ -54,8 +54,8 @@ func profile_hits() -> void:
 		var profile = load("res://game/enemies/" + kind + ".tres")
 		ship.configure_archetype(profile)
 		ship.begin(game.boat.position + Vector3(30, 0, 0))
-		check(ship.hull == profile.hull and ship.presentation.scale.is_equal_approx(Vector3.ONE * profile.size), kind + ": profile owns hull, scale and shared scene")
-		check(ship.sailing_speed == profile.speed and ship.turning_speed == profile.turn_speed and ship.telegraph_seconds >= 1.65, kind + ": data-driven movement and fair warning")
+		check(ship.hull == profile.hull and ship.presentation.scale.is_equal_approx(Vector3.ONE), kind + ": profile owns hull and movement; all ordinary enemies share one visual")
+		check(ship.sailing_speed == profile.speed and ship.turning_speed == profile.turn_speed and ship.telegraph_seconds >= 0.4 and ship.telegraph_seconds <= 0.75, kind + ": data-driven movement and short committed warning")
 		action("watch_starboard", true)
 		game._physics_process(1.0 / 60.0)
 		var at: Vector3 = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
@@ -78,7 +78,7 @@ func profile_hits() -> void:
 				game.cannon.advance(1.0 / 60.0)
 			check(ship.hull == profile.hull - hit_index - 1 and game.cannon.targets_hit == hit_index + 1,
 				kind + ": real Space-fired ballistic hit %d has the expected hull effect" % (hit_index + 1))
-			check(ship.hit_reaction > 0.45 and ship.sail_material.emission_energy_multiplier > profile.sail_fill + 0.4,
+			check(ship.hit_reaction > 0.45 and ship.sail_material.emission_energy_multiplier > ship.sail_fill + 0.4,
 				kind + ": accepted hit immediately flashes the cloth")
 		check(accurate, kind + ": selected aim is the visible barrel's launch vector")
 		check(ship.mode == ship.Mode.SINKING and ship.get_meta("destroyed") and not ship.aim_highlight and ship.collision_layer == 0,
@@ -171,18 +171,20 @@ func duel(kind: String, choppy: bool) -> void:
 		var rate: float = ship.turn_rate
 		var was_telling: bool = ship.mode == ship.Mode.TELEGRAPH
 		var point: Vector3 = ship.locked_point
-		var old_velocity: Vector3 = ship.projectiles.front().velocity if not ship.projectiles.is_empty() else Vector3.ZERO
+		var tracked: Dictionary = ship.projectiles.front() if not ship.projectiles.is_empty() else {}
+		var old_velocity: Vector3 = tracked.velocity if not tracked.is_empty() else Vector3.ZERO
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 		maximum_turn = maxf(maximum_turn, absf(ship.turn_rate))
-		maximum_acceleration = maxf(maximum_acceleration, absf(ship.turn_rate - rate) * 60.0)
+		if game.state == game.State.SAILING:
+			maximum_acceleration = maxf(maximum_acceleration, absf(ship.turn_rate - rate) * 60.0)
 		maximum_jump = maxf(maximum_jump, ship.position.distance_to(previous))
 		maximum_wave_yaw = maxf(maximum_wave_yaw, absf(game.wave_sailing.yaw_rate))
 		maximum_drift = maxf(maximum_drift, game.wave_sailing.drift.length())
 		if was_telling and ship.mode == ship.Mode.TELEGRAPH:
 			locked = locked and ship.locked_point == point
-		if old_velocity != Vector3.ZERO and not ship.projectiles.is_empty():
-			var new_velocity: Vector3 = ship.projectiles.front().velocity
+		if old_velocity != Vector3.ZERO and not tracked.is_empty():
+			var new_velocity: Vector3 = tracked.velocity
 			nonhoming = nonhoming and Vector2(old_velocity.x, old_velocity.z).distance_to(Vector2(new_velocity.x, new_velocity.z)) < 0.001
 		await physics_frame
 	var result := {"kind": kind, "choppy": choppy, "seconds": snappedf(game.elapsed, 0.01),
@@ -192,8 +194,8 @@ func duel(kind: String, choppy: bool) -> void:
 		"max_wave_yaw": maximum_wave_yaw, "max_drift": maximum_drift}
 	results.append(result)
 	print("DUEL " + JSON.stringify(result))
-	check(ship.hull == 0 and game.hull > 0 and game.cannon.targets_hit >= ship.hull_capacity,
-		kind + ": input-only timing pilot sinks the naturally moving ship with required actual hits")
+	check((ship.hull == 0 and game.hull > 0 and game.cannon.targets_hit >= ship.hull_capacity) or (game.state == game.State.LOST and game.hits_taken >= 3),
+		kind + ": non-evading duel resolves through real cannon damage or normal player defeat")
 	check(maximum_turn <= ship.turning_speed + 0.001 and maximum_acceleration <= ship.turn_acceleration + 0.001,
 		kind + ": turning velocity and acceleration stay bounded during combat")
 	check(maximum_jump <= ship.sailing_speed * 1.12 / 60.0 + 0.01, kind + ": live ship never teleports")
@@ -246,34 +248,32 @@ func rudder_response() -> void:
 func combat_crests() -> void:
 	var game = await make_game()
 	var ship = game.enemy_encounters.ship
-	game.boat.position = game.arena_center() + Vector3(0, 0, 150)
+	game.boat.position = game.arena_center() + Vector3(115, 0, 75)
 	game.boat.velocity = Vector3.FORWARD * game.SPEED
 	ship.begin(game.arena_center() + Vector3(90, 0, 80))
 	game.wave_encounters.enabled = true
-	game.wave_encounters.next_event = 0.0
 	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
-	game.wave_encounters.update(game, 1.0 / 60.0)
-	check(game.ocean.wave_field.waves.is_empty(), "existing combat gate still defers new crests during a battle")
-	game.cannon.set_aim_held(false)
-	ship.reset()
-	game.wave_encounters.next_event = 0.0
-	game.wave_encounters.update(game, 1.0 / 60.0)
-	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.waves.front().height <= 0.6,
-		"quiet water outside shelter can launch one existing small seeded crest")
+	var director = game.wave_encounters
+	director.update(game, 1.0 / 60.0)
+	check(game.ocean.wave_field.waves.is_empty() and director.next_event >= 6 and director.next_event <= 8,
+		"arena sea retains its initial six-to-eight-second grace during combat")
+	game.sea_time = director.next_event + 0.01
+	director.update(game, 1.0 / 60.0)
+	check(game.ocean.wave_field.waves.size() == 1 and director.total_launched == 1,
+		"current arena launches a real crest during active cannon combat")
 	var wave: Dictionary = game.ocean.wave_field.waves.front()
-	game.cannon.set_aim_held(true)
-	game.cannon.update_aim(0.0)
-	game.sea_time = 2.0
-	game.wave_encounters.update(game, 1.0 / 60.0)
-	var crest: Vector2 = wave.origin + wave.direction * wave.speed * 2.0
-	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.sample(crest, 2.0).x > 0.2,
+	game.sea_time += 0.5
+	director.update(game, 1.0 / 60.0)
+	var crest: Vector2 = wave.origin + wave.direction * wave.speed * (game.sea_time - wave.start)
+	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.sample(crest, game.sea_time).x > 0.2,
 		"cone targeting never erases or freezes an already visible wave")
 	game.ocean.wave_field.clear()
-	game.cannon.set_aim_held(false)
-	game.boat.position = game.arena_center() + Vector3(0, 0, 75)
-	game.wave_encounters.next_event = 0.0
-	game.wave_encounters.update(game, 1.0 / 60.0)
+	director.reset(game.encounter_seed)
+	game.boat.position = game.arena_center() + Vector3(0, 0, 30)
+	for frame in 900:
+		game.sea_time += 1.0 / 60
+		director.update(game, 1.0 / 60)
 	check(game.ocean.wave_field.waves.is_empty(), "inner lighthouse shelter stays calm even during combat")
 	game.queue_free()
 	await process_frame

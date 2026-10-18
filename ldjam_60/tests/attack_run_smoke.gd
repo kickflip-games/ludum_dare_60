@@ -23,7 +23,7 @@ func independent_states() -> void:
 		game.advance_sailing(1.0 / 60.0, 0.0)
 		ship.update_ship(1.0 / 60.0)
 		if previous == ship.Navigation.APPROACH and ship.navigation_state == previous:
-			committed = committed and course == ship.run_heading
+			committed = committed and (course == ship.run_heading or ship._course_age < 0.001)
 		if previous_weapon == ship.Weapon.TELEGRAPH:
 			sails_while_warning += ship.position.distance_to(at)
 		if previous_weapon == ship.Weapon.RELOAD:
@@ -36,8 +36,8 @@ func independent_states() -> void:
 				"weapon": ship.weapon_state, "heading": ship.heading,
 				"x": ship.position.x, "z": ship.position.z})
 		await physics_frame
-	check(committed, "approach course stays committed rather than following the player every frame")
-	check(independent and sails_while_warning > 8.0 and sails_while_reload > 10.0,
+	check(committed, "approach course changes only at the bounded four-second interception refresh")
+	check(independent and sails_while_warning > 2.0 and sails_while_reload > 10.0,
 		"weapon transitions preserve the sailing clock and actual forward motion")
 	check(seen.has(ship.Navigation.ATTACK_RUN) and seen.has(ship.Navigation.TURN_AWAY) and seen.has(ship.Navigation.REPOSITION),
 		"independent navigation completes attack, broad turn and reposition")

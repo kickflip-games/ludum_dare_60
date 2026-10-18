@@ -5,3 +5,6 @@
 [resource]
 resource_name = "Cutter"
 script = ExtResource("1")
+telegraph_seconds = 0.5
+reload_seconds = 2.5
+attack_run_seconds = 9

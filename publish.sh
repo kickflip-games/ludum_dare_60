@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 export GODOT_BIN="${GODOT_BIN:-${GODOT:-}}"
-ITCH_TARGET="${ITCH_TARGET:-avivajpeyi/latitude-lines:html5}"
+ITCH_TARGET="${ITCH_TARGET:-avivajpeyi/blackwater:html5}"
 case "${1:-publish}" in
     --build-only) exec ./build_web.sh ;;
     --help|-h) echo "Usage: ./publish.sh [--build-only|--check] (default target: $ITCH_TARGET)"; exit 0 ;;

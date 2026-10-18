@@ -8,6 +8,8 @@ uniform vec4 main_color : source_color;
 uniform vec4 slope_color : source_color;
 uniform vec4 crest_color : source_color;
 uniform vec3 sun_direction;
+// Keep this azimuth matched to night_sky.gdshader's low moon direction.
+uniform vec3 moon_direction = vec3(0.43, 0.105, 0.897);
 uniform float band_softness = 0.035;
 uniform float foam_threshold = 0.42;
 uniform float foam_softness = 0.12;
@@ -57,6 +59,7 @@ void vertex() {
 	float breakup = 0.5 + 0.25 * sin(dot(p, vec2(0.37, 0.53)) + wave_time * 0.35)
 		+ 0.25 * sin(dot(p, vec2(-0.83, 0.27)) - wave_time * 0.21);
 	float cap = smoothstep(foam_threshold, foam_threshold + foam_softness, ripple_fraction);
+	cap = max(cap,smoothstep(0.12,0.24,length(ambient.yz))*smoothstep(0.25,0.75,ripple_fraction)*0.65);
 	cap_foam = max(cap * smoothstep(0.52, 0.82, breakup) * foam_intensity, event_style.z * encounter_foam);
 	flow_style = vec3(0.0);
 	for (int i = 0; i < 3; i++) {
@@ -101,6 +104,27 @@ void fragment() {
 	water = mix(water,main_color.rgb,turbulence*0.12);
 	water = mix(water,slope_color.rgb,leading*turbulence*0.45);
 	water = mix(water,crest_color.rgb,elevated*turbulence*0.20);
+	// A broad blue-silver moon lobe on raised, moving faces. No extra pass.
+	vec3 moon = normalize(sun_direction);
+	vec3 halfway = normalize(moon+view);
+	float glint = pow(max(0.0,dot(n,halfway)),20.0);
+	float raised = max(smoothstep(0.18,0.86,ripple_fraction),elevated*0.8);
+	float silver = glint*raised*(0.14+moon_slope*0.30);
+	water = mix(water,vec3(0.43,0.64,0.81),silver);
+	// A broken silver path leads from the horizon toward the viewer. The
+	// moving wave pattern interrupts the reflection without another pass.
+	vec2 moon_forward = normalize(moon_direction.xz);
+	vec2 from_eye = surface_world.xz - CAMERA_POSITION_WORLD.xz;
+	float moon_along = dot(from_eye, moon_forward);
+	float moon_across = abs(from_eye.x * moon_forward.y - from_eye.y * moon_forward.x);
+	float path_width = 1.4 + max(moon_along, 0.0) * 0.09;
+	float path = exp(-pow(moon_across / path_width, 2.0))
+		* exp(-max(moon_along, 0.0) / 220.0) * step(0.0, moon_along);
+	float broken_glimmer = 0.68 + 0.32 * sin(moon_along * 0.72 - wave_time * 2.1
+		+ sin(moon_across * 1.8 + wave_time) * 1.3);
+	float moon_reflection = path * broken_glimmer
+		* (0.22 + 0.38 * smoothstep(0.12, 0.75, ripple_fraction));
+	water = mix(water, vec3(0.47, 0.60, 0.72), moon_reflection);
 	float rim = 1.0-clamp(dot(n,view),0.0,1.0);
 	water = mix(water,slope_color.rgb,rim*rim*rim*0.055);
 	float streak = sin(dot(p,wave_1.xy)*pattern_density*0.8-wave_time*0.26

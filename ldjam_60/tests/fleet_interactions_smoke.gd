@@ -49,9 +49,9 @@ func simultaneous_runs() -> void:
 		await physics_frame
 	var history: Array = manager.director.warning_history
 	check(peak == 2 and manager.director.owners.size() == 2, "two distinct ships can run parallel attacks under two owned slots")
-	check(history.size() >= 2 and history[1].seconds - history[0].seconds >= 1.599,
-		"simultaneous valid broadsides start warnings at least 1.6 seconds apart")
-	check(first.shots_fired == 1 and second.shots_fired == 1 and committed,
+	check(history.size() >= 2 and history[1].seconds - history[0].seconds >= manager.survival_settings.warning_interval - 0.001,
+		"simultaneous valid broadsides respect the configured warning stagger")
+	check(first.salvos_fired >= 1 and second.salvos_fired >= 1 and committed,
 		"both staggered warnings commit to fixed points and launch real non-homing shots")
 	check(stable_focus, "combat focus remains stable during a nearby two-ship pass")
 	results.append({"alternating_warnings": history.duplicate(true), "shots": [first.shots_fired, second.shots_fired]})

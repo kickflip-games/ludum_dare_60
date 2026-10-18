@@ -60,7 +60,7 @@ func _run() -> void:
 				game._update_view(1.0 / hz)
 				game.hud._process(1.0 / hz)
 				var label := ""
-				if not captured_warning and living.any(func(s): return s.mode == s.Mode.TELEGRAPH and s.timer > 0.5):
+				if not captured_warning and living.any(func(s): return s.mode == s.Mode.TELEGRAPH and s.timer > 0.1):
 					captured_warning = true
 					label = "first-warning"
 				if frame in [6 * hz, 45 * hz, 70 * hz]: label = "combat-%ds" % (frame / hz)
@@ -109,6 +109,7 @@ func crossing_opportunities() -> void:
 		ship.configure_archetype(load("res://game/enemies/" + kind + ".tres"))
 		for blocked in [false, true]:
 			ship.begin(game.boat.position + Vector3(42, 0, 14))
+			ship.sea_effects.advance_arrival(ship.SeaEffects.ARRIVAL_SECONDS)
 			ship.heading = 0.3
 			ship.rotation.y = -ship.heading
 			ship.cooldown = 2.0 if blocked else 0.0
@@ -124,13 +125,14 @@ func crossing_opportunities() -> void:
 				check(ship.locked_point == point and ship.projectiles.is_empty(),
 					kind + ": crossing warning stays fixed and cannot fire early")
 				game.boat.position.x -= 1.0
-		ship.begin(game.boat.position + Vector3(-42, 0, 14))
+		ship.begin(game.boat.position + Vector3(-42, 0, -14))
+		ship.sea_effects.advance_arrival(ship.SeaEffects.ARRIVAL_SECONDS)
 		ship.heading = 0.3
 		ship.rotation.y = -ship.heading
 		await physics_frame
 		ship._change_navigation(ship.Navigation.ATTACK_RUN)
 		ship.update_ship(1.0 / 60.0)
-		check(ship.mode != ship.Mode.TELEGRAPH, kind + ": cannot fire through the wrong side of the hull")
+		check(ship.mode == ship.Mode.TELEGRAPH and ship.active_battery == ship.Battery.STARBOARD, kind + ": uses the actual starboard battery on the other side")
 		ship.reset()
 	game.queue_free()
 	await process_frame

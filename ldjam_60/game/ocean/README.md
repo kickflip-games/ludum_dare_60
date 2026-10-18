@@ -1,5 +1,20 @@
 # Calm ocean and directional waves
 
+## Ocean interaction polish — 18 October 2026
+
+The current wake keeps its 96 world-space samples, two meshes and 576 vertices,
+with broader broken V arms and short stern churn. Width and density retain
+measured boost/flow speeds beyond cruise; foam uses the unchanged shared GPU
+surface. Bow spray adds 12 reserved slots to the existing MultiMesh (64 total),
+using one bow surface sample per moving update, fixed world-space origins and
+0.42–0.62 s lifetimes. Low uses four bow slots; Standard ten; High twelve.
+Impact bursts still consume the existing deck-contact events and two burst slots.
+Blue-silver moon highlights and steep ambient caps only affect presentation.
+
+See the [current ocean review](../../../artifacts/ocean_juice_review.md) for
+matched arena renders, tests, browser measurements and remaining limits.
+The smaller spray budget and narrow stern trail described below are historical.
+
 ## Current night-blue water and flow rewards — 18 October 2026
 
 Production `calm.tres` now uses night-blue bands, cool pale-blue caps and height

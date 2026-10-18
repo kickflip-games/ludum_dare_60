@@ -32,7 +32,8 @@ func _run() -> void:
 	game.hud.set_process(false)
 	game.start_crossing()
 	game._physics_process(game.CAST_OFF_SECONDS)
-	var pilot := Pilot.new()
+	var evasion := "--no-evasion" not in OS.get_cmdline_user_args()
+	var pilot = Pilot.new() if evasion else load("res://tests/combat_arena_pilot.gd").new()
 	var seen_wave := 0
 	var peak_living := 0
 	var ship_hits := 0
@@ -85,7 +86,7 @@ func _run() -> void:
 				capture_counts[kind] += 1
 		await physics_frame
 	pilot.release()
-	var result := {"state": game.state, "won": game.state == game.State.ARRIVED,
+	var result := {"evasion":evasion, "state": game.state, "won": game.state == game.State.ARRIVED,
 		"seconds": game.elapsed, "wave": game.enemy_encounters.wave_number,
 		"kills": game.enemy_encounters.ships_sunk, "hull": game.hull, "hits_taken": game.hits_taken,
 		"shots": shots, "ship_hits": ship_hits, "all_impacts": all_impacts,

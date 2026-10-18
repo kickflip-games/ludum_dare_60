@@ -134,7 +134,7 @@ func _run() -> void:
 	schedule(2.8)
 	check(enemies.wave_number==1 and game.hull==2, "early-clear pause lasts three seconds without duplicate repair")
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="FLEET CLEARED · NEXT IN 1", "early-clear countdown uses fleet wording")
+	check(game.hud.wave_countdown.text=="WAVE CLEARED · NEXT IN 1", "early-clear countdown uses fleet wording")
 	check(not game.hud.wave_announcement.visible, "early clear suppresses any unfinished incoming-wave banner")
 	clean_retry("early intermission")
 	fresh()
@@ -169,14 +169,14 @@ func _run() -> void:
 	check(not enemies.spawn_queue.is_empty() and enemies.phase==enemies.Phase.ACTIVE and enemies.wave_number==2,
 		"pending queued spawn prevents false early completion even with no living enemy")
 	game.hud._process(0)
-	check(game.hud.wave_label.text=="II / V" and not game.hud.wave_countdown.visible,
+	check(game.hud.wave_label.text=="WAVE 2 / 5" and not game.hud.wave_countdown.visible,
 		"persistent top-centre wave label with no countdown outside last 15 seconds")
 	enemies.wave_remaining=12
 	enemies._update_arena(0)
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="NEXT FLEET IN 00:12", "last 15 seconds use mm:ss approaching-fleet countdown")
+	check(game.hud.wave_countdown.text=="NEXT WAVE IN 00:12", "last 15 seconds use mm:ss approaching-wave countdown")
 	game.hud._process(0.3)
-	check(game.hud.wave_announcement.text=="FLEET II" and game.hud.wave_announcement.modulate.a==1,
+	check(game.hud.wave_announcement.text=="WAVE 2" and game.hud.wave_announcement.modulate.a==1,
 		"three-second fleet banner has a visible plateau")
 	game.hud._fleet_banner_left=2.95
 	game.hud._process(0)

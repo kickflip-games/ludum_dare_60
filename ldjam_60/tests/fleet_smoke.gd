@@ -63,10 +63,15 @@ func sustain(count: int, hz: int, seconds: int = 180) -> void:
 	var longest_stop := 0.0
 	var stopped := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	var trace: Array[Dictionary] = []
+	var state_seconds := {}
+	var range_seconds := {}
+	var shot_times := {}
+	var last_shots := {}
 	for frame in seconds * hz:
 		var before: Array[Dictionary] = []
 		for ship in manager.ships:
 			before.append({"position": ship.position, "heading": ship.heading, "alive": ship.visible})
+		game._window_focused = true
 		sail_orbit(game, pilot)
 		game._physics_process(1.0 / hz)
 		game.cannon.advance(1.0 / hz)
@@ -80,6 +85,14 @@ func sustain(count: int, hz: int, seconds: int = 180) -> void:
 		var snapshot: Array[Dictionary] = []
 		for ship in living:
 			var index: int = manager.ships.find(ship)
+			var key := "%d:%d" % [index, ship.navigation_state]
+			state_seconds[key] = state_seconds.get(key, 0.0) + 1.0 / hz
+			if ship.position.distance_to(game.boat.position) < ship.firing_range:
+				range_seconds[index] = range_seconds.get(index, 0.0) + 1.0 / hz
+			if ship.shots_fired > last_shots.get(index, 0):
+				if not shot_times.has(index): shot_times[index] = []
+				shot_times[index].append(game.elapsed)
+			last_shots[index] = ship.shots_fired
 			var previous: Dictionary = before[index]
 			var radius: float = ship.position.distance_to(game.arena_center())
 			maximum_radius = maxf(maximum_radius, radius)
@@ -120,7 +133,12 @@ func sustain(count: int, hz: int, seconds: int = 180) -> void:
 		"attack_peak": attack_peak, "minimum_separation": minimum_separation if count > 1 else null, "minimum_clearance": minimum_clearance if count > 1 else null,
 		"max_radius": maximum_radius, "max_turn": maximum_turn, "max_speed": maximum_step,
 		"longest_stop": longest_stop, "holding_travel": holding_travel, "collisions": collision_count,
-		"assignments": manager.director.assignments.duplicate(), "warnings": history.duplicate(true)}
+		"assignments": manager.director.assignments.duplicate(), "warnings": history.duplicate(true),
+		"state_seconds": state_seconds, "range_seconds": range_seconds, "shot_times": shot_times,
+		"shots":manager.ships.reduce(func(total, s): return total + s.shots_fired, 0),
+		"salvos":manager.ships.reduce(func(total, s): return total + s.salvos_fired, 0),
+		"cancelled":manager.ships.reduce(func(total, s): return total + s.cancelled_shots, 0),
+		"hits":game.hits_taken, "cannon_hits":manager.ships.reduce(func(total, s): return total + s.shots_hit, 0)}
 	print("FLEET TRACE " + JSON.stringify(metrics))
 	check(peak == count and living_count(manager) == count and visible_alive, "%d ships/%d Hz: all living ships persist, visible and hittable" % [count, hz])
 	check(valid_slots and slot_peak == manager.director.slot_limit() and attack_peak <= 2, "%d ships: approaches/runs obey attack-slot ownership" % count)
@@ -146,6 +164,18 @@ func living_count(manager) -> int:
 	return manager.living_ships().size()
 
 func _run() -> void:
+	if "--pressure" in OS.get_cmdline_user_args():
+		DirAccess.make_dir_recursive_absolute("/tmp/blackwater-pressure")
+		for hz in [30, 60]:
+			Engine.physics_ticks_per_second = hz
+			await sustain(4, hz, 90)
+			var measured: Dictionary = results.back().metrics
+			check(measured.salvos >= 3 and measured.cannon_hits > 0, "%d Hz: a sustained fleet launches repeated physical volleys and hits the player" % hz)
+		var file := FileAccess.open("/tmp/blackwater-pressure/fleet-pressure.json", FileAccess.WRITE)
+		file.store_string(JSON.stringify(results, "\t"))
+		print("FLEET PRESSURE: %d checks, %d failures" % [checks, failures])
+		quit(0 if failures == 0 else 1)
+		return
 	for count in [1, 2, 4, 6]:
 		await sustain(count, 60)
 	await sustain(6, 30)

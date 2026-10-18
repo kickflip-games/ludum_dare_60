@@ -1,4 +1,4 @@
-# Agent instructions — Latitude Lines
+# Agent instructions — Blackwater
 
 This is an existing playable Godot game. Make focused changes and preserve working systems.
 

@@ -1,11 +1,116 @@
 # Changelog
 
-Concise development history for Latitude Lines. Dates use Pacific/Auckland time.
+Concise development history for Blackwater (formerly Latitude Lines). Dates use Pacific/Auckland time.
 This initial history summarises recent Git commits; linked reviews contain their
 recorded evidence and limitations.
 
+## 2026-10-19
+
+- Work in progress: minimal wave HUD with a brief Kenney Adventure ribbon and
+  centred circles, including queued arrivals, surviving earlier ships and the
+  flagship. Destructions leave hollows until the next wave; all-clear hides the
+  row after one second. Existing danger, countdown and boss-health UI retained.
+
+- Work in progress: occasional arena lightning briefly lifts existing sky and
+  moonlight, followed by delayed, synthesized rolling thunder on its own audio
+  player. Reduced motion suppresses flashes; mute, Retry, endings and focus loss
+  clear active/pending sound. No new lights, textures or gameplay forces.
+  All 215 checks across six suites pass; 12 native capture/playback checks pass.
+  Flash sequence inspected; browser performance and human audio balance untested.
+
+- Work in progress: persistent arena storm cover and wind-driven rain with a
+  lightweight cool grade and vignette beneath the HUD. Outer weather intensifies;
+  Retry resets rain and base weather. Reduced motion keeps the static grade only.
+  Controls and wave physics retained; native chase, cannon, menu and small-window
+  frames inspected. Browser and low-end GPU performance remain untested.
+
 ## 2026-10-18
 
+- Work in progress: added a low full moon to the sky and a broken silver
+  reflection path across the moving water; reviewed in a live gameplay frame.
+
+- Work in progress: prepared Blackwater itch.io cover, banners and icon using
+  only actual gameplay screenshots and the game's bundled font. Updated the
+  Butler target to `avivajpeyi/blackwater:html5`; no upload performed.
+
+- Work in progress: the restored player sailboat's canvas gently sways with
+  the same timing as enemy sails. Cloth beside the mast and boom stays pinned;
+  existing pennant flutter, warm canvas, hull rocking and controls are retained.
+  All 242 checks across five suites pass; native gameplay/turn/wave frames and
+  WebGL inspected, with no browser shader or runtime errors.
+
+- Work in progress: restored the original simple player sailboat, warm canvas,
+  mast pennant and matching damage marks. Kept the new small pirate enemies
+  and two-mast flagship; disabled their specular shine and reduced constant
+  night fill for deeper wood and canvas colours. All 444 checks across six
+  suites pass; matched native chase, cannon, damage and small-window frames
+  inspected. Human playtesting and Web remain untested.
+
+- Work in progress: enemy sails gently turn with their yards around the mast;
+  flags flutter faster around their pole axes, with independent ship/part phases.
+  Visual transforms only; source models, hull motion and combat are retained.
+  All 766 checks across seven suites pass; native stationary/turning/wave frames
+  and a seven-ship WebGL fixture inspected. The medium GLB is absent and untested.
+
+- Work in progress: wave HUD clears destroyed-ship circles at each new wave.
+  Current-wave defeats remain empty; living and queued earlier ships stay filled.
+  All 125 fleet/HUD/survival checks pass; native wave-transition frames inspected.
+
+- Work in progress: ordinary enemies and the flagship leave water-following
+  curved wakes and pooled stern spray. Arrivals fade in over 0.9 seconds with
+  a small water cue; blocked hulls stop emitting, and retry/endings clear trails.
+  Preserved safe spawn positions, wave timing, targeting and weapon warnings.
+  All 744 checks across eight suites pass; matched native arrival/wake frames,
+  flagship and 900×506 gameplay inspected. Human playtesting and Web untested.
+
+- Work in progress: renamed the game Blackwater in project metadata, window
+  title and start menu; removed the menu lighthouse icon.
+  All 257 menu/arena checks pass; native 1280×720 and 900×506 menus inspected.
+
+- Work in progress: destroyed ships remain as empty coral circles in the wave
+  HUD; filled dots show ships still outstanding. Retry clears the empty circles.
+  All 122 fleet/HUD/survival checks pass; native 900×506 frames inspected.
+
+- Work in progress: cutters/skiffs carry two guns per side, heavies three;
+  skiffs also fire a bow cannon. Each facing battery shares the existing full
+  warning and reload. Pursued heavies leave bounded, delayed-arm stern mines
+  using the existing model/ring; sinking, retry and endings clear their trails.
+  All 628 checks across seven focused suites pass; native deck, warning, mine
+  and desktop/small gameplay frames inspected. Two legacy voyage failures
+  reproduce with the prior enemy script. Human balance and Web remain untested.
+
+- Work in progress: simplified the combat HUD to `WAVE 1 / 5` and coral dots
+  for remaining ships. Launch announcements and countdowns use WAVE and regular
+  numbers; survivors, queued arrivals and flagship health stay tracked.
+  All 121 fleet/HUD/survival checks pass; native 1280×720 and 900×506 frames
+  inspected. Human playtesting and Web remain untested.
+
+- Work in progress: replaced the active player, ordinary enemy and boss hulls
+  with the supplied Kenney Pirate Kit ships. Ordinary enemies share one small
+  pirate model, scale and palette; the boss uses the large two-mast variant.
+  Preserved combat stats, controls, physical shots and water motion; adapted
+  native material feedback and player damage marks. Bundled CC0 licence and
+  verified source hashes. Across nine suites, 618/620 checks pass; the two
+  inherited wave-scheduling failures remain. Native chase, cannon, damage,
+  small-window and flagship-cone frames inspected. Human playtesting and Web
+  remain untested.
+
+- Work in progress: ordinary guns reload in 1.8/1.6/2.7 seconds, reach 78 m and
+  fire repeatedly from valid broadside opportunities, including stable holding
+  legs. Full warnings, global warning spacing, clear lanes and navigation slots
+  remain. Boss recovery is 3/3.4 seconds; one filled water-following triangle
+  replaces its individual volley lines, retaining physical dodgeable shells.
+  476/477 checks pass across eight suites; all boss patterns and the small-window
+  cone inspected natively. Four-ship recovery exceeds its stop limit (7.2 s;
+  3.65 s with the original enemy implementation). Human balance and Web untested.
+
+- Work in progress: removed menu slogans and the decorative wave divider.
+  Settings now shows only the control reference and Back, with camera/motion
+  options removed. Kept failure reasons, result details and keyboard navigation.
+  377 checks pass across five suites; eight native desktop/small-window menu
+  frames inspected. Human playtesting and Web remain untested.
+
+<<<<<<< HEAD
 - Work in progress: Development Tools `+` (Shift+= / numpad +) releases the
   current wave's queued ships, bypassing stagger and the ordinary ship cap.
   Preserves safe placement, survivors, timers and wave/defeat accounting;
@@ -13,6 +118,22 @@ recorded evidence and limitations.
   Enable Development Tools in the inspector or launch with `--debug-tools`.
   306 checks pass across debug, survival, flagship and control suites; native
   nine-ship fleet frame inspected. Human playtesting and Web remain untested.
+=======
+- Added directional warm cannon flashes, delayed smoke, snappy recoil and varied
+  hull/sinking feedback in the existing 192-instance particle batch. Four pooled
+  water splashes reuse 24 meshes/materials; real collision types control feedback
+  and mid-air expiry creates no splash. Reduced motion scales cannon camera kick.
+  New checks, matched native captures and a Chrome WebGL2 comparison pass; three
+  inherited wave/foam assertions still fail on untouched main. Integrated the
+  current flagship and nautical UI; see the [combat effects review](artifacts/combat_juice_review.md).
+
+
+- Work in progress: fuller broken V foam, broad stern churn, movement/surface-driven
+  bow spray and stronger directional splashes; blue-silver moonlit crest shading.
+  Existing wave physics, controls and ballistics remain unchanged. Wake retains
+  two meshes / 576 vertices; spray uses one fixed 64-instance pool (four bow slots
+  on Low). Validation and matched arena captures: [ocean review](artifacts/ocean_juice_review.md).
+>>>>>>> 2c96f4d17bea26a2bc2fb50a50d784085d4b3a4c
 
 - Merged nautical UI into main while preserving the flagship encounter. Final
   fleet icons include the flagship and queued escorts; its health bar sits

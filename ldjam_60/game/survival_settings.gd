@@ -22,7 +22,7 @@ var enemy_counts: PackedInt32Array:
 @export_range(0.05, 15.0, 0.05) var spawn_interval := 2.5
 @export_range(1, 6, 1) var maximum_living := 6
 @export var attack_slots := PackedInt32Array([1, 1, 2, 2, 2])
-@export_range(1.0, 3.0, 0.1) var warning_interval := 1.6
+@export_range(0.6, 3.0, 0.1) var warning_interval := 0.7
 @export_range(0.0, 3.0, 0.1) var holding_entry_seconds := 0.75
 @export_range(0.0, 5.0, 0.1) var early_clear_pause := 3.0
 @export_range(0.0, 10.0, 0.1) var first_wave_delay := 0.0

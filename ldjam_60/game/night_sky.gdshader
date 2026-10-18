@@ -2,6 +2,8 @@ shader_type sky;
 render_mode disable_fog;
 
 uniform float visual_time = 0.0;
+// A fixed low moon, shared with the water's reflection corridor.
+uniform vec3 moon_direction = vec3(0.43, 0.105, 0.897);
 uniform float storm = 0.0;
 uniform float lightning = 0.0;
 uniform float star_density : hint_range(0.0, 1.0) = 0.72;
@@ -173,6 +175,14 @@ void sky() {
 		starlight += guiding_star_color.rgb * (core * (0.8 + focus * 1.6) + glow * (0.035 + focus * 0.32)) * pulse;
 
 		night += starlight * smoothstep(0.015, 0.15, d.y) * mix(1.0, 0.78, storm);
+		// Softly glowing full moon sitting just above the horizon. Clouds are
+		// composited afterward, so they can naturally veil the disc.
+		float moon_separation = length(d - normalize(moon_direction));
+		float moon_edge = max(fwidth(moon_separation), 0.00035);
+		float moon_disc = 1.0 - smoothstep(0.014 - moon_edge, 0.014 + moon_edge, moon_separation);
+		float moon_halo = exp(-moon_separation * moon_separation / 0.0018) * 0.16;
+		night += vec3(0.91, 0.89, 0.79) * moon_disc * 1.35;
+		night += vec3(0.52, 0.63, 0.75) * moon_halo * smoothstep(0.0, 0.08, d.y);
 		vec4 clouds = procedural_clouds ? toon_clouds(d) : painted_clouds(d);
 		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning);
 		if (cloud_debug == 1) { COLOR = vec3(clouds.a); }

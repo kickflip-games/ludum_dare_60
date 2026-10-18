@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Latitude Lines"
+config/name="Blackwater"
 run/main_scene="res://game/crossing.tscn"
 config/features=PackedStringArray("4.8")
 boot_splash/image="res://assets/branding/kickflip_games_logo.png"

@@ -93,7 +93,7 @@ func _run() -> void:
 		"lit atmospheric lighthouse and ten authored obstacle pieces; no distant voyage hazards")
 	check(game.archipelago.water_clear(game.boat.position, 10), "spawn has safe water around the entire six-metre boat")
 	game.hud._process(0)
-	check(game.hud.menu_kicker.text == "FIVE WAVES AT SEA", "introduction states survival rather than lighthouse defence")
+	check(game.hud.menu_title.text == "BLACKWATER" and not game.hud.menu_body.visible, "introduction presents the title without decorative slogans")
 	var terrain = game.archipelago.get_node("Terrain")
 	check(terrain.terrain_height_at(Vector3.ZERO) < -10 and terrain.terrain_height_at(game.arena_center()) > 17,
 		"distant voyage terrain removed; lighthouse foundation retained")

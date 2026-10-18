@@ -27,8 +27,13 @@ var actual_speed := 0.0
 var boosting := false
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
+const StormAtmosphere = preload("res://game/storm_atmosphere.gd")
+var storm_atmosphere: CanvasLayer
+const StormLightning = preload("res://game/storm_lightning.gd")
+var storm_lightning := StormLightning.new()
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
 const ShipPennant = preload("res://game/ship_pennant.gd")
+const ClothMotion = preload("res://game/ship_cloth_motion.gd")
 var player_pennant: MeshInstance3D
 
 const PLAYER_SAIL_BOAT = preload("res://assets/sail_boat/sail_boat.glb")
@@ -74,6 +79,13 @@ var gust_strength := 0.0
 
 @export_group("Voyage presentation")
 @export var weather_enabled: bool = true
+@export_subgroup("Arena storm")
+@export_range(0.0, 1.0, 0.05) var arena_storm_strength: float = 0.65
+@export var storm_post_enabled: bool = true
+@export_range(0.0, 1.0, 0.05) var storm_rain_amount: float = 0.65
+@export var storm_lightning_enabled: bool = true
+## Random seconds between single distant flashes; thunder follows 0.9–2.4 s later.
+@export var storm_lightning_interval := Vector2(14.0, 28.0)
 
 @export_group("Night illumination")
 @export var night_ambient_color := Color("71879e")
@@ -258,6 +270,8 @@ var _audio_playback: AudioStreamGeneratorPlayback
 var _audio_phase: float = 0.0
 var _audio_noise: float = 0.0
 var _audio_rng := RandomNumberGenerator.new()
+var _whiz_players: Array[AudioStreamPlayer3D] = []
+var _whiz_player_cursor: int = 0
 var _sound_enabled: bool = true
 
 
@@ -314,6 +328,10 @@ func _ready() -> void:
 	hud.set("game", self)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(hud)
+	storm_atmosphere = StormAtmosphere.new()
+	add_child(storm_atmosphere)
+	add_child(storm_lightning)
+	storm_lightning.reset(encounter_seed, storm_lightning_interval)
 	turbulence_effects = TurbulenceEffects.new()
 	turbulence_effects.name = "TurbulenceEffects"
 	add_child(turbulence_effects)
@@ -326,7 +344,7 @@ func _ready() -> void:
 		_danger_audio = cannon._audio(66.0, 0.8, -16.0)
 	_update_view(1.0)
 	if DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_title("Latitude Lines")
+		DisplayServer.window_set_title(ProjectSettings.get_setting("application/config/name"))
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--debug-tools":
 			development_tools = true
@@ -420,6 +438,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_sound_enabled = not _sound_enabled
 		if is_instance_valid(_sound):
 			_sound.volume_db = -26.0 if _sound_enabled else -80.0
+		for player in _whiz_players:
+			player.volume_db = -7.0 if _sound_enabled else -80.0
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		get_tree().quit()
 
@@ -564,9 +584,10 @@ func restart(to_menu: bool = false) -> void:
 	_last_hull_damage_time = 0.0
 	phase = 0
 	phase_banner_left = 4.0
-	storm_blend = 0.0
+	storm_blend = arena_storm_strength if arena_mode and weather_enabled else 0.0
 	last_sighting_time = 0.0
 	_last_thunder = -1
+	storm_lightning.reset(encounter_seed, storm_lightning_interval)
 	for obstacle: Dictionary in obstacles:
 		if obstacle.body.get_meta("landmark", false):
 			continue
@@ -872,6 +893,7 @@ func _update_view(delta: float) -> void:
 	damage_shake_left = maxf(0.0, damage_shake_left - delta)
 	_update_weather(delta)
 	_apply_night_illumination()
+	storm_atmosphere.present(self)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	# A fresh, uninterrupted hold is required every time; lowering erases assistance.
 	if reading and state == State.SAILING:
@@ -930,7 +952,7 @@ func _update_view(delta: float) -> void:
 		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend) * motion_amount()
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
-		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
+		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend) * motion_amount()
 	if state == State.SAILING or state == State.LOST:
 		# A separate hit envelope makes hull damage readable in the chase view,
 		# including the killing blow, without amplifying cannon recoil or rolling the horizon.
@@ -950,7 +972,8 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	sky_material.set_shader_parameter("star_density", star_density)
 	sky_material.set_shader_parameter("twinkle_strength", twinkle_strength)
-	sky_material.set_shader_parameter("cloud_density", cloud_density)
+	var storm_cover := storm_blend * 0.42 if arena_mode and weather_enabled else 0.0
+	sky_material.set_shader_parameter("cloud_density", lerpf(cloud_density, 1.0, storm_cover))
 	sky_material.set_shader_parameter("cloud_speed", cloud_speed)
 	sky_material.set_shader_parameter("cloud_scale", cloud_scale)
 	sky_material.set_shader_parameter("cloud_wind", cloud_wind)
@@ -1131,6 +1154,8 @@ func _process(_delta: float) -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_sound):
 		_sound.stop()
+	for player in _whiz_players:
+		player.stop()
 	_audio_playback = null
 
 
@@ -1253,7 +1278,11 @@ func _build_boat() -> void:
 	canvas.albedo_color = Color("d7bd8b") # Warm ivory under the nearby amber lantern.
 	canvas.metallic = 0.0
 	canvas.roughness = 0.95
+	canvas.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 	(sail as MeshInstance3D).set_surface_override_material(1, canvas)
+	var sail_motion := ClothMotion.new()
+	sail_motion.configure_canvas(sail, 1)
+	sail.add_child(sail_motion)
 	player_pennant = ShipPennant.new()
 	boat_visual.add_child(player_pennant)
 	# Seat the flag at the actual imported mast tip, then retain boat-local scale.
@@ -1320,14 +1349,20 @@ func _update_weather(delta: float) -> void:
 		phase = new_phase
 		phase_banner_left = 3.0
 	phase_banner_left = maxf(0, phase_banner_left - delta)
+	storm_lightning.update(self, delta)
 	if not weather_enabled:
+		if arena_mode: sky_material.set_shader_parameter("lightning", 0.0)
 		return
 	var strength: float = [0.0, 0.25, 0.45, 0.15][phase]
-	if arena_mode and state == State.SAILING:
-		strength = smoothstep(arena_radius - 8.0, arena_radius + 24.0, storm_distance()) * 0.8
+	if arena_mode:
+		var boundary := smoothstep(arena_radius - 8.0, arena_radius + 24.0, storm_distance()) if state == State.SAILING else 0.0
+		strength = lerpf(arena_storm_strength, 1.0, boundary)
 	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
 	# Storm presentation never changes wave forces or player controls.
 	sky_material.set_shader_parameter("storm", storm_blend)
+	if arena_mode:
+		sky_material.set_shader_parameter("lightning", storm_lightning.strength)
+		return
 	var flash: float = maxf(0.0, 1.0 - fmod(elapsed, 9.0) / 0.16) if phase == 2 else 0.0
 	sky_material.set_shader_parameter("lightning", flash * 0.3)
 	var thunder: int = int(elapsed / 9.0)
@@ -1341,10 +1376,12 @@ func _apply_night_illumination() -> void:
 	var environment := world_environment.environment
 	environment.ambient_light_color = night_ambient_color
 	environment.ambient_light_energy = lerpf(calm_ambient_energy, storm_ambient_energy, storm_blend)
+	environment.ambient_light_energy += storm_lightning.strength * 0.25
 	environment.fog_light_color = night_fog_color
 	environment.fog_density = lerpf(0.0035, 0.0048, storm_blend)
 	moon.light_color = moonlight_color
 	moon.light_energy = lerpf(calm_moon_energy, storm_moon_energy, storm_blend)
+	moon.light_energy += storm_lightning.strength * 1.8
 	water_material.set_shader_parameter("storm_shading", storm_blend)
 
 
@@ -1361,6 +1398,24 @@ func cue_sound(kind: String) -> void:
 	elif is_instance_valid(_warning_audio):
 		_warning_audio.pitch_scale = 0.6 if kind == "gust" else 1.0
 		_warning_audio.play()
+
+
+func cannonball_whiz(from: Vector3, to: Vector3, shot: Dictionary) -> void:
+	if shot.get("whiz_played", false) or not _sound_enabled or _whiz_players.is_empty() or not is_instance_valid(boat):
+		return
+	var segment := to - from
+	var along := clampf((boat.global_position - from).dot(segment) / maxf(0.0001, segment.length_squared()), 0.0, 1.0)
+	var closest := from + segment * along
+	var offset := closest - boat.global_position
+	var distance := offset.length()
+	if distance > 12.0 or absf(offset.y) > 9.0:
+		return
+	shot["whiz_played"] = true
+	var player := _whiz_players[_whiz_player_cursor]
+	_whiz_player_cursor = (_whiz_player_cursor + 1) % _whiz_players.size()
+	player.global_position = closest
+	player.volume_db = lerpf(-7.0, -15.0, distance / 12.0)
+	player.play()
 
 
 func _add_hazard(at: Vector3, radius: float, kind: String) -> void:
@@ -1440,6 +1495,31 @@ func _build_audio() -> void:
 	# Quiet synthesized surf: no asset downloads or audio dependencies.
 	if DisplayServer.get_name() == "headless":
 		return
+	var whistle := AudioStreamWAV.new()
+	whistle.mix_rate = 22050
+	whistle.format = AudioStreamWAV.FORMAT_16_BITS
+	whistle.stereo = false
+	var sample_count := 5292 # 0.24 seconds at 22.05 kHz.
+	var pcm := PackedByteArray()
+	pcm.resize(sample_count * 2)
+	var phase := 0.0
+	for i in sample_count:
+		var progress := float(i) / float(sample_count - 1)
+		var frequency := lerpf(1480.0, 560.0, progress)
+		phase += TAU * frequency / float(whistle.mix_rate)
+		var envelope := pow(maxf(0.0, sin(PI * progress)), 1.25)
+		var sample := sin(phase) * envelope * 0.62
+		pcm.encode_s16(i * 2, int(sample * 32767.0))
+	whistle.data = pcm
+	for i in 4:
+		var player := AudioStreamPlayer3D.new()
+		player.name = "CannonWhiz%d" % i
+		player.stream = whistle
+		player.volume_db = -7.0
+		player.unit_size = 8.0
+		player.max_distance = 30.0
+		add_child(player)
+		_whiz_players.append(player)
 	_sound = AudioStreamPlayer.new()
 	# Web defaults to sample playback, which cannot play an AudioStreamGenerator.
 	_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM

@@ -4,8 +4,10 @@ python tools/turbulence_web_review.py --prepare --godot PATH --templates DIR
 python tools/turbulence_web_review.py --serve
 
 Templates must match the engine. No installs, source swaps or recursive deletes.
-Open the printed URL in one browser tab; 24 alternating 40-second runs take about
-16 minutes. Keep other GPU workloads/recording closed during timed samples.
+The default fixture uses 24 alternating 40-second runs (about 16 minutes).
+Use --fixture ocean_juice_browser --baseline HEAD for ten arena workloads per
+build, four seconds warmup plus twelve seconds sampling each (about six minutes).
+Keep the tab visible and other GPU workloads/recording closed during samples.
 """
 from argparse import ArgumentParser
 from functools import partial
@@ -61,15 +63,17 @@ def prepare(args, build):
         development = variant != 'release'
         if development:
             (source / 'tests').mkdir()
-            for name in ['turbulence_browser.gd', 'turbulence_browser.tscn']:
+            for name in [f'{args.fixture}.gd', f'{args.fixture}.tscn']:
                 shutil.copy2(REPO / 'ldjam_60' / 'tests' / name, source / 'tests' / name)
+        if development and args.fixture == 'turbulence_browser':
+            shutil.copy2(REPO / 'ldjam_60/tests/legacy_voyage.tscn', source / 'tests/legacy_voyage.tscn')
         project = source / 'project.godot'
         text = project.read_text()
         text = re.sub(r'^_mcp_game_helper=.*\n', '', text, flags=re.M)
         text = re.sub(r'^enabled=PackedStringArray\(.*\)$', 'enabled=PackedStringArray()', text, flags=re.M)
         if development:
             text = text.replace('run/main_scene="res://game/crossing.tscn"',
-                                'run/main_scene="res://tests/turbulence_browser.tscn"')
+                                f'run/main_scene="res://tests/{args.fixture}.tscn"')
         project.write_text(text)
         (source / 'export_presets.cfg').write_text(f'''[preset.0]
 name="Web"
@@ -112,6 +116,10 @@ progressive_web_app/enabled=false
 
 def serve(build, port):
     class Handler(SimpleHTTPRequestHandler):
+        def end_headers(self):
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
         def do_POST(self):
             if self.path != '/result':
                 self.send_error(404)
@@ -142,6 +150,7 @@ def main():
     parser.add_argument('--serve', action='store_true')
     parser.add_argument('--godot')
     parser.add_argument('--templates')
+    parser.add_argument('--fixture', default='turbulence_browser', choices=['turbulence_browser', 'ocean_juice_browser'])
     parser.add_argument('--baseline', default='96e14a3')
     parser.add_argument('--output', default=str(REPO / 'build' / 'turbulence-web-review'))
     parser.add_argument('--port', type=int, default=8766)

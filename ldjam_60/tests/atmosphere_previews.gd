@@ -81,7 +81,6 @@ func _run() -> void:
 				child.light_color = Color("ffc178")
 				child.light_energy = 2.0
 				child.light_specular = 1.0
-		game.enemy_encounters.ship.sail_color = Color("a23e32")
 		game.enemy_encounters.ship.sail_material.emission_enabled = false
 	pose(game.archipelago.get_node("SpawnPoints/Departure").position,game.START_HEADING)
 	await shot("01-departure")

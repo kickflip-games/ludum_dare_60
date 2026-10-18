@@ -55,7 +55,8 @@ func route(kind: String, hz: int) -> void:
 		var previous_rate: float = ship.turn_rate
 		var telling: bool = ship.mode == ship.Mode.TELEGRAPH
 		var point: Vector3 = ship.locked_point
-		var velocity: Vector3 = ship.projectiles.front().velocity if not ship.projectiles.is_empty() else Vector3.ZERO
+		var tracked: Dictionary = ship.projectiles.front() if not ship.projectiles.is_empty() else {}
+		var velocity: Vector3 = tracked.velocity if not tracked.is_empty() else Vector3.ZERO
 		game.sea_time += 1.0 / hz
 		game.ocean.wave_time = game.sea_time
 		game.damage_immunity = maxf(0.0, game.damage_immunity - 1.0 / hz)
@@ -72,8 +73,8 @@ func route(kind: String, hz: int) -> void:
 			warning_seen = true
 			if ship.mode == ship.Mode.TELEGRAPH:
 				locked = locked and ship.locked_point == point
-		if velocity != Vector3.ZERO and not ship.projectiles.is_empty():
-			var now: Vector3 = ship.projectiles.front().velocity
+		if velocity != Vector3.ZERO and not tracked.is_empty():
+			var now: Vector3 = tracked.velocity
 			nonhoming = nonhoming and Vector2(velocity.x, velocity.z).distance_to(Vector2(now.x, now.z)) < 0.001
 		await physics_frame
 	var result := {"kind": kind, "hz": hz, "max_radius": maximum_radius,

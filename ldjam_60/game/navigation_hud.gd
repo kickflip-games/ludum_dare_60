@@ -3,8 +3,9 @@ extends Control
 const Gauge = preload("res://game/nautical_gauge.gd")
 const NauticalTheme = preload("res://game/nautical_theme.gd")
 const WalkthroughCard = preload("res://game/walkthrough_card.gd")
-const ENEMY_ICON = preload("res://assets/ui/enemy_ship.svg")
-const FLEET_BANNER_SECONDS := 3.0
+const FLEET_BANNER_SECONDS := 2.4
+const FLEET_COMPLETE_SECONDS := 1.0
+const WAVE_RIBBON = preload("res://assets/ui/kenney_adventure/banner_classic_curtain.png")
 const STORM_NOTICE_SECONDS := 10.0
 const INK := Color("f0e5cc")
 const MUTED := Color("a6cac7")
@@ -18,12 +19,10 @@ var action_button: Button
 var menu: MarginContainer
 var menu_shade: TextureRect
 var menu_title: Label
-var menu_kicker: Label
 var menu_body: Label
 var menu_controls: GridContainer
 var menu_details: Label
 var menu_footer: Label
-var motion_choice: OptionButton
 var menu_column: VBoxContainer
 var menu_actions: VBoxContainer
 var settings_button: Button
@@ -31,8 +30,6 @@ var main_menu_button: Button
 var quit_button: Button
 var settings_panel: VBoxContainer
 var settings_back: Button
-var menu_motif: TextureRect
-var menu_rule: TextureRect
 var menu_spacer: Control
 var settings_open := false
 var walkthrough_button: Button
@@ -43,11 +40,10 @@ var wave_countdown: Label
 var wave_announcement: Label
 var boss_label: Label
 var boss_health: ProgressBar
-var wave_label: Label
 var fleet_status: CenterContainer
-var fleet_icons: HBoxContainer
-var fleet_divider: ColorRect
-var _fleet_icon_count := -1
+var fleet_circles: FleetCircles
+var _fleet_group_total := 0
+var _fleet_complete_left := 0.0
 var _announced_fleet := 0
 var _fleet_banner_left := 0.0
 var threat_label: Label
@@ -64,6 +60,29 @@ var _reading_alpha: float = 0.0
 var _threat_direction: float = 1.0
 var _has_threat: bool = false
 var _menu_alpha: float = 1.0
+
+
+class FleetCircles extends Control:
+	## One draw call; encounter records, including queued arrivals, own the count.
+	var remaining := 0
+	var total := 0
+
+	func set_counts(outstanding: int, group_size: int) -> void:
+		if remaining == outstanding and total == group_size:
+			return
+		remaining = outstanding
+		total = group_size
+		custom_minimum_size = Vector2(maxi(0, total * 20 - 8), 12)
+		queue_redraw()
+
+	func _draw() -> void:
+		for index in total:
+			var at := Vector2(6 + index * 20, 6)
+			draw_circle(at + Vector2(0, 1), 7, Color("102838b3"), true, -1, true)
+			if index < remaining:
+				draw_circle(at, 6, Color("df9389"), true, -1, true)
+			else:
+				draw_circle(at, 5.5, Color("c6d6cdad"), false, 1, true)
 
 
 func _ready() -> void:
@@ -105,15 +124,25 @@ func _ready() -> void:
 		style.bg_color = Color("263a42") if style_name == "background" else Color("c78d70")
 		boss_health.add_theme_stylebox_override(style_name, style)
 	wave_countdown = _label(gameplay_hud,"WaveCountdown","",13,MUTED)
-	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",52,INK,true)
-	for entry in [[wave_countdown,60,80],[wave_announcement,84,150]]:
-		var label: Label = entry[0]
+	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",24,INK,true)
+	for label: Label in [wave_countdown, wave_announcement]:
 		label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-		label.offset_left=-260
-		label.offset_right=260
-		label.offset_top=entry[1]
-		label.offset_bottom=entry[2]
-		label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wave_countdown.offset_left = -180
+	wave_countdown.offset_right = 180
+	wave_announcement.offset_left = -128
+	wave_announcement.offset_right = 128
+	wave_announcement.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var ribbon := TextureRect.new()
+	ribbon.name = "AdventureRibbon"
+	ribbon.texture = WAVE_RIBBON
+	ribbon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ribbon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ribbon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ribbon.show_behind_parent = true
+	wave_announcement.add_child(ribbon)
+	ribbon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
 	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -154,49 +183,15 @@ func _build_fleet_status() -> void:
 	fleet_status.offset_left = 16
 	fleet_status.offset_right = -16
 	fleet_status.offset_top = 20
-	fleet_status.offset_bottom = 56
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 16)
-	fleet_status.add_child(row)
-	wave_label = _label(row, "SurvivalWave", "", 26, INK)
-	var bold := FontVariation.new()
-	bold.base_font = sans
-	bold.variation_embolden = 0.8
-	wave_label.add_theme_font_override("font", bold)
-	wave_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	fleet_divider = ColorRect.new()
-	fleet_divider.color = Color(BRASS, 0.65)
-	fleet_divider.custom_minimum_size = Vector2(1, 24)
-	fleet_divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	fleet_divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(fleet_divider)
-	fleet_icons = HBoxContainer.new()
-	fleet_icons.name = "RemainingShips"
-	fleet_icons.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fleet_icons.add_theme_constant_override("separation", 5)
-	row.add_child(fleet_icons)
+	fleet_status.offset_bottom = 32
+	fleet_circles = FleetCircles.new()
+	fleet_circles.name = "RemainingEnemies"
+	fleet_circles.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fleet_status.add_child(fleet_circles)
 
 
-func _sync_fleet_icons(remaining: int) -> void:
-	if remaining == _fleet_icon_count:
-		return
-	_fleet_icon_count = remaining
-	fleet_divider.visible = remaining > 0
-	fleet_icons.visible = remaining > 0
-	# Reuse icons as fleets grow; records include survivors and queued arrivals.
-	while fleet_icons.get_child_count() < remaining:
-		var icon := TextureRect.new()
-		icon.name = "EnemyShip%d" % (fleet_icons.get_child_count() + 1)
-		icon.texture = ENEMY_ICON
-		icon.custom_minimum_size = Vector2(26, 32)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.modulate = CORAL
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fleet_icons.add_child(icon)
-	for index in fleet_icons.get_child_count():
-		fleet_icons.get_child(index).visible = index < remaining
+func _sync_fleet_circles(remaining: int, total: int = 0) -> void:
+	fleet_circles.set_counts(remaining, maxi(remaining, total))
 
 
 func _label(parent: Node, node_name: String, value: String, point_size: int = 17, color: Color = INK, elegant: bool = false) -> Label:
@@ -210,18 +205,6 @@ func _label(parent: Node, node_name: String, value: String, point_size: int = 17
 		label.add_theme_font_override("font", serif)
 	parent.add_child(label)
 	return label
-
-
-func _menu_texture(parent: Node, node_name: String, asset: Texture2D, dimensions: Vector2) -> TextureRect:
-	var graphic := TextureRect.new()
-	graphic.name = node_name
-	graphic.texture = asset
-	graphic.custom_minimum_size = dimensions
-	graphic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	graphic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	graphic.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(graphic)
-	return graphic
 
 
 func _menu_button(parent: Node, node_name: String, caption: String, primary: bool = false) -> Button:
@@ -265,18 +248,14 @@ func _build_menu() -> void:
 	menu_column.add_theme_constant_override("separation", 12)
 	menu_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu.add_child(menu_column)
-	menu_motif = _menu_texture(menu_column, "LighthouseMark", preload("res://assets/ui/lighthouse.svg"), Vector2(72, 48))
-	menu_motif.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	menu_kicker = _label(menu_column, "Kicker", "FIVE WAVES AT SEA", 16, NauticalTheme.BRASS)
-	menu_title = _label(menu_column, "Title", "LATITUDE\nLINES", 82, NauticalTheme.IVORY, true)
+	menu_title = _label(menu_column, "Title", "BLACKWATER", 82, NauticalTheme.IVORY, true)
 	menu_title.add_theme_constant_override("line_spacing", -12)
 	menu_title.add_theme_constant_override("outline_size", 0)
-	menu_rule = _menu_texture(menu_column, "WaveRule", preload("res://assets/ui/wave_rule.svg"), Vector2(0, 20))
-	menu_body = _label(menu_column, "Subtitle", "Five waves. One last light.", 21, NauticalTheme.SEA_GLASS)
+	menu_body = _label(menu_column, "ResultReason", "", 21, NauticalTheme.SEA_GLASS)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu_details = _label(menu_column, "VoyageDetails", "", 18, NauticalTheme.BRASS)
 	menu_details.visible = false
-	for label: Label in [menu_kicker, menu_title, menu_body, menu_details]:
+	for label: Label in [menu_title, menu_body, menu_details]:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_spacer = Control.new()
 	menu_spacer.name = "LighthouseBreathingRoom"
@@ -317,19 +296,7 @@ func _build_menu() -> void:
 	settings_panel.add_theme_constant_override("separation", 15)
 	settings_panel.visible = false
 	menu_column.add_child(settings_panel)
-	_label(settings_panel, "MotionHeading", "CAMERA MOTION", 15, NauticalTheme.BRASS)
-	motion_choice = OptionButton.new()
-	motion_choice.name = "MotionSetting"
-	motion_choice.add_item("Full")
-	motion_choice.add_item("Reduced")
-	motion_choice.selected = game.motion_setting
-	motion_choice.custom_minimum_size.y = 46
-	motion_choice.tooltip_text = "Reduced softens banking and impacts. Waves and steering stay the same."
-	motion_choice.item_selected.connect(func(index: int): game.motion_setting = index)
-	settings_panel.add_child(motion_choice)
-	var motion_note := _label(settings_panel, "MotionNote", "Reduced softens camera banking and impacts.", 17, NauticalTheme.SEA_GLASS)
-	motion_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_label(settings_panel, "ControlsHeading", "AT THE HELM", 15, NauticalTheme.BRASS)
+	_label(settings_panel, "ControlsHeading", "CONTROLS", 15, NauticalTheme.BRASS)
 	var help_text := "A / D or arrows   Steer\nShift   Boost while held\nMouse   Look around\nClick / Space   Fire\nE   Switch camera\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
 	if not game.arena_mode:
 		help_text = "A / D   Steer\nShift   Boost while held\nHold Space   Find the guiding star\nHold E   Aim cannon\nF   Fire\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
@@ -343,8 +310,7 @@ func _show_settings(open: bool) -> void:
 	settings_open = open
 	_refresh_menu_copy()
 	if open:
-		motion_choice.select(game.motion_setting)
-		motion_choice.grab_focus()
+		settings_back.grab_focus()
 	else:
 		settings_button.grab_focus()
 
@@ -368,13 +334,7 @@ func _layout_menu() -> void:
 	menu.size = Vector2(width, maxf(maxf(0, bottom - 20), menu_column.get_combined_minimum_size().y))
 	menu_column.add_theme_constant_override("separation", 7 if compact else 10)
 	menu_actions.add_theme_constant_override("separation", 7 if compact else 10)
-	menu_motif.custom_minimum_size.y = 24 if compact else 30
-	menu_motif.visible = game.arena_mode and not settings_open
 	menu_spacer.visible = game.arena_mode and not settings_open
-	# On the title, keep the premise with the action and leave the live light clear.
-	var body_index := menu_actions.get_index() - 1 if game.arena_mode and game.state == game.State.READY and not settings_open else menu_rule.get_index() + 1
-	if menu_body.get_index() != body_index:
-		menu_column.move_child(menu_body, body_index)
 	var title_size := (75 if compact else 93) if game.state == game.State.READY else (48 if compact else 62)
 	if not game.arena_mode: title_size = 48 if compact else 58
 	if settings_open: title_size = 38 if compact else 48
@@ -394,9 +354,9 @@ func _layout_menu() -> void:
 func _refresh_menu_copy() -> void:
 	var intro: bool = game.state == game.State.READY
 	var won: bool = game.state == game.State.ARRIVED
-	menu_kicker.text = "FIVE WAVES AT SEA" if intro and game.arena_mode else "A CROSSING BY STARLIGHT" if intro else "LATITUDE LINES"
-	menu_title.text = "LATITUDE\nLINES" if intro else "YOU HELD\nTHE LIGHT" if won and game.arena_mode else "Safe harbour." if won else "LOST\nAT SEA" if game.arena_mode else "Lost at sea."
-	menu_body.text = "Five waves. One last light." if intro and game.arena_mode else "Find your way home by starlight." if intro else "The flagship is sunk. The light still shines." if won and game.arena_mode else "The light has brought you home." if won else game.failure_reason
+	menu_title.text = "BLACKWATER" if intro else "YOU HELD\nTHE LIGHT" if won and game.arena_mode else "Safe harbour." if won else "LOST\nAT SEA" if game.arena_mode else "Lost at sea."
+	menu_body.text = "" if intro or won else game.failure_reason
+	menu_body.visible = not menu_body.text.is_empty() and not settings_open
 	menu_details.visible = not intro
 	var clock := "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
 	menu_details.text = ("ALL 5 WAVES COMPLETE" if won else "WAVE %d / 5 REACHED" % maxi(1, game.enemy_encounters.wave_number)) + "   ·   " + clock if game.arena_mode else "Voyage time   " + clock
@@ -411,8 +371,6 @@ func _refresh_menu_copy() -> void:
 	menu_footer.visible = not settings_open and not game.arena_mode
 	if settings_open:
 		menu_title.text = "SETTINGS"
-		menu_kicker.text = "LATITUDE LINES"
-		menu_body.text = "A steadier course."
 		menu_details.visible = false
 	_layout_menu()
 
@@ -451,8 +409,10 @@ func _sync_button() -> void:
 		fleet_status.visible = false
 		_announced_fleet = 0
 		_fleet_banner_left = 0.0
-		_sync_fleet_icons(0)
-		for label: Label in [notice, threat_label, wave_label, wave_countdown, wave_announcement]:
+		_sync_fleet_circles(0)
+		_fleet_group_total = 0
+		_fleet_complete_left = 0.0
+		for label: Label in [notice, threat_label, wave_countdown, wave_announcement]:
 			label.text = ""
 			label.visible = false
 		_has_threat = false
@@ -461,7 +421,7 @@ func _sync_button() -> void:
 	_last_state = game.state
 	if not show_menu:
 		settings_open = false
-		for control: Control in [action_button, settings_button, main_menu_button, quit_button, motion_choice, settings_back, walkthrough_button]:
+		for control: Control in [action_button, settings_button, main_menu_button, quit_button, settings_back, walkthrough_button]:
 			control.release_focus()
 		if game.state == game.State.CASTING_OFF:
 			cannon_gauge.pulse = 0.0
@@ -565,7 +525,7 @@ func _update_storm_warning(delta: float = 0.0) -> void:
 	if not outside or _storm_notice_left < 0.00001:
 		_storm_notice_left = 0.0
 	storm_warning.visible = outside and _storm_notice_left > 0.0
-	storm_warning.offset_top = 180 if wave_announcement.visible else 132
+	storm_warning.offset_top = wave_announcement.offset_bottom + 20 if wave_announcement.visible else 132
 	storm_warning.offset_bottom = storm_warning.offset_top + 78
 	storm_warning.modulate.a = 1.0
 	storm_instruction.text = "RETURN TO THE LIGHTHOUSE"
@@ -794,37 +754,42 @@ func _update_wave_ui(delta: float = 0.0) -> void:
 	if boss_health.visible:
 		boss_health.max_value = waves.boss.hull_capacity
 		boss_health.value = waves.boss.hull
-	fleet_status.visible=active and waves.wave_number > 0
-	wave_announcement.offset_top = 110 if boss_health.visible else 84
-	wave_announcement.offset_bottom = wave_announcement.offset_top + 66
-	wave_label.visible=active
-	wave_countdown.visible=false
-	wave_announcement.visible=false
+	wave_announcement.offset_top = 110 if boss_health.visible else 44
+	wave_announcement.offset_bottom = wave_announcement.offset_top + 64
+	fleet_status.visible = false
+	wave_countdown.visible = false
+	wave_announcement.visible = false
 	if not active:
 		return
-	var roman: String = ["I", "II", "III", "IV", "V"][clampi(waves.wave_number - 1, 0, 4)]
-	wave_label.text=roman + " / V"
 	var remaining := 0
 	for record: Dictionary in waves.records:
 		remaining += maxi(0, int(record.count) - int(record.defeated))
 	if waves.wave_number == waves.ARENA_WAVES and (waves.boss_spawn_pending or waves.boss_active()):
 		remaining += 1
-	_sync_fleet_icons(remaining)
 	if waves.wave_number != _announced_fleet:
 		_announced_fleet = waves.wave_number
+		# Freeze this group's size: later defeats of carried survivors also leave hollows.
+		_fleet_group_total = remaining
+		_fleet_complete_left = 0.0
 		_fleet_banner_left = FLEET_BANNER_SECONDS if waves.wave_number > 0 else 0.0
 	else:
-		_fleet_banner_left = maxf(0.0, _fleet_banner_left - delta)
+		_fleet_banner_left = maxf(0.0, _fleet_banner_left - maxf(0.0, delta))
+		_fleet_complete_left = maxf(0.0, _fleet_complete_left - maxf(0.0, delta))
+		if remaining == 0 and fleet_circles.remaining > 0:
+			_fleet_complete_left = FLEET_COMPLETE_SECONDS
+	_sync_fleet_circles(remaining, _fleet_group_total)
+	fleet_status.visible = _fleet_group_total > 0 and (remaining > 0 or _fleet_complete_left > 0.0)
 	if waves.phase == waves.Phase.EARLY_CLEAR:
 		_fleet_banner_left = 0.0
-		wave_countdown.text="FLEET CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
-		wave_countdown.visible=true
-	elif waves.wave_number < 5 and waves.next_wave_in>0 and waves.next_wave_in<=15:
+		wave_countdown.text = "WAVE CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
+		wave_countdown.visible = true
+	elif waves.wave_number < waves.ARENA_WAVES and waves.next_wave_in > 0 and waves.next_wave_in <= 15:
 		var seconds := ceili(waves.next_wave_in)
-		wave_countdown.text="NEXT FLEET IN %02d:%02d" % [seconds/60,seconds%60]
-		wave_countdown.visible=true
+		wave_countdown.text = "NEXT WAVE IN %02d:%02d" % [seconds / 60, seconds % 60]
+		wave_countdown.visible = true
 	if _fleet_banner_left > 0.0:
-		wave_announcement.text = "FLEET " + roman
-		wave_announcement.visible=true
-		var elapsed: float = FLEET_BANNER_SECONDS - _fleet_banner_left
-		wave_announcement.modulate.a = 1.0 if game.motion_setting == 1 else minf(clampf(elapsed/0.2,0,1),clampf(_fleet_banner_left/0.4,0,1))
+		wave_announcement.text = ["", "WAVE I", "WAVE II", "WAVE III", "WAVE IV", "FINAL WAVE"][clampi(waves.wave_number, 0, waves.ARENA_WAVES)]
+		wave_announcement.visible = true
+		wave_announcement.modulate.a = 1.0 if game.motion_setting == 1 else clampf(_fleet_banner_left / 0.4, 0, 1)
+	wave_countdown.offset_top = wave_announcement.offset_bottom + 8 if wave_announcement.visible else 52
+	wave_countdown.offset_bottom = wave_countdown.offset_top + 20

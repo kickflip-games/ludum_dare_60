@@ -2,6 +2,7 @@ extends SceneTree
 ## Godot --headless --path ldjam_60 --script res://tests/pirate_kit_smoke.gd
 
 var failures: int = 0
+var checks := 0
 
 
 func _initialize() -> void:
@@ -9,6 +10,7 @@ func _initialize() -> void:
 
 
 func check(condition: bool, message: String) -> void:
+	checks += 1
 	print(("PASS: " if condition else "FAIL: ") + message)
 	if not condition:
 		failures += 1
@@ -38,6 +40,10 @@ func _run() -> void:
 	var cannon: Node3D = game.find_child("PirateKitStarboardCannon", true, false)
 	var rock: Node3D = game.find_child("PirateKitRock", true, false)
 	check(ship != null and cannon != null and rock != null, "sailboat, cannon and rock models instantiate in the playable scene")
+	check(game.PLAYER_SAIL_BOAT.resource_path == "res://assets/sail_boat/sail_boat.glb"
+		and ship.has_node("RootNode/Sail"), "player uses the original simple sailboat and canvas")
+	check(game.enemy_encounters.ship.SHIP.resource_path == "res://assets/kenney_ships/ship-pirate-small.glb",
+		"ordinary enemies use the supplied small pirate hull")
 	var ship_bounds := bounds_of(ship, game.boat)
 	check(ship_bounds.size.x > 2.5 and ship_bounds.size.x < 4.0 and ship_bounds.size.z > 5.0 and ship_bounds.size.z < 7.0,
 		"ship visual scale and forward axis match the existing boat")
@@ -49,6 +55,7 @@ func _run() -> void:
 	check(game.obstacles[0].body.collision_layer == 1 and game.obstacles[0].body.get_child(0) is CollisionShape3D,
 		"rock visual keeps the original hazard collision")
 	print("Imported ship bounds: %s; cannon bounds: %s" % [ship_bounds, cannon_bounds])
+	print("SHIP ASSETS: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame
 	quit(0 if failures == 0 else 1)

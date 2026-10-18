@@ -7,6 +7,8 @@ void vertex() {
 	VERTEX.y = sea_level + surface_sample(VERTEX.xz).x + 0.16;
 }
 void fragment() {
+	// Solid translucent danger area with a brighter rim; no individual aim lines.
+	float rim = max(smoothstep(0.93, 0.99, abs(UV.x * 2.0 - 1.0)), smoothstep(0.97, 0.995, UV.y));
 	ALBEDO = tell_color.rgb;
-	ALPHA = opacity;
+	ALPHA = mix(opacity, min(0.7, opacity * 2.5), rim);
 }

@@ -50,6 +50,8 @@ func _run() -> void:
 	await physics_frame
 	fresh()
 	check(is_instance_valid(boss.flagship_model) and is_equal_approx(boss.collision_shape.shape.radius, 4.8) and boss.get_meta("target_radius") == 6.2, "imported large ship and matching hull/target metadata load")
+	check(boss.FLAGSHIP.resource_path == "res://assets/kenney_ships/ship-pirate-large.glb"
+		and boss.flagship_model.has_node("ship-pirate-large/sail-b"), "boss uses the supplied large two-mast pirate ship")
 	check(boss.hull == 9 and boss.sailing_speed == 8.7 and boss.turning_speed < manager.ship.turning_speed, "nine-hit flagship has heavier tunable navigation")
 	for i in 6:
 		manager.ships[i].begin(game.arena_center() + Vector3(-100 + i * 20, 0, -100), true)
@@ -70,7 +72,16 @@ func _run() -> void:
 			check(boss._prepare_volley(1.6), "%d Hz pattern %d commits clear ballistic lanes" % [hz, kind])
 			var snapshot: Array = boss.volley.duplicate(true)
 			boss._update_tell()
-			check(boss.warnings.filter(func(line): return line.visible).size() == snapshot.size(), "each projectile has its own warning")
+			check(boss.warnings.size() == 1 and boss.warnings[0].visible and boss.warnings[0].mesh is ImmediateMesh, "whole volley uses one filled triangular warning")
+			var geometry: Dictionary = boss.warning_geometry()
+			var side: Vector3 = geometry.direction.cross(Vector3.UP)
+			var contained := true
+			for planned in snapshot:
+				for point: Vector3 in [planned.origin, planned.end]:
+					var offset: Vector3 = point - geometry.origin
+					var along: float = offset.dot(geometry.direction)
+					contained = contained and along > 0 and along <= geometry.length + 0.001 and absf(offset.dot(side)) <= geometry.half_width * along / geometry.length
+			check(contained, "filled warning contains every committed muzzle-to-endpoint lane")
 			var previous: Vector3 = boss.position
 			var frames := roundi((2.6 if kind != boss.Pattern.DOUBLE else 3.1) * hz)
 			for tick in frames:
@@ -79,6 +90,8 @@ func _run() -> void:
 				boss._update_weapon(1.0 / hz)
 			check(boss.shots_fired == (4 if kind == boss.Pattern.DOUBLE else 5), "%d Hz pattern %d launches intended physical projectile count" % [hz, kind])
 			check(boss.weapon_state == boss.Weapon.RELOAD and boss.position.distance_to(previous) > 10, "pattern completes and recovers while sailing")
+			boss._update_tell()
+			check(not boss.warnings[0].visible and boss.cooldown <= (boss.double_reload if kind == boss.Pattern.DOUBLE else boss.volley_reload), "completed volley clears its cone and uses the shorter reload")
 			check(boss.passes > 0 and boss.navigation_state == boss.Navigation.ATTACK_RUN, "broadside commits a sustained navigation pass")
 			var matched := true
 			for shot in boss.launch_history:

@@ -97,9 +97,9 @@ for name in ('index.html', 'index.js', 'index.wasm', 'index.pck'):
     output = web / name
     if not output.is_file() or output.stat().st_size == 0:
         raise SystemExit(f'Web export incomplete: {output}. See build/export.log.')
-with ZipFile('build/latitude-lines-web.zip', 'w', ZIP_DEFLATED) as archive:
+with ZipFile('build/blackwater-web.zip', 'w', ZIP_DEFLATED) as archive:
     for output in sorted(web.iterdir()):
         if output.is_file():
             archive.write(output, output.name)
-print('Ready: build/latitude-lines-web.zip')
+print('Ready: build/blackwater-web.zip')
 PY

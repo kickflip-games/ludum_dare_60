@@ -72,7 +72,8 @@ func update(delta: float) -> void:
 		ship.receive_attack_slot()
 
 func request_warning(ship: CharacterBody3D) -> bool:
-	if not owners.has(ship) or clock < next_warning:
+	# Only active attackers may start a warning; queued hulls keep sailing.
+	if not owners.has(ship) or ship not in manager.living_ships() or clock < next_warning:
 		return false
 	next_warning = clock + manager.survival_settings.warning_interval
 	warning_history.append({"seconds": clock, "enemy": ship.get_meta("enemy_id", -1)})

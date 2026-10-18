@@ -18,7 +18,7 @@ func _ready() -> void:
 	states = States.new(game)
 	_build_toolbar()
 	show_state(0)
-	DisplayServer.window_set_title("Latitude Lines — UI review")
+	DisplayServer.window_set_title("Blackwater — UI review")
 
 
 func _build_toolbar() -> void:

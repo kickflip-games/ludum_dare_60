@@ -8,6 +8,11 @@ func _initialize() -> void:
 		if arg.begins_with("--output="): output = arg.trim_prefix("--output=")
 	_run.call_deferred()
 func capture(label: String) -> void:
+	# Static combat/model fixtures show settled ships; arrival stages have their own preview.
+	for vessel in game.enemy_encounters.combat_ships():
+		if vessel.visible:
+			vessel.sea_effects.advance_arrival(1.0)
+			vessel.sea_effects.apply_arrival()
 	for i in 8:
 		game._update_view(1.0 / 60)
 		game.hud._process(1.0 / 60)
@@ -58,6 +63,10 @@ func _run() -> void:
 		assert(boss._prepare_volley(1.6))
 		boss.weapon_time = 0.8
 		await capture("%02d-warning" % (2 + kind * 2))
+		if kind == boss.Pattern.SCATTER:
+			root.size = Vector2i(900, 506)
+			await capture("06b-small-warning")
+			root.size = Vector2i(1280, 720)
 		boss.weapon_time = 0.0
 		for i in (99 if kind == boss.Pattern.DOUBLE else 119):
 			boss.position += boss.forward() * boss._speed / 60

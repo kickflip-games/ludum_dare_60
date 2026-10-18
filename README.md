@@ -1,4 +1,4 @@
-# Latitude Lines — Lighthouse Arena
+# Blackwater — Lighthouse Arena
 
 Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
 compact arena around the existing lighthouse at **(275, 250)**. The boat starts
@@ -32,7 +32,7 @@ earlier survivors alive. Entering the old harbour never wins.
   (height multiplier 0.88). Existing directional crest force is **50% stronger**,
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
-  **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
+  **M:** mute; **Esc:** quit. Settings shows the control reference and Back.
 - **Debug `+` (Shift+= or numpad +):** with **Development → Development Tools**
   enabled on the crossing, spawn all remaining ships for the current wave.
   This skips arrival delays and the ordinary ship cap; survivors, wave timers
@@ -61,11 +61,13 @@ earlier survivors alive. Entering the old harbour never wins.
   The final wave has no victory timer. The independent flagship appears even
   when the ordinary pool is full. Its defeat cancels enemy volleys, shots and
   mines immediately; already fatal player damage retains loss priority.
-- A large three-second upper-screen fleet announcement marks each launch. A bold top-centre
-  `I / V` Roman-numeral counter sits beside one enemy ship icon per undefeated ship, including
-  survivors, queued arrivals and the flagship; each defeat removes one icon. A final-15-second
-  countdown signals the next fleet. A faint starboard cone, incoming-fire warning and visible damage remain;
-  a thin **THE FLAGSHIP** health bar appears only during the final encounter.
+- A small Kenney Adventure ribbon announces each wave for two seconds, then fades
+  over 0.4 seconds (stationary and instant dismissal in Reduced Motion). During
+  combat, only a centred row of small coral circles tracks outstanding enemies,
+  including survivors, queued arrivals and the flagship. Defeats leave hollow
+  circles until the next wave rebuilds the group; an all-hollow row hides after
+  one second. A final-15-second countdown signals the next wave. Incoming-fire
+  and storm warnings remain; **THE FLAGSHIP** health bar sits clear of the ribbon.
   The existing player hull-damage presentation remains.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
@@ -73,8 +75,9 @@ earlier survivors alive. Entering the old harbour never wins.
   directional audio warnings, terrain checks and the four-crest cap remain.
   The central island's 40 m shelter prevents launching through its shoreline.
   Damage and self-repair remain.
-- Coral cutters take two hits; smaller blue-green, single-banded skiffs take one;
-  larger ochre, double-banded heavy attackers take three and warn for 2.3 seconds.
+- Ordinary enemies share the supplied small pirate ship and its native palette.
+  Cutters take two hits, skiffs one and heavies three; their speed, reload and
+  warning differences remain. Ordinary warnings last 0.50 / 0.40 / 0.75 seconds for cutters/skiffs/heavies.
   Eligible enemy sails glow subtly inside the firing cone; solid obstacles block
   acquisition. Camera visibility does not affect targeting.
   Confirmed hits flash the sail, throw splinters and culminate in a visible tilted descent.
@@ -90,8 +93,25 @@ earlier survivors alive. Entering the old harbour never wins.
 Transit profiles remain 13 m/s for cutters, 16 m/s for skiffs and 10.5 m/s
 for heavies. Attack runs slow to approximately player cruise speed and keep a
 committed heading. Spawns prefer safe starboard approaches, with separated
-sector fallbacks. Warnings retain their full 1.65 / 1.8 / 2.3 seconds and fixed
-aim point; launched shots never home. Crowded ships yield speed as well as turning.
+sector fallbacks. Warnings hold one intercept point from their start, using measured player and
+ship velocity plus warning and flight time; launched shots never home. A steady
+course is hittable; steering after the warning spoils the prediction. Crowded ships yield speed as well as turning.
+Ordinary guns reach **78 m** and reload in **2.5 / 2.0 / 3.5 seconds** for
+cutters/skiffs/heavies. They can fire repeatedly during a pass, or from a stable
+approach, turn or reposition leg with an attack slot when the player is on their gun side and
+the lane is clear. Every volley still receives its full warning. Cutters and skiffs carry two
+cannons per side; heavies carry three per side. Only the battery facing the player
+fires, using one shared reload. Skiffs also have a forward cannon for targets off
+the bow. Heavies leave up to three stationary mines astern while pursued: a
+5 m warning ring, 1.2 s arming delay, 16 s lifetime and at least 8 s between drops.
+Drops require clear water and a safe player gap; sinking, retry and endings clear
+the ordinary ship's mines.
+
+All enemies, including the flagship, arrive through a **0.9 s fade-in** with a
+small water-spray cue. Moving hulls leave curved foam wakes and pale stern spray;
+blocked or stopped hulls stop emitting. Trails follow the same ocean waves and
+fade in place. Low quality reduces spray, and retry/endings clear the pools.
+Spawn positions, wave timing, physical targeting and weapon warnings are retained.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
@@ -106,13 +126,17 @@ wave forces, surface and rocking muzzle. Existing crests keep moving while firin
 
 Arena enemies use independent navigation and weapon states: a committed approach,
 parallel pass, broad turn and reposition; guns keep sailing through warnings and
-reload. A lightweight director allocates 1/1/2/2/2 attack slots, queues ships fairly,
-and separates warning starts by 1.6 seconds. Waiting ships sail vulnerable routes
+reload. A lightweight director allocates 1/1/2/2/2 navigation attack slots, queues ships fairly,
+and separates ordinary warning starts by 0.7 seconds. Only slot owners may
+start warnings; waiting ships cannot fire. Ordinary batteries accept ±38°
+and recheck the lane at launch. Their glow is visible throughout the warning,
+and acquisition waits until the arrival fade completes. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
 out; blocked routes recover visibly, and retry clears the fleet and its shots.
 Waves 1–4 keep their existing rosters, deadlines and ship types. The flagship
 uses no director slot, but reserves warning spacing for its whole volley.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
+See [enemy cannon accuracy, pressure and acceptance evidence](artifacts/enemy_cannon_review.md).
 
 The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.
 The translucent water sector and two thin boundaries rotate with the boat.
@@ -156,6 +180,12 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/flow_zones_
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/naval_ai_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_pressure_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_accuracy_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_gunnery_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/fleet_smoke.gd -- --pressure
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_cadence_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_armament_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_sea_effects_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_previews.gd -- --output=/tmp/latitude-arcade-rendered
 ```
 
@@ -165,8 +195,8 @@ only to keep the 90-second observation alive. Add `-- --render` with the native
 renderer for actual gameplay captures in `/tmp/latitude-enemy-pressure`.
 
 Ship readability fixtures check actual visual triangle coverage (including an
-obstructed-camera negative control), banking, local opaque materials and pennant
-pool reuse. Matched 720p captures and a five-ship effects benchmark:
+obstructed-camera negative control), banking, local opaque materials and native
+flag visibility through pooled reuse. Matched 720p captures and a five-ship effects benchmark:
 
 ```sh
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/ship_readability_smoke.gd
@@ -188,30 +218,39 @@ Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 
 `combat_arena_playtest.gd` is an exploratory input-only pilot, not a balance
-acceptance test. It records a full attempt and exits 1 on defeat. Its final wave now includes the independent flagship and mine-aware steering.
+acceptance test. It records a full attempt and exits 1 on defeat. Its final wave now includes the independent flagship and mine/shell-aware steering. `--no-evasion`
+uses the original steering-and-shooting pilot without shell dodges.
 The dedicated final-wave fixture is `tests/boss_playtest.gd`; its optional
 `--protected` flag is explicitly a damage-immune observation, not a survival win. See the combat review for actual results.
 
 
 ## Wave 5 flagship
 
-The CC0 Quaternius **Ship** is a separate large hull, rather than a scaled cutter.
-Its inherited movement keeps bounded rudder acceleration, wave motion, collision
+The supplied Kenney **ship-pirate-large** is a separate two-mast hull. Ordinary
+enemies share **ship-pirate-small**; the player uses the original simple
+Quaternius sailboat with its warm canvas and mast pennant. Enemy models keep
+their original atlas and authored sails/flags, with a matte finish and reduced
+night fill. There are no enemy class recolours or size variants. Source licence and checksums live in
+`ldjam_60/assets/kenney_ships/`; see [credits](CREDITS.md).
+The flagship's inherited movement keeps bounded rudder acceleration, wave motion, collision
 recovery and terrain avoidance. Broadside passes commit their sailing course;
 missed approaches refresh only after six seconds. The encounter manager owns
 spawning, targeting, victory and cleanup; the six ordinary slots remain available.
 
 - **9 hits**, **8.7 m/s**, **0.34 rad/s** maximum turn; attacks at **35–65 m**.
 - **Rolling Broadside:** five separated gun positions, **1.6 s** warning,
-  **0.21 s** shot spacing and **4.5 s** recovery.
+  **0.21 s** shot spacing and **3 s** recovery.
 - **Double Salvo:** two shots, a newly locked **0.8 s** second warning, two
-  further shots; **5 s** recovery. Each pair keeps its advertised direction.
+  further shots; **3.4 s** recovery. Each pair keeps its advertised direction.
 - **Scattershot:** five outward fan trajectories across **±24°**, with visible
   gaps. Introduced below half health, with a splinter burst and persistent smoke.
   Phase two rotates fan/rolling/fan/rolling/double and reduces recovery by 10%.
 - All shells use existing ballistic collision, gravity, water interception,
   muzzle effects and trails; they never home. Terrain cancels obstructed shots.
-  Warning streaks follow the water and keep their committed planar trajectories.
+  One translucent triangle follows the water and covers the entire committed
+  volley. Amber/gold/coral distinguish patterns and the second salvo; the area
+  stays fixed while the ships move and clears when the volley ends. Real shells
+  retain gaps inside this danger envelope; the fill itself deals no damage.
 - Mines drop astern every **6 s**, or **4.5 s** in phase two: **six** active,
   **18 s** lifetime, **0.8 s** arming delay, **7 m** trigger radius. Unsafe drops
   are skipped; reaching the cap harmlessly expires the oldest. They stay fixed
@@ -249,13 +288,33 @@ At most **192 cubes** are drawn in one batch; busy frames replace the oldest
 cosmetic particles. Animation runs in the vertex shader, without particle nodes,
 collisions, textures, lights or shadows. Idle effects stop processing and drawing.
 Particles expire within 1.25 seconds, including after defeat; retry clears the pool.
-The existing wave-following splash rings/spray remain capped at 24 meshes.
+Water impacts reuse four preallocated six-mesh splash groups (24 meshes and
+24 independent opacity materials). Expired nodes stay hidden; saturation replaces
+a complete cosmetic splash. Rings follow the animated water height. Mid-air
+projectile expiry and solid hull/reef hits no longer create full water splashes.
 
 ```sh
 godot --headless --path ldjam_60 --script res://tests/combat_particles_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/combat_particles_previews.gd -- --output=/tmp/latitude-combat-particles
 godot --path ldjam_60 res://tests/combat_particles_benchmark.tscn
 ```
+
+Directional warm flame meshes and the existing player light give a brief 110 ms
+flash. The barrel kicks back in 45 ms and settles by 250 ms; cosmetic recoil does
+not move the launch marker. Delayed blue-grey smoke, varied wood chips and a
+larger final-hit burst retain the same particle batch. Full/Reduced motion scales
+the existing camera kick. Ordinary enemy and flagship flashes add no lights.
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/combat_juice_previews.gd -- --clip --output=/tmp/latitude-juice/after
+godot --path ldjam_60 res://tests/combat_particles_benchmark.tscn -- --full-vfx
+```
+
+`--full-vfx` extends the existing benchmark with idle, player muzzle, five enemy
+muzzles, hull impacts, pooled water, mixed combat and fully expired phases. For a
+separate development Web export, set its scene's `full_vfx` property to `true`.
+See the [combat effects review](artifacts/combat_juice_review.md) for matched
+captures, pool checks, timings and inherited test limitations.
 
 The benchmark alternates three idle/saturated pairs with a fixed gameplay camera,
 10 seconds per phase and three seconds of warmup. It emits 2,450 particles/second,
@@ -577,6 +636,22 @@ Run `res://tests/landmark_previews.gd -- --output=/tmp/landmark-review --clip` w
 the native renderer to reproduce its curated art views.
 
 ## Night clouds
+
+The arena has persistent storm cover and rain, intensifying beyond the red boundary.
+A single lightweight screen pass adds a cool shadow grade, soft vignette and two
+layers of wind-driven rain beneath the HUD. Tune **Voyage presentation → Arena storm**
+on the crossing: `arena_storm_strength`, `storm_rain_amount`, or disable
+`storm_post_enabled` independently. Reduced motion removes rain and retains the
+static grade. Weather never changes wave forces, aiming or steering; Retry resets
+the rain clock and restores the arena's base storm. The legacy voyage is unchanged.
+Occasional single sky flashes briefly illuminate the sea and ships every 14–28 s;
+a dedicated low thunder rumble follows 0.9–2.4 s later. Tune
+`storm_lightning_interval` or disable `storm_lightning_enabled` in the same group.
+Reduced motion suppresses the flash while keeping thunder. M mutes the rumble;
+Retry, endings, focus loss and disabling weather cancel pending thunder.
+Check scheduling/reset behaviour with `res://tests/storm_lightning_smoke.gd`;
+native `res://tests/storm_lightning_previews.gd` captures the flash sequence and
+checks delayed playback, mute and Retry (`-- --output=/tmp/blackwater-lightning`).
 
 The active cloud layer is an original procedural field in the existing sky pass:
 connected low banks, sparse upper wisps, dark blue-grey undersides and restrained

@@ -61,45 +61,48 @@ func advance(delta: float) -> void:
 		set_process(false)
 
 
-func _emit(at: Vector3, velocity: Vector3, size: Vector3, tint: Color, life: float, smoke := false) -> void:
+func _emit(at: Vector3, velocity: Vector3, size: Vector3, tint: Color, life: float, smoke := false, delay := 0.0) -> void:
 	if not enabled:
 		return
 	life = clampf(life, 0.01, MAX_LIFETIME)
 	var basis := Basis.from_euler(Vector3(_rng.randf(), _rng.randf() * TAU, _rng.randf())).scaled(size)
 	mesh.set_instance_transform(cursor, Transform3D(basis, at))
-	mesh.set_instance_custom_data(cursor, Color(velocity.x, velocity.y, velocity.z, -(clock + 1.0) if smoke else clock + 1.0))
+	mesh.set_instance_custom_data(cursor, Color(velocity.x, velocity.y, velocity.z, -(clock + delay + 1.0) if smoke else clock + delay + 1.0))
 	# Keep colours in [0, 1]; signed custom birth time selects rising smoke.
 	tint.a = life / MAX_LIFETIME
 	mesh.set_instance_color(cursor, tint)
 	cursor = (cursor + 1) % CAPACITY
 	emitted += 1
-	expires_at = maxf(expires_at, clock + life)
+	expires_at = maxf(expires_at, clock + delay + life)
 	batch.visible = true
 	set_process(true)
 
 
 func muzzle(at: Vector3, direction: Vector3, hostile := false) -> void:
-	for i in 7:
+	for i in 8:
 		var spread := Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-0.3, 1), _rng.randf_range(-1, 1))
-		_emit(at, direction * (5.0 + i * 1.2) + spread * 2.0, Vector3.ONE * (0.23 + i * 0.025),
-			Color("ffab61") if hostile else Color("ffe4a4"), 0.18 + i * 0.025)
-	for i in 5:
-		_emit(at + direction * i * 0.24, direction * (1.6 + i * 0.4) + Vector3.UP * 1.5,
-			Vector3.ONE * (0.4 + i * 0.1), Color("8c969e"), 0.65 + i * 0.07, true)
+		var size := Vector3(0.14, 0.14, _rng.randf_range(0.35, 0.7)) if i < 3 else Vector3.ONE * _rng.randf_range(0.18, 0.32)
+		_emit(at, direction * _rng.randf_range(6, 14) + spread * 3.0, size,
+			Color("ffb66e") if hostile else Color("ffe9b5"), _rng.randf_range(0.12, 0.26))
+	for i in 4:
+		_emit(at + direction * i * 0.25, direction * (1.4 + i * 0.35) + Vector3.UP * 1.4,
+			Vector3.ONE * (0.6 + i * 0.13), Color("77818b"), 0.56 + i * 0.045, true, 0.06 + i * 0.025)
 
 
 func impact(at: Vector3, timber := true, heavy := false) -> void:
-	for i in (24 if heavy else 14):
+	# A compact contact glint precedes chips; destruction gets a larger warm core.
+	_emit(at, Vector3.UP * 0.4, Vector3.ONE * (1.25 if heavy else 0.65), Color("ffdfac") if timber else Color("b2c4ca"), 0.09)
+	for i in (26 if heavy else 13 if timber else 7):
 		var angle := i * 2.39996
 		var radial := Vector3(sin(angle), 0, cos(angle))
-		var velocity := radial * _rng.randf_range(2.0, 6.5) + Vector3.UP * _rng.randf_range(2.0, 5.5)
-		var size := Vector3(0.16, 0.22, _rng.randf_range(0.5, 0.95)) if timber else Vector3.ONE * 0.22
-		_emit(at + radial * 0.35, velocity, size,
-			Color("e5b87c") if timber and i % 3 == 0 else Color("a87a48") if timber else Color("b2d5d9"),
-			_rng.randf_range(0.55, 1.1))
-	for i in (5 if heavy else 3):
+		var velocity := radial * _rng.randf_range(2.0, 7.5 if heavy else 5.5) + Vector3.UP * _rng.randf_range(2.0, 6.5 if heavy else 4.5)
+		var size := Vector3(_rng.randf_range(0.08, 0.2), _rng.randf_range(0.1, 0.24), _rng.randf_range(0.45, 1.25)) if timber else Vector3.ONE * 0.18
+		_emit(at + radial * 0.2, velocity, size,
+			Color("e5b87c") if timber and i % 3 == 0 else Color("94623e") if timber else Color("adb9bb"),
+			_rng.randf_range(0.55, 1.2) if timber else 0.32)
+	for i in (5 if heavy else 3 if timber else 1):
 		_emit(at + Vector3.UP * i * 0.3, Vector3(_rng.randf_range(-1, 1), 1.6 + i * 0.3, 0),
-			Vector3.ONE * (0.55 + i * 0.15), Color("858b90"), 0.8 + i * 0.1, true)
+			Vector3.ONE * ((0.85 if heavy else 0.45) + i * 0.15), Color("444d59") if heavy else Color("858b90"), 0.75 + i * 0.1, true)
 
 
 func damage(at: Vector3, lethal := false) -> void:
@@ -114,6 +117,33 @@ func damage(at: Vector3, lethal := false) -> void:
 func trail(at: Vector3, hostile := false) -> void:
 	_emit(at, Vector3.ZERO, Vector3.ONE * (0.18 if hostile else 0.12),
 		Color("ffb46e") if hostile else Color("f3dcb0"), 0.22)
+
+
+static var _flame: ArrayMesh
+
+static func flame_mesh() -> ArrayMesh:
+	if _flame != null:
+		return _flame
+	_flame = ArrayMesh.new()
+	# Two nested six-point flames in one cached mesh; no transparency or bloom.
+	for layer in 2:
+		var radius := 0.48 if layer == 0 else 0.23
+		var length := 1.5 if layer == 0 else 1.95
+		var vertices := PackedVector3Array()
+		for side in 6:
+			var a := Vector3(0.22, sin(side * TAU / 6.0) * radius, cos(side * TAU / 6.0) * radius)
+			var b := Vector3(0.22, sin((side + 1) * TAU / 6.0) * radius, cos((side + 1) * TAU / 6.0) * radius)
+			vertices.append_array(PackedVector3Array([Vector3(length, 0, 0), a, b, Vector3(-0.12, 0, 0), b, a]))
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		_flame.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mat.albedo_color = Color("ffad52") if layer == 0 else Color("fff1c9")
+		_flame.surface_set_material(layer, mat)
+	return _flame
 
 
 func smoke(at: Vector3) -> void:

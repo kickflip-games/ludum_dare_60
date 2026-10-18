@@ -72,10 +72,17 @@ func _run() -> void:
 		var event := InputEventKey.new()
 		event.physical_keycode = KEY_R
 		event.pressed = true
-		game._unhandled_input(event)
+		if state == game.State.SAILING:
+			Input.action_press("restart_crossing")
+			game._physics_process(game.RESTART_HOLD_SECONDS)
+			Input.action_release("restart_crossing")
+		else:
+			game._unhandled_input(event)
 		check(game.state == game.State.CASTING_OFF and game.voyage.stage == 0 and game.hull == game.hull_capacity, "R retry preserves gameplay reset from state %d" % state)
 		check(material.get_shader_parameter("cloud_offset") == offset and material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()) and material.get_shader_parameter("target_focus") == 0.0, "retry keeps the same procedural world and clears focus from state %d" % state)
 		check(material.get_shader_parameter("lightning") == 0.0 and material.get_shader_parameter("storm") == 0.0, "retry clears storm and lightning from state %d" % state)
+		event.pressed = false
+		game._unhandled_input(event)
 	print("PROCEDURAL SKY CHECK: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

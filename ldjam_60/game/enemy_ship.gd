@@ -2,11 +2,16 @@ extends CharacterBody3D
 ## Planar navigation and committed cannon fire use independent state machines.
 
 const Motion = preload("res://game/ocean/boat_wave_motion.gd")
-const SHIP = preload("res://assets/pirate_kit/small_ship.glb")
+const SHIP = preload("res://assets/kenney_ships/ship-pirate-small.glb")
+const ShipMaterials = preload("res://game/ship_materials.gd")
+const ClothMotion = preload("res://game/ship_cloth_motion.gd")
+const SeaEffects = preload("res://game/enemy_sea_effects.gd")
+const MineLayer = preload("res://game/enemy_mine_layer.gd")
 const CANNON = preload("res://assets/pirate_kit/cannon.glb")
 enum Mode { DORMANT, APPROACH, POSITION, TELEGRAPH, FIRE, REPOSITION, SINKING, ESCAPED, DISENGAGING }
 enum Navigation { DORMANT, APPROACH, ATTACK_RUN, TURN_AWAY, REPOSITION, HOLDING, RETREAT, SINKING, ESCAPED }
 enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
+enum Battery { PORT, STARBOARD, BOW }
 
 @export var sailing_speed: float = 7.0
 @export var turning_speed: float = 0.42
@@ -36,11 +41,8 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var encounter_seconds: float = 55.0
 @export var escape_distance: float = 135.0
 @export var cleanup_distance: float = 180.0
-## Every other pass aims slightly long; aim stays fixed during the muzzle warning.
-@export var forgiving_aim_offset: float = 4.5
 @export_group("Night presentation")
-@export var sail_color := Color("c57565")
-@export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.22
+@export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.04
 
 var territory := Vector3.ZERO
 var game: Node3D
@@ -84,12 +86,17 @@ var hit_reaction: float = 0.0
 var shots_fired: int = 0
 var shots_hit: int = 0
 var visual: Node3D
-var pennant: MeshInstance3D
-var trim_material: StandardMaterial3D
+var ship_model: Node3D
+var model_materials: Array[StandardMaterial3D] = []
 var sail_material: StandardMaterial3D
 var flash: MeshInstance3D
 var motion := Motion.new()
 var projectiles: Array[Dictionary] = []
+var gun_mounts: Array[Dictionary] = []
+var active_battery := Battery.PORT
+var sea_effects: Node3D
+var mine_layer: RefCounted
+var salvos_fired := 0
 var run_heading: float = 0.0
 var run_speed: float = 6.3
 var lane_separation: float = 34.0
@@ -103,12 +110,10 @@ var _avoid_heading: float = 0.0
 var _avoid_side: float = 1.0
 var _blocked_elapsed: float = 0.0
 var _departure_heading: float = 0.0
-var _pass_fired: bool = false
 var _course_age: float = 0.0
 var archetype: Resource
 var presentation: Node3D
 var collision_shape: CollisionShape3D
-var sail_bands: Array[MeshInstance3D] = []
 var aim_highlight := false
 var acceleration := 1.2
 var approach_lead := 28.0
@@ -156,49 +161,88 @@ func _ready() -> void:
 	add_child(visual)
 	presentation = Node3D.new()
 	visual.add_child(presentation)
-	var model: Node3D = SHIP.instantiate()
-	model.rotation.y = -PI / 2.0
-	model.scale = Vector3(1.30, 0.9, 0.95)
-	model.position = Vector3(0, -0.1, -1.8)
-	presentation.add_child(model)
-	trim_material = game._material(Color("38282d"))
-	var timber = trim_material
-	game._box(presentation, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
-	sail_material = game._material(sail_color)
-	# A restrained cloth fill keeps the red identity on the moon's shadow side.
-	sail_material.emission_enabled = true
-	sail_material.emission = sail_color
-	sail_material.emission_energy_multiplier = sail_fill
-	var canvas := Node3D.new()
-	presentation.add_child(canvas)
-	canvas.position = Vector3(0, 4.3, -1.8)
-	canvas.rotation.y = PI / 4.0
-	for panel_index in 2:
-		var side := -1.0 if panel_index == 0 else 1.0
-		var panel = game._box(canvas, Vector3(2.5, 3.4, 0.09), Vector3(side * 1.02, 0, 0.72), sail_material)
-		panel.rotation.y = side * deg_to_rad(35.0)
-		for band_index in 2:
-			var band = game._box(panel, Vector3(2.5, 0.28, 0.11), Vector3(0, -0.6 + band_index * 1.1, 0), timber)
-			band.visible = false
-			sail_bands.append(band)
-		game._box(panel, Vector3(2.6, 0.14, 0.14), Vector3(0, 1.8, 0), timber)
-	pennant = preload("res://game/ship_pennant.gd").new()
-	presentation.add_child(pennant)
-	pennant.position = Vector3(0, 7.45, -1.8)
-	pennant.configure(Color("d94b51"), Vector2(1.7, 0.85))
-	var gun: Node3D = CANNON.instantiate()
-	gun.position = Vector3(-1.1, 0.55, -1.8)
-	gun.rotation.y = -PI / 2.0
-	gun.scale = Vector3.ONE * 1.1
-	presentation.add_child(gun)
-	var spark := SphereMesh.new()
-	spark.radius = 0.4
-	spark.height = 0.8
-	flash = game._mesh(presentation, spark, Vector3(-2.4, 1.3, -1.8), game._material(Color("ffbe67"), 2.0))
+	_build_presentation()
+	if is_instance_valid(ship_model):
+		mine_layer = MineLayer.new()
+		mine_layer.ship = self
+		_build_armament(1, false, false)
+	else:
+		# The flagship supplies its own multi-muzzle weapon and presentation.
+		flash = game._mesh(presentation, game.combat_particles.flame_mesh(), Vector3(-2.4, 1.3, -1.8), null)
+		flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sea_effects = SeaEffects.new()
+	sea_effects.name = "SeaEffects"
+	add_child(sea_effects)
+	sea_effects.setup(self)
 	reset()
 
 
+func _build_armament(count: int, both_sides: bool, bow: bool) -> void:
+	for mount in gun_mounts:
+		mount.gun.queue_free()
+		mount.flash.queue_free()
+	gun_mounts.clear()
+	for side in ([Battery.PORT, Battery.STARBOARD] if both_sides else [Battery.PORT]):
+		for i in count:
+			var along := -1.8 if count == 1 else lerpf(-2.8, 0.2, float(i) / (count - 1))
+			var sign_x := -1.0 if side == Battery.PORT else 1.0
+			var deck := 1.3 if both_sides else 0.55
+			_add_gun(side, Vector3(sign_x * 1.1, deck, along), Vector3(sign_x * 2.4, deck + 0.75, along), sign_x * PI / 2)
+	if bow:
+		_add_gun(Battery.BOW, Vector3(0, 2.28, -4.2), Vector3(0, 3.03, -5.5), 0)
+	flash = gun_mounts[0].flash
+	if is_instance_valid(sea_effects): sea_effects.refresh_materials()
+
+
+func _add_gun(battery: int, at: Vector3, muzzle: Vector3, yaw: float) -> void:
+	var gun: Node3D = CANNON.instantiate()
+	gun.name = "BowCannon" if battery == Battery.BOW else "PortCannon" if battery == Battery.PORT else "StarboardCannon"
+	gun.position = at
+	gun.rotation.y = yaw
+	gun.scale = Vector3.ONE * 1.1
+	presentation.add_child(gun)
+	var tell: MeshInstance3D = game._mesh(presentation, game.combat_particles.flame_mesh(), muzzle, null)
+	var direction := Vector3.FORWARD if battery == Battery.BOW else Vector3.LEFT if battery == Battery.PORT else Vector3.RIGHT
+	tell.basis = Basis(direction, Vector3.UP, direction.cross(Vector3.UP))
+	tell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	tell.visible = false
+	gun_mounts.append({"battery": battery, "gun": gun, "muzzle": muzzle, "flash": tell})
+
+
+func _battery_direction(battery: int) -> Vector3:
+	return forward() if battery == Battery.BOW else port_direction() if battery == Battery.PORT else -port_direction()
+
+
+func _select_battery(offset: Vector3) -> int:
+	var selected := -1
+	var best := cos(deg_to_rad(38.0)) if game.arena_mode else 0.90
+	for mount in gun_mounts:
+		var alignment: float = _battery_direction(mount.battery).dot(offset.normalized())
+		if alignment > best:
+			best = alignment
+			selected = mount.battery
+	return selected
+
+
+func _mount_position(mount: Dictionary) -> Vector3:
+	# Match visible barrels, including cosmetic wave heave/pitch/roll.
+	return presentation.to_global(mount.muzzle)
+
+
+func _build_presentation() -> void:
+	ship_model = SHIP.instantiate()
+	ship_model.name = "EnemyShipModel"
+	ship_model.rotation.y = PI
+	ship_model.scale = Vector3.ONE * 0.9
+	ship_model.position = Vector3(0, -0.6, -1.62)
+	presentation.add_child(ship_model)
+	ship_model.add_child(ClothMotion.new())
+	model_materials = ShipMaterials.prepare(ship_model)
+	sail_material = ship_model.get_node("ship-pirate-small/sail-a").get_active_material(0)
+
+
 func reset() -> void:
+	if is_instance_valid(sea_effects): sea_effects.reset()
 	if has_meta("wave_id"):
 		remove_meta("wave_id")
 	if director != null:
@@ -219,6 +263,12 @@ func reset() -> void:
 	set_meta("destroyed", true)
 	flash.visible = false
 	shots_fired = 0
+	salvos_fired = 0
+	active_battery = Battery.PORT
+	for mount in gun_mounts:
+		mount.flash.visible = false
+	if mine_layer != null:
+		mine_layer.reset()
 	shots_hit = 0
 	velocity = Vector3.ZERO
 	hull = hull_capacity
@@ -230,10 +280,6 @@ func reset() -> void:
 	heading = 0.0
 	rotation = Vector3.ZERO
 	visual.transform = Transform3D.IDENTITY
-	# Specialized hulls can replace the ordinary presentation, including its flag.
-	if is_instance_valid(pennant): pennant.flutter(0.0)
-	sail_material.albedo_color = sail_color
-	sail_material.emission = sail_color
 	motion.reset()
 	run_heading = 0.0
 	run_speed = game.SPEED
@@ -248,7 +294,6 @@ func reset() -> void:
 	_avoid_side = 1.0
 	_blocked_elapsed = 0.0
 	_departure_heading = 0.0
-	_pass_fired = false
 	_course_age = 0.0
 	_route_point = Vector3.INF
 	_route_check_left = 0.0
@@ -278,10 +323,6 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	turn_acceleration = profile.turn_acceleration
 	acceleration = profile.acceleration
 	hull_capacity = profile.hull
-	sail_color = profile.sail_color
-	sail_fill = profile.sail_fill
-	trim_material.albedo_color = profile.trim_color
-	if is_instance_valid(pennant): pennant.configure(profile.pennant_color, profile.pennant_size)
 	broadside_separation = profile.broadside_separation + lane_offset
 	approach_lead = profile.approach_lead
 	approach_angle = profile.approach_angle
@@ -290,13 +331,16 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	return_seconds = profile.return_seconds
 	telegraph_seconds = profile.telegraph_seconds
 	reload_seconds = profile.reload_seconds
-	presentation.scale = Vector3.ONE * profile.size
-	collision_shape.shape.radius = 3.6 * profile.size
-	collision_shape.position = Vector3(0, 1.0, -1.8) * profile.size
-	set_meta("target_radius", 4.2 * profile.size)
+	firing_range = profile.firing_range
+	_build_armament(profile.broadside_guns, profile.both_sides, profile.bow_gun)
+	if mine_layer != null:
+		mine_layer.reset()
+		mine_layer.enabled = profile.lays_mines
+	presentation.scale = Vector3.ONE
+	collision_shape.shape.radius = 3.6
+	collision_shape.position = Vector3(0, 1.0, -1.8)
+	set_meta("target_radius", 4.2)
 	set_meta("hazard_name", "the hostile " + profile.display_name.to_lower())
-	for band_index in sail_bands.size():
-		sail_bands[band_index].visible = band_index % 2 < profile.sail_bands
 	_update_cloth()
 
 
@@ -314,11 +358,12 @@ func set_aim_highlight(enabled: bool) -> void:
 
 func _update_cloth() -> void:
 	var damage := 0.16 * (1.0 - float(maxi(0, hull)) / maxi(1, hull_capacity))
-	var color := sail_color.darkened(damage)
 	var impact := clampf((hit_reaction - 0.45) / 0.20, 0.0, 1.0)
-	sail_material.albedo_color = color.lerp(Color("fff0c4"), impact * 0.8)
-	sail_material.emission = color.lerp(Color("fff0c4"), impact)
-	sail_material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
+	for material in model_materials:
+		material.albedo_color = Color.WHITE.darkened(damage).lerp(Color("fff0c4"), impact * 0.8)
+		material.emission = Color.WHITE.lerp(Color("fff0c4"), maxf(damage, impact))
+		material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
+	if is_instance_valid(sea_effects): sea_effects.apply_arrival()
 
 
 func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
@@ -336,9 +381,8 @@ func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
 	visible = true
 	collision_layer = 4
 	set_meta("destroyed", false)
-	sail_material.albedo_color = sail_color
-	sail_material.emission = sail_color
 	_update_cloth()
+	sea_effects.begin()
 	game.cue_sound("enemy")
 
 
@@ -351,6 +395,9 @@ func port_direction() -> Vector3:
 
 
 func muzzle_position() -> Vector3:
+	for mount in gun_mounts:
+		if mount.battery == active_battery:
+			return _mount_position(mount)
 	return global_position + forward() * 1.8 + port_direction() * 2.4 + Vector3.UP * 1.3
 
 
@@ -373,14 +420,15 @@ func update_ship(delta: float) -> void:
 	navigation_time += delta
 	hit_reaction = maxf(0, hit_reaction - delta)
 	_update_cloth()
-	if is_instance_valid(pennant): pennant.flutter(game.sea_time)
 	if navigation_state == Navigation.SINKING:
+		sea_effects.update_trail(delta, false)
 		visual.position.y -= delta * 2.5
 		visual.rotation.z += delta * 0.18
 		if navigation_time >= 3.5:
 			navigation_state = Navigation.ESCAPED
 			visible = false
 		return
+	sea_effects.advance_arrival(delta)
 	age += delta
 	cooldown = maxf(0.0, cooldown - delta)
 	var to_player: Vector3 = game.boat.position - global_position
@@ -391,6 +439,11 @@ func update_ship(delta: float) -> void:
 	var target_speed := run_speed
 	match navigation_state:
 		Navigation.APPROACH:
+			_course_age += delta
+			# Refresh a stale interception only between committed legs. Guns keep
+			# their warning point; steering still uses the same bounded turn rate.
+			if game.arena_mode and not gun_mounts.is_empty() and game.boat.velocity.length() > 1.0 and _course_age >= 4.0 and not _route_point.is_finite() and weapon_state != Weapon.TELEGRAPH:
+				_capture_course()
 			var relative: Vector3 = global_position - _intercept_origin
 			var along := relative.dot(_run_forward())
 			var lateral := relative.dot(_run_right())
@@ -400,17 +453,16 @@ func update_ship(delta: float) -> void:
 				desired = (_run_forward() * approach_lead + _run_right() * (lane_separation - lateral)).normalized()
 			else:
 				desired = _arena_approach(_intercept_point, delta) if game.arena_mode else to_join.normalized()
-			var predicted_along := along - _intercept_velocity.dot(_run_forward()) * navigation_time
+			var predicted_along := along - _intercept_velocity.dot(_run_forward()) * _course_age
 			target_speed = clampf(run_speed + (8.0 - predicted_along) * 0.18 + maxf(0.0, absf(lateral - lane_separation) - 10.0) * 0.05,
 				minf(run_speed * 0.85, sailing_speed * 0.74), sailing_speed * 1.12)
 			var actual: Vector3 = global_position - game.boat.position
 			var player_forward := _direction(game.heading)
 			var player_right := Vector3(cos(game.heading), 0, sin(game.heading))
-			if navigation_time > 2.0 and absf(actual.dot(player_forward)) < 24.0 and actual.dot(player_right) > 24.0 and actual.dot(player_right) < 46.0 and forward().dot(player_forward) > 0.90 and _avoid_left <= 0.0 and _path_clear(player_forward, 32.0):
+			if _can_join_run(actual, player_forward, player_right) and _avoid_left <= 0.0 and _path_clear(player_forward, 32.0):
 				run_heading = game.heading
 				run_speed = minf(sailing_speed * 0.96, clampf(game.boat.velocity.length(), game.SPEED * 0.85, game.SPEED * 1.05))
 				run_elapsed = 0.0
-				_pass_fired = false
 				passes += 1
 				_change_navigation(Navigation.ATTACK_RUN)
 			elif navigation_time >= approach_timeout:
@@ -494,8 +546,24 @@ func update_ship(delta: float) -> void:
 			last_abort = "blocked route recovery"
 			_start_turn()
 		_blocked_elapsed = 0.0
-	_update_weapon(delta)
+	sea_effects.update_trail(delta, true)
+	sea_effects.apply_arrival()
+	if gun_mounts.is_empty() or sea_effects.arrival_age >= SeaEffects.ARRIVAL_SECONDS or weapon_state != Weapon.READY:
+		_update_weapon(delta)
+	if mine_layer != null:
+		mine_layer.update(delta)
 	_update_tell()
+
+
+func _can_join_run(actual: Vector3, player_forward: Vector3, player_right: Vector3) -> bool:
+	# Ordinary hulls commit to a useful broadside without chasing exact parallelism.
+	# The flagship keeps its specialised approach contract.
+	var ordinary: bool = game.arena_mode and not gun_mounts.is_empty()
+	return navigation_time > (0.5 if ordinary else 2.0) \
+		and absf(actual.dot(player_forward)) < (35.0 if ordinary else 24.0) \
+		and (absf(actual.dot(player_right)) if ordinary else actual.dot(player_right)) > (player_separation + 3.0 if ordinary else 24.0) \
+		and (absf(actual.dot(player_right)) if ordinary else actual.dot(player_right)) < (55.0 if ordinary else 46.0) \
+		and forward().dot(player_forward) > (0.78 if ordinary else 0.90)
 
 
 func _traffic_speed(desired: float) -> float:
@@ -524,7 +592,6 @@ func _start_turn() -> void:
 
 
 func receive_attack_slot() -> void:
-	_pass_fired = false
 	_capture_course()
 	_change_navigation(Navigation.APPROACH)
 
@@ -555,24 +622,37 @@ func _change_weapon(value: Weapon) -> void:
 
 
 func _shot_lane_valid(point: Vector3) -> bool:
-	var from := muzzle_position()
-	var query := PhysicsRayQueryParameters3D.create(from, point, 5, [get_rid()])
-	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	for mount in gun_mounts:
+		if mount.battery != active_battery:
+			continue
+		var flat := (point - _mount_position(mount)) * Vector3(1, 0, 1)
+		if _battery_direction(active_battery).dot(flat.normalized()) < cos(deg_to_rad(38.0)):
+			return false
+		var query := PhysicsRayQueryParameters3D.create(_mount_position(mount), point, 5, [get_rid()])
+		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
+			return false
+	return true
 
 
 func _update_weapon(delta: float) -> void:
 	weapon_time += delta
-	if navigation_state == Navigation.RETREAT:
+	if navigation_state in [Navigation.DORMANT, Navigation.ESCAPED, Navigation.SINKING, Navigation.RETREAT] or hull <= 0:
 		return
 	match weapon_state:
 		Weapon.READY:
 			var offset: Vector3 = game.boat.position - global_position
-			if navigation_state != Navigation.ATTACK_RUN or _pass_fired or cooldown > 0.0:
+			var permitted: bool = not managed_by_director or director.owners.has(self)
+			var sailing_leg: bool = navigation_state in [Navigation.APPROACH, Navigation.REPOSITION, Navigation.TURN_AWAY]
+			var attack_course: bool = navigation_state == Navigation.ATTACK_RUN or (game.arena_mode and sailing_leg and absf(turn_rate) < 0.7)
+			if not permitted or not attack_course or safety_priority >= 2 or cooldown > 0.0:
 				return
-			if offset.length() <= player_separation or offset.length() >= firing_range or port_direction().dot(offset.normalized()) < 0.90:
+			if offset.length() <= player_separation or offset.length() >= firing_range:
 				return
-			_lock_shot()
-			if not _shot_lane_valid(locked_point):
+			var battery := _select_battery(offset)
+			if battery < 0:
+				return
+			active_battery = battery
+			if not _lock_shot() or not _shot_lane_valid(locked_point):
 				return
 			if managed_by_director and not director.request_warning(self):
 				return
@@ -580,14 +660,13 @@ func _update_weapon(delta: float) -> void:
 			game.cue_sound("warning")
 		Weapon.TELEGRAPH:
 			if weapon_time >= telegraph_seconds:
-				if _shot_lane_valid(locked_point):
+				if safety_priority < 2 and _shot_lane_valid(locked_point):
 					_fire()
 					_change_weapon(Weapon.FIRE)
 				else:
 					cancelled_shots += 1
 					cooldown = reload_seconds
 					_change_weapon(Weapon.RELOAD)
-				_pass_fired = true
 		Weapon.FIRE:
 			if weapon_time >= 0.18:
 				_change_weapon(Weapon.RELOAD)
@@ -760,36 +839,59 @@ func _change(value: Mode) -> void:
 	timer = 0.0
 
 
-func _lock_shot() -> void:
-	# Predict once and keep this fixed world point throughout the warning. No homing.
-	# The cutter is settling onto its pass, so predict the committed parallel
-	# course rather than extrapolating the last inward approach velocity.
-	var future_origin: Vector3 = muzzle_position() + _run_forward() * (run_speed + 0.15) * telegraph_seconds
-	var player_at: Vector3 = game.boat.position + game.boat.velocity * telegraph_seconds
-	var r: Vector3 = player_at - future_origin
-	r.y = 0.0
-	var v: Vector3 = game.boat.velocity
-	var a: float = v.length_squared() - projectile_speed * projectile_speed
-	var b: float = 2.0 * r.dot(v)
-	var discriminant: float = maxf(0.0, b * b - 4.0 * a * r.length_squared())
-	var flight: float = clampf((-b - sqrt(discriminant)) / (2.0 * a), 0.4, 3.0)
+func _lock_shot() -> bool:
+	# Freeze a world-space intercept at warning start. Use measured motion rather
+	# than the navigation goal; the short warning may begin on an approach leg.
+	var future_origin := muzzle_position() + velocity * telegraph_seconds
+	var v: Vector3 = game.boat.velocity * Vector3(1, 0, 1)
+	var player_at: Vector3 = game.boat.position + v * telegraph_seconds
+	var r := (player_at - future_origin) * Vector3(1, 0, 1)
+	var flight := intercept_time(r, v, projectile_speed)
+	if flight <= 0.0 or flight >= 3.9:
+		return false
 	locked_point = player_at + v * flight
-	if passes % 2 == 0:
-		locked_point += _run_forward() * forgiving_aim_offset
 	locked_point.y = 0.8
+	return true
+
+
+static func intercept_time(r: Vector3, v: Vector3, speed: float) -> float:
+	var a := v.length_squared() - speed * speed
+	var b := 2.0 * r.dot(v)
+	var c := r.length_squared()
+	if c < 0.000001: return 0.0
+	if absf(a) < 0.00001 * maxf(1.0, speed * speed):
+		return -c / b if absf(b) > 0.000001 and -c / b > 0 else -1.0
+	var discriminant := b * b - 4.0 * a * c
+	if discriminant < 0: return -1.0
+	# Stable quadratic roots, including equal-speed and receding-target cases.
+	var q := -0.5 * (b + (1.0 if b >= 0 else -1.0) * sqrt(discriminant))
+	var first := q / a
+	var second := c / q if absf(q) > 0.000001 else -1.0
+	if first > 0 and second > 0: return minf(first, second)
+	return first if first > 0 else second
 
 
 func _update_tell() -> void:
-	flash.visible = weapon_state == Weapon.FIRE or (weapon_state == Weapon.TELEGRAPH and fmod(weapon_time, 0.3) < 0.15)
+	for mount in gun_mounts:
+		mount.flash.visible = mount.battery == active_battery and ((weapon_state == Weapon.FIRE and weapon_time < 0.11) or weapon_state == Weapon.TELEGRAPH)
+		mount.flash.scale = Vector3.ONE * ((0.65 + 0.15 * sin(weapon_time * 32.0)) if weapon_state == Weapon.TELEGRAPH else 0.6 + 0.4 * clampf(1.0 - weapon_time / 0.11, 0.0, 1.0))
 
 
 func _fire() -> void:
-	var from := muzzle_position()
+	for mount in gun_mounts:
+		if mount.battery == active_battery:
+			_launch_ball(_mount_position(mount))
+	salvos_fired += 1
+	cooldown = reload_seconds
+	game.cue_sound("enemy_shot")
+
+
+func _launch_ball(from: Vector3) -> void:
 	var offset := locked_point - from
 	var flat := Vector3(offset.x, 0, offset.z)
 	var flight: float = maxf(0.2, flat.length() / projectile_speed)
 	var launch := flat.normalized() * projectile_speed
-	launch.y = (locked_point.y - from.y + 2.5 * flight * flight) / flight
+	launch.y = (locked_point.y - from.y) / flight + 2.5 * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second)
 	var shape := SphereMesh.new()
 	shape.radius = 0.4
 	shape.height = 0.8
@@ -799,8 +901,6 @@ func _fire() -> void:
 	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0, "trail_clock": 0.0})
 	game.combat_particles.muzzle(from, launch.normalized(), true)
 	shots_fired += 1
-	cooldown = reload_seconds
-	game.cue_sound("enemy_shot")
 
 
 func _advance_shots(delta: float) -> void:
@@ -808,7 +908,8 @@ func _advance_shots(delta: float) -> void:
 		var shot: Dictionary = projectiles[i]
 		var from: Vector3 = shot.position
 		var to: Vector3 = from + shot.velocity * delta
-		var query := PhysicsRayQueryParameters3D.create(from, to, 3)
+		game.cannonball_whiz(from, to, shot)
+		var query := PhysicsRayQueryParameters3D.create(from, to, 7 if not gun_mounts.is_empty() else 3, [get_rid()])
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		var water: Dictionary = game.ocean.water_hit(from, to, delta)
 		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
@@ -821,8 +922,10 @@ func _advance_shots(delta: float) -> void:
 					shots_hit += 1
 			elif not hit.is_empty() and hit.collider.get_meta("destructible", false):
 				game.cannon._impact(hit.collider, hit.position)
-			if hit.is_empty() or not hit.collider.get_meta("destructible", false):
-				game.cannon.water_splash(hit.position if not hit.is_empty() else water.position if not water.is_empty() else to)
+			elif not hit.is_empty() and hit.collider != game.boat:
+				game.combat_particles.impact(hit.position, false)
+			elif hit.is_empty() and not water.is_empty():
+				game.cannon.water_splash(water.position)
 			shot.node.queue_free()
 			projectiles.remove_at(i)
 		else:
@@ -840,9 +943,15 @@ func take_hit() -> void:
 	hull -= 1
 	hit_reaction = 0.65
 	if hull <= 0:
+		sea_effects.advance_arrival(SeaEffects.ARRIVAL_SECONDS)
+		sea_effects.apply_arrival()
 		set_meta("destroyed", true)
 		collision_layer = 0
 		flash.visible = false
+		for mount in gun_mounts:
+			mount.flash.visible = false
+		if mine_layer != null:
+			mine_layer.reset()
 		_change_navigation(Navigation.SINKING)
 		_change_weapon(Weapon.READY)
 		set_aim_highlight(false)
@@ -852,11 +961,14 @@ func take_hit() -> void:
 
 
 func update_visuals(delta: float) -> void:
-	if not visible or navigation_state == Navigation.SINKING:
+	if not visible:
 		return
-	if is_instance_valid(pennant): pennant.flutter(game.sea_time)
+	sea_effects.sync_surface()
+	if navigation_state == Navigation.SINKING:
+		return
+	sea_effects.apply_arrival()
 	motion.update_motion(game.ocean, self, visual, delta)
-	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.16
+	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.21
 	_update_tell()
 
 
@@ -881,7 +993,8 @@ func _finish_escape() -> void:
 
 func warning() -> String:
 	if weapon_state == Weapon.TELEGRAPH:
-		return "ENEMY BROADSIDE  ·  TURN TO EVADE  ·  %.1fs" % maxf(0, telegraph_seconds - weapon_time)
+		var kind := "BOW CANNON" if active_battery == Battery.BOW else "BROADSIDE"
+		return "ENEMY %s  ·  TURN TO EVADE  ·  %.1fs" % [kind, maxf(0, telegraph_seconds - weapon_time)]
 	if navigation_state in [Navigation.APPROACH, Navigation.ATTACK_RUN] and age < 7.0:
 		return "HOSTILE %s  ·  SHOOT OR SAIL CLEAR" % display_name().to_upper()
 	return ""

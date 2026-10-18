@@ -1,6 +1,6 @@
 extends "res://game/enemy_ship.gd"
 ## Heavy navigation is inherited. Committed multi-muzzle volleys and mines stay here.
-const FLAGSHIP = preload("res://assets/boss_ship/ship.glb")
+const FLAGSHIP = preload("res://assets/kenney_ships/ship-pirate-large.glb")
 const WARNING = preload("res://game/boss_warning.gdshader")
 const MINE = preload("res://game/boss_mine.tscn")
 enum Pattern { ROLLING, DOUBLE, SCATTER }
@@ -10,6 +10,8 @@ enum Pattern { ROLLING, DOUBLE, SCATTER }
 @export var minimum_attack_distance := 35.0
 @export var maximum_projectiles := 12
 @export var scatter_half_angle := 24.0
+@export var volley_reload := 3.0
+@export var double_reload := 3.4
 @export_group("Flagship mines")
 @export var mine_interval := 6.0
 @export var phase_two_mine_interval := 4.5
@@ -33,23 +35,12 @@ var attack_side := 1.0
 var launch_history: Array[Dictionary] = []
 var pattern_history: Array[int] = []
 var phase_bursts := 0
+var muzzle_flash_until := 0.0
 var flagship_model: Node3D
 var boss_materials: Array[StandardMaterial3D] = []
 
 func _ready() -> void:
 	super._ready()
-	# Keep the shared flash, damage material and motion pivot; replace the small hull.
-	flash.reparent(visual)
-	for child in presentation.get_children():
-		presentation.remove_child(child)
-		child.queue_free()
-	sail_bands.clear()
-	flagship_model = FLAGSHIP.instantiate()
-	flagship_model.rotation.y = -PI / 2.0
-	flagship_model.scale = Vector3.ONE * 1.25
-	flagship_model.position.y = 0.4
-	presentation.add_child(flagship_model)
-	_fill_materials(flagship_model)
 	collision_shape.shape.radius = 4.8
 	collision_shape.position = Vector3(0, 1.2, -1.8)
 	for z in [-6.0, 3.0]:
@@ -61,37 +52,50 @@ func _ready() -> void:
 		add_child(shape)
 	set_meta("target_radius", 6.2)
 	set_meta("hazard_name", "the flagship")
-	for i in 5:
-		var mesh := PlaneMesh.new()
-		mesh.subdivide_depth = 48
-		var mat := ShaderMaterial.new()
-		mat.shader = WARNING
-		var line: MeshInstance3D = game._mesh(game, mesh, Vector3.ZERO, mat)
-		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		line.extra_cull_margin = 4.0
-		line.visible = false
-		warnings.append(line)
+	var mat := ShaderMaterial.new()
+	mat.shader = WARNING
+	var area: MeshInstance3D = game._mesh(game, _warning_triangle(), Vector3.ZERO, mat)
+	area.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	area.extra_cull_margin = 4.0
+	area.visible = false
+	warnings.append(area)
 
-func _fill_materials(node: Node) -> void:
-	if node is MeshInstance3D:
-		for i in node.mesh.get_surface_count():
-			var mat: StandardMaterial3D = node.mesh.surface_get_material(i).duplicate()
-			# Preserve the atlas and distinctive rigging silhouette in the night scene.
-			mat.emission_enabled = true
-			mat.emission_texture = mat.albedo_texture
-			mat.emission = Color("d4b884")
-			mat.emission_energy_multiplier = 0.22
-			node.set_surface_override_material(i, mat)
-			boss_materials.append(mat)
-	for child in node.get_children():
-		_fill_materials(child)
+func _warning_triangle() -> ImmediateMesh:
+	# One reusable filled triangle, tessellated for the shared rolling-water shader.
+	var mesh := ImmediateMesh.new()
+	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring in 64:
+		for side in 32:
+			var a := Vector2(float(side) / 32, float(ring) / 64)
+			var b := Vector2(float(side + 1) / 32, float(ring) / 64)
+			var c := Vector2(float(side + 1) / 32, float(ring + 1) / 64)
+			var d := Vector2(float(side) / 32, float(ring + 1) / 64)
+			for uv: Vector2 in [a, b, c, a, c, d]:
+				mesh.surface_set_uv(uv)
+				mesh.surface_add_vertex(Vector3((uv.x * 2.0 - 1.0) * uv.y, 0, -uv.y))
+	mesh.surface_end()
+	return mesh
+
+func _build_presentation() -> void:
+	flagship_model = FLAGSHIP.instantiate()
+	flagship_model.name = "FlagshipModel"
+	flagship_model.rotation.y = PI
+	flagship_model.scale = Vector3.ONE * 1.25
+	flagship_model.position = Vector3(0, -1.0, -1.8)
+	presentation.add_child(flagship_model)
+	flagship_model.add_child(ClothMotion.new())
+	model_materials = ShipMaterials.prepare(flagship_model)
+	boss_materials.assign(model_materials)
+	sail_material = flagship_model.get_node("ship-pirate-large/sail-a").get_active_material(0)
+
 
 func _update_cloth() -> void:
 	super._update_cloth()
 	var impact := clampf((hit_reaction - 0.45) / 0.20, 0.0, 1.0)
 	for mat in boss_materials:
 		mat.albedo_color = Color.WHITE.darkened(0.12 * (1.0 - float(maxi(0, hull)) / maxi(1, hull_capacity)))
-		mat.emission_energy_multiplier = 0.22 + (0.16 if aim_highlight else 0.0) + impact * 0.30
+		mat.emission_energy_multiplier = sail_fill + (0.16 if aim_highlight else 0.0) + impact * 0.30
+	if is_instance_valid(sea_effects): sea_effects.apply_arrival()
 
 func display_name() -> String:
 	return "Flagship"
@@ -99,6 +103,7 @@ func display_name() -> String:
 func reset() -> void:
 	clear_hazards()
 	super.reset()
+	muzzle_flash_until = 0.0
 	phase_two = false
 	pattern_index = 0
 	pattern = Pattern.ROLLING
@@ -111,9 +116,10 @@ func reset() -> void:
 	phase_bursts = 0
 
 func clear_hazards() -> void:
+	if is_instance_valid(sea_effects): sea_effects.reset()
 	volley.clear()
-	for line in warnings:
-		line.visible = false
+	for area in warnings:
+		area.visible = false
 	for mine in mines:
 		if is_instance_valid(mine): mine.expire()
 	mines.clear()
@@ -272,6 +278,10 @@ func _fire_due() -> void:
 		projectiles.append({"node":ball, "position":from, "velocity":launch, "ttl":4.0, "trail_clock":0.0})
 		game.combat_particles.muzzle(from, launch.normalized(), true)
 		flash.global_position = from
+		var direction := launch.normalized()
+		var up := (Vector3.UP - direction * direction.dot(Vector3.UP)).normalized()
+		flash.global_basis = Basis(direction, up, direction.cross(up))
+		muzzle_flash_until = game.sea_time + 0.11
 		shots_fired += 1
 		launch_history.append({"pattern":pattern, "salvo":salvo, "origin":from, "warning_origin":shot.origin, "direction":shot.direction, "velocity":launch})
 		if launch_history.size() > 128: launch_history.pop_front()
@@ -287,33 +297,53 @@ func _fire_due() -> void:
 
 func _finish_pattern() -> void:
 	volley.clear()
-	cooldown = (5.0 if pattern == Pattern.DOUBLE else 4.5) * (0.90 if phase_two else 1.0)
+	cooldown = (double_reload if pattern == Pattern.DOUBLE else volley_reload) * (0.90 if phase_two else 1.0)
 	_change_weapon(Weapon.RELOAD)
-	for line in warnings: line.visible = false
+	for area in warnings: area.visible = false
 
 func _update_tell() -> void:
-	flash.visible = weapon_state == Weapon.FIRE
-	for i in warnings.size():
-		var line := warnings[i]
-		line.visible = i < volley.size() and weapon_state in [Weapon.TELEGRAPH, Weapon.FIRE] and not volley[i].fired
-		if not line.visible: continue
-		var shot: Dictionary = volley[i]
-		var offset: Vector3 = shot.end - shot.origin
-		offset.y = 0.0
-		line.mesh.size = Vector2(0.22 if pattern != Pattern.SCATTER else 0.28, offset.length())
-		var at: Vector3 = (shot.origin + shot.end) * 0.5
-		at.y = game.ocean.height_at(Vector2(at.x, at.z)) + 0.14
-		line.global_position = at
-		line.global_basis = Basis.looking_at(offset)
-		var mat: ShaderMaterial = line.material_override
-		mat.set_shader_parameter("tell_color", Color("dc9e65") if pattern == Pattern.ROLLING else Color("e6c17a") if pattern == Pattern.DOUBLE and salvo == 0 else Color("cf7e73"))
-		mat.set_shader_parameter("opacity", 0.58 + 0.12 * sin(weapon_time * 7.0 + i * 0.6))
-		game.ocean.settings.apply_waves(mat)
-		game.ocean.wave_field.apply_to(mat)
-		mat.set_shader_parameter("wave_time", game.ocean.wave_time)
-		mat.set_shader_parameter("focus_xz", game.ocean.focus_xz)
-		mat.set_shader_parameter("fade_start", game.ocean.fade_start)
-		mat.set_shader_parameter("fade_end", game.ocean.fade_end)
+	flash.visible = game.sea_time < muzzle_flash_until and not get_meta("destroyed", true)
+	flash.scale = Vector3.ONE * (0.6 + 0.4 * clampf((muzzle_flash_until - game.sea_time) / 0.11, 0.0, 1.0))
+	if warnings.is_empty(): return
+	var area := warnings[0]
+	area.visible = not volley.is_empty() and weapon_state in [Weapon.TELEGRAPH, Weapon.FIRE]
+	if not area.visible: return
+	var geometry := warning_geometry()
+	area.global_position = geometry.origin
+	area.global_basis = Basis.looking_at(geometry.direction) * Basis.from_scale(Vector3(geometry.half_width, 1, geometry.length))
+	var mat: ShaderMaterial = area.material_override
+	mat.set_shader_parameter("tell_color", Color("dc9e65") if pattern == Pattern.ROLLING else Color("e6c17a") if pattern == Pattern.DOUBLE and salvo == 0 else Color("cf7e73"))
+	mat.set_shader_parameter("opacity", 0.23 + (0.0 if game.motion_setting == 1 else 0.03 * sin(weapon_time * 7.0)))
+	game.ocean.settings.apply_waves(mat)
+	game.ocean.wave_field.apply_to(mat)
+	mat.set_shader_parameter("wave_time", game.ocean.wave_time)
+	mat.set_shader_parameter("focus_xz", game.ocean.focus_xz)
+	mat.set_shader_parameter("fade_start", game.ocean.fade_start)
+	mat.set_shader_parameter("fade_end", game.ocean.fade_end)
+
+func warning_geometry() -> Dictionary:
+	# Bound the entire locked volley, including separated muzzles. The broad fill
+	# advertises danger, while individual cannonballs still leave dodgeable gaps.
+	var origin := Vector3.ZERO
+	var direction := Vector3.ZERO
+	for shot in volley:
+		origin += shot.origin
+		direction += shot.direction
+	origin /= maxi(1, volley.size())
+	direction.y = 0
+	direction = direction.normalized()
+	origin -= direction * 20.0
+	origin.y = 0
+	var side := direction.cross(Vector3.UP)
+	var length := 1.0
+	var slope := 0.0
+	for shot in volley:
+		for point: Vector3 in [shot.origin, shot.end]:
+			var offset := point - origin
+			var along := maxf(0.1, offset.dot(direction))
+			length = maxf(length, along)
+			slope = maxf(slope, (absf(offset.dot(side)) + 0.8) / along)
+	return {"origin": origin, "direction": direction, "length": length, "half_width": length * slope}
 
 func take_hit() -> void:
 	if game.state != game.State.SAILING: return

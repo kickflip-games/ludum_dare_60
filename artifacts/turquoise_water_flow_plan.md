@@ -8,8 +8,9 @@ Restore the supplied references' turquoise water, broad moving surface bands and
 small pale crest caps. Make the existing directional waves share that style.
 Add visible optional flow zones that grant 25% more forward sailing speed.
 **The boost persists after leaving the zone**, until the run ends or restarts.
-The recommendation is one permanent 1.25 multiplier per run; additional
-distinct-zone stacking was offered as an alternative and is not assumed.
+**Each distinct zone grants another 25% of the current forward speed, once per
+run.** Revisiting a collected zone grants nothing. These rewards compound:
+`forward_speed = base_speed * pow(1.25, collected_zone_count)`.
 
 Base: latest `origin/main`, `61ba63f`, the lighthouse survival arena. Preserve
 the arena, timed cutter waves, steering, cannon controls, damage and retry.
@@ -84,31 +85,37 @@ the preset, arena branch and production code above take precedence.
   filaments and pale broken edges. Match the actual water surface and wave time;
   do not float a flat luminous plane above passing waves. World placement and
   membership must agree with the rendered footprint.
-- On first entry, latch the speed reward into session state. Do not recompute
-  the reward by multiplying last frame's speed. Leaving a patch never clears
-  the latch. Overlapping zones or standing in one cannot repeatedly grant it.
-  Under the recommended rule, entering a different patch grants no further
-  speed increase once the run's reward has been collected.
-- Under the recommended single-reward rule, propulsion becomes exactly
-  `6.3 * 1.25 = 7.875 m/s` through the rest of the run. Wave drift stays separate;
+- Give every zone a stable unique ID. On first entry, add its ID to the session's
+  collected set and recompute speed from base speed and set size. Leaving a
+  patch never clears its reward. Standing inside or revisiting a collected zone
+  grants nothing; entering a different uncollected zone grants one more 25%.
+  Overlapping fresh zones each grant once, independent of iteration order or
+  frame rate; repeated frames cannot duplicate either grant.
+- With the initial three zones, forward propulsion progresses through
+  **6.3 -> 7.875 -> 9.84375 -> 12.3046875 m/s**. Every collected reward lasts
+  through the rest of the run. Wave drift stays separate;
   actual ground speed still reflects turning, collisions and boundary handling.
   E aim/release and accepted nonfatal damage must not cancel the reward.
 - Use one authoritative forward-speed value in wave integration, arena return
   prediction and relevant movement probes. Preserve collision sweeps, the arena
   hard limit, inward steering and the existing cannon-control priority.
 - Give a short entry sound, a brighter moving wake and one brief `Flow +25%`
-  acknowledgement. After collection, visually soften a spent zone so it does
+  acknowledgement for each newly collected zone. After collection, soften that
+  spent zone visually so it does
   not advertise another reward. Keep feedback legible against incoming-fire
   warnings; no permanent speed HUD or new control is needed.
-- Win/loss clears active speed state; retry restores normal speed, uncollected
-  zones and entry feedback. New sessions start outside all boost footprints.
+- Win/loss clears active speed state; retry restores normal speed, clears the
+  collected-ID set, and restores every zone's reward and entry feedback.
+  New sessions start outside all boost footprints.
   Zones affect the player only; enemy speed, projectile speed, reloads, damage,
   timers and the five-wave survival rules stay unchanged.
 
 The number and placement of patches, palette, foam coverage and roll amplitude
-are tunable. Persistent exit behavior, the requested 25% reward and preserved
-controls/surface authority are fixed. The single-reward rule is a recommendation
-for design agreement, not a claim that the user requested a cap.
+are tunable. Persistent exit behavior, 25% compounding for each distinct zone,
+one reward per zone per run, and preserved controls/surface authority are fixed.
+The number of authored zones bounds the available rewards; no separate speed
+cap is proposed. Test arena return at the full three-zone speed, not just the
+first boost, and tune zone placement or return prediction if needed.
 
 ## Small implementation scope after design agreement
 
@@ -135,10 +142,10 @@ All implementation checks below are **planned, not run** for this proposal.
 | --- | --- | --- | --- |
 | R1 | Reference color and rolling modulation | Sail in calm/storm at matched camera/time; compare unchanged baseline | Broad turquoise moving bands, sparse pale caps and a visible gentle hull ride; readable horizon, reefs and shots. Native frames plus a short moving clip inspected. |
 | R2 | Existing waves merge with the surface | Stage port, starboard and four overlapping crests, then recovery | Same palette, visible advancing faces, smooth spatial/temporal blend; original countersteering remains effective. Native captures plus `wave_encounter_smoke.gd`. |
-| R3 | Flow entry grants 25% propulsion | Same straight clear-water run with/without actual zone crossing | 7.875 versus 6.3 m/s after entry under single-reward rule; no-zone run never boosts. Check measured displacement, not a visual flag alone. |
-| R4 | Boost survives exit | Cross and leave a patch; continue in clear water, aim/release, accept nonfatal damage | Forward target remains 7.875; wake/feedback agree. No requirement to remain in or return to the patch. |
-| R5 | No accidental repeated rewards | Stay inside, overlap patches, cross border repeatedly, revisit spent zone or another patch | No per-frame multiplication or repeat-entry exploit. Under the recommended cap, speed remains 7.875 everywhere after collection. |
-| R6 | Collision and arena safety | Boost toward reef/props and outward rim; mixed A/D with E; repeat 30/60/120 Hz and a long frame | Solids still stop/slide movement; bounded return and inward steering remain available; speed reward never bypasses collision or boundary. `arena_smoke.gd` plus focused boosted scenarios. |
+| R3 | Each distinct zone grants 25% of current propulsion | Same straight clear-water run with/without actual crossings of three different zones | Forward targets are 6.3, 7.875, 9.84375 and 12.3046875 m/s after zero/one/two/three zones; no-zone control never boosts. Check displacement, not a visual flag alone. |
+| R4 | Every boost survives exit | Leave each collected patch; continue in clear water, aim/release, accept nonfatal damage | Forward target remains `6.3 * pow(1.25, collected_zone_count)`; wake/feedback agree. No requirement to remain in or return to a patch. |
+| R5 | Each zone rewards once per run | Stay inside, overlap two fresh patches, cross borders repeatedly, revisit spent zones; collect in different orders | One grant per distinct ID; two fresh overlapping zones grant exactly two boosts. No per-frame/re-entry multiplication. Zone order does not change the final speed. |
+| R6 | Collision and arena safety at every reward level | Sail at zero/one/two/three boosts toward reef/props and outward rim; mixed A/D with E; repeat 30/60/120 Hz and a long frame | Solids still stop/slide movement; bounded return and inward steering remain available; speed reward never bypasses collision or boundary. `arena_smoke.gd` plus focused boosted scenarios. |
 | R7 | State lifecycle | Fresh start, damage, sinking, victory, held restart/retry | Nonfatal damage preserves boost; endings stop movement and clear reward; retry restores 6.3, zone eligibility, audio/camera/effect state. `controls_lifecycle_smoke.gd`, `damage_smoke.gd` and new flow tests. |
 | R8 | Shared sea and combat/navigation preservation | Sample both surfaces, fire into moving water, steer/counter crest, play representative survival circuit | CPU/GPU heights/normals agree; splashes meet water; muzzle/controls and five-wave timing/queues still work. `wave_render_check.gd`, `ocean_smoke.gd`, `cannon_aim_smoke.gd`, `survival_smoke.gd`. |
 | R9 | Readable and bounded presentation | Approach uncollected/spent patches with incoming fire; Low/Standard, Full/Reduced | Visible footprint agrees with collision-root membership, no clipping/flicker or ambiguous reward, clear warnings. Native review and paired frame-time/draw-call measurements; no unbounded allocations. |

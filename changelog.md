@@ -8,7 +8,9 @@ recorded evidence and limitations.
 
 - Planning only: proposed reference-matched turquoise rolling water, consistent
   encounter-wave styling and optional 25% flow rewards that persist after leaving
-  a zone, for the latest lighthouse arena; recommends one reward per run.
+  a zone, for the latest lighthouse arena. Each distinct zone compounds current
+  speed by 25% once per run; revisiting cannot repeat its reward, and retry
+  resets all collected zones. Added acceptance checks through all three boosts.
   Inspected native baseline helm/layout captures and the GitHub-rendered
   proposal; screenshots included for web review. Documentation whitespace
   check passes. Gameplay unchanged; implementation checks remain pending.

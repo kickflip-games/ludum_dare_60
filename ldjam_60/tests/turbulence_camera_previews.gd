@@ -55,7 +55,7 @@ func advance(seconds: float, steering: float = 0.0, clip: bool = false) -> void:
 func _run() -> void:
 	root.size = Vector2i(1280,720)
 	DirAccess.make_dir_recursive_absolute(output.path_join("clip"))
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

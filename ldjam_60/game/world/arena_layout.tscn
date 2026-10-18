@@ -1,0 +1,74 @@
+[gd_scene format=3]
+
+[node name="ArenaLayout" type="Node3D"]
+position = Vector3(275, 0, 250)
+
+[node name="Obstacles" type="Node3D" parent="."]
+
+[node name="JaggedReef" type="Node3D" parent="Obstacles"]
+[node name="NorthTooth" type="Marker3D" parent="Obstacles/JaggedReef"]
+position = Vector3(-92, -0.7, -67)
+metadata/kind = "rock"
+metadata/radius = 6.0
+metadata/height_scale = 1.4
+[node name="WestTooth" type="Marker3D" parent="Obstacles/JaggedReef"]
+position = Vector3(-110, -0.7, -18)
+metadata/kind = "rock"
+metadata/radius = 6.0
+metadata/height_scale = 1.8
+[node name="SouthTooth" type="Marker3D" parent="Obstacles/JaggedReef"]
+position = Vector3(-98, -0.7, 36)
+metadata/kind = "rock"
+metadata/radius = 6.0
+metadata/height_scale = 1.2
+[node name="ReefTail" type="Marker3D" parent="Obstacles/JaggedReef"]
+position = Vector3(-72, -0.7, 73)
+metadata/kind = "rock"
+metadata/radius = 5.0
+metadata/height_scale = 0.9
+
+[node name="BrokenWreck" type="Node3D" parent="Obstacles"]
+[node name="SplitHull" type="Marker3D" parent="Obstacles/BrokenWreck"]
+position = Vector3(85, 0, 45)
+rotation = Vector3(0, -0.6, 0)
+metadata/kind = "wreck"
+metadata/radius = 8.0
+[node name="LooseTimber" type="Marker3D" parent="Obstacles/BrokenWreck"]
+position = Vector3(70, 0, 65)
+metadata/kind = "debris"
+metadata/radius = 2.5
+[node name="CargoBarrels" type="Marker3D" parent="Obstacles/BrokenWreck"]
+position = Vector3(101, 0, 36)
+metadata/kind = "barrels"
+metadata/radius = 2.0
+
+[node name="LowIslets" type="Node3D" parent="Obstacles"]
+[node name="WestIslet" type="Marker3D" parent="Obstacles/LowIslets"]
+position = Vector3(-5, -1, -109)
+metadata/kind = "rock"
+metadata/radius = 7.0
+metadata/height_scale = 0.45
+[node name="MiddleIslet" type="Marker3D" parent="Obstacles/LowIslets"]
+position = Vector3(48, -1, -94)
+metadata/kind = "rock"
+metadata/radius = 8.0
+metadata/height_scale = 0.55
+[node name="EastIslet" type="Marker3D" parent="Obstacles/LowIslets"]
+position = Vector3(88, -1, -57)
+metadata/kind = "rock"
+metadata/radius = 6.0
+metadata/height_scale = 0.4
+
+[node name="EnemySectors" type="Node3D" parent="."]
+[node name="North" type="Marker3D" parent="EnemySectors"]
+position = Vector3(0, 0, -143)
+metadata/spread_degrees = 16.0
+[node name="East" type="Marker3D" parent="EnemySectors"]
+position = Vector3(143, 0, 0)
+metadata/spread_degrees = 16.0
+[node name="South" type="Marker3D" parent="EnemySectors"]
+position = Vector3(0, 0, 143)
+metadata/spread_degrees = 16.0
+[node name="West" type="Marker3D" parent="EnemySectors"]
+position = Vector3(-143, 0, 0)
+metadata/spread_degrees = 16.0

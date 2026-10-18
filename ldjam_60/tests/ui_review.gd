@@ -13,7 +13,7 @@ var output := "res://../build/ui_review/current"
 
 func _ready() -> void:
 	get_viewport().gui_embed_subwindows = true
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	add_child(game)
 	states = States.new(game)
 	_build_toolbar()

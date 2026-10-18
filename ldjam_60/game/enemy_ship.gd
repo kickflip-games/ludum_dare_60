@@ -205,7 +205,7 @@ func update_ship(delta: float) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
 	var to_player: Vector3 = game.boat.position - global_position
 	_escape_elapsed = _escape_elapsed + delta if to_player.length() > escape_distance else 0.0
-	if mode != Mode.DISENGAGING and (age >= encounter_seconds or (age > 8.0 and _escape_elapsed > 4.0)):
+	if not game.arena_mode and mode != Mode.DISENGAGING and (age >= encounter_seconds or (age > 8.0 and _escape_elapsed > 4.0)):
 		disengage()
 	var desired := _run_forward()
 	var target_speed := run_speed
@@ -271,7 +271,10 @@ func update_ship(delta: float) -> void:
 	_speed = move_toward(_speed, target_speed, delta * 1.2)
 	var before := position
 	velocity = forward() * _speed
-	var collision := move_and_collide(velocity * delta)
+	var travel := velocity * delta
+	if game.arena_mode:
+		travel = game.arena_return.bounded_motion(global_position - game.arena_center(), travel, game.arena_radius - 5.0)
+	var collision := move_and_collide(travel)
 	if collision:
 		var normal := Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()
 		move_and_collide(collision.get_remainder().slide(normal))
@@ -311,10 +314,19 @@ func _path_clear(direction: Vector3, distance: float = 30.0) -> bool:
 	for step in [0.35, 0.7, 1.0]:
 		var at: Vector3 = global_position + direction * distance * step
 		for offset in [Vector3.ZERO, side, -side]:
+			if game.arena_mode and (at + offset).distance_to(game.arena_center()) > game.arena_radius - 9.0:
+				return false
 			if terrain.terrain_height_at(at + offset) > -3.0:
 				return false
-	var query := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, global_position + direction * distance + Vector3.UP, 1)
-	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	if not game.arena_mode:
+		var query := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, global_position + direction * distance + Vector3.UP, 1)
+		return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	for offset in [Vector3.ZERO, side, -side]:
+		var origin: Vector3 = global_position + offset + Vector3.UP * 0.5
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * distance, 1)
+		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
+			return false
+	return true
 
 
 func _clear_course() -> Vector3:
@@ -425,7 +437,10 @@ func _advance_shots(delta: float) -> void:
 			if not hit.is_empty() and hit.collider == game.boat:
 				if game.take_damage(1, "Enemy broadside hit"):
 					shots_hit += 1
-			game.cannon.water_splash(hit.position if not hit.is_empty() else water.position if not water.is_empty() else to)
+			elif not hit.is_empty() and hit.collider.get_meta("destructible", false):
+				game.cannon._impact(hit.collider, hit.position)
+			if hit.is_empty() or not hit.collider.get_meta("destructible", false):
+				game.cannon.water_splash(hit.position if not hit.is_empty() else water.position if not water.is_empty() else to)
 			shot.node.queue_free()
 			projectiles.remove_at(i)
 		else:

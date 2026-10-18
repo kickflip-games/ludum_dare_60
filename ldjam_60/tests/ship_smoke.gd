@@ -14,7 +14,7 @@ func check(value: bool, label: String) -> void:
 		failures += 1
 
 func make_game():
-	var game = load("res://game/crossing.tscn").instantiate()
+	var game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

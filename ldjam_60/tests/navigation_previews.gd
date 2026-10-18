@@ -63,7 +63,7 @@ func _run() -> void:
 	# Scripted captures must remain reproducible while the user works in another
 	# app. Real focus-loss behavior is exercised separately by stargazing_smoke.
 	root.set_flag(Window.FLAG_NO_FOCUS, true)
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

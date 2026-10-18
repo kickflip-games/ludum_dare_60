@@ -25,7 +25,7 @@ func capture(label: String) -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(output_dir)
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

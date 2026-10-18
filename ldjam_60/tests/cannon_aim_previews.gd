@@ -56,7 +56,7 @@ func _run() -> void:
 			if filename.begins_with("frame-") and filename.ends_with(".png"):
 				directory.remove(filename)
 	root.size = dimensions
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

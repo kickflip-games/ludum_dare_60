@@ -25,12 +25,14 @@ func configure(value: Node3D, world: Node3D, wreck_body: StaticBody3D) -> void:
 	materials["window"] = game._material(Color("d39b53"), 0.65)
 	cloth = ShaderMaterial.new()
 	cloth.shader = CLOTH
-	_build_wreck(wreck_body)
-	_build_peaks()
+	if not map.arena_mode:
+		_build_wreck(wreck_body)
+		_build_peaks()
 	_build_tower()
 	_build_harbour()
-	_build_discoveries()
-	set_meta("site_count", 6)
+	if not map.arena_mode:
+		_build_discoveries()
+	set_meta("site_count", 1 if map.arena_mode else 6)
 	set_meta("batch_count", batch_count)
 
 
@@ -40,6 +42,7 @@ func _process(_delta: float) -> void:
 	cloth.set_shader_parameter("visual_time", game.sea_time)
 	if is_instance_valid(beam_pivot):
 		beam_pivot.rotation.y = game.sea_time * 0.22 + 0.4
+	warm_lights = warm_lights.filter(func(light): return is_instance_valid(light))
 	for i in warm_lights.size():
 		# Tiny asynchronous lantern flicker; local lights never cast shadows.
 		warm_lights[i].light_energy = warm_lights[i].get_meta("base_energy") * (1.0 + 0.035 * sin(game.sea_time * 1.3 + i * 2.4))

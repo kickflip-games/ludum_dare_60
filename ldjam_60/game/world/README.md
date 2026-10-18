@@ -1,5 +1,55 @@
 # Latitude Lines: the island sea
 
+## Active lighthouse arena
+
+Normal play is five-wave player survival inside a 170 m circle centred on
+`Landmarks/Lighthouse` (world X/Z 275/250). Only the existing central island,
+lighthouse, jetty and matching coast bake remain from the voyage. The lantern
+is always lit and has no health. The player starts 75 m north, heading 100°.
+
+`arena_layout.tscn` is the editable obstacle/spawn scene. No runtime random
+layout generation is used:
+
+- **JaggedReef:** four curved, angular rock teeth west of the island; over 30 m
+  between consecutive rock footprints, with inner and outer routes.
+- **BrokenWreck:** separate bow/stern, snapped mast and a lantern southeast;
+  existing destructible timber and barrels float nearby. Both sides are open.
+- **LowIslets:** three low rock outcrops north/northeast with alternative gaps.
+- **EnemySectors:** four 143 m cardinal markers, each with a configurable 16°
+  spread. Spawn selection checks 12 m solid clearance and 65 m player separation;
+  an obstructed sector is skipped rather than spawning inside geometry.
+
+Each obstacle's collider is built from its visible mesh faces. Solid reefs,
+islets and wreck sections stop both sides' cannonballs; both sides shatter
+floating timber/barrels. The floats retain the existing cosmetic bobbing model.
+Retry rebuilds all pieces and clears old registrations/lights.
+
+Return rudder begins at 132.6 m with a latched turn side and gradual blend.
+32 m swept hull-width probes select a clear return course when rocks are ahead.
+Normal inner sailing stays manual. Movement is bounded **before** collision
+sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
+including while E is held. No boundary collider or teleport is used.
+
+The existing cutter is reused once per wave, targets the player and stays until
+sunk. A finished sinking animation plus clear enemy projectiles gates each
+10-second intermission and the fifth-wave victory. No timer-only progression or
+old harbour victory remains. Original territories/discoveries stay inactive;
+the old journey remains accessible through `tests/legacy_voyage.tscn`.
+
+Separate resources preserve the original voyage terrain and foam:
+
+```sh
+godot --headless --path ldjam_60 --script res://tools/bake_archipelago.gd -- --arena
+godot --headless --path ldjam_60 --script res://tools/bake_coastal_foam.gd -- --arena
+```
+
+Run `tests/arena_smoke.gd` and render `tests/arena_previews.gd`. The overhead
+capture disables distance fog and adds labelled radius rings for review only;
+helm captures retain normal lighting, fog, camera and sea. See the
+[arena review](../../../artifacts/lighthouse_arena_review.md).
+
+## Retained voyage layout
+
 One authored 1,024 × 1,024 m map, with 6.3 m/s sailing and a roughly 10 m turning radius. After the 18 October composition pass, the main outer route takes about 3:48 in scripted play; the longer inner detour takes about 4:31. Exploration has no time limit.
 
 | Place | World X, Z | Discovery radius |

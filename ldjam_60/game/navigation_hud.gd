@@ -21,6 +21,7 @@ var menu_footer: Label
 var motion_choice: OptionButton
 var cannon_gauge: Control
 var gameplay_hud: Control
+var wave_label: Label
 var threat_label: Label
 var notice: Label
 var instrument: Control
@@ -52,6 +53,8 @@ func _ready() -> void:
 	add_child(gameplay_hud)
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cannon_gauge = _gauge("StarboardCannon", Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
+	wave_label = _label(gameplay_hud, "SurvivalWave", "", 16, BRASS)
+	wave_label.position = Vector2(24, 24)
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
 	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -124,7 +127,10 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
+	var controls := [["A / D", "Steer"], ["Hold E", "Aim cannon"], ["F", "Fire"]]
+	if not game.arena_mode:
+		controls.insert(1, ["Hold Space", "Find the guiding star"])
+	for pair: Array in controls:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -205,9 +211,15 @@ func _sync_button() -> void:
 	menu_title.text = "LATITUDE\nLINES" if intro else "Safe harbour." if won else "Lost at sea."
 	menu_title.add_theme_font_size_override("font_size", 58 if intro else 48)
 	menu_body.text = "Find your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
+	if intro and game.arena_mode:
+		menu_kicker.text = "FIVE WAVES AT SEA"
+		menu_body.text = "Survive five waves of hostile cutters.\nSail, turn and fire. The light marks the centre."
+	if won and game.arena_mode:
+		menu_title.text = "Waters clear."
+		menu_body.text = "Five waves defeated. You survived the night."
 	menu_controls.visible = intro
 	menu_details.visible = won
-	menu_details.text = "Voyage time   %02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
+	menu_details.text = ("Survived   %02d:%02d" if game.arena_mode else "Voyage time   %02d:%02d") % [int(game.elapsed) / 60, int(game.elapsed) % 60]
 	action_button.text = "Play" if intro else "Retry"
 	menu_footer.text = "Enter play · Hold R to restart · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
 	action_button.grab_focus()
@@ -225,6 +237,12 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(game) or not is_instance_valid(gameplay_hud):
 		return
 	_sync_button()
+	if game.arena_mode:
+		var waves = game.enemy_encounters
+		wave_label.text = "WAVE %d / 5" % waves.wave_number if waves.wave_in_progress else "NEXT WAVE  ·  %ds" % ceili(waves.next_wave_in)
+		wave_label.visible = game.state == game.State.SAILING
+	else:
+		wave_label.visible = false
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
 	menu.modulate.a = _menu_alpha
 	if game.state != game.State.SAILING:

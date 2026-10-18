@@ -15,7 +15,7 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS: " if ok else "FAIL: ") + label)
 
 func _run() -> void:
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

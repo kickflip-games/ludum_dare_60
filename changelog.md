@@ -6,6 +6,31 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: restored Roman numerals (WAVE I–V) on wave banners; kept
+  the navy/brass palette, brief timing and simple wording.
+
+- Work in progress: recoloured the existing Kenney wave ribbon to navy/brass with
+  a separate cloth/trim palette shader, preserving the source PNG and its shading
+  and alpha. Enemy circles now use brass fills and blue-grey hollow outlines.
+  Retained all HUD dimensions, positions, timing and encounter counts.
+  Both requested suites pass (59 checks); compared native before/after frames
+  at 1280×720 and 900×506, including hollow circles and final-wave boss health.
+
+- Work in progress: simplified UI copy to Play, Tutorial, Victory and Sunk.
+  Tutorial steps describe their controls directly; results show wave reached and
+  time survived, and announcements use WAVE 1–5. Retained Kenney styling,
+  Credits, Esc pause and all existing interactions. All 580 checks in seven suites
+  pass; reviewed native frames at four sizes and rebuilt the local Web export.
+
+- Work in progress: restyled title, pause, results, Settings, Credits and walkthrough
+  with actual Kenney Adventure buttons and corner frames, recoloured navy/brass/
+  parchment. Kept originals and CC0 provenance. Left-aligned menus keep the
+  lighthouse visible; Settings exposes the existing Full/Reduced motion setting.
+  Bottom-right practice cards retain real-input validation, held-key highlighting,
+  completion feedback and clean Skip/Begin Voyage resets. Credits and Esc pause stay.
+  All 515 checks in seven relevant suites pass; native frames at four sizes and
+  Web interaction reviewed. Replaced unsupported arrow glyphs with portable labels.
+
 - Runtime combat optimization: shared preallocated cannonball visuals, recycled
   flagship/ordinary mines and private offscreen material warm-up. Final paired
   Web maxima: first shot 110.9→33.7 ms, first mine 55.0→12.4 ms; warm-up costs

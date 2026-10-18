@@ -55,7 +55,7 @@ func _run() -> void:
 	game.enemy_encounters.announcement_left = 0.0
 	game.enemy_encounters.wave_number = 5
 	await capture("late-wave")
-	game.show_discovery("CURRENT CAUGHT · +25%", 2)
+	game.show_discovery("SPEED +25%", 2)
 	await capture("flow-pickup")
 	game.discovery_left = 0
 	var enemy = game.enemy_encounters.ship

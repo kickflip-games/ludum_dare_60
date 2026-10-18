@@ -64,7 +64,7 @@ func _run() -> void:
 	var guide = game.walkthrough
 	var hud = game.hud
 	var card = hud.walkthrough_card
-	check(hud.walkthrough_button.text == "WALKTHROUGH" and not hud.walkthrough_button.toggle_mode, "Walkthrough is a plain launch button with no On/Off state")
+	check(hud.walkthrough_button.text == "TUTORIAL" and not hud.walkthrough_button.toggle_mode, "Walkthrough is a plain launch button with no On/Off state")
 	check(hud.walkthrough_button.get_index() == hud.action_button.get_index() + 1 and hud.walkthrough_button.global_position.y >= hud.action_button.get_global_rect().end.y, "Walkthrough sits directly beneath Set Sail")
 	click(hud.action_button)
 	step(game.CAST_OFF_SECONDS + 0.1)
@@ -76,6 +76,11 @@ func _run() -> void:
 	step(game.CAST_OFF_SECONDS)
 	await settle()
 	check(guide.active and guide.step == Guide.Step.STEER and card.visible, "Walkthrough opens guided practice after cast-off")
+	check(card.get_theme_stylebox("panel") is StyleBoxTexture and card.next_button.get_theme_stylebox("normal") is StyleBoxTexture, "tutorial shares Kenney panel and primary button textures")
+	for cap in card.caps:
+		for character in cap.get_child(0).text:
+			check(hud.sans.has_char(character.unicode_at(0)), "practice keycap glyph is bundled: " + character)
+	check(card.next_button.disabled and card.instruction.text == "Use A / D or the arrow keys to turn.", "steering instruction waits for practice")
 	check(not hud.gameplay_hud.visible and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "practice has a usable cursor and no fleet HUD")
 	var start: Vector3 = game.boat.position
 	var start_heading: float = game.heading
@@ -95,6 +100,7 @@ func _run() -> void:
 	check(guide.held_seconds == 0, "opposing steering keys do not count as a turn")
 	key(KEY_D, false)
 	step(0.2)
+	check(card.caps[0].get_theme_stylebox("panel") == card.key_styles[1], "held steering visibly highlights its keycap")
 	var partial: float = guide.held_seconds
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	step(2)
@@ -103,6 +109,7 @@ func _run() -> void:
 	key(KEY_D, true)
 	step(0.4)
 	check(guide.practiced and absf(game.heading - start_heading) > 0.01, "real steering completes the first exercise")
+	check(not card.next_button.disabled and card.progress.text.ends_with("COMPLETE"), "completed practice enables Continue and shows success")
 	var parked: Vector3 = game.boat.position
 	step(10)
 	check(game.boat.position.is_equal_approx(parked), "completed exercise stops drifting even while the key remains held")
@@ -140,9 +147,10 @@ func _run() -> void:
 	guide.advance(game)
 	step(0)
 	check(guide.step == Guide.Step.READY and not game.arena_cannon_view, "ready card restores chase view")
-	for dimensions: Vector2i in [Vector2i(1920,1080), Vector2i(1280,720), Vector2i(900,506)]:
+	for dimensions: Vector2i in [Vector2i(1920,1080), Vector2i(1280,720), Vector2i(960,540), Vector2i(900,506)]:
 		root.size = dimensions
 		await settle()
+		check(is_equal_approx(card.size.x, 360) and is_equal_approx(card.get_global_rect().end.x, hud.size.x - 24) and is_equal_approx(card.get_global_rect().end.y, hud.size.y - 24), "practice card stays compact at bottom right %s" % dimensions)
 		check(Rect2(Vector2.ZERO, hud.size).grow(1).encloses(card.get_global_rect()) and Rect2(Vector2.ZERO, hud.size).grow(1).encloses(card.next_button.get_global_rect()), "practice card and buttons fit %s" % dimensions)
 	game.motion_setting = 1
 	click(card.next_button)
@@ -154,7 +162,7 @@ func _run() -> void:
 	check(not guide.active and game.enemy_encounters.clock > 0, "normal fleet clock starts after practice")
 	game.restart(true)
 	await settle()
-	check(hud.walkthrough_button.visible and hud.walkthrough_button.text == "WALKTHROUGH", "return to title offers the same Walkthrough action for replay")
+	check(hud.walkthrough_button.visible and hud.walkthrough_button.text == "TUTORIAL", "return to title offers the same Walkthrough action for replay")
 	check(Rect2(Vector2.ZERO, hud.size).grow(1).encloses(hud.walkthrough_button.get_global_rect()), "Walkthrough button remains inside the menu after resizing and practice")
 	hud.walkthrough_button.grab_focus()
 	var accept := InputEventKey.new()

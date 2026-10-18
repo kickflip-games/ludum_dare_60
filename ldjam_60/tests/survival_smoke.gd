@@ -210,7 +210,7 @@ func _run() -> void:
 	enemies.update_encounters(100)
 	check(enemies.encounter_index==encounters, "defeat immediately prevents further spawns")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="LOST\nAT SEA", "defeat end screen uses LOST AT SEA")
+	check(game.hud.menu_title.text=="SUNK", "defeat end screen uses SUNK")
 	clean_retry("defeat")
 	for repeat in 4: clean_retry("repeated session %d"%repeat)
 	var report_dir := ProjectSettings.globalize_path("res://../build/latitude-timed-waves")
@@ -305,7 +305,7 @@ func _completion_checks() -> void:
 		enemies.update_encounters(1.0/60)
 		if enemies.wave_number==5: break
 	game.hud._process(0)
-	check(enemies.boss_active() and enemies.announcement=="FINAL WAVE" and not game.hud.wave_countdown.visible, "final wave announces and activates independent flagship with no victory timer")
+	check(enemies.boss_active() and enemies.announcement=="WAVE 5" and not game.hud.wave_countdown.visible, "final wave announces and activates independent flagship with no victory timer")
 	for tick in 300: enemies.update_encounters(1.0/60)
 	check(enemies.records.back().spawned==2 and enemies.ships.filter(func(c):return c.visible).size()==2, "both final escorts arrive through the ordinary staggered queue")
 	for cutter in enemies.ships:
@@ -315,7 +315,7 @@ func _completion_checks() -> void:
 	while enemies.boss.hull>0: game.cannon._impact(enemies.boss,enemies.boss.position+Vector3.UP)
 	check(game.state==game.State.ARRIVED and not enemies.has_projectiles(), "flagship death immediately wins and clears incoming shots")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="YOU HELD\nTHE LIGHT", "victory screen uses YOU HELD THE LIGHT")
+	check(game.hud.menu_title.text=="VICTORY", "victory screen uses VICTORY")
 	action("restart_crossing",true)
 	await process_frame
 	action("restart_crossing",false)

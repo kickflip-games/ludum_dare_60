@@ -48,13 +48,12 @@ func _run() -> void:
 	check(hud.menu_column.get_node_or_null("LighthouseMark") == null, "start menu has no lighthouse icon")
 	check(hud.menu_actions.get_node_or_null("Quit") == null, "Web menu has no Quit button")
 	check(inside(hud.menu) and inside(hud.menu_title) and inside(hud.action_button), "initial menu fits before any resize or settings visit")
-	check(hud.action_button.has_focus() and hud.action_button.text == "SET SAIL", "title starts with focused Set Sail")
+	check(hud.action_button.has_focus() and hud.action_button.text == "PLAY", "title starts with focused Set Sail")
 	check(hud.menu_column.get_node_or_null("Kicker") == null and hud.menu_column.get_node_or_null("WaveRule") == null
 		and not hud.menu_body.visible and hud.menu_body.text.is_empty(), "title has no decorative slogans or divider")
 	check(not hud.settings_panel.is_visible_in_tree() and not hud.main_menu_button.visible, "settings hidden on title; no Continue or result action")
-	check(hud.settings_panel.find_children("*", "OptionButton", true, false).is_empty()
-		and hud.settings_panel.get_node_or_null("MotionHeading") == null and hud.settings_panel.get_node_or_null("MotionNote") == null,
-		"Settings has no camera or Reduced Motion options")
+	check(hud.motion_selector.item_count == 2 and hud.motion_selector.get_item_text(0) == "Full" and hud.motion_selector.get_item_text(1) == "Reduced", "Settings exposes the existing two motion preferences")
+	check(hud.action_button.get_theme_stylebox("normal") is StyleBoxTexture and hud.settings_frame.get_theme_stylebox("panel") is StyleBoxTexture, "buttons and panels use scalable Kenney textures")
 	check(not hud.menu_footer.is_visible_in_tree(), "arena menu has no bottom instructions; full controls remain in Settings")
 	for font: Font in [hud.serif, hud.sans]:
 		for character in "BLACKWATER 0123456789·/+":
@@ -64,12 +63,18 @@ func _run() -> void:
 		await settle()
 		for control: Control in [hud.menu_title, hud.action_button, hud.walkthrough_button, hud.settings_button, hud.credits_button]:
 			check(inside(control), "title %s fits %s" % [control.name, dimensions])
+		check(hud.menu_title.global_position.x < dimensions.x * 0.1 and hud.action_button.size.x == 300 and hud.settings_button.size.x == 260, "left composition retains primary/secondary hierarchy at %s" % dimensions)
 		click(hud.settings_button)
 		await settle()
 		check(not hud.walkthrough_button.is_visible_in_tree(), "Settings hides Walkthrough launch")
 		check(hud.settings_open and hud.settings_back.has_focus() and not hud.menu_body.visible, "Settings opens without a slogan and focuses Back")
 		for control: Control in [hud.menu_title, hud.settings_panel.get_node("FullControls"), hud.settings_back]:
 			check(inside(control), "settings %s fits %s" % [control.name, dimensions])
+		check(hud.settings_panel.get_node("FullControls/Action7").text == "Pause / resume", "Escape reference describes Web pause")
+		# Headless windows cannot route native popup keys; exercise its selection signal.
+		hud.motion_selector.get_popup().index_pressed.emit(1)
+		await settle()
+		check(game.motion_setting == 1 and hud.motion_selector.selected == 1, "Reduced popup selection updates the existing motion system")
 		# Even a stray unhandled Enter cannot start a run behind settings.
 		var begin := InputEventAction.new()
 		begin.action = "begin_crossing"
@@ -116,10 +121,10 @@ func _run() -> void:
 	game.damage_immunity = 0
 	game.take_damage(1, "The last shot found its mark.")
 	await settle()
-	check(hud.menu_title.text == "LOST\nAT SEA" and hud.action_button.text == "RETRY", "real lethal damage presents defeat/retry")
-	check(hud.menu_details.text.contains("WAVE 3 / 5") and hud.menu_details.text.contains("01:42"), "defeat reports actual reached wave and elapsed time")
+	check(hud.menu_title.text == "SUNK" and hud.action_button.text == "RETRY", "real lethal damage presents defeat/retry")
+	check(hud.menu_details.text.contains("WAVE REACHED 3 / 5") and hud.menu_details.text.contains("01:42"), "defeat reports actual reached wave and elapsed time")
 	check(not hud.gameplay_hud.visible and not hud.wave_announcement.visible and not hud.wave_countdown.visible, "defeat hides wave transients")
-	check(hud.menu_body.visible and hud.menu_body.text == game.failure_reason, "defeat retains its actual cause instead of decorative copy")
+	check(not hud.menu_body.visible and hud.menu_body.text.is_empty(), "results omit flavour text and show only wave/time")
 	for control: Control in [hud.menu_title, hud.main_menu_button]:
 		check(inside(control), "small result %s fits" % control.name)
 	click(hud.credits_button)
@@ -130,7 +135,7 @@ func _run() -> void:
 	check(hud.credits_open and game.state == game.State.LOST, "Credits is available after defeat and blocks underlying Retry shortcut")
 	click(hud.credits_back)
 	await settle()
-	check(hud.menu_title.text == "LOST\nAT SEA" and not hud.credits_open, "Credits Back restores the defeat result")
+	check(hud.menu_title.text == "SUNK" and not hud.credits_open, "Credits Back restores the defeat result")
 	click(hud.main_menu_button)
 	await settle()
 	check(game.state == game.State.READY and hud.action_button.has_focus() and hud.menu_title.text == "BLACKWATER", "Main Menu restores Blackwater and focuses Set Sail without casting off")
@@ -146,8 +151,8 @@ func _run() -> void:
 	game.enemy_encounters.wave_number = 5
 	game._clear_player_controls()
 	await settle()
-	check(hud.menu_title.text == "YOU HELD\nTHE LIGHT" and hud.action_button.text == "SAIL AGAIN", "victory has shared treatment and Sail Again")
-	check(hud.menu_details.text.contains("ALL 5 WAVES COMPLETE") and not hud.gameplay_hud.visible, "victory result has no gameplay HUD")
+	check(hud.menu_title.text == "VICTORY" and hud.action_button.text == "PLAY AGAIN", "victory has shared treatment and Sail Again")
+	check(hud.menu_details.text.contains("WAVE REACHED 5 / 5") and not hud.gameplay_hud.visible, "victory result has no gameplay HUD")
 	check(not hud.menu_body.visible, "victory has no decorative subtitle")
 	click(hud.action_button)
 	await settle()

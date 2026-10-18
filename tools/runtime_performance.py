@@ -8,9 +8,10 @@ p=argparse.ArgumentParser()
 p.add_argument('--label', choices=['before','after'],required=True)
 p.add_argument('--godot',required=True)
 p.add_argument('--web',action='store_true')
+p.add_argument('--output-root',default='build/runtime_performance')
 a=p.parse_args()
 root=Path(__file__).resolve().parents[1]
-build=root/'build/runtime_performance'/a.label
+build=root/a.output_root/a.label
 source=build/'source'
 if source.exists(): raise SystemExit(f'Refusing to overwrite snapshot {source}')
 shutil.copytree(root/'ldjam_60',source,ignore=shutil.ignore_patterns('.godot','addons','export_presets.cfg','export_credentials.cfg'))
@@ -34,7 +35,7 @@ variant/extensions_support=false
 variant/thread_support=false
 vram_texture_compression/for_desktop=true
 vram_texture_compression/for_mobile=false
-html/canvas_resize_policy=2
+html/canvas_resize_policy=0
 html/focus_canvas_on_start=true
 ''')
 steps=[('import',['--editor','--quit'])]

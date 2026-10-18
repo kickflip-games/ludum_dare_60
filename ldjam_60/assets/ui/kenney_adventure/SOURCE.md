@@ -3,8 +3,9 @@ Source: https://kenney.nl/assets/ui-pack-adventure
 License: CC0; original `License.txt` included.
 
 Unmodified `PNG/Double/banner_classic_curtain.png` (512 × 128) is displayed at
-256 × 64 with preserved aspect ratio. Its existing runtime tint `#d4c4ac`
-softens the cloth to rust and warms the border; the source pixels are retained.
+256 × 64 with preserved aspect ratio. `game/wave_ribbon.gdshader` maps the
+original red cloth and cream trim separately to navy `#243746` and brass
+`#B99B65`, retaining their shade weights and original alpha. The PNG is unchanged.
 
 The three SVGs in `originals/` are unmodified `Vector/` files from that archive.
 `blackwater/` contains palette-only derivatives, rasterized by Godot:

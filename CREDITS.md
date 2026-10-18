@@ -90,8 +90,10 @@ geometry, lighthouse, and remaining primitive props were created for this protot
   joined in Blender for fewer draw calls, with geometry and colours retained.
   Original attribution and CC BY 3.0 licence continue to apply.
 
-## Wave announcement ribbon
+## Adventure interface and wave ribbon
 
 **UI Pack – Adventure** by **Kenney**, [official source](https://kenney.nl/assets/ui-pack-adventure).
-CC0. Only the unmodified `PNG/Double/banner_classic_curtain.png` is bundled in
-`ldjam_60/assets/ui/kenney_adventure/`, with the original licence.
+CC0. The wave ribbon and three original button/panel SVGs are bundled with the
+original licence in `ldjam_60/assets/ui/kenney_adventure/`. Recoloured navy, brass
+and parchment copies are kept separately in `blackwater/`; see
+[SOURCE.md](ldjam_60/assets/ui/kenney_adventure/SOURCE.md) for exact pack filenames.

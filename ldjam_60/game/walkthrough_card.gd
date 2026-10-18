@@ -2,8 +2,8 @@ extends PanelContainer
 ## A compact adventure card; the existing guide still validates every real input.
 const Palette = preload("res://game/nautical_theme.gd")
 const Guide = preload("res://game/walkthrough.gd")
-const TITLES := ["Take the helm", "Catch the wind", "Look to the horizon", "Fire to starboard", "A closer view", "Ready for the fleets"]
-const INSTRUCTIONS := ["Turn your ship.", "Hold Shift to catch the wind.", "Move the mouse to look around.", "Fire a shot to starboard.", "Switch to the close cannon view.", "You're ready to face the fleets."]
+const TITLES := ["STEER", "BOOST", "LOOK", "FIRE", "CAMERA", "READY"]
+const INSTRUCTIONS := ["Use A / D or the arrow keys to turn.", "Hold Shift to move faster.", "Move the mouse to look around.", "Press Space or click to fire.", "Press E to switch camera views.", "Press Play to start the game."]
 var game: Node3D
 var column: VBoxContainer
 var progress: Label
@@ -37,8 +37,8 @@ func _ready() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_theme_constant_override("separation", 5)
 	add_child(column)
-	progress = _label("SEA TRIALS · 1 / 5", 12, Palette.BRASS)
-	heading = _label("Take the helm", 24, Palette.IVORY)
+	progress = _label("TUTORIAL · 1 / 5", 12, Palette.BRASS)
+	heading = _label("STEER", 24, Palette.IVORY)
 	heading.add_theme_font_override("font", Palette.TITLE)
 	instruction = _label(INSTRUCTIONS[0], 15, Palette.SEA_GLASS)
 	keys = HBoxContainer.new()
@@ -58,7 +58,7 @@ func _ready() -> void:
 	skip_button.pressed.connect(func(): game.finish_walkthrough(); _process(0))
 	row.add_child(skip_button)
 	next_button = Button.new()
-	next_button.text = "CONTINUE  ›"
+	next_button.text = "CONTINUE"
 	next_button.tooltip_text = "Try the control, then press Enter or Continue."
 	next_button.custom_minimum_size.y = 36
 	next_button.add_theme_font_size_override("font_size", 16)
@@ -106,15 +106,15 @@ func _rebuild_keys(step: int) -> void:
 	key_actions.clear()
 	match step:
 		Guide.Step.STEER:
-			_cap("A  /  ←", "steer_port", 112)
-			_cap("D  /  →", "steer_starboard", 112)
+			_cap("A / LEFT", "steer_port", 112)
+			_cap("D / RIGHT", "steer_starboard", 112)
 		Guide.Step.BOOST: _cap("SHIFT", "boost_sailing", 112)
-		Guide.Step.LOOK: _cap("←   MOUSE   →", "mouse", 200)
+		Guide.Step.LOOK: _cap("MOVE MOUSE", "mouse", 200)
 		Guide.Step.FIRE:
 			_cap("LMB", "fire_mouse", 84)
 			_cap("SPACE", "fire_starboard", 120)
 		Guide.Step.CAMERA: _cap("E", "watch_starboard")
-		Guide.Step.READY: _cap("BON VOYAGE", "", 200)
+		Guide.Step.READY: _cap("COMPLETE", "", 200)
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(game): return
@@ -130,10 +130,10 @@ func _process(_delta: float) -> void:
 		skip_button.release_focus()
 		_layout.call_deferred()
 	var ready: bool = guide.practiced or _step == Guide.Step.READY
-	progress.text = "SEA TRIALS COMPLETE" if _step == Guide.Step.READY else "SEA TRIALS · %d / 5%s" % [_step + 1, " · COMPLETE" if ready else ""]
+	progress.text = "TUTORIAL COMPLETE" if _step == Guide.Step.READY else "TUTORIAL · %d / 5%s" % [_step + 1, " · COMPLETE" if ready else ""]
 	progress.add_theme_color_override("font_color", Palette.SEA_GLASS if ready else Palette.BRASS)
 	next_button.disabled = not ready
-	next_button.text = "BEGIN VOYAGE  ›" if _step == Guide.Step.READY else "CONTINUE  ›"
+	next_button.text = "PLAY" if _step == Guide.Step.READY else "CONTINUE"
 	for i in caps.size():
 		var pressed: bool = Input.is_action_pressed(key_actions[i]) if InputMap.has_action(key_actions[i]) else guide.mouse_travel > 0 if key_actions[i] == "mouse" else false
 		caps[i].add_theme_stylebox_override("panel", key_styles[1 if pressed else 2 if ready else 0])

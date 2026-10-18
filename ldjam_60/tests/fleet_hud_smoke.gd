@@ -45,7 +45,7 @@ func _run() -> void:
 	hud._process(0)
 	check(not hud.fleet_status.visible, "title has no fleet tracker")
 	begin()
-	check(enemies.wave_number == 1 and hud.wave_announcement.text == "WAVE I", "authoritative first wave launches Roman-numeral announcement")
+	check(enemies.wave_number == 1 and hud.wave_announcement.text == "WAVE I", "authoritative first wave launches numbered announcement")
 	check(hud.wave_announcement.visible and hud.wave_announcement.modulate.a == 1, "ribbon appears immediately")
 	check(hud.gameplay_hud.find_child("SurvivalWave", true, false) == null, "no permanent wave-number control remains")
 	var ribbon: TextureRect = hud.wave_announcement.get_node("AdventureRibbon")
@@ -122,7 +122,7 @@ func _run() -> void:
 		enemies.wave_remaining = 0
 		enemies._update_arena(0)
 		hud._process(0)
-		check(hud.wave_announcement.text == ["WAVE II", "WAVE III", "WAVE IV", "FINAL WAVE"][wave - 2], "wave %d announces its own title" % wave)
+		check(hud.wave_announcement.text == ["WAVE II", "WAVE III", "WAVE IV", "WAVE V"][wave - 2], "wave %d announces its own title" % wave)
 		if wave == 2:
 			check(dots() == 5 and empty_circles() == 0, "overlapping second wave includes both earlier survivors and all three arrivals")
 	check(enemies.wave_number == 5 and dots() == 17, "maximum final backlog counts sixteen ordinary ships and flagship exactly once")

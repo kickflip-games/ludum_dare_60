@@ -61,7 +61,7 @@ func _run() -> void:
 	hud = game.hud
 	await frames()
 	check(hud.menu_actions.get_node_or_null("Quit") == null, "no Quit button is constructed")
-	check(hud.settings_panel.get_node("FullControls").text.contains("Esc   Pause / resume"), "controls describe pause rather than exit")
+	check(hud.settings_panel.get_node("FullControls/Action7").text == "Pause / resume", "controls describe pause rather than exit")
 	tap(KEY_ESCAPE)
 	await frames()
 	check(game.state == game.State.READY and not game.paused and not paused, "Esc on the title keeps the game open without pausing")

@@ -17,7 +17,6 @@ func capture(label: String) -> void:
 	for frame in 6: await process_frame
 	print("LAYOUT %s: menu=%s title=%s visible=%s alpha=%s" % [label, game.hud.menu.get_global_rect(), game.hud.menu_title.get_global_rect(), game.hud.menu.is_visible_in_tree(), game.hud.menu.modulate.a])
 	RenderingServer.force_draw(true, 1.0 / 60.0)
-	await RenderingServer.frame_post_draw
 	var path := ProjectSettings.globalize_path(output).path_join(label + ".png")
 	assert(root.get_texture().get_image().save_png(path) == OK)
 	print("MENU CAPTURE: " + path)
@@ -35,6 +34,29 @@ func _run() -> void:
 	game.hud.set_process(false)
 	game.set_process_unhandled_input(false)
 	await capture("title")
+	# Capture real hover and pressed GUI states before activating the start action.
+	game.hud.action_button.release_focus()
+	var hover := InputEventMouseMotion.new()
+	hover.position = game.hud.action_button.get_global_rect().get_center()
+	root.push_input(hover, true)
+	await capture("primary-hover")
+	game.hud.action_button.set_block_signals(true)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.position = hover.position
+	press.pressed = true
+	root.push_input(press, true)
+	await capture("primary-pressed")
+	# Cancel this held click outside the button.
+	press = press.duplicate()
+	press.position = Vector2(2, 2)
+	press.pressed = false
+	root.push_input(press, true)
+	game.hud.action_button.set_block_signals(false)
+	hover.position = game.hud.settings_button.get_global_rect().get_center()
+	root.push_input(hover, true)
+	game.hud.settings_button.grab_focus()
+	await capture("secondary-focused")
 	game.hud._show_credits(true)
 	await capture("credits")
 	game.hud._show_credits(false)

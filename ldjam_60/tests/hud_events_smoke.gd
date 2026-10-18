@@ -42,7 +42,7 @@ func _run() -> void:
 	game.advance_sailing(0.001, 0)
 	hud._process(0)
 	check(game.flow_zones.collected.size() == 1 and is_equal_approx(game.flow_zones.multiplier(), 1.25), "real pickup keeps permanent compound reward")
-	check(hud.notice.text == "CURRENT CAUGHT · +25%" and not hud.notice.text.contains("m/s"), "pickup feedback is momentary and contains no technical speed")
+	check(hud.notice.text == "SPEED +25%" and not hud.notice.text.contains("m/s"), "pickup feedback is momentary and contains no technical speed")
 	game.boat.position = game.arena_center() + Vector3(0, 0, 100)
 	game._update_view(1)
 	var ship = waves.ship

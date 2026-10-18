@@ -287,7 +287,7 @@ func _begin_wave() -> void:
 		boss_spawn_pending = true
 		_spawn_boss()
 		spawn_remaining = maxf(spawn_remaining, survival_settings.spawn_interval)
-	announcement = "FINAL WAVE" if wave_number == ARENA_WAVES else "WAVE %d INCOMING" % wave_number
+	announcement = "WAVE %d" % wave_number
 	announcement_left = 2.0
 	game.cue_sound("wave")
 

@@ -781,7 +781,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if arena_mode:
 		var earned := flow_zones.collect_at(Vector2(boat.global_position.x, boat.global_position.z))
 		if earned > 0:
-			show_discovery("CURRENT CAUGHT · +25%", 2.2)
+			show_discovery("SPEED +25%", 2.2)
 			cue_sound("victory")
 	var forward_speed := propulsion_speed()
 	# Only the retained voyage fixture has a gun-view steering gate.
@@ -889,7 +889,7 @@ func _constrain_sailing_area() -> void:
 		# Stop outward wave momentum; preserve motion along the edge and the rudder.
 		wave_sailing.slide(inward)
 	if at_boundary and not _at_sailing_boundary:
-		show_discovery("Open sea · turn back toward the islands")
+		show_discovery("Return to the islands")
 	_at_sailing_boundary = at_boundary
 
 

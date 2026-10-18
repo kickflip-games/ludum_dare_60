@@ -19,13 +19,24 @@ var peak_nodes := 0
 var peak_resources := 0.0
 var entered := false
 var captures := false
+# Diagnostic ablations are benchmark-only; normal gameplay never reads these.
+var probe := ""
+var first_shot_only := false
+var first_update_us: Array[float] = []
+var first_cannon_us: Array[float] = []
 func _ready() -> void:
 	captures = "--captures" in OS.get_cmdline_user_args()
+	first_shot_only = "--first-shot-only" in OS.get_cmdline_user_args()
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--probe="): probe = arg.trim_prefix("--probe=")
 		if arg.begins_with("--label="): label = arg.trim_prefix("--label=")
 		if arg.begins_with("--output="): output = arg.trim_prefix("--output=")
 	if OS.has_feature("web"):
 		label = JavaScriptBridge.eval("new URLSearchParams(location.search).get('label') || 'before'")
+		probe = JavaScriptBridge.eval("new URLSearchParams(location.search).get('probe') || ''")
+		first_shot_only = JavaScriptBridge.eval("new URLSearchParams(location.search).has('first-shot-only')")
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	get_tree().root.content_scale_size = Vector2i(1280,720)
 	get_tree().root.size = Vector2i(1280,720)
 	seed(60)
 	game = load("res://game/crossing.tscn").instantiate()
@@ -92,7 +103,14 @@ func _process(delta: float) -> void:
 	# Real delta, same physical collision and VFX update paths as gameplay.
 	game.sea_time += delta
 	game.ocean.update_surface(game.boat.position, game.sea_time, delta, 1.0, game.heading)
+	var cannon_started := Time.get_ticks_usec()
 	game.cannon.advance(delta)
+	if first_cannon_us.size() < 12: first_cannon_us.append(float(Time.get_ticks_usec()-cannon_started))
+	if phase == 1:
+		if probe == "no_light": game.cannon.flash_light.hide()
+		if probe == "no_flame": game.cannon.flash.hide()
+		if probe == "no_ball":
+			for shot in game.cannon.projectiles: shot.node.hide()
 	for ship in game.enemy_encounters.ships:
 		if phase == 7: ship.update_ship(delta)
 		else: ship._advance_shots(delta)
@@ -105,6 +123,7 @@ func _process(delta: float) -> void:
 	if phase == 7:
 		game.wave_encounters.enabled = true
 		game.wave_encounters.update(game,delta)
+	if first_update_us.size() < 12: first_update_us.append(float(Time.get_ticks_usec()-now))
 	if elapsed >= 3.0:
 		var record := metrics()
 		results.append(record)
@@ -122,6 +141,7 @@ func capture_event(case_name: String) -> void:
 func _event() -> void:
 	if phase in [1,7]:
 		game.cannon.cooldown = 0
+		if probe == "no_particles": game.combat_particles.enabled = false
 		game.cannon.fire()
 	if phase in [2,3,7]:
 		for i in (1 if phase == 2 else 5):
@@ -153,12 +173,12 @@ func percentile(values: Array[float], f: float) -> float:
 	sorted.sort()
 	return sorted[mini(sorted.size()-1,int(sorted.size()*f))] if not sorted.is_empty() else 0
 func metrics() -> Dictionary:
-	return {"case":CASES[phase],"peak_draw_calls":peak_draws,"peak_nodes":peak_nodes,"peak_resources":peak_resources,"frames":frames.size(),"median_ms":percentile(frames,0.5),"p95_ms":percentile(frames,0.95),"p99_ms":percentile(frames,0.99),"max_ms":percentile(frames,1),"event_cpu_us":event_us.duplicate(),"draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),"nodes":get_tree().get_node_count(),"resources":Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),"static_bytes":Performance.get_monitor(Performance.MEMORY_STATIC),"video_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)}
+	return {"case":CASES[phase],"first_frames_ms":frames.slice(0,12),"first_update_us":first_update_us.duplicate(),"first_cannon_us":first_cannon_us.duplicate(),"peak_draw_calls":peak_draws,"peak_nodes":peak_nodes,"peak_resources":peak_resources,"frames":frames.size(),"median_ms":percentile(frames,0.5),"p95_ms":percentile(frames,0.95),"p99_ms":percentile(frames,0.99),"max_ms":percentile(frames,1),"event_cpu_us":event_us.duplicate(),"draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),"nodes":get_tree().get_node_count(),"resources":Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),"static_bytes":Performance.get_monitor(Performance.MEMORY_STATIC),"video_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)}
 func _next_phase() -> void:
 	phase += 1
-	if phase == CASES.size():
+	if phase == (2 if first_shot_only else CASES.size()):
 		done = true
-		var report := {"label":label,"engine":Engine.get_version_info().string,"adapter":RenderingServer.get_video_adapter_name(),"viewport":str(get_viewport().size),"phases":results}
+		var report := {"label":label,"probe":probe,"first_shot_only":first_shot_only,"engine":Engine.get_version_info().string,"adapter":RenderingServer.get_video_adapter_name(),"viewport":str(get_viewport().size),"render_size":str(get_viewport().get_texture().get_size()),"phases":results}
 		print("RUNTIME_RESULT "+JSON.stringify(report))
 		if OS.has_feature("web"):
 			JavaScriptBridge.eval("document.title='Runtime benchmark complete';window.runtimeBenchmark="+JSON.stringify(report))
@@ -174,5 +194,7 @@ func _next_phase() -> void:
 	elapsed = 0
 	pulse = 0
 	entered = false
+	first_update_us.clear()
+	first_cannon_us.clear()
 	frames.clear()
 	event_us.clear()

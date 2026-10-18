@@ -5,7 +5,6 @@ func capture(label: String) -> void:
 	game.hud.walkthrough_card._process(0)
 	for frame in 8: await process_frame
 	RenderingServer.force_draw(true, 1.0 / 60)
-	await RenderingServer.frame_post_draw
 	var path := ProjectSettings.globalize_path(output).path_join(label + ".png")
 	assert(root.get_texture().get_image().save_png(path) == OK)
 	print("WALKTHROUGH CAPTURE: " + path)
@@ -34,7 +33,16 @@ func _run() -> void:
 			key(KEY_A, true)
 			step(0.2)
 			await capture("steer-pressed")
+			step(0.4)
 			key(KEY_A, false)
+			await capture("steer-complete")
+		if index == 4:
+			game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+			key(KEY_E, true)
+			step(0.5)
+			key(KEY_E, false)
+			assert(game.arena_cannon_view and game.walkthrough.practiced)
+			await capture("camera-active")
 	game.motion_setting = 1
 	await capture("reduced-ready")
 	game.queue_free()

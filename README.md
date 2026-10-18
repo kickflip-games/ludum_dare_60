@@ -8,12 +8,12 @@ Enemies attack the player; the lighthouse is a lit landmark with no health or
 damage system. **Sink the flagship to win immediately**, even with escorts or
 earlier survivors alive. Entering the old harbour never wins.
 
-- **Set Sail / Enter:** start the game directly; forward sailing is automatic at **7.5 m/s**.
-- **Walkthrough:** the button beneath Set Sail opens guided practice for steering, boost, mouse
+- **Play / Enter:** start the game directly; forward sailing is automatic at **7.5 m/s**.
+- **Tutorial:** the button beneath Play opens guided practice for steering, boost, mouse
   look, firing and the camera toggle before enemies arrive. Cards wait for real
   input; Continue/Enter moves on, and Skip begins the voyage immediately.
   Finish or Skip starts a fresh game, clearing practice time, shots and rewards.
-  The Walkthrough button is always available on the start menu for replay.
+  The Tutorial button is always available on the start menu for replay.
 - **Credits:** available from the title, pause and result menus; Back or Esc returns
   to the previous menu without starting or resuming play.
 - **A / D or arrows:** steer; forward sailing stays automatic.
@@ -35,7 +35,9 @@ earlier survivors alive. Entering the old harbour never wins.
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute, including background music; **Esc:** pause / resume. The pause menu offers Resume, Settings, Credits and Main Menu;
-  Esc in Settings returns to the previous menu. Settings shows the control reference and Back.
+  Esc in Settings returns to the previous menu. Settings shows the control reference,
+  existing Full/Reduced motion preference and Back. Menus share recoloured Kenney
+  Adventure buttons; the compact practice card sits at bottom right.
 - **Debug `+` (Shift+= or numpad +):** with **Development → Development Tools**
   enabled on the crossing, spawn all remaining ships for the current wave.
   This skips arrival delays and the ordinary ship cap; survivors, wave timers
@@ -50,7 +52,7 @@ earlier survivors alive. Entering the old harbour never wins.
   archipelago style. Their shores sit beyond the combat boundary; the inner
   sailing routes and enemy sectors remain clear.
 - A red **storm warning circle**, 170 m from the lighthouse, fades in across the
-  final 38 m of approach. Only after crossing, **STORMY AHEAD / RETURN TO THE
+  final 38 m of approach. Only after crossing, **STORM AHEAD / RETURN TO THE
   LIGHTHOUSE** appears once per voyage, for at most 10 seconds or until returning
   inside. It does not repeat on later crossings. Beyond the line, a slow red screen pulse and
   stormier lighting. Reduced motion uses a steady tint. The player can sail
@@ -70,7 +72,7 @@ earlier survivors alive. Entering the old harbour never wins.
   including survivors, queued arrivals and the flagship. Defeats leave hollow
   circles until the next wave rebuilds the group; an all-hollow row hides after
   one second. A final-15-second countdown signals the next wave. Incoming-fire
-  and storm warnings remain; **THE FLAGSHIP** health bar sits clear of the ribbon.
+  and storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
   The existing player hull-damage presentation remains.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,

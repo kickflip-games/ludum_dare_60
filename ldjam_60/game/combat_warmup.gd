@@ -1,5 +1,5 @@
 extends Node
-## Render existing combat material paths in a tiny private world, never on screen.
+## Prime combat rendering from the menu, using clipped copies and isolated lights.
 ## No weapon methods, timers, audio or gameplay random stream are touched.
 var complete := false
 var elapsed_ms := 0.0
@@ -14,27 +14,31 @@ func _warm(game: Node3D) -> void:
 	# Let the existing menu/world present once before compiling combat variants.
 	await RenderingServer.frame_post_draw
 	var start := Time.get_ticks_usec()
-	var viewport := SubViewport.new()
-	viewport.size = Vector2i(32,32)
-	viewport.own_world_3d = true
-	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	add_child(viewport)
-	var world := WorldEnvironment.new()
-	world.environment = game.world_environment.environment
-	viewport.add_child(world)
-	var light := DirectionalLight3D.new()
-	viewport.add_child(light)
+	# Compile against the real viewport's formats/lighting variants. Geometry is
+	# completely beyond its clip volume; private culling bounds admit the draw.
+	# Lights affect only these copies, never the visible world.
+	var camera: Camera3D = game.get_viewport().get_camera_3d()
+	var old_mask := camera.cull_mask
+	const WARM_LAYER := 1 << 19
+	camera.cull_mask |= WARM_LAYER
+	var stage := Node3D.new()
+	add_child(stage)
+	var anchor := camera.global_position - camera.global_basis.z * 10.0
+	var clipped := camera.to_global(Vector3(10000,0,-10))
 	var flash_light := OmniLight3D.new()
 	flash_light.light_energy = 5.0
-	flash_light.omni_range = 7.0
-	flash_light.position = Vector3(0,2,0)
-	viewport.add_child(flash_light)
-	var camera := Camera3D.new()
-	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 32
-	viewport.add_child(camera)
-	camera.position = Vector3(0,12,18)
-	camera.look_at(Vector3.ZERO)
+	flash_light.omni_range = 64.0
+	flash_light.light_cull_mask = WARM_LAYER
+	stage.add_child(flash_light)
+	flash_light.global_position = anchor
+	var lantern := OmniLight3D.new()
+	lantern.omni_range = 64.0
+	lantern.light_energy = game.lantern_energy
+	lantern.light_cull_mask = WARM_LAYER
+	stage.add_child(lantern)
+	lantern.global_position = anchor
+	# The muzzle light also selects variants on the player sail, deck and cannon.
+	# Use their actual material resources, including surface overrides.
 	var pool = game.cannon.projectile_visuals
 	var samples: Array[MeshInstance3D] = []
 	for material in [pool.friendly, pool.hostile]:
@@ -68,20 +72,43 @@ func _warm(game: Node3D) -> void:
 		warning.material_override = game.enemy_encounters.boss.warnings[0].material_override
 		warning.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		samples.append(warning)
+	_collect(game.boat_visual, Transform3D.IDENTITY, samples)
 	for i in samples.size():
 		var sample := samples[i]
-		viewport.add_child(sample)
-		sample.position = Vector3((i%5-2)*4,0,(i/5)*4)
+		stage.add_child(sample)
+		sample.layers = WARM_LAYER
+		sample.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		sample.global_position = clipped
+		sample.custom_aabb = AABB(sample.to_local(anchor)-Vector3.ONE,Vector3.ONE*2)
 	var particles := MultiMeshInstance3D.new()
-	particles.multimesh = game.combat_particles.mesh
-	particles.material_override = game.combat_particles.material
+	# An empty/zero-sized batch does not exercise a live particle draw reliably.
+	# Private instance data prevents touching the real pool or its random stream.
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.use_colors = true
+	batch.use_custom_data = true
+	batch.mesh = game.combat_particles.mesh.mesh
+	batch.instance_count = 2
+	for i in 2:
+		batch.set_instance_transform(i,Transform3D(Basis.IDENTITY,Vector3(i*2,1,0)))
+		batch.set_instance_color(i,Color(1,0.8,0.5,1))
+		batch.set_instance_custom_data(i,Color(0,0,0,1 if i == 0 else -1))
+	particles.multimesh = batch
+	particles.material_override = game.combat_particles.material.duplicate()
+	particles.material_override.set_shader_parameter("effect_time",0.1)
 	particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	viewport.add_child(particles)
-	# Two real draw opportunities include shader variants and their render passes.
+	stage.add_child(particles)
+	particles.layers = WARM_LAYER
+	particles.global_position = clipped
+	batch.custom_aabb = AABB(particles.to_local(anchor)-Vector3.ONE,Vector3.ONE*2)
+	# Prime the unlit and muzzle-lit variants before gameplay can reveal them.
+	flash_light.hide()
+	await RenderingServer.frame_post_draw
+	flash_light.show()
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
-	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	viewport.queue_free()
+	camera.cull_mask = old_mask
+	stage.queue_free()
 	complete = true
 	elapsed_ms = (Time.get_ticks_usec()-start)/1000.0
 	print("COMBAT_WARMUP_MS ", elapsed_ms)

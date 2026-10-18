@@ -91,9 +91,15 @@ func _run() -> void:
 	var file := FileAccess.open(output.path_join("results.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(result, "\t"))
 	if capture_enabled:
-		game._update_view(1.0)
-		game.hud._process(0.0)
+		for frame in 60:
+			game._update_view(1.0 / 60.0)
+			game.hud._process(1.0 / 60.0)
+			await process_frame
 		await capture("ending")
 	game.queue_free()
 	await process_frame
+	if capture_enabled:
+		RenderingServer.force_draw(true, 1.0 / 60.0)
+		OS.delay_msec(200)
+		await process_frame
 	quit(0 if result.won else 1)

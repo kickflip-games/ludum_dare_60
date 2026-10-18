@@ -6,11 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
-- In progress: Improve combat readability with folded, brighter sails, aim-only
-  visibility/occlusion-checked cloth illumination and confirmed hit/sinking
-  feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;
-  preserved physical cannon fire and wave forces. Initial combat/naval checks
-  pass; timed-roster integration and final rendered evidence remain pending.
+- Added readable cutter/skiff/heavy profiles (2/1/3 hits), aim-only occlusion-checked
+  sail illumination, confirmed hit/sinking feedback and exact 1/2/2/3/3 rosters.
+  Fixed remote approaches and reciprocal yielding; quicker helm response retains
+  physical shots, wave forces and current 9 m/s/chase-camera work. 862 checks pass;
+  input-only full run defeats all 11 ships through 22 physical hits. Native
+  comparisons and combat clips reviewed; human balance remains open. See the
+  [combat review](artifacts/combat_feel_review.md).
 - Raised player cruise from 6.3 to 9 m/s (43% faster), including
   while aiming. Movement and arena return share the configurable speed; tighter
   chase follow keeps the boat readable. Retained voyage fixtures explicitly

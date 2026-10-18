@@ -480,8 +480,9 @@ func _hold_avoidance(direction: Vector3, seconds: float) -> void:
 
 
 func _separation_course(away: Vector3) -> Vector3:
-	var side := 1.0 if away.dot(_run_right()) >= 0.0 else -1.0
-	return (away.normalized() * 0.45 + _run_right() * side + _run_forward() * 0.25).normalized()
+	var right := Vector3(cos(heading), 0, sin(heading))
+	var side := 1.0 if away.dot(right) >= 0.0 else -1.0
+	return (away.normalized() * 0.45 + right * side + forward() * 0.25).normalized()
 
 
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:

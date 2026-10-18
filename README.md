@@ -74,8 +74,9 @@ Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 
 `combat_arena_playtest.gd` is an exploratory input-only pilot, not a balance
-acceptance test. It records a full attempt and exits 1 on defeat; the current
-pilot has not established a complete win. See the combat review for actual results.
+acceptance test. It records a full attempt and exits 1 on defeat. The current
+build completed all eleven ships through 22 physical hits in 446.42 simulated
+seconds; earlier controllers lost. See the combat review for actual results.
 
 ## Retained voyage reference (inactive in normal play)
 

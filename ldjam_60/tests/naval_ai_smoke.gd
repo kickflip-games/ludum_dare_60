@@ -156,6 +156,7 @@ func multi_approach() -> void:
 		ships[index].rotation.y = -ships[index].heading
 	await physics_frame
 	var minimum_separation := INF
+	var minimum_clearance := INF
 	var maximum_step := 0.0
 	var longest_stop := 0
 	var stopped := [0, 0, 0]
@@ -175,13 +176,17 @@ func multi_approach() -> void:
 		for first_index in 3:
 			for second_index in range(first_index + 1, 3):
 				minimum_separation = minf(minimum_separation, ships[first_index].position.distance_to(ships[second_index].position))
+				var first = ships[first_index].collision_shape
+				var second = ships[second_index].collision_shape
+				minimum_clearance = minf(minimum_clearance, first.global_position.distance_to(second.global_position) - first.shape.radius - second.shape.radius)
 		await physics_frame
 	print("MULTI APPROACH " + JSON.stringify({"minimum_separation": minimum_separation,
-		"longest_stop": longest_stop / 60.0, "maximum_step": maximum_step, "closest": closest}))
+		"longest_stop": longest_stop / 60.0, "maximum_step": maximum_step, "closest": closest, "minimum_hull_clearance": minimum_clearance}))
 	check(minimum_separation > 10.0, "three different approach directions yield instead of stacking or colliding")
 	check(longest_stop / 60.0 < 2.5 and not grounded, "multi-ship blocked paths recover while all hulls stay in water")
 	check(closest.all(func(distance): return distance < 80.0), "all three archetypes physically close from separate sectors")
-	check(maximum_step < 0.18 and ships.all(func(ship): return ship.visible and ship.hull == ship.hull_capacity),
+	var speed_limit: float = ships.map(func(ship): return ship.sailing_speed).max() * 1.12 / 60.0 + 0.01
+	check(maximum_step < speed_limit and ships.all(func(ship): return ship.visible and ship.hull == ship.hull_capacity),
 		"simultaneous AI never teleports, silently despawns or takes time-based damage")
 	game.restart()
 	check(ships.all(ship_is_reset), "multi-ship retry clears detours, glow, shots and every pooled hull")

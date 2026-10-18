@@ -1,11 +1,7 @@
 extends RefCounted
 
 var target: CharacterBody3D
-var shots := 0
 var helm_exits := 0
-var evade_left := 0.0
-var evade_side := -1.0
-var dodged_threats: Dictionary = {}
 var avoid_left := 0.0
 var avoid_heading := 0.0
 var orbit := false
@@ -94,7 +90,6 @@ func update(game, delta: float) -> void:
 			if (travel - offset).length() < target.collision_shape.shape.radius - 0.45 and game.get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 				action("fire_starboard", true)
 				action("fire_starboard", false)
-				shots += 1
 	else:
 		if game.cannon.aiming:
 			helm_exits += 1

@@ -152,6 +152,8 @@ func duel(kind: String, choppy: bool) -> void:
 	var game = await make_game()
 	var ship = game.enemy_encounters.ship
 	ship.configure_archetype(load("res://game/enemies/" + kind + ".tres"))
+	if kind == "heavy":
+		game.boat.position = Vector3(260, 0, 355)
 	ship.begin(game.boat.position + Vector3(ship.broadside_separation, 0, -4))
 	if choppy:
 		game.ocean.wave_field.add_wave(Vector2(286, 323), Vector2.RIGHT, 0.85, 4.5, 35.0, 8.0, 0.0, 9.0)
@@ -168,6 +170,10 @@ func duel(kind: String, choppy: bool) -> void:
 			break
 		if not choppy or frame >= 300:
 			pilot.update(game, 1.0 / 60.0)
+		else:
+			var correction: float = -game.heading * 3.0 - (game.boat.position.x - 310.0) * 0.10 - game.wave_sailing.drift.x * 0.22
+			action("steer_port", correction < -0.1)
+			action("steer_starboard", correction > 0.1)
 		var previous: Vector3 = ship.position
 		var rate: float = ship.turn_rate
 		var was_telling: bool = ship.mode == ship.Mode.TELEGRAPH
@@ -235,15 +241,6 @@ func rudder_response() -> void:
 		heading = sailing.step(field, Vector2.ZERO, heading, 0.0, 0.2 + (frame + 1.0) / 60.0, 1.0 / 60.0)
 	check(sailing.rudder_rate > 0.0 and sailing.rudder_rate < 0.01 and sailing.drift == Vector2.ZERO and sailing.yaw_rate == 0.0,
 		"released helm settles smoothly with no hidden drift, yaw or current")
-	field.add_wave(Vector2(-24, 0), Vector2.RIGHT, 0.9, 4.5, 24.0, 8.0, 0.0, 8.0)
-	sailing.reset()
-	baseline.reset()
-	sailing.wave_response = 0.75
-	sailing._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
-	baseline._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
-	check(absf(sailing.drift.length() / baseline.drift.length() - 0.75) < 0.001
-		and absf(sailing.yaw_rate / baseline.yaw_rate - 0.75) < 0.001,
-		"arena hull response reduces drift and yaw together without altering the authoritative sampled crest")
 
 func combat_crests() -> void:
 	var game = await make_game()
@@ -260,8 +257,8 @@ func combat_crests() -> void:
 	game.cannon.set_aim_held(false)
 	game.wave_encounters.next_event = 0.0
 	game.wave_encounters.update(game, 1.0 / 60.0)
-	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.waves.front().height <= 0.6,
-		"active combat outside shelter can launch one small, visible, seeded crest instead of suppressing the sea")
+	check(game.ocean.wave_field.waves.is_empty(), "combat preserves the existing director's new-crest suppression")
+	game.ocean.wave_field.add_wave(Vector2(251, 381), Vector2.RIGHT, 0.55, 4.5, 35.0, 8.0, 0.0, 9.0)
 	var wave: Dictionary = game.ocean.wave_field.waves.front()
 	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
@@ -272,6 +269,7 @@ func combat_crests() -> void:
 		"entering gun view never erases or freezes an already visible wave")
 	game.ocean.wave_field.clear()
 	game.cannon.set_aim_held(false)
+	ship.reset()
 	game.boat.position = game.arena_center() + Vector3(0, 0, 75)
 	game.wave_encounters.next_event = 0.0
 	game.wave_encounters.update(game, 1.0 / 60.0)

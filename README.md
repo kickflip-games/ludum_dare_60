@@ -3,7 +3,7 @@
 Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
 Find the Wreck, cross Twin Peaks, then reach Lighthouse Harbour. Sailing has no
 destination labels or route instructions. Hold Space until a guiding star glows,
-remember its direction, then steer. Quiet sailing shows only the three small hull symbols.
+remember its direction, then steer. Quiet sailing has no hull indicators.
 Discovery notices acknowledge the place you found without announcing the next stop.
 Reach the lighthouse by recovering your course after reefs and directional waves,
 with optional cutter duels. The sea is mostly calm, interrupted by sparse travelling
@@ -35,11 +35,13 @@ Remember the direction and choose your own path around islands. The star does no
 provide a safe route, turn the boat or rotate the sky. Discoveries reset focus and
 briefly acknowledge the place found for 2.8 seconds. See the world documentation
 for the shared bearing convention and scripted navigation checks.
-The open instrument has no instant bearing needle or course bubble. Hull symbols
-stay at bottom left; damaged boats have broken, sail-free outlines.
-Short hit/repair notices and progress appear beside them when relevant. The cannon
-ring appears only during gun view, reload and a brief ready pulse. Incoming-fire
-cues and repair notices remain readable while sighting. There are no idle target marks.
+The open instrument has no instant bearing needle or course bubble. Hull damage
+appears on the boat: two small stern scratches after one hit, with extra gunwale
+splintering at one remaining hull point. A brief warm wood flash and the existing
+hit sound/edge tint acknowledge accepted hits. There are no hull icons, health
+numbers or repair bars. The cannon ring appears only during gun view, reload and
+a brief ready pulse. Incoming-fire cues remain readable while sighting. There are
+no idle target marks.
 The lighthouse's stone silhouette can be glimpsed in the distance; its warm lantern
 and sweeping beam activate on the final approach. There is no waypoint arrow or
 progress readout. Actual entry into its broad harbour region is required to win.
@@ -49,12 +51,16 @@ immunity window prevents per-frame damage. Pale timber can be shattered; rocks a
 wrecks must be avoided. Red-sailed cutters take two hits and sink visibly. Their
 amber firing line is locked during the warning; the orange cannonball never homes.
 Turn away from that line or line up your own cannon. Killing enemies is optional,
-and each hostile disengages after 24 seconds. There is one active hostile at a time.
+and each hostile fights for up to 55 seconds before visibly sailing away. There is
+one active hostile at a time. Cutters approach starboard, hold a six-second parallel
+pass and make a wide forward turn before returning. A sustained 135 m escape also
+starts retreat; the ship is removed only at a safe distance.
 Once the cutter is sunk or has disengaged and its last cannonballs are clear,
 the crew automatically repairs one hull point every eight uninterrupted seconds.
-New damage or another hostile interrupts repairs. The hull gauge shows the repair
-countdown and progress; no extra button is needed. Nearby salvage still restores
-one hull point immediately, once per discovery per voyage.
+New damage or another hostile interrupts repairs. Each restored point removes a
+stage of scratches; a fully repaired boat looks normal. No extra button is needed.
+Nearby salvage still restores one hull point immediately, once per discovery
+per voyage.
 
 The opening pirate
 appears about eight seconds after cast-off on either main route. There are 31
@@ -77,7 +83,10 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   3°. The camera follows a level heading with filtered heave, shows the whole ship,
   and retracts at shores. See the [camera review](artifacts/sailing_camera_review.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
-  and sky FOV (94°). Procedural toon cloud banks drift in world space;
+  upward pitch (`stargazing_pitch_degrees`, 25°), and sky FOV (94°). The sighting
+  camera stays 2.55 m high and 4.5 m toward the bow; an aligned star appears about
+  17% down the view with the real sea horizon about 72% down. Yaw follows the hull.
+  Procedural toon cloud banks drift in world space;
   a broad wind lane keeps the active star readable in storm weather. See the cloud
   controls and review notes below.
 - **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65).
@@ -104,11 +113,16 @@ Waves now apply force ahead of the hull's lateral resistance, creating a lasting
 heading change that needs countersteering, as well as sideways drift.
 
 `game/enemy_ship.tscn` is the reusable cutter. Its Inspector exports speed 7 m/s,
-turning 0.85 rad/s, hull 2, firing range 62 m, reload 3.8 s, telegraph 1.65 s,
-projectile speed 24 m/s and encounter duration 24 s. The departure and eastern
-territories, spawn distances and opening delay are editable on `PiratePatrols`
-in `game/world/archipelago.tscn`. Ships yield before predicted close
-passes. The player's single starboard cannon fires along its visible barrel;
+turning 0.42 rad/s (rudder acceleration 0.65 rad/s²), hull 2, firing range 62 m,
+reload 3.8 s, telegraph 1.65 s and projectile speed 24 m/s. Engagement budget is
+55 s, broadside spacing 34 m (26 m near a blocked shore lane), attack run 6 s and
+return turn 8.5 s. One shot per pass and a 4.5 m long aim on alternate passes keep
+fire forgiving. Retreat cleanup requires 180 m separation and an offscreen hull
+(or 240 m separation). The departure and eastern territories, spawn distances
+and opening delay are editable on `PiratePatrols` in `game/world/archipelago.tscn`.
+Patrol triggers stay authored; a clear starboard spawn is preferred. Ships yield
+before predicted close passes. See the [enemy AI review](artifacts/enemy_ai_review.md).
+The player's single starboard cannon fires along its visible barrel;
 there is no launch correction or target tracking. Reload remains 1.5 seconds.
 
 Open `game/broadside_cannon.tscn` to tune the Inspector exports: ±30° sweep,
@@ -185,9 +199,14 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   two actual projectile hits, sinking and reset.
 - `--script res://tests/hud_smoke.gd`: menu actions, responsive bounds,
   minimal sailing HUD, reload/damage feedback, sighting priorities and result screens.
+- `--script res://tests/damage_smoke.gd`: health-derived scratches, accepted-hit flash,
+  immunity/non-damage controls, threshold boundaries, repairs, sinking and retry.
 - `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
   repeated checks, live-star/edge projection across headings/window sizes, text-free
-  focus stages, active enemy fire, camera precedence and vulnerability.
+  focus stages, star/horizon framing, 30/60/120 Hz camera transitions, active enemy
+  fire, camera precedence and vulnerability.
+- `--script res://tests/sailing_camera_smoke.gd`: whole-boat framing, heading/follow
+  response, level horizon, and terrain/water clearance in sailing and sighting views.
 - `--script res://tests/navigation_smoke.gd`: compass/turn wraparound, actual A/D
   direction, independent hull-axis bearing checks, moving readings and discoveries.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
@@ -216,6 +235,14 @@ cover initial search, mid-focus, lock, sailing/combat return and drifting storm
 clouds. The bounded `clip/` PNG sequence encodes at 20 fps. Use `--no-clip` for
 screenshots only, or `--size=960x540` for small-window review. Input is scripted;
 weather and the combat encounter are staged, so these do not establish human balance.
+
+For matching camera-composition captures, add `--framing --size=1280x720` (repeat
+with `--size=900x506`). This saves nine views: sailing, searching, aligned focus,
+immediate release, sailing return, wrong heading, nearby islands, storm focus and
+storm return, plus `framing.json` with camera and projected star/horizon positions.
+Boat poses, seed, clock and weather are fixed comparison fixtures. Native focus
+notifications are ignored only by this capture fixture; the smoke test checks the
+game's actual focus-loss reset. Screenshots remain local; use `/tmp` or `build/`.
 
 Real-renderer captures: `--script res://tests/gameplay_previews.gd -- --output=/tmp/last-bearing-gameplay`.
 Run captures with `--fixed-fps 60`; the harness also saves a bounded 15 fps PNG
@@ -313,3 +340,9 @@ the shared ray against live destinations, wrong-way sailing, rudder recovery,
 vertical/behind-camera projection and wraparound. The full `archipelago_voyage.gd`
 uses actual Space/A/D inputs with test-only route choices; `--alternate` takes the
 longer island detour. These establish scripted reachability, not human intuition.
+
+Boat damage captures (normal gameplay camera): `--script
+res://tests/damage_previews.gd -- --output=/tmp/latitude-lines-damage`. Healthy,
+impact, damaged, heavy, storm, both repair stages, repeat-hit, loss and retry frames
+use the same comparison pose. Add `--size=900x506` for the small window. These are
+scripted fixtures, not human playtesting.

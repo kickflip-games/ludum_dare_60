@@ -34,6 +34,17 @@ func sail(seconds: float, fps: int = 60) -> void:
 		remaining -= delta
 
 
+func finish_retreat() -> void:
+	# Keep the player still while the cutter visibly sails out of the test arena.
+	var ship = game.enemy_encounters.ship
+	for frame in range(60 * 60):
+		if ship.mode == ship.Mode.ESCAPED:
+			break
+		ship.update_ship(1.0 / 60.0)
+		game._update_hull_recovery(1.0 / 60.0)
+	check(ship.mode == ship.Mode.ESCAPED, "retreat reaches safe cleanup before recovery begins")
+
+
 func _run() -> void:
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
@@ -47,7 +58,7 @@ func _run() -> void:
 	sail(20.0)
 	check(game.hull == game.hull_capacity and game.hull_repair_elapsed == 0.0, "full hull cannot bank future repairs")
 	game.take_damage(2, "battle damage")
-	for mode in [ship.Mode.APPROACH, ship.Mode.POSITION, ship.Mode.TELEGRAPH, ship.Mode.FIRE, ship.Mode.REPOSITION]:
+	for mode in [ship.Mode.APPROACH, ship.Mode.POSITION, ship.Mode.TELEGRAPH, ship.Mode.FIRE, ship.Mode.REPOSITION, ship.Mode.DISENGAGING]:
 		ship.begin()
 		ship.mode = mode
 		game._update_hull_recovery(20.0)
@@ -60,19 +71,19 @@ func _run() -> void:
 	sail(0.01)
 	game.hud._process(0.01)
 	check(game.hull == 2 and game.hits_taken == 1 and game.damage_immunity == 0.0, "first safe interval restores one point without changing hit history or granting immunity")
-	check(game.hud.hull_gauge.status.text == "Hull repaired" and game.hud.hull_gauge.pulse > 0.0, "repair completion gives accurate text and a positive hull pulse")
+	check(game.boat_damage.severity == 1 and not game.boat_damage.heavy_marks.visible, "first repair removes the heavy scratches immediately")
 	sail(4.0)
 	game.hud._process(0.01)
-	check(game.hud.hull_gauge.status.text == "Repairing · 4s", "damaged hull displays an accurate countdown at a whole-second boundary")
+	check(is_equal_approx(game.hull_repair_elapsed, 4.0) and game.boat_damage.light_marks.visible, "light scratches persist through the next repair interval")
 	sail(4.0)
 	check(game.hull == 3 and game.hull_repair_elapsed == 0.0, "a second full interval restores the remaining hull and clears progress")
 	sail(12.0)
-	check(game.hull == 3 and game.hull_repair_notice_left == 0.0, "repairs stop at capacity and completion feedback fades")
+	check(game.hull == 3 and game.boat_damage.severity == 0 and not game.boat_damage.light_marks.visible, "repairs stop at capacity and all damage visuals clear")
 	reset_voyage()
 	game.take_damage(1, "first hit")
 	sail(7.5)
 	game.take_damage(1, "interrupt repair")
-	check(game.hull == 1 and game.hull_repair_elapsed == 0.0 and game.hull_repair_notice_left == 0.0, "new damage discards partial progress and old repair feedback")
+	check(game.hull == 1 and game.hull_repair_elapsed == 0.0, "new damage discards partial repair progress")
 	sail(0.5)
 	check(game.hull == 1 and is_equal_approx(game.hull_repair_elapsed, 0.5), "interrupted repairs require a fresh full interval")
 	check(not game.take_damage(1, "immune contact") and is_equal_approx(game.hull_repair_elapsed, 0.5), "rejected immune contact does not interrupt recovery")
@@ -81,6 +92,9 @@ func _run() -> void:
 	game.advance_sailing(0.1, 0.0)
 	check(game.hull == 1 and game.hull_repair_elapsed == 0.0, "a new cutter cancels a nearly complete repair")
 	ship.disengage()
+	game._update_hull_recovery(8.0)
+	check(game.hull == 1 and game.hull_repair_elapsed == 0.0, "visible retreat still blocks repairs")
+	finish_retreat()
 	sail(8.0)
 	check(game.hull == 2, "escaping a cutter earns the same recovery as defeating it")
 	reset_voyage()
@@ -107,6 +121,9 @@ func _run() -> void:
 		check(game.enemy_encounters.battle_active() and game.hull == 2 and game.hull_repair_elapsed == 0.0, "lingering cannonball blocks repairs after %s" % ("defeat" if defeated else "escape"))
 		ship.projectiles[0].ttl = 0.0
 		ship.update_ship(0.01)
+		if not defeated:
+			check(not game.is_repairing_hull(), "retreating cutter blocks repairs even after its last shot clears")
+			finish_retreat()
 		check(ship.projectiles.is_empty() and game.is_repairing_hull(), "last cannonball clearing unlocks recovery")
 		sail(7.99)
 		check(game.hull == 2, "clearing incoming fire starts a fresh repair interval")
@@ -131,7 +148,7 @@ func _run() -> void:
 	game.take_damage(1, "retry fixture")
 	sail(4.0)
 	game.restart()
-	check(game.hull == 3 and game.hull_repair_elapsed == 0.0 and game.hull_repair_notice_left == 0.0, "retry clears repair progress and feedback")
+	check(game.hull == 3 and game.hull_repair_elapsed == 0.0 and game.boat_damage.severity == 0, "retry clears repair progress and restores the boat appearance")
 	for state in [game.State.READY, game.State.CASTING_OFF, game.State.ARRIVED, game.State.LOST]:
 		game.state = state
 		game.hull = 1

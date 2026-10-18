@@ -42,7 +42,7 @@ func _run() -> void:
 		check_inside(hud.menu, "menu stays inside %s" % dimensions)
 		check_inside(hud.action_button, "Play button stays inside %s" % dimensions)
 		check_inside(hud.menu_footer, "controls footer stays inside %s" % dimensions)
-		check_inside(hud.hull_gauge, "hull stays inside %s" % dimensions)
+		check(hud.gameplay_hud.get_node_or_null("Hull") == null, "no hull HUD at %s" % dimensions)
 		check_inside(hud.cannon_gauge, "cannon stays inside %s" % dimensions)
 	check(hud.action_button.pressed.get_connections().size() == 1, "one menu action connection after repeated resizing")
 	var mouse := InputEventMouseButton.new()
@@ -57,13 +57,13 @@ func _run() -> void:
 	check(game.state == game.State.CASTING_OFF and not hud.menu.visible and not hud.gameplay_hud.visible, "Play retains the cast-off transition and hides menus")
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
-	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing shows compact hull feedback")
+	check(hud.gameplay_hud.visible and not hud.menu.visible, "normal sailing keeps the existing context UI available")
 	check(hud.gameplay_hud.get_node_or_null("Destination") == null and hud.gameplay_hud.get_node_or_null("RouteHint") == null and not hud.notice.visible, "departure leaves navigation to the player without route instructions")
 	game.wave_encounters.begin_region(0, Vector2(0, -1), game.sea_time)
 	hud._process(0.1)
 	check(hud.gameplay_hud.get_node_or_null("WaveWarning") == null and not hud.notice.text.contains("Wave"), "wave sets add no counters or routine sea-state banners")
 	game.wave_encounters.stop(game.ocean.wave_field)
-	check(hud.hull_gauge.status.text.is_empty() and not hud.cannon_gauge.visible and hud.get_node_or_null("SailingHUD/HeadingCompass") == null, "no-input sailing has only hull icons, no compass or cannon prompt")
+	check(hud.gameplay_hud.get_node_or_null("Hull") == null and not hud.cannon_gauge.visible and hud.get_node_or_null("SailingHUD/HeadingCompass") == null, "no-input sailing has no hull icons, compass or cannon prompt")
 	var before_heading: float = game.heading
 	game.heading += 0.6
 	hud._process(0.1)
@@ -82,7 +82,7 @@ func _run() -> void:
 	check(not hud.cannon_gauge.visible, "ready feedback expires after reload without a permanent popup")
 	game.take_damage(1, "UI regression hit")
 	hud._process(0.1)
-	check(hud.hull_gauge.pulse > 0 and hud.hull_gauge.status.text == "Hull hit" and game.hull == 2, "actual damage pulses hull icons and shows a short hit notice")
+	check(game.boat_damage.flash_strength > 0 and game.boat_damage.light_marks.visible and game.hull == 2, "actual damage flashes and scratches the boat without adding HUD health")
 	game.damage_immunity = 0.0
 	game.take_damage(1, "UI regression hit")
 	Input.action_press("astrolabe")
@@ -97,7 +97,7 @@ func _run() -> void:
 	check(game.focus_strength == 1 and not hud.star_guidance().is_empty(), "continued hold reveals the live star")
 	check(hud.instrument.get_child_count() == 0, "focused instrument contains no text or number labels")
 	check_inside(hud.instrument, "text-free instrument fits the small window")
-	check(not hud.cannon_gauge.visible and hud.hull_gauge.modulate.a == 1, "sighting dims combat UI while critical hull remains readable")
+	check(not hud.cannon_gauge.visible and hud.gameplay_hud.get_node_or_null("Hull") == null, "sighting keeps the instrument and threat UI without health indicators")
 	var ship = game.enemy_encounters.ship
 	ship.begin()
 	ship.mode = ship.Mode.TELEGRAPH
@@ -121,7 +121,7 @@ func _run() -> void:
 	await settle()
 	game._physics_process(game.CAST_OFF_SECONDS)
 	await settle()
-	check(game.hull == game.hull_capacity and hud.hull_gauge.status.text.is_empty() and hud.hull_gauge.pulse == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
+	check(game.hull == game.hull_capacity and game.boat_damage.severity == 0 and game.boat_damage.flash_strength == 0.0 and hud.cannon_gauge.pulse == 0.0, "retry restores gameplay and clears damage/reload animation memory")
 	game.boat.position = game.target
 	game.voyage.update_progress(game)
 	hud._process(0.1)
@@ -132,7 +132,7 @@ func _run() -> void:
 	game.boat.position = game.target + Vector3(0,0,-5)
 	game.advance_sailing(0.001, 0.0)
 	await settle()
-	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.contains("01:42") and hud.menu_details.text.contains("3 / 3"), "arrival menu shows the real voyage time and remaining hull")
+	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.contains("01:42") and not hud.menu_details.text.contains("Hull"), "arrival menu shows real voyage time without numeric hull health")
 	check_inside(hud.menu_body, "result text stays inside the small window")
 	var mute := InputEventAction.new()
 	mute.action = "mute_sea"

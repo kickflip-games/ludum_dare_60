@@ -4,17 +4,22 @@ Concise development history for Latitude Lines. Dates use Pacific/Auckland time.
 This initial history summarises recent Git commits; linked reviews contain their
 recorded evidence and limitations.
 
-## Unreleased — work in progress
-
-- Local, uncommitted stargazing work lowers the sighting camera pitch from 60° to
-  a configurable 25° so the guiding star and sea horizon share the view. Camera
-  yaw continues to follow the boat's heading.
-- That work also extends camera/framing regression checks and adds repeatable
-  comparison captures. These changes remain outside the documentation commit;
-  their tests and rendered captures were not rerun for this changelog task.
-
 ## 2026-10-18
 
+- Polished cutter encounters: predictable starboard passes, smooth return turns,
+  visible retreat after a 55-second fighting budget, fair fixed-shot warnings,
+  and complete reset/next-patrol handling. See the
+  [enemy AI review](artifacts/enemy_ai_review.md) for tuning, captures and checks.
+- Lowered the sighting camera from 60° to a configurable 25° so the guiding star
+  and sea horizon share the view; yaw still follows the boat. Added framing,
+  obstruction and mixed-input regression checks and repeatable captures.
+- Replaced hull HUD indicators with boat scratches and a short wood hit flash.
+  Repair, salvage, immunity, sinking and retry retain their existing rules;
+  repairs remove the corresponding damage marks. Updated UI review fixtures.
+- Validation: 404 checks across eight gameplay suites passed during the cutter
+  task; 212 further damage, HUD, camera and UI-review checks passed before
+  publication. Native cutter motion, hit and sinking captures were inspected.
+  Human combat balance and casual-player aim tolerance remain untested.
 - Added this changelog and required agents to read it before changes and update
   it in the same commit as each task. Documentation links and whitespace checked;
   gameplay tests were not rerun for this documentation-only update.

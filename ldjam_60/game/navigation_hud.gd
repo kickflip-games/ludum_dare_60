@@ -18,14 +18,12 @@ var menu_body: Label
 var menu_controls: GridContainer
 var menu_details: Label
 var menu_footer: Label
-var hull_gauge: Control
 var cannon_gauge: Control
 var gameplay_hud: Control
 var threat_label: Label
 var notice: Label
 var instrument: Control
 var _last_state: int = -1
-var _last_hull: int = -1
 var _last_cooldown: float = 0.0
 var _reading_alpha: float = 0.0
 var _threat_direction: float = 1.0
@@ -52,8 +50,7 @@ func _ready() -> void:
 	gameplay_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(gameplay_hud)
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hull_gauge = _gauge("Hull", Gauge.Kind.HULL, Control.PRESET_BOTTOM_LEFT, Rect2(24, -86, 210, 62))
-	cannon_gauge = _gauge("StarboardCannon", Gauge.Kind.CANNON, Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
+	cannon_gauge = _gauge("StarboardCannon", Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
 	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -156,10 +153,9 @@ func _build_menu() -> void:
 	menu_footer = _label(column, "Footer", "Automatic sailing · avoid reefs · 3 hits sink\nR retry     M mute     Esc quit", 14, MUTED)
 
 
-func _gauge(node_name: String, kind: int, preset: int, rect: Rect2) -> Control:
+func _gauge(node_name: String, preset: int, rect: Rect2) -> Control:
 	var gauge := Control.new()
 	gauge.set_script(Gauge)
-	gauge.kind = kind
 	gauge.game = game
 	gauge.name = node_name
 	gameplay_hud.add_child(gauge)
@@ -191,7 +187,6 @@ func _sync_button() -> void:
 	if not show_menu:
 		action_button.release_focus()
 		if game.state == game.State.CASTING_OFF:
-			hull_gauge.pulse = 0.0
 			cannon_gauge.pulse = 0.0
 		return
 	var intro: bool = game.state == game.State.READY
@@ -202,7 +197,7 @@ func _sync_button() -> void:
 	menu_body.text = "Find your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
 	menu_controls.visible = intro
 	menu_details.visible = won
-	menu_details.text = "Voyage time   %02d:%02d\nHull remaining   %d / %d" % [int(game.elapsed) / 60, int(game.elapsed) % 60, game.hull, game.hull_capacity]
+	menu_details.text = "Voyage time   %02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
 	action_button.text = "Play" if intro else "Retry"
 	menu_footer.text = "Enter play · R retry · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
 	action_button.grab_focus()
@@ -225,22 +220,14 @@ func _process(delta: float) -> void:
 	if game.state != game.State.SAILING:
 		_reading_alpha = 0.0
 		instrument.visible = false
-		_last_hull = game.hull
 		_last_cooldown = game.cannon.cooldown
 		queue_redraw()
 		return
 	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend) if game.reading else 0.0
-	if _last_hull >= 0 and game.hull != _last_hull:
-		hull_gauge.pulse = 0.65
 	if _last_cooldown > 0.0 and game.cannon.cooldown == 0.0:
 		cannon_gauge.pulse = 0.5
-	_last_hull = game.hull
 	_last_cooldown = game.cannon.cooldown
-	# Quiet sailing keeps only hull symbols. Danger remains legible in the sky.
-	var urgent_hull: bool = game.hull == 1 or game.hit_message_left > 0.0 or game.hull_repair_notice_left > 0.0 or game.is_repairing_hull()
-	hull_gauge.modulate.a = 1.0 if urgent_hull else lerpf(0.85, 0.55, _reading_alpha)
-	for gauge: Control in [hull_gauge, cannon_gauge]:
-		gauge.update_presentation(delta)
+	cannon_gauge.update_presentation(delta)
 	cannon_gauge.visible = not game.reading and (game.cannon.aiming or game.cannon.cooldown > 0.0 or cannon_gauge.pulse > 0.0)
 	instrument.modulate.a = _reading_alpha
 	instrument.visible = _reading_alpha > 0.01

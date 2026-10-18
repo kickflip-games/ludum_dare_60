@@ -4,7 +4,7 @@ extends RefCounted
 const CASES := [
 	["title", "Title / controls", "Title, star instructions, controls, Play button and keyboard focus."],
 	["casting-off", "Casting off", "Casting off… appears; menus and sailing gauges are hidden."],
-	["sailing", "Quiet sailing", "Only three small hull symbols. No compass, course line or cannon prompt."],
+	["sailing", "Quiet sailing", "No hull symbols, compass, course line or cannon prompt."],
 	["drift", "Wave drift", "Wave drift leaves the HUD quiet; the boat and water carry the motion."],
 	["searching", "Sextant / searching", "Delicate graduated sextant and alignment notch; no guiding halo before focus."],
 	["star-wreck", "Focused star / Wreck", "Gold star with two broken halo segments; thin vertical guide fades toward the lower edge."],
@@ -18,27 +18,27 @@ const CASES := [
 	["cannon", "Cannon / ready", "Direction sight, sweep tick, shoot/steer tutorial and F · Shoot."],
 	["reload", "Cannon / reloading", "Part-filled reload ring and muted direction sight."],
 	["reloaded", "Cannon / reload complete", "Ready ring pulse; repeat-use Ready feedback, then the cannon gauge disappears."],
-	["damage", "Hull hit", "Coral damage edges and Hull hit, two filled boats and one broken outline."],
-	["critical", "Critical hull", "One remaining hull icon and Hull critical, one filled boat and two broken outlines."],
+	["damage", "Hull hit", "Short impact feedback and two small scratches on the stern; no hull HUD."],
+	["critical", "Critical hull", "Stern scratches plus additional gunwale splintering; the boat remains afloat."],
 	["sighting-danger", "Sextant / incoming + critical hull", "Star stays visible alongside incoming warning and critical hull."],
-	["repair", "Hull repair / countdown", "Gold progress bar and Repairing · 4s."],
-	["repaired", "Hull repaired / partial", "Gold repair notice at 2/3, with the next repair underway."],
-	["full-hull", "Hull repaired / full", "Hull repaired; no repair progress bar."],
+	["repair", "Hull repair / countdown", "Damage remains on the boat during the existing eight-second repair interval."],
+	["repaired", "Hull repaired / partial", "Gunwale splintering disappears; light stern scratches remain."],
+	["full-hull", "Hull repaired / full", "All boat damage disappears; no repair HUD."],
 	["wreck-found", "Discovery / Wreck", "The Wreck found; next destination is not announced."],
 	["peaks-found", "Discovery / Twin Peaks", "Twin Peaks found."],
 	["salvage", "Discovery / salvage", "Optional discovery notice and recovered hull."],
 	["boundary", "World boundary", "Open sea · turn back toward the islands."],
 	["storm", "Storm feedback", "Rain strokes over the ordinary sailing HUD; no weather banner."],
-	["victory", "Safe harbour", "Arrival menu with voyage time, remaining hull and Retry."],
+	["victory", "Safe harbour", "Arrival menu with voyage time and Retry; no numeric hull health."],
 	["defeat", "Lost at sea", "Defeat menu with failure text and Retry."],
-	["tooltip-hull", "Authored tooltip / hull", "Hull hover text (hover is enabled by this test only)."],
+	["healthy-hull", "Healthy hull", "Normal boat appearance with no hull tooltip or indicator."],
 	["star-horizon", "Star / visible horizon", "Projected star column ends on the visible world horizon."],
 	["star-release", "Sextant / release", "Lowered instrument and guide disappear immediately, even while the camera returns."],
 	["tooltip-reload", "Authored tooltip / cannon reload", "Reload hover text (hover is enabled by this test only)."],
 	["star-left", "Focused star / left", "Guide uses the actual off-centre star X coordinate."],
 	["star-right", "Focused star / right", "Guide uses the actual off-centre star X coordinate."],
 	["star-focusing", "Sextant / partial focus", "The true star and its line appear gradually after the search delay."],
-	["sighting-repair", "Sextant / repairs", "Repair countdown and progress stay readable while sighting."],
+	["sighting-repair", "Sextant / repairs", "Sextant stays clear during automatic repairs; no health UI is added."],
 	["discovery-fading", "Discovery / fading", "Brief discovery text fades without revealing the next destination."],
 	["development-chart", "Development chart (F2)", "Optional development-only map, landmark labels and wave zones."],
 ]
@@ -59,7 +59,7 @@ func apply(index: int) -> void:
 		Input.action_release(action)
 	if game.archipelago.debug_layer.visible:
 		game.archipelago.toggle_debug()
-	for gauge: Control in [game.hud.hull_gauge, game.hud.cannon_gauge]:
+	for gauge: Control in [game.hud.cannon_gauge]:
 		gauge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		gauge.process_mode = Node.PROCESS_MODE_INHERIT
 	game.restart()
@@ -109,7 +109,6 @@ func apply(index: int) -> void:
 				game._update_view(1.0 / 60.0)
 			elif id == "sighting-repair":
 				_damage(1)
-				game.hit_message_left = 0.0
 				game.hit_flash = 0.0
 				game.hull_repair_elapsed = 4.0
 			if id == "sighting-danger":
@@ -139,7 +138,6 @@ func apply(index: int) -> void:
 			if id == "damage" or id == "critical":
 				_ship(1.0, false) # Combat prevents automatic repair text.
 			if id in ["repair", "repaired", "full-hull", "salvage"]:
-				game.hit_message_left = 0.0
 				game.hit_flash = 0.0
 				if id == "repair":
 					game.elapsed += 4.0
@@ -203,7 +201,6 @@ func _ship(side: float, incoming: bool) -> void:
 
 func tooltip_control(index: int) -> Control:
 	match CASES[index][0]:
-		"tooltip-hull": return game.hud.hull_gauge
 		"tooltip-reload": return game.hud.cannon_gauge
 	return null
 
@@ -221,7 +218,7 @@ func problem(index: int) -> String:
 		"star-wreck", "star-peaks", "star-harbour", "sighting-danger", "star-left", "star-right", "star-horizon", "sighting-repair":
 			ok = game.focus_strength == 1.0 and hud.star_guidance().get("visible", false) and not hud.star_horizon_line().is_empty()
 			if id == "sighting-danger":
-				ok = ok and hud.threat_label.visible and hud.hull_gauge.modulate.a == 1.0
+				ok = ok and hud.threat_label.visible and game.boat_damage.severity == 2
 		"star-port", "star-starboard":
 			var cue: Dictionary = hud.star_guidance()
 			ok = not cue.is_empty() and not cue.visible and hud.star_horizon_line().is_empty()
@@ -232,10 +229,10 @@ func problem(index: int) -> String:
 		"cannon": ok = game.cannon.aiming and game.cannon.indicator_alpha == 1.0 and hud.cannon_gauge.status.text == "F · Shoot"
 		"reload", "tooltip-reload": ok = game.cannon.cooldown > 0 and hud.cannon_gauge.status.text == "Reloading"
 		"reloaded": ok = hud.cannon_gauge.pulse > 0 and hud.cannon_gauge.visible and hud.cannon_gauge.status.text == "Ready"
-		"damage": ok = game.hit_flash > 0 and hud.hull_gauge.status.text == "Hull hit"
-		"critical": ok = hud.hull_gauge.status.text == "Hull critical"
-		"repair": ok = hud.hull_gauge.status.text == "Repairing · 4s"
-		"repaired", "full-hull": ok = hud.hull_gauge.status.text == "Hull repaired" and game.hull == (3 if id == "full-hull" else 2)
+		"damage": ok = game.boat_damage.flash_strength > 0 and game.boat_damage.severity == 1
+		"critical": ok = game.boat_damage.severity == 2
+		"repair": ok = game.boat_damage.severity == 2 and is_equal_approx(game.hull_repair_elapsed, 4.0)
+		"repaired", "full-hull": ok = game.boat_damage.severity == (0 if id == "full-hull" else 1) and game.hull == (3 if id == "full-hull" else 2)
 		"wreck-found", "peaks-found": ok = hud.notice.text == ("The Wreck found" if id == "wreck-found" else "Twin Peaks found")
 		"salvage": ok = hud.notice.text.contains("salvage recovered") and game.hull == 2
 		"boundary": ok = hud.notice.text.contains("turn back")
@@ -246,5 +243,5 @@ func problem(index: int) -> String:
 		"star-focusing": ok = 0.0 < game.focus_strength and game.focus_strength < 1.0 and not hud.star_horizon_line().is_empty()
 		"star-release": ok = not hud.instrument.visible and hud.star_horizon_line().is_empty() and game.read_blend > 0.0
 		"discovery-fading": ok = hud.notice.visible and hud.notice.modulate.a > 0.0 and hud.notice.modulate.a < 0.5
-		"tooltip-hull": ok = not tooltip_control(index).tooltip_text.is_empty()
+		"healthy-hull": ok = game.boat_damage.severity == 0 and hud.gameplay_hud.get_node_or_null("Hull") == null
 	return "" if ok else "Fixture does not show its expected state: " + id

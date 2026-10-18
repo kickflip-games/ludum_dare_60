@@ -99,6 +99,11 @@ func _run() -> void:
 	game._update_view(1.0/60)
 	var camera_at: Vector3 = game.camera.position
 	check(camera_at.y > game.ocean.height_at(Vector2(camera_at.x,camera_at.z))+1.19, "camera remains above four overlapping maximum-height crests")
+	game.reading = true
+	game.read_blend = 1.0
+	game._update_view(0)
+	camera_at = game.camera.position
+	check(camera_at.y > game.ocean.height_at(Vector2(camera_at.x,camera_at.z))+1.19, "reframed sighting camera retains water clearance above four maximum-height crests")
 	# A physical wall behind the boat must shorten the camera arm with margin.
 	place(Vector3(390,0,350),0)
 	settle()
@@ -140,6 +145,31 @@ func _run() -> void:
 		var start: Vector3 = game._camera_shore_anchor()
 		ray = PhysicsRayQueryParameters3D.create(start,game.camera.position,1)
 		check(space.intersect_ray(ray).is_empty(), "real rocky shore stays outside the camera sight arm at %s" % at)
+	# Check the same near-plane protection on the forward sighting arm.
+	place(Vector3(390,0,350),0)
+	game.reading = true
+	game.read_blend = 1.0
+	game._update_view(0)
+	var sight_at: Vector3 = game.camera.position
+	anchor = game._camera_shore_anchor()
+	wall = StaticBody3D.new()
+	wall.collision_layer = 1
+	wall.position = anchor.lerp(sight_at,0.6)
+	shape = CollisionShape3D.new()
+	box = BoxShape3D.new()
+	box.size = Vector3.ONE
+	shape.shape = box
+	wall.add_child(shape)
+	game.add_child(wall)
+	await physics_frame
+	game._update_view(1.0/60)
+	ray = PhysicsRayQueryParameters3D.create(anchor,game.camera.position,1)
+	probe.transform = Transform3D(Basis.IDENTITY,game.camera.position)
+	check(anchor.distance_to(game.camera.position) < anchor.distance_to(sight_at)*0.6 and space.intersect_ray(ray).is_empty() and space.intersect_shape(probe).is_empty(), "sighting arm retracts before real terrain and retains near-plane clearance")
+	wall.queue_free()
+	await physics_frame
+	game._update_view(1.0/60)
+	check(game.camera.position.distance_to(sight_at) < 0.001, "sighting arm clears normally after the obstruction is removed")
 	game.restart()
 	var departure_center: Vector3 = game.boat.position+Basis(Vector3.UP,-game.heading)*game.BoatWaveMotion.HULL_CENTER
 	check(game._sailing_anchor.distance_to(departure_center)<0.02 and is_equal_approx(game._sailing_heading,game.START_HEADING) and is_equal_approx(game._camera_clear_fraction,1.0), "replay resets follow history to the actual departure")

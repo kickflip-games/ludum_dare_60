@@ -7,6 +7,7 @@ const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
+const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 var wave_sailing := WaveSailing.new()
@@ -76,6 +77,8 @@ var gust_strength := 0.0
 @export var procedural_clouds: bool = true
 @export var cloud_size_range := Vector2(0.9, 1.2)
 @export_subgroup("")
+## Upward sighting angle; yaw continues to follow the boat's actual heading.
+@export_range(10.0, 45.0, 0.5) var stargazing_pitch_degrees: float = 25.0
 @export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
 
 @export_group("Sextant assistance")
@@ -131,10 +134,8 @@ var damage_immunity: float = 0.0
 var hit_flash: float = 0.0
 var shake_strength: float = 0.0
 var hit_message: String = ""
-var hit_message_left: float = 0.0
 var hits_taken: int = 0
 var hull_repair_elapsed: float = 0.0
-var hull_repair_notice_left: float = 0.0
 var _last_hull_damage_time: float = 0.0
 var voyage := VoyageDirector.new()
 var archipelago: Node3D
@@ -185,6 +186,7 @@ var cannon: Node3D
 var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
+var boat_damage := BoatDamage.new()
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
@@ -379,9 +381,7 @@ func restart() -> void:
 	shake_strength = 0.0
 	hits_taken = 0
 	hull_repair_elapsed = 0.0
-	hull_repair_notice_left = 0.0
 	_last_hull_damage_time = 0.0
-	hit_message_left = 0.0
 	phase = 0
 	phase_banner_left = 4.0
 	storm_blend = 0.0
@@ -519,14 +519,13 @@ func restore_hull(amount: int) -> bool:
 	if state != State.SAILING or hull <= 0 or hull >= hull_capacity or amount <= 0:
 		return false
 	hull = mini(hull_capacity, hull + amount)
-	hull_repair_notice_left = 3.0
 	if hull == hull_capacity:
 		hull_repair_elapsed = 0.0
+	boat_damage.update(hull, hull_capacity, hit_flash)
 	return true
 
 
 func _update_hull_recovery(delta: float) -> void:
-	hull_repair_notice_left = maxf(0.0, hull_repair_notice_left - delta)
 	if not is_repairing_hull():
 		hull_repair_elapsed = 0.0
 		return
@@ -556,17 +555,16 @@ func _constrain_sailing_area() -> void:
 
 
 func take_damage(amount: int, reason: String) -> bool:
-	if state != State.SAILING or damage_immunity > 0.0:
+	if state != State.SAILING or damage_immunity > 0.0 or amount <= 0:
 		return false
 	hull = maxi(0, hull - amount)
 	hits_taken += 1
 	hull_repair_elapsed = 0.0
-	hull_repair_notice_left = 0.0
 	_last_hull_damage_time = elapsed
 	damage_immunity = hit_immunity_seconds
 	hit_flash = 0.8
+	boat_damage.update(hull, hull_capacity, hit_flash)
 	hit_message = reason.to_upper()
-	hit_message_left = 2.0
 	shake(0.16)
 	cue_sound("damage")
 	if hull == 0:
@@ -586,7 +584,7 @@ func shake(amount: float) -> void:
 func _update_view(delta: float) -> void:
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
-	hit_message_left = maxf(0.0, hit_message_left - delta)
+	boat_damage.update(hull, hull_capacity, hit_flash)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	_update_weather(delta)
 	_apply_night_illumination()
@@ -614,7 +612,7 @@ func _update_view(delta: float) -> void:
 	var helm_pose := _normal_sailing_pose(delta)
 	helm_pose = _sailing_camera_pose(helm_pose, delta)
 	# Sky has final priority, including while the aim camera is blending out.
-	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(60.0), -heading, 0.0)),
+	var sky_pose := Transform3D(Basis.from_euler(Vector3(deg_to_rad(stargazing_pitch_degrees), -heading, 0.0)),
 		boat.position + Basis(Vector3.UP, -heading) * Vector3(0, 2.55, -4.5))
 	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
@@ -892,6 +890,7 @@ func _build_boat() -> void:
 	# Set the boom off the centreline so the canvas catches wind and reads from astern.
 	var sail := ship.get_node("RootNode/Sail") as Node3D
 	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
+	boat_damage.configure(boat_visual, ship)
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
 	var brass := _material(Color("e4b96f"), 1.0)

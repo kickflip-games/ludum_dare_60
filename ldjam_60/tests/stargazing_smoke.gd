@@ -50,6 +50,50 @@ func wave_sighting(with_wave: bool, hz: int) -> Dictionary:
 	return result
 
 
+func camera_transitions(hz: int) -> void:
+	game.restart()
+	game.state = game.State.SAILING
+	game.wave_encounters.enabled = false
+	game.enemy_encounters.enabled = false
+	game.weather_enabled = false
+	game.boat.position = Vector3(390, 0, 350)
+	game.heading = 0.0
+	game._sailing_camera_initialized = false
+	for frame in range(hz):
+		game._physics_process(1.0 / hz)
+	var previous: Transform3D = game.camera.transform
+	Input.action_press("astrolabe")
+	game._physics_process(1.0 / hz)
+	check(game.camera.rotation.x > previous.basis.get_euler().x and game.camera.rotation.x < deg_to_rad(0.0), "%d Hz fresh Space hold starts raising without jumping to the sky pose" % hz)
+	var max_angle := 0.0
+	var max_distance := 0.0
+	for held in [true, false]:
+		if not held:
+			Input.action_release("astrolabe")
+		for frame in range(hz * 2):
+			previous = game.camera.transform
+			game._physics_process(1.0 / hz)
+			max_angle = maxf(max_angle, previous.basis.get_rotation_quaternion().angle_to(game.camera.basis.get_rotation_quaternion()))
+			max_distance = maxf(max_distance, previous.origin.distance_to(game.camera.position))
+			if not held and frame == 0:
+				game.hud._process(0.0)
+				check(game.read_blend > 0.0 and not game.hud.instrument.visible and game.hud.star_horizon_line().is_empty(), "%d Hz release removes guidance immediately while the camera eases back" % hz)
+		if held:
+			check(is_equal_approx(game.camera.rotation.x, deg_to_rad(game.stargazing_pitch_degrees)) and game.focus_strength == 1, "%d Hz uninterrupted hold reaches the tuned pitch and full focus" % hz)
+	# The retained 0.22-second blend traverses the full chase-to-bow arm.
+	# A direct pose jump exceeds these rate bounds even at 30 Hz.
+	check(max_angle * hz < deg_to_rad(300) and max_distance * hz < 120, "%d Hz entry/return stay continuous (max %.2f degrees, %.2f m per frame)" % [hz, rad_to_deg(max_angle), max_distance])
+	for frame in range(12):
+		Input.action_press("astrolabe")
+		game._physics_process(1.0 / hz)
+		Input.action_release("astrolabe")
+		game._physics_process(1.0 / hz)
+	for frame in range(hz / 2):
+		game._physics_process(1.0 / hz)
+	game.hud._process(0.0)
+	check(game.camera_mode == game.CameraMode.SAILING and game.camera.rotation.x < 0 and game.read_blend == 0.0 and game.focus_strength == 0.0 and not game.hud.instrument.visible, "%d Hz rapid Space holds/releases settle to the original sailing view" % hz)
+
+
 func _run() -> void:
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
@@ -69,7 +113,7 @@ func _run() -> void:
 	check(game.focus_strength == 0 and game.focus_elapsed > 0.5, "searching has no target assistance before delay")
 	check(hud.instrument.get_child_count() == 0, "initial hold withholds star name and solution")
 	check(game.boat.position.distance_to(start) > 3, "sailing continues while the instrument is raised")
-	check(game.look_blend == 0 and game.camera.rotation.x > 1.0, "sky mode takes precedence over held combat glance")
+	check(game.look_blend == 0 and game.camera.rotation.x > deg_to_rad(20) and game.camera.rotation.x < deg_to_rad(30) and is_equal_approx(game.camera.rotation.x, deg_to_rad(game.stargazing_pitch_degrees)), "tuned upward sky pitch takes precedence over held combat glance")
 	step(0.6)
 	check(game.focus_strength > 0.05 and game.focus_strength < 0.8, "focus ramps gradually after the short search")
 	check(hud.instrument.get_child_count() == 0, "mid-focus still withholds exact bearing")
@@ -99,12 +143,20 @@ func _run() -> void:
 	for dimensions: Vector2i in [Vector2i(1280, 720), Vector2i(960, 540), Vector2i(900, 506), Vector2i(1440, 900)]:
 		root.size = dimensions
 		await process_frame
+		game.heading = game.destination_bearing()
+		game._update_view(0.0)
+		var star: Vector2 = hud._star_screen_position()
+		var horizon: Vector2 = game.camera.unproject_position(game.camera.global_position + Vector3(sin(game.heading), 0, -cos(game.heading)) * 700)
+		check(star.y / hud.size.y >= 0.15 and star.y / hud.size.y <= 0.35 and absf(star.x / hud.size.x - 0.5) < 0.001, "aligned real star occupies upper 15-35 percent / %s" % dimensions)
+		check(horizon.y / hud.size.y >= 0.65 and horizon.y / hud.size.y <= 0.78, "actual world horizon occupies lower 65-78 percent / %s" % dimensions)
 		for degrees in [0, 90, 180, -90]:
 			game.heading = deg_to_rad(degrees)
 			game._update_view(0.0)
 			hud._process(0.0)
 			var guidance: Dictionary = hud.star_guidance()
 			check(not guidance.is_empty() and Rect2(Vector2.ZERO, hud.size).has_point(guidance.position), "star or peripheral glimmer stays in view at %d degrees / %s" % [degrees, dimensions])
+			var forward: Vector3 = -game.camera.basis.z
+			check(Vector2(forward.x, forward.z).normalized().dot(Vector2(sin(game.heading), -cos(game.heading))) > 0.99999, "sky yaw follows the actual hull heading %d / %s" % [degrees, dimensions])
 	# Turning with real input brings an astern star into the visible sky.
 	game.wave_encounters.enabled = false
 	game.enemy_encounters.enabled = false
@@ -114,8 +166,11 @@ func _run() -> void:
 	game._update_view(0.0)
 	check(hud.star_horizon_line().is_empty(), "offscreen star never creates a horizon line")
 	check(not hud.star_guidance().visible, "wrong heading starts with peripheral guidance")
+	var wrong_heading: float = game.heading
+	step(0.6)
+	check(is_equal_approx(game.heading, wrong_heading) and not hud.star_guidance().visible, "waiting without steering neither turns the boat nor brings the astern star into view")
 	Input.action_press("steer_port")
-	step(3.0)
+	step(4.0)
 	Input.action_release("steer_port")
 	check(hud.star_guidance().visible, "actual port input brings the star into view and removes peripheral cue")
 	# A key release and re-entry between physics ticks cannot retain focus.
@@ -160,12 +215,16 @@ func _run() -> void:
 		game._update_view(1.3)
 		hud._process(0.0)
 		check(game.focus_strength == 1 and hud.instrument.get_child_count() == 0, "stage %d reveals light with no text" % stage)
+		game.heading = game.destination_bearing()
+		game._update_view(0.0)
+		var aligned: Vector2 = hud._star_screen_position()
+		check(hud.star_guidance().visible and aligned.y / hud.size.y >= 0.15 and aligned.y / hud.size.y <= 0.35, "stage %d retains the authored star above a visible sea horizon" % stage)
 		game.heading = game.destination_bearing() + 0.5
 		game._update_view(0.0)
 		var guide: Dictionary = hud.star_horizon_line()
 		var projected: Vector2 = game.camera.unproject_position(game.camera.global_position + game.guiding_star_direction() * 700.0)
 		check(not guide.is_empty() and absf(guide.from.x - projected.x) < 0.01 and guide.from.x == guide.to.x and guide.from.y > projected.y and guide.to.y > guide.from.y, "stage %d guide descends vertically from the actual off-centre star" % stage)
-		check(guide.to.y <= hud.size.y - 24.0, "stage %d guide stays inside lower view when horizon is absent" % stage)
+		check(guide.to.y / hud.size.y >= 0.65 and guide.to.y / hud.size.y <= 0.78 and absf(game.camera.project_ray_normal(guide.to).y) < 0.0001, "stage %d guide meets the real visible horizon" % stage)
 		game.camera.rotation.x = deg_to_rad(30.0)
 		guide = hud.star_horizon_line()
 		check(not guide.is_empty() and absf(game.camera.project_ray_normal(guide.to).y) < 0.0001, "stage %d guide ends at the real horizon when visible" % stage)
@@ -203,6 +262,8 @@ func _run() -> void:
 	check(absf(game.heading) < before and game.focus_strength == 1, "actual rudder input can recover wave yaw while the star remains focused")
 	for action in ["astrolabe", "steer_port", "steer_starboard"]:
 		Input.action_release(action)
+	for hz in [30, 60, 120]:
+		camera_transitions(hz)
 	print("STARGAZING CHECK: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

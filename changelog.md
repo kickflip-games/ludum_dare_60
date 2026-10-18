@@ -6,6 +6,9 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: implement the approved deck camera and turbulence plan on
+  `codex/turbulence-deck-camera`, based on `4f464ec`. Preserve wave forces,
+  cannon input, star navigation and planar collisions. Runtime validation pending.
 - Required a dedicated branch and immediate draft web PR for every task, an
   initial check for overlapping open PRs, and screenshots visible in each PR.
   Added a [rendered workflow capture](artifacts/pr_workflow/agent-workflow.jpg)

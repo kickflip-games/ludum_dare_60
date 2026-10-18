@@ -79,3 +79,15 @@ func request_warning(ship: CharacterBody3D) -> bool:
 	if warning_history.size() > 128:
 		warning_history.pop_front()
 	return true
+
+
+func request_boss_warning(duration: float) -> bool:
+	if clock < next_warning: return false
+	reserve_boss_warning(duration)
+	return true
+
+func reserve_boss_warning(duration: float) -> void:
+	# Boss uses no ordinary slot, but its full sequence has warning-start priority.
+	next_warning = maxf(next_warning, clock + maxf(duration, manager.survival_settings.warning_interval))
+	warning_history.append({"seconds":clock, "enemy":-2})
+	if warning_history.size() > 128: warning_history.pop_front()

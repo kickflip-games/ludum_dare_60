@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://game/boss_ship.gd" id="1"]
+[node name="Flagship" type="CharacterBody3D"]
+collision_layer = 0
+collision_mask = 7
+script = ExtResource("1")
+hull_capacity = 9
+sailing_speed = 8.7
+turning_speed = 0.34
+turn_acceleration = 0.42
+broadside_separation = 43.0
+attack_run_seconds = 7.5
+return_seconds = 7.0
+turn_away_seconds = 3.5
+player_separation = 25.0
+ship_separation = 24.0
+terrain_margin = 11.0
+firing_range = 65.0
+telegraph_seconds = 1.6
+reload_seconds = 4.5

@@ -27,6 +27,18 @@ recorded evidence and limitations.
   warning remain. 245 checks pass across five suites; four native frames
   inspected. Human playtesting and Web remain untested.
 
+- Added the imported nine-hit flagship and CC BY 3.0 spike mines for Wave 5.
+  Separate boss ownership preserves the six normal ship slots; skiff/cutter escorts
+  remain queued and staggered. Boss defeat immediately wins, cancels enemy fire and
+  mines, and preserves already fatal player damage priority. Rolling five-gun
+  broadsides, double salvos, a phase-two scatter fan, heavier committed passes,
+  seven-metre pulsing mine rings and a thin boss health bar retain the existing
+  controls, cannon cone, 1.5-second reload, Waves 1–4 and arena geometry. Ten smoke
+  suites pass 581 checks; native/full input pilots win in 54/328 s. Both legacy
+  voyage failures reproduce on unchanged `910a80b`. Human balance, consistent
+  60–90 s boss pacing and Web/mobile remain open. See the
+  [flagship review](artifacts/flagship_review.md).
+
 - Replaced player arena containment and automatic return steering
   with a red storm line that fades in on approach, STORMY AHEAD, and a persistent
   return-to-lighthouse warning beyond 170 m. Slow red screen pulses (steady in

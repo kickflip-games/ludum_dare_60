@@ -3,9 +3,10 @@
 Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
 compact arena around the existing lighthouse at **(275, 250)**. The boat starts
 75 m north of the tower, facing east-southeast into safe water. Survive **five
-waves** of cutters, fast skiffs and heavy attackers. Enemies attack the player; the lighthouse
-is a lit landmark with no health or damage system. Defeat every queued and living
-enemy to win; entering the old harbour never wins.
+waves** of cutters, fast skiffs and heavy attackers, ending with **the flagship**.
+Enemies attack the player; the lighthouse is a lit landmark with no health or
+damage system. **Sink the flagship to win immediately**, even with escorts or
+earlier survivors alive. Entering the old harbour never wins.
 
 - **Play / Enter:** cast off; forward sailing is automatic at **7.5 m/s**.
 - **A / D or arrows:** steer; forward sailing stays automatic.
@@ -39,17 +40,19 @@ enemy to win; entering the old harbour never wins.
   **RETURN TO THE LIGHTHOUSE** stays visible with a slow red screen pulse and
   stormier lighting. Reduced motion uses a steady tint. The player can sail
   freely across the line: no automatic rudder, wall, speed clamp or storm damage.
-- Waves contain **2 / 3 / 4 / 5 / 6** ships (compositions below). The next wave begins after
+- Waves contain **2 / 3 / 4 / 5** ordinary ships, then a **flagship + two escorts** (below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
-  three seconds after a safe early all-clear. Up to five living ships can be
+  three seconds after a safe early all-clear. Up to six ordinary ships can be
   active; further arrivals queue and normally stagger 2.5 seconds apart.
 - An early clear restores one hull point, capped at capacity; surviving a timer
   never grants repair. Original automatic repair remains during safe periods.
-  The final wave has no victory timer: all **20** enemies, sinking animations and
-  incoming shots must resolve while the player remains alive.
+  The final wave has no victory timer. The independent flagship appears even
+  when the ordinary pool is full. Its defeat cancels enemy volleys, shots and
+  mines immediately; already fatal player damage retains loss priority.
 - A small top-centre wave label, final-15-second countdown and brief announcements
   carry progress. A faint starboard cone, incoming-fire warning and visible damage remain;
-  no hull bar, lighthouse health or navigation overlay is added.
+  a thin **THE FLAGSHIP** health bar appears only during the final encounter.
+  The existing player hull-damage presentation remains.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
   two crests 2 s apart, then full expiry and 4–6 s of calm recovery. Three-second
@@ -68,7 +71,7 @@ enemy to win; entering the old harbour never wins.
 | 2 | Two cutters + skiff |
 | 3 | Cutter + two skiffs + heavy |
 | 4 | Two cutters + two skiffs + heavy |
-| 5 | Two heavies + two skiffs + two cutters |
+| 5 | Flagship + skiff + cutter (escorts use the staggered ordinary queue) |
 
 Transit profiles remain 13 m/s for cutters, 16 m/s for skiffs and 10.5 m/s
 for heavies. Attack runs slow to approximately player cruise speed and keep a
@@ -93,7 +96,8 @@ reload. A lightweight director allocates 1/1/2/2/2 attack slots, queues ships fa
 and separates warning starts by 1.6 seconds. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
 out; blocked routes recover visibly, and retry clears the fleet and its shots.
-The current 2/3/4/5/6 roster, deadlines and existing ship types are unchanged.
+Waves 1–4 keep their existing rosters, deadlines and ship types. The flagship
+uses no director slot, but reserves warning spacing for its whole volley.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
 
 The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.
@@ -169,9 +173,58 @@ Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 
 `combat_arena_playtest.gd` is an exploratory input-only pilot, not a balance
-acceptance test. It records a full attempt and exits 1 on defeat. The current
-build completed all eleven ships through 22 physical hits in 446.42 simulated
-seconds; earlier controllers lost. See the combat review for actual results.
+acceptance test. It records a full attempt and exits 1 on defeat. Its final wave now includes the independent flagship and mine-aware steering.
+The dedicated final-wave fixture is `tests/boss_playtest.gd`; its optional
+`--protected` flag is explicitly a damage-immune observation, not a survival win. See the combat review for actual results.
+
+
+## Wave 5 flagship
+
+The CC0 Quaternius **Ship** is a separate large hull, rather than a scaled cutter.
+Its inherited movement keeps bounded rudder acceleration, wave motion, collision
+recovery and terrain avoidance. Broadside passes commit their sailing course;
+missed approaches refresh only after six seconds. The encounter manager owns
+spawning, targeting, victory and cleanup; the six ordinary slots remain available.
+
+- **9 hits**, **8.7 m/s**, **0.34 rad/s** maximum turn; attacks at **35–65 m**.
+- **Rolling Broadside:** five separated gun positions, **1.6 s** warning,
+  **0.21 s** shot spacing and **4.5 s** recovery.
+- **Double Salvo:** two shots, a newly locked **0.8 s** second warning, two
+  further shots; **5 s** recovery. Each pair keeps its advertised direction.
+- **Scattershot:** five outward fan trajectories across **±24°**, with visible
+  gaps. Introduced below half health, with a splinter burst and persistent smoke.
+  Phase two rotates fan/rolling/fan/rolling/double and reduces recovery by 10%.
+- All shells use existing ballistic collision, gravity, water interception,
+  muzzle effects and trails; they never home. Terrain cancels obstructed shots.
+  Warning streaks follow the water and keep their committed planar trajectories.
+- Mines drop astern every **6 s**, or **4.5 s** in phase two: **six** active,
+  **18 s** lifetime, **0.8 s** arming delay, **7 m** trigger radius. Unsafe drops
+  are skipped; reaching the cap harmlessly expires the oldest. They stay fixed
+  horizontally and bob with the real sea. The thin coral ring pulses in opacity
+  at its actual fixed trigger radius. A detonation consumes one mine and calls
+  normal one-hit damage, respecting immunity. Mines never become cannon targets.
+- Boss defeat starts sinking and wins immediately. Escort kills alone never win.
+  Victory/defeat/retry clear all hazards; retry restores health, phases and HUD.
+
+Tune the hull in `game/boss_ship.tscn`, volley/mine exports in `game/boss_ship.gd`,
+and the two final escorts in `game/survival_settings.gd`. Models, exact source
+checksums and licences are under `assets/boss_ship/` and `assets/boss_mine/`;
+see [credits](CREDITS.md).
+
+```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/boss_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/boss_playtest.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/boss_previews.gd -- --output=/tmp/latitude-flagship-review
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/boss_playtest.gd -- --render --output=/tmp/latitude-flagship-native-play
+```
+
+See the [flagship implementation and validation](artifacts/flagship_review.md) for
+actual results, captures and remaining balance limits.
+
+The input pilot uses existing steering and physical cannon fire, plus short
+hazard lookahead; direct damage calls are confined to isolated regression and
+visual fixtures. Scripted survival and native screenshots do not establish human
+balance, comfort or Web/mobile performance.
 
 ## Combat particles
 

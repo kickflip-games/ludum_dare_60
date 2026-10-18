@@ -10,7 +10,7 @@ const ARCHETYPES := {
 	PackedStringArray(["cutter", "skiff", "cutter"]),
 	PackedStringArray(["cutter", "skiff", "heavy", "skiff"]),
 	PackedStringArray(["skiff", "cutter", "heavy", "skiff", "cutter"]),
-	PackedStringArray(["heavy", "skiff", "cutter", "heavy", "skiff", "cutter"])
+	PackedStringArray(["skiff", "cutter"])
 ]
 var enemy_counts: PackedInt32Array:
 	get:

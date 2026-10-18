@@ -128,7 +128,7 @@ static func flame_mesh() -> ArrayMesh:
 	# Two nested six-point flames in one cached mesh; no transparency or bloom.
 	for layer in 2:
 		var radius := 0.48 if layer == 0 else 0.23
-		var length := 1.8 if layer == 0 else 1.25
+		var length := 1.5 if layer == 0 else 1.95
 		var vertices := PackedVector3Array()
 		for side in 6:
 			var a := Vector3(0.22, sin(side * TAU / 6.0) * radius, cos(side * TAU / 6.0) * radius)
@@ -144,3 +144,10 @@ static func flame_mesh() -> ArrayMesh:
 		mat.albedo_color = Color("ffad52") if layer == 0 else Color("fff1c9")
 		_flame.surface_set_material(layer, mat)
 	return _flame
+
+
+func smoke(at: Vector3) -> void:
+	# Reuse the bounded rising-smoke cubes for a damaged flagship's small plume.
+	for i in 3:
+		_emit(at + Vector3.UP * i * 0.25, Vector3(0.25, 1.2 + i * 0.2, 0.15),
+			Vector3.ONE * (0.5 + i * 0.15), Color("707b85"), 0.9 + i * 0.1, true)

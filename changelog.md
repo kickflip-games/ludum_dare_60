@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Added a visible 0.32-second damage shake to the chase camera,
+  including lethal hits. It fades quickly, respects Reduced motion and camera
+  clearance, ignores immune contacts and clears on retry; cannon feedback and
+  steering remain independent. Damage-camera (51), damage (38), controls (50)
+  and native checks (56) pass; before/impact/settled frames inspected. The older
+  sailing-camera suite retains two superseded-control failures, reproduced on
+  the unchanged source. Human comfort and Web remain untested.
+
 - Added blocky muzzle sparks/smoke, enemy shot trails, stronger timber
   hits/sinking bursts and player damage spray. Replaced individual smoke, trail
   and splinter nodes with one shader-animated, 192-cube pool; idle effects sleep,

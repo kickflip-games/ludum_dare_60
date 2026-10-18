@@ -8,6 +8,9 @@ and arena return feeds a blended rudder into the unchanged `wave_sailing.step()`
 The field, shader, hull sampler and cannon-water authority remain shared.
 Only the static coastal foam texture changes to match the isolated island.
 The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.
+The arena player cruises at 9 m/s; the retained voyage fixture explicitly uses
+6.3 m/s. Both pass their configured speed into the same movement integrator;
+the arena return also uses that speed when measuring outward motion.
 
 `game/crossing.tscn` uses `presets/calm.tres`: gentle rolling swells, no ambient foam and negligible uncommanded horizontal motion. Weather changes lighting/clouds, not wave height. Choppy/stormy presets retain stronger surfaces for stress checks.
 

@@ -7,4 +7,5 @@
 [node name="LatitudeLines" type="Node3D"]
 script = ExtResource("1_game")
 arena_mode = true
+sailing_follow_smoothing = 10.0
 ocean_settings = ExtResource("2_ocean")

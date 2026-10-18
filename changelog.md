@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Raised player cruise from 6.3 to 9 m/s (43% faster), including
+  while aiming. Movement and arena return share the configurable speed; tighter
+  chase follow keeps the boat readable. Retained voyage fixtures explicitly
+  keep their original pace. 454 checks across seven suites pass, including
+  measured 27 m travel in three seconds at 30/60/120 Hz, steering, boundary
+  return, firing and retry. Import and native sailing/gun views pass inspection;
+  human combat balance remains open.
+
 - Restored `534b021`'s elevated chase camera and visible 35° sail so the whole
   player boat and its turns are readable again. Kept current arena rules,
   E/F gun controls, wave forces, contact spray/audio and camera safety; the

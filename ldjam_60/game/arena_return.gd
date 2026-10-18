@@ -13,12 +13,12 @@ func reset() -> void:
 
 func rudder(offset: Vector2, heading: float, manual: float, drift: Vector2,
 		yaw_rate: float, delta: float, radius: float, soft_fraction: float,
-		inward_bias: float) -> float:
+		inward_bias: float, forward_speed: float = 6.3) -> float:
 	var distance := offset.length()
 	var radial := offset / maxf(distance, 0.001)
 	var forward := Vector2(sin(heading), -cos(heading))
 	var right := Vector2(cos(heading), sin(heading))
-	var outward_speed := (forward * 6.3 + drift).dot(radial)
+	var outward_speed := (forward * forward_speed + drift).dot(radial)
 	var soft_radius := radius * soft_fraction
 	if not active and distance >= soft_radius and outward_speed > 0.1:
 		active = true

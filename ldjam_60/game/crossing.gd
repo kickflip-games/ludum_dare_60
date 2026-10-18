@@ -25,7 +25,10 @@ const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
 const ENCOUNTER_SCRIPT = preload("res://game/enemy_encounters.gd")
 const ARCHIPELAGO = preload("res://game/world/archipelago.tscn")
-const SPEED: float = 6.3
+# Retain the speed accessor used by cutters and existing gameplay fixtures.
+var SPEED: float:
+	get:
+		return sailing_speed
 const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
@@ -37,6 +40,7 @@ const GUIDING_STAR_ELEVATION: float = PI / 3.0
 const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
+@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 9.0
 @export var encounter_seed: int = 60
 @export_group("Lighthouse arena")
 @export var arena_mode: bool = false
@@ -570,7 +574,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		var was_returning: bool = arena_return.active
 		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
 			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
-			arena_soft_fraction, arena_inward_bias)
+			arena_soft_fraction, arena_inward_bias, SPEED)
 		if arena_return.active:
 			steering = archipelago.safe_return_rudder(steering)
 		if arena_return.active and not was_returning and not _at_sailing_boundary:
@@ -579,7 +583,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		elif not arena_return.active and arena_return.blend == 0.0:
 			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
-	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta)
+	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, SPEED)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position

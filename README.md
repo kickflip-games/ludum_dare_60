@@ -7,7 +7,7 @@ waves** of the existing hostile cutter. Enemies attack the player; the lighthous
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
-- **Play / Enter:** cast off; forward sailing remains automatic.
+- **Play / Enter:** cast off; forward sailing is automatic at **9 m/s**.
 - **A / D or arrows:** steer; **hold E** to aim and **press F** to fire once.
   Release E to return to steering. Cannonballs follow the visible barrel.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
@@ -36,7 +36,8 @@ enemy to win; entering the old harbour never wins.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
-Radius and return settings are exposed on the main crossing. Edit
+Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
+exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five counts/deadlines, spawn interval,
 maximum living enemies (1–3), early-clear pause and spawn separation. Retry
 preserves tuning and resets session progress.
@@ -51,7 +52,7 @@ godot --path ldjam_60 --fixed-fps 60 --script res://tests/survival_previews.gd -
 ```
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
-retaining their original scenarios and acceptance gates.
+retaining their original 6.3 m/s pace, scenarios and acceptance gates.
 
 ## Retained voyage reference (inactive in normal play)
 
@@ -135,7 +136,8 @@ Select `TheLastBearing` in `game/crossing.tscn`:
 - **Voyage presentation:** weather controls sky/lighting independently of wave encounters.
 - **Sailing camera:** restored the elevated chase view and visible 35° sail from
   `534b021`: 11 m behind the hull centre, 5.5 m high, 5 m look-ahead and 62° base
-  FOV. Position/heading follow at 7/5.5 per second; speed gently extends distance
+  FOV. Arena position/heading follow at 10/5.5 per second (7/5.5 in the retained
+  voyage); speed gently extends distance
   and FOV. The horizon stays level as the whole boat rocks and turns. Shore
   retraction, the 1.2 m water guard, cannon view and contact-driven spray/audio
   remain. **Motion: Full / Reduced** still softens presentation without changing

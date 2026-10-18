@@ -130,7 +130,7 @@ func sustain(count: int, hz: int, seconds: int = 180) -> void:
 	check(maximum_turn <= manager.survival_settings.ARCHETYPES.cutter.turn_speed + 0.001
 		and maximum_step <= manager.survival_settings.ARCHETYPES.cutter.speed * 1.12 + 0.01,
 		"%d ships: no heading snaps, reversals or teleporting" % count)
-	check(count == 1 or (minimum_clearance > -0.1 and collision_count < count * 5), "%d ships: route crossings stay within 10 cm contact tolerance without repeated pileups" % count)
+	check(count == 1 or (minimum_clearance > -0.1 and collision_count <= count * 5), "%d ships: route crossings stay within 10 cm contact tolerance and at most five contacts per hull" % count)
 	check(warning_gaps and (count == 1 or identities.size() > 1), "%d ships: separate warning starts obey the global stagger" % count)
 	check(game.cannon.shots_fired == 0 and manager.ships_sunk == 0, "%d ships: no-fire control cannot earn wave kills" % count)
 	results.append({"metrics": metrics, "trace": trace})

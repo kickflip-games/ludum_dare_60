@@ -58,7 +58,7 @@ func simultaneous_runs() -> void:
 	game.queue_free()
 	await process_frame
 
-func holding_target(index: int) -> void:
+func holding_target(index: int, owned: bool = false) -> void:
 	var game = await make_game(6)
 	var manager = game.enemy_encounters
 	manager._begin_wave()
@@ -77,6 +77,11 @@ func holding_target(index: int) -> void:
 		var angle := -PI * 0.7 + other_index * PI / 7.0
 		staged_ship(game, other_index, game.arena_center() + Vector3(sin(angle), 0, -cos(angle)) * 143.0)
 	manager.ship = target
+	if owned:
+		manager.director.waiting.erase(target)
+		manager.director.owners.append(target)
+		target.receive_attack_slot()
+		target._change_navigation(target.Navigation.ATTACK_RUN)
 	var pilot = load("res://tests/cannon_sweep_pilot.gd").new()
 	var never_owned := true
 	for frame in 15 * 60:
@@ -92,8 +97,13 @@ func holding_target(index: int) -> void:
 	pilot.release()
 	check(target.hull == 0 and game.cannon.targets_hit == 2 and game.cannon.shots_fired == 2,
 		"pool hull %d: two ordinary fire-input projectiles sink a naturally moving holding cutter" % index)
-	check(never_owned and manager.records[0].defeated == 1 and manager.ships_sunk == 1,
+	check((never_owned or owned) and manager.records[0].defeated == 1 and manager.ships_sunk == 1,
 		"pool hull %d: killing a waiting enemy counts exactly once without an attack slot" % index)
+	if owned:
+		check(not manager.director.owners.has(target), "real cannonball defeat releases an owned attack slot immediately")
+		manager.director.update(0.1)
+		check(not manager.director.owners.is_empty() and not manager.director.owners.has(target),
+			"the fair queue transfers the defeated owner's slot to a living waiting ship")
 	manager.on_ship_sunk(target)
 	check(manager.ships_sunk == 1 and manager.records[0].defeated == 1 and manager.focus_ship() != target,
 		"pool hull %d: duplicate death notification is inert and the camera rejects the sunk target" % index)
@@ -108,6 +118,7 @@ func _run() -> void:
 	await simultaneous_runs()
 	for index in 6:
 		await holding_target(index)
+	await holding_target(0, true)
 	var output := FileAccess.open("/tmp/latitude-fleet-interactions.json", FileAccess.WRITE)
 	output.store_string(JSON.stringify(results, "\t"))
 	print("FLEET INTERACTIONS: %d checks, %d failures" % [checks, failures])

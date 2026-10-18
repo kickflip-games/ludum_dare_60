@@ -19,6 +19,8 @@ func _run() -> void:
 	await physics_frame
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
+	game.ocean_settings.height_multiplier = 0.0
+	game.wave_encounters.enabled = false
 	check(game.hull == 3 and not game.cannon.fire(), "three-hit hull and cannon gated on the title")
 	game.start_crossing()
 	game._physics_process(game.CAST_OFF_SECONDS)

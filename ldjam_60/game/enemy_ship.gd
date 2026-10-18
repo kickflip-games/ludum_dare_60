@@ -14,7 +14,7 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var broadside_separation: float = 34.0
 @export var attack_run_seconds: float = 6.0
 @export var return_seconds: float = 8.5
-@export var approach_timeout: float = 28.0
+@export var approach_timeout: float = 40.0
 @export var turn_away_seconds: float = 4.0
 @export var turn_away_angle: float = 1.05
 @export var player_separation: float = 19.0

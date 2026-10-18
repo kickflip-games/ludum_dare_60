@@ -40,6 +40,10 @@ for name in ('staging', 'web'):
 shutil.copytree('ldjam_60', build / 'staging', ignore=shutil.ignore_patterns(
     '.godot', '.git', '.DS_Store', 'addons', 'tests', 'export_presets.cfg',
     'export_credentials.cfg'))
+# LiteTerrain's map script is a runtime dependency of archipelago_terrain.gd.
+# Keep it while omitting the editor automation plugin from the distributable.
+shutil.copytree('ldjam_60/addons/lite_terrain', build / 'staging/addons/lite_terrain',
+                ignore=shutil.ignore_patterns('.godot', '.DS_Store'))
 (build / 'web').mkdir()
 project = build / 'staging/project.godot'
 source = project.read_text()
@@ -53,7 +57,7 @@ platform="Web"
 runnable=true
 export_filter="all_resources"
 include_filter=""
-exclude_filter="addons/*,tests/*"
+exclude_filter="addons/godot_ai/*,tests/*"
 script_export_mode=2
 
 [preset.0.options]

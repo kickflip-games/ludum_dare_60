@@ -6,6 +6,20 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Added the hull-mounted deck view, directional wave inertia and contact-driven
+  spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the
+  obstructing canvas, retained the real cannon and added a fitted planked floor.
+  Wave forces, controls and planar collisions are preserved. Fixed Web staging's
+  omission of the runtime terrain addon and Web ambient audio playback.
+  Bounded visual edge support keeps the gunwale coherent during side crests.
+  578 checks across twelve suites pass after integration; 51,840 GPU comparisons
+  pass and the earlier rendered voyage reaches harbour without shore impacts.
+  Partial browser timings are recorded without claiming performance acceptance;
+  full profiling and human comfort testing remain open. See the
+  [implementation report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md).
+- Integrated the newly merged hold-E cannon controls from `96e14a3` into the
+  deck-camera branch, retaining upstream's faster sextant and held restart.
+  Updated camera fixtures; post-integration cannon, sighting and lifecycle checks pass.
 - Simplified cannon controls to hold E / press F with immediate steering on
   release, Space priority and no buffered/autofire shots. Sextant focus now takes
   0.8 seconds; sailing restarts require a continuous 0.6-second R hold.

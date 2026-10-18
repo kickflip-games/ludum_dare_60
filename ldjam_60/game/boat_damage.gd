@@ -12,6 +12,8 @@ func configure(pivot: Node3D, ship: Node3D) -> void:
 	var hull := ship.get_node("RootNode/Boat") as MeshInstance3D
 	for surface in [0, 1]:
 		var material := hull.get_active_material(surface).duplicate() as StandardMaterial3D
+		# The helm now sees the inside of the existing open hull while banking.
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		material.emission_enabled = true
 		material.emission = Color("d68b67")
 		material.emission_energy_multiplier = 0.0
@@ -21,6 +23,8 @@ func configure(pivot: Node3D, ship: Node3D) -> void:
 	light_marks = _marks(pivot, "HullScratches", [
 		PackedVector3Array([Vector3(-0.82, 0.94, 0.94), Vector3(-0.57, 0.83, 0.94), Vector3(-0.67, 0.76, 0.94), Vector3(-0.39, 0.60, 0.94)]),
 		PackedVector3Array([Vector3(0.23, 0.94, 0.94), Vector3(0.46, 0.85, 0.94), Vector3(0.37, 0.77, 0.94), Vector3(0.69, 0.62, 0.94)]),
+		# Inboard gunwale cuts stay visible from the deck eye as well as outside.
+		PackedVector3Array([Vector3(-1.08,0.92,-1.2),Vector3(-1.08,0.83,-1.4),Vector3(-1.08,0.87,-1.55),Vector3(-1.08,0.73,-1.75)]),
 	], Vector3.BACK)
 	# More splintering across the top of both gunwales at critical health.
 	heavy_marks = _marks(pivot, "HeavyHullScratches", [

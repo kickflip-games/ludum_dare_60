@@ -7,6 +7,8 @@ const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
+const DeckCameraResponse = preload("res://game/ocean/deck_camera_response.gd")
+const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
@@ -88,13 +90,9 @@ var gust_strength := 0.0
 @export_range(0.0, 1.0, 0.05) var target_highlight_strength: float = 0.65
 
 @export_group("Sailing camera")
-## Distance behind the hull centre, before a gentle speed extension.
-@export_range(8.0, 24.0, 0.5) var sailing_follow_distance: float = 11.0
-@export_range(3.0, 12.0, 0.25) var sailing_camera_height: float = 5.5
-## Exponential response rates, in inverse seconds. Larger values follow faster.
-@export_range(2.0, 14.0, 0.5) var sailing_follow_smoothing: float = 7.0
-@export_range(2.0, 14.0, 0.5) var sailing_rotation_smoothing: float = 5.5
-@export_range(0.0, 10.0, 0.5) var sailing_look_ahead: float = 5.0
+## Hull-local eye position, authored against the existing six-metre boat.
+@export var helm_eye := Vector3(0.0, 2.05, 0.45)
+@export_enum("Full", "Reduced") var motion_setting: int = 0
 @export_range(0.0, 6.0, 0.25) var sailing_speed_fov: float = 3.0
 
 @export_group("Cannon camera")
@@ -145,6 +143,12 @@ var discovery_left: float = 0.0
 var _at_sailing_boundary: bool = false
 @export_group("Development")
 @export var development_tools: bool = false
+# Fixture switches; deliberately absent from the normal gameplay controls.
+var development_camera_response := true
+var development_spray := true
+var development_overlays := true
+var development_sound := true
+var turbulence_effects: Node3D
 var _warning_audio: AudioStreamPlayer
 var heading: float = START_HEADING
 var elapsed: float = 0.0
@@ -178,6 +182,8 @@ var end_view_blend: float = 0.0
 var _transition_from: Transform3D
 var boat: CharacterBody3D
 var boat_visual: Node3D
+var helm_anchor: Marker3D
+var deck_response := DeckCameraResponse.new()
 var camera: Camera3D
 var sky_root: Node3D
 var beacon: Node3D
@@ -242,6 +248,10 @@ func _ready() -> void:
 	hud.set("game", self)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(hud)
+	turbulence_effects = TurbulenceEffects.new()
+	turbulence_effects.name = "TurbulenceEffects"
+	add_child(turbulence_effects)
+	turbulence_effects.setup(self,layer)
 	_build_audio()
 	if DisplayServer.get_name() != "headless":
 		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
@@ -447,6 +457,9 @@ func restart() -> void:
 	_camera_aim_degrees = 0.0
 	_camera_target_offset = Vector3.ZERO
 	_sailing_camera_initialized = false
+	deck_response.reset()
+	turbulence_effects.reset()
+	ocean.clear_turbulence()
 	_camera_clear_fraction = 1.0
 	_cannon_impulse = 0.0
 	camera_mode = CameraMode.SAILING
@@ -628,6 +641,7 @@ func _update_view(delta: float) -> void:
 	boat.rotation.y = -heading
 	var speed_factor := actual_speed / SPEED if state == State.SAILING else 0.0
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
+	ocean.update_turbulence(wave_encounters,delta)
 	var sailing_turn := wave_sailing.rudder_rate + wave_sailing.yaw_rate if state == State.SAILING else 0.0
 	# Let sail-driven heel settle in gun view; sampled wave rocking still applies.
 	var trim_speed := 0.0 if cannon.aiming else speed_factor
@@ -644,7 +658,7 @@ func _update_view(delta: float) -> void:
 		boat.position + Basis(Vector3.UP, -heading) * Vector3(0, 2.55, -4.5))
 	helm_pose = helm_pose.interpolate_with(sky_pose, sky_blend)
 	camera.h_offset = 0.0
-	var sailing_fov := lerpf(62.0 + sailing_speed_fov * _sailing_speed, 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
+	var sailing_fov := lerpf(74.0 + sailing_speed_fov * _sailing_speed * motion_amount(), 74.0, smoothstep(0.0, 1.0, combat_camera_blend))
 	camera.fov = lerpf(lerpf(sailing_fov, aim_camera_fov, aim_camera_blend), stargazing_fov, sky_blend)
 	if state == State.READY:
 		camera.transform = _title_camera_pose()
@@ -666,9 +680,9 @@ func _update_view(delta: float) -> void:
 	else:
 		camera.transform = helm_pose
 	if state == State.SAILING:
-		# Keep the chase view quiet during impacts; retain dedicated gun feedback.
+		# Keep damage shake restrained on deck; retain dedicated gun feedback.
 		var sailing_shake := lerpf(0.22, 1.0, maxf(aim_camera_blend, combat_camera_blend))
-		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend)
+		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend) * motion_amount()
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
 		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
@@ -676,6 +690,9 @@ func _update_view(delta: float) -> void:
 		# Final safety includes the sky transition and the small recoil displacement.
 		camera.position = _camera_obstruction_limit(camera.position)
 	_cannon_impulse *= exp(-16.0 * delta)
+	turbulence_effects.update_effects(self,delta)
+	if state != State.SAILING:
+		turbulence_effects.reset()
 	sky_root.position = camera.position
 	sky_material.set_shader_parameter("visual_time", sea_time)
 	sky_material.set_shader_parameter("star_density", star_density)
@@ -697,27 +714,28 @@ func _update_view(delta: float) -> void:
 
 
 func _normal_sailing_pose(delta: float) -> Transform3D:
-	# The planar collision root supplies position and heading; only a little
-	# filtered heave follows the visual hull. Pitch and roll never enter the rig.
-	var stable_orientation := Basis(Vector3.UP, -heading)
-	var center := boat.position + stable_orientation * BoatWaveMotion.HULL_CENTER
-	center.y += clampf((boat_motion.heave - ocean_settings.sea_level) * ocean_settings.camera_bob_strength, -0.18, 0.18)
+	# One authored marker follows the complete visual-pivot transform, including
+	# the rotation around the hull centre. No second addition of hull heave.
+	helm_anchor.position = helm_eye
+	_sailing_anchor = boat.to_global(BoatWaveMotion.HULL_CENTER)
+	_sailing_heading = heading
 	var speed := clampf(actual_speed / SPEED, 0.0, 1.15) if state == State.SAILING else 0.0
-	if not _sailing_camera_initialized or _sailing_anchor.distance_to(center) > 60.0:
-		_sailing_anchor = center
-		_sailing_heading = heading
+	if not _sailing_camera_initialized:
+		deck_response.reset()
 		_sailing_speed = speed
 		_sailing_camera_initialized = true
 		_camera_clear_fraction = 1.0
 	else:
-		_sailing_anchor = _sailing_anchor.lerp(center, 1.0 - exp(-sailing_follow_smoothing * delta))
-		_sailing_heading = lerp_angle(_sailing_heading, heading, 1.0 - exp(-sailing_rotation_smoothing * delta))
 		_sailing_speed = lerpf(_sailing_speed, speed, 1.0 - exp(-3.0 * delta))
-	var orientation := Basis(Vector3.UP, -_sailing_heading)
-	var distance := sailing_follow_distance * (1.0 + _sailing_speed * 0.07)
-	var at := _sailing_anchor + orientation * Vector3(0, sailing_camera_height, distance)
-	var focus := _sailing_anchor + orientation * Vector3(0, 0.85, -sailing_look_ahead)
-	return Transform3D(Basis.looking_at(focus - at, Vector3.UP), at)
+	var result := deck_response.pose(helm_anchor, boat, boat_motion, ocean, heading, 0.0,
+		delta, motion_amount(), state == State.SAILING)
+	if development_tools and not development_camera_response:
+		return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading,0)),boat.to_global(helm_eye))
+	return result
+
+
+func motion_amount() -> float:
+	return 0.28 if motion_setting == 1 else 1.0
 
 
 func _camera_obstruction_limit(at: Vector3) -> Vector3:
@@ -755,7 +773,7 @@ func _camera_shore_anchor() -> Vector3:
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	# Compose poses for the single transform writer in _update_view; never change gun yaw.
 	var ship = enemy_encounters.ship
-	var combat: bool = is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
+	var combat: bool = ocean.wave_field.waves.is_empty() and not wave_encounters.busy() and is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
 	camera_mode = CameraMode.STARGAZING if reading else CameraMode.CANNON if cannon.aiming else CameraMode.COMBAT if combat else CameraMode.SAILING
 	var aiming: bool = camera_mode == CameraMode.CANNON
 	var seconds: float = aim_camera_seconds if aiming else camera_return_seconds
@@ -908,6 +926,10 @@ func _build_boat() -> void:
 	boat_visual = Node3D.new()
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
+	helm_anchor = Marker3D.new()
+	helm_anchor.name = "HelmEye"
+	helm_anchor.position = helm_eye
+	boat_visual.add_child(helm_anchor)
 	var ship: Node3D = PLAYER_SAIL_BOAT.instantiate()
 	ship.name = "SailBoatPlayer"
 	# The source bow faces +Z; seat the 6 m hull around the existing flotation centre.
@@ -915,9 +937,11 @@ func _build_boat() -> void:
 	ship.scale = Vector3.ONE * 7.0
 	ship.position = Vector3(-0.072, 0.0, -2.065)
 	boat_visual.add_child(ship)
-	# Set the boom off the centreline so the canvas catches wind and reads from astern.
 	var sail := ship.get_node("RootNode/Sail") as Node3D
-	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
+	# Stow the oversized canvas/boom for the forward deck composition. Retain the
+	# licensed hull, with one fitted planked floor rather than a second ship.
+	sail.visible = false
+	_build_deck_floor()
 	boat_damage.configure(boat_visual, ship)
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
@@ -931,6 +955,26 @@ func _build_boat() -> void:
 	lamp.light_specular = 0.15
 	lamp.omni_range = 7.0
 	boat_visual.add_child(lamp)
+	for x in [-0.095,0.095]:
+		for z in [-0.095,0.095]:
+			_box(boat_visual,Vector3(0.025,0.34,0.025),Vector3(-1.05+x,1.3,-2.9+z),dark)
+
+
+func _build_deck_floor() -> void:
+	var outline := PackedVector2Array([Vector2(-0.98,0.5),Vector2(0.98,0.5),
+		Vector2(1.0,-2.5),Vector2(0.72,-3.8),Vector2(0,-4.75),Vector2(-0.72,-3.8),Vector2(-1.0,-2.5)])
+	var triangles := Geometry2D.triangulate_polygon(outline)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for index in triangles:
+		var p := outline[index]
+		surface.set_normal(Vector3.UP)
+		surface.set_uv(Vector2((p.x+1.0)/2.0,(p.y+4.75)/5.25))
+		surface.add_vertex(Vector3(p.x,0.65,p.y))
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://game/ocean/deck_wood.gdshader")
+	var floor_mesh := _mesh(boat_visual,surface.commit(),Vector3.ZERO,material)
+	floor_mesh.name = "PlankedDeck"
 
 
 func _build_hazards() -> void:
@@ -1065,6 +1109,8 @@ func _build_audio() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	_sound = AudioStreamPlayer.new()
+	# Web defaults to sample playback, which cannot play an AudioStreamGenerator.
+	_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	var stream := AudioStreamGenerator.new()
 	stream.mix_rate = 22050.0
 	stream.buffer_length = 0.15

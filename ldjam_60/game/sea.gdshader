@@ -21,6 +21,8 @@ uniform float coastal_foam_strength = 0.38;
 uniform float storm_shading : hint_range(0.0, 1.0) = 0.0;
 // Same linear horizon color as the existing night-sky shader, without extra fog.
 uniform vec3 horizon_color = vec3(0.075, 0.13, 0.17);
+// World-anchored, presentation-only footprint: centre XZ, radius, envelope.
+uniform vec4 turbulence_area = vec4(0.0);
 
 varying vec3 surface_world;
 varying vec3 surface_normal;
@@ -28,6 +30,7 @@ varying float crest_fraction;
 varying float cap_foam;
 varying float ripple_fraction;
 varying vec2 encounter_face;
+varying float turbulence;
 
 void vertex() {
 	vec2 p = VERTEX.xz;
@@ -41,6 +44,7 @@ void vertex() {
 	crest_fraction = wave.x / crest_scale;
 	ripple_fraction = ambient.x/max(0.025,dot(wave_amplitudes,vec3(1.0))*height_multiplier*0.6875);
 	encounter_face = event_style.xy;
+	turbulence = (1.0-smoothstep(turbulence_area.z*0.45,max(0.01,turbulence_area.z),distance(p,turbulence_area.xy)))*turbulence_area.w;
 	// Two incommensurate travelling variations break caps, entirely per vertex.
 	float breakup = 0.5 + 0.25 * sin(dot(p, vec2(0.37, 0.53)) + wave_time * 0.35)
 		+ 0.25 * sin(dot(p, vec2(-0.83, 0.27)) - wave_time * 0.21);
@@ -64,6 +68,9 @@ void fragment() {
 	water = mix(water,slope_color.rgb,leading*0.46);
 	water = mix(water,crest_color.rgb,elevated*(0.15+leading*0.40));
 	water = mix(water,trough_color.rgb,trailing*0.72);
+	water = mix(water,vec3(0.018,0.18,0.23),turbulence*0.28);
+	water = mix(water,vec3(0.025,0.35,0.40),leading*turbulence*0.72);
+	water = mix(water,vec3(0.10,0.48,0.51),elevated*turbulence*0.30);
 	float rim = 1.0-clamp(dot(n,view),0.0,1.0);
 	water = mix(water,slope_color.rgb,rim*rim*rim*0.055);
 	float streak = sin(dot(p,wave_1.xy)*pattern_density*0.8-wave_time*0.26
@@ -77,7 +84,8 @@ void fragment() {
 	float wash_pulse = 0.62+0.22*sin(wave_time*0.8+dot(p,vec2(0.19,0.12)))+0.16*sin(dot(p,vec2(0.65,-0.42))-wave_time*0.5);
 	coast *= wash_pulse*coastal_foam_strength*(1.0-smoothstep(0.45,1.4,crest_fraction));
 	coast *= 0.55+0.45*smoothstep(-0.4,0.6,sin(dot(p,vec2(0.45,0.31))+wave_time*0.35));
-	water = mix(water,foam_color.rgb,max(cap_foam*foam_grain*0.88,coast));
+	vec3 cap_color = mix(foam_color.rgb,vec3(0.78,0.93,0.94),turbulence);
+	water = mix(water,cap_color,max(cap_foam*foam_grain*0.88,coast));
 	float distance_to_eye = distance(surface_world, CAMERA_POSITION_WORLD);
 	float haze = smoothstep(48.0, 180.0, distance_to_eye);
 	ALBEDO = mix(water * mix(1.0, 0.76, storm_shading), horizon_color, haze);

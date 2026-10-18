@@ -2,6 +2,59 @@
 
 `game/crossing.tscn` uses `presets/calm.tres`: gentle rolling swells, no ambient foam and negligible uncommanded horizontal motion. Weather changes lighting/clouds, not wave height. Choppy/stormy presets retain stronger surfaces for stress checks.
 
+## Deck camera and turbulence — 18 October 2026
+
+The normal view now stands on the deck. `HelmEye` is a marker on the same visual
+pivot as the fitted wooden floor, lantern and real cannon. `deck_camera_response.gd`
+uses its complete world transform, including the hull-centre rotation lever.
+Heave has at most 14 cm of relative lag; wave pitch/roll use 0.78/0.52 gains,
+while artificial sailing trim uses only 0.25/0.12. Heading remains the actual
+steering heading. The analytic damped response snaps across teleports, reversed
+clocks and gaps over 0.25 seconds. Final water/terrain/near-plane protection runs
+after presentation offsets. Gunner and star modes retain their precision poses.
+The same five flotation samples supply up to 0.35 m of extra visual edge support
+when a side crest reaches the gunwale before the centre rises. Existing damping,
+tilt limits, planar collisions and wave forces are retained.
+
+Per-wave height, peak and filtered descent detect one compression per crest.
+The same ID, direction and intensity drive head compression, spray and generated
+hull/spray sounds. Contact history is bounded by the four active events. There
+is no random wave shake or additional physical forcing. Automatic combat framing
+waits through warning/active/draining waves; explicit gun controls retain priority.
+
+The sea's new turquoise advancing faces and white caps use the existing vertex
+wave results. A smooth world-fixed region footprint blends in during the warning
+and fades through recovery; it does not travel with the player-following mesh.
+No displacement, derivatives, waves, collision forces or encounter tuning changed.
+
+`turbulence_effects.gd` preallocates one 52-instance MultiMesh: two 18-droplet
+impact bursts and sixteen small crest flecks. Low quality uses ten droplets per
+burst and no crest flecks. One lightweight peripheral overlay keeps the centre
+clear. Existing generated audio respects mute and caps overlapping playback.
+Retry and teleport clear the pools and camera contacts. Full/Reduced motion is
+available on the existing menu; Reduced scales angular response, impacts, FOV
+influence and streaks to 0.28, with identical physics and vertical attachment.
+
+See the [implementation report](../../../artifacts/water_review/TURBULENCE_CAMERA_REPORT.md)
+for actual checks and platform limits. The earlier chase-camera/zero-roll findings
+below are historical and are superseded by this deck-camera contract.
+
+Development fixtures (excluded from the release Web export):
+
+```sh
+godot --headless --path ldjam_60 --script res://tests/turbulence_camera_smoke.gd
+godot --headless --path ldjam_60 --script res://tests/turbulence_effects_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/turbulence_camera_previews.gd -- --clip --no-effects
+```
+
+Preview options: `--views-only`, `--clip`, `--no-effects`, `--no-camera`,
+`--no-spray`, `--no-overlays`, `--no-sound`, `--output=/absolute/path`.
+The `turbulence_browser.tscn` fixture is only for a separate development staging
+export: it alternates baseline/final, Low/Standard, calm/four-wave runs, each with
+ten seconds warmup and thirty seconds measurement. It needs the accompanying
+local report server; it is not a normal gameplay entry point. Prepare and serve
+it with `tools/turbulence_web_review.py` from the repository root (use `--help`).
+
 ## Night water and foam
 
 - Deep blue/teal water uses `#112C46`, `#17556B`, `#238A98`, moonlit `#3796A5` crests and cool `#A1D7DB` foam. Actual ambient height, signed encounter slope and normals drive soft toon bands: bright advancing faces, darker backs and narrow foam caps. Two flowing sine variations add subtle crest-aligned filaments. The fragment shader has no event/noise loops or screen refraction.

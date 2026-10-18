@@ -78,10 +78,14 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   `wave_sailing.gd`. Steering smoothly approaches 0.64 rad/s.
 - **Hull:** capacity 3, contact damage 1, immunity 2.2 seconds, repair interval 8 seconds.
 - **Voyage presentation:** weather controls sky/lighting independently of wave encounters.
-- **Sailing camera:** chase distance 11 m behind the hull centre, height 5.5 m,
-  follow/rotation response 7.0/5.5 per second, look-ahead 5 m, and speed FOV influence
-  3°. The camera follows a level heading with filtered heave, shows the whole ship,
-  and retracts at shores. See the [camera review](artifacts/sailing_camera_review.md).
+- **Sailing camera:** a hull-mounted deck eye at `(0, 2.05, 0.45)` frames the
+  wooden bow, lantern left and actual starboard cannon right. The oversized sail
+  is stowed to keep incoming waves visible. The view follows most deck lift,
+  78% of wave pitch and 52% of wave roll, with bounded head inertia and one
+  compression per descending crest. The menu offers **Motion: Full / Reduced**;
+  Reduced softens angles, impacts and streaks without changing wave forces.
+  Shores and the 1.2 m water guard still protect every final camera pose.
+  See the [deck camera report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md).
 - **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
   upward pitch (`stargazing_pitch_degrees`, 25°), and sky FOV (94°). The sighting
   camera stays 2.55 m high and 4.5 m toward the bow; an aligned star appears about
@@ -207,8 +211,12 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   repeated checks, live-star/edge projection across headings/window sizes, text-free
   focus stages, star/horizon framing, 30/60/120 Hz camera transitions, active enemy
   fire, camera precedence and vulnerability.
-- `--script res://tests/sailing_camera_smoke.gd`: whole-boat framing, heading/follow
-  response, level horizon, and terrain/water clearance in sailing and sighting views.
+- `--script res://tests/sailing_camera_smoke.gd`: deck/lantern/real-cannon framing,
+  attachment, steering, wave pitch, and terrain/water clearance in sailing and sighting.
+- `--script res://tests/turbulence_camera_smoke.gd`: front/side/oblique/four-wave
+  motion, contact deduplication, recovery, Full/Reduced, 30/60/120 Hz, gaps and retry.
+- `--script res://tests/turbulence_effects_smoke.gd`: synchronized event IDs,
+  fixed spray capacity, world-anchored water styling, motion selection and reset.
 - `--script res://tests/navigation_smoke.gd`: compass/turn wraparound, actual A/D
   direction, independent hull-axis bearing checks, moving readings and discoveries.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.

@@ -23,6 +23,11 @@ var wake_strength: float = 0.0
 var wake_yaw: float = 0.0
 var floating_visuals: Array[Dictionary] = []
 var cells: int = 192
+var turbulence_center := Vector2.ZERO
+var turbulence_radius := 80.0
+var turbulence_intensity := 0.0
+var _turbulence_active := false
+var _turbulence_region := -1
 
 
 func initialize(value: WaveSettings, quality_value: int = 1) -> void:
@@ -165,6 +170,41 @@ func sample_surface(p: Vector2, time: float = -1.0) -> Vector3:
 
 func height_at(p: Vector2, time: float = -1.0) -> float:
 	return sample_surface(p, time).x
+
+
+func clear_turbulence() -> void:
+	turbulence_intensity = 0.0
+	_turbulence_active = false
+	_turbulence_region = -1
+	material.set_shader_parameter("turbulence_area",Vector4.ZERO)
+
+
+func update_turbulence(encounters: RefCounted, delta: float) -> void:
+	# A fixed region footprint; neither its position nor its phase follows the mesh.
+	var target := 0.0
+	if encounters.busy():
+		if _turbulence_region != encounters.region_id:
+			for r: Vector4 in encounters.REGIONS:
+				if int(r.w)==encounters.region_id:
+					turbulence_center = Vector2(r.x,r.y)
+					turbulence_radius = r.z+45.0
+					_turbulence_region = encounters.region_id
+		_turbulence_active = true
+		target = 0.85 if encounters.phase==encounters.Phase.WARNING else 1.0
+	elif encounters.phase==encounters.Phase.RECOVERY:
+		target = smoothstep(15.0,20.0,encounters.phase_until-wave_time)
+	elif not wave_field.waves.is_empty():
+		if not _turbulence_active:
+			var wave: Dictionary = wave_field.waves[0]
+			turbulence_center = wave.origin+wave.direction*wave.speed*3.0
+			turbulence_radius = 70.0
+			_turbulence_active = true
+		target = 0.7
+	else:
+		_turbulence_active = false
+		_turbulence_region = -1
+	turbulence_intensity = lerpf(turbulence_intensity,target,1.0-exp(-1.5*clampf(delta,0.0,1.0)))
+	material.set_shader_parameter("turbulence_area",Vector4(turbulence_center.x,turbulence_center.y,turbulence_radius,turbulence_intensity))
 
 
 func water_hit(from: Vector3, to: Vector3, delta: float) -> Dictionary:

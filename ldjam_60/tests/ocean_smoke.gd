@@ -141,8 +141,8 @@ func _run() -> void:
 	game.wave_sailing.rudder_rate = 0.72
 	game.boat_motion.reset()
 	game._update_view(0.0)
-	check(game.boat_motion.roll < -deg_to_rad(10.0) and absf(game.camera.rotation.z) < 0.0001,
-		"game view uses measured speed and turn while keeping the camera horizon level")
+	check(game.boat_motion.roll < -deg_to_rad(10.0) and absf(game.camera.rotation.z) < deg_to_rad(2.0),
+		"game view uses measured speed and turn without amplifying artificial turn heel")
 	check(game.cannon.shot_origin().is_equal_approx(game.cannon.muzzle.global_position),
 		"banked cannon still launches at its visible muzzle")
 	game.cannon.set_aim_held(true)

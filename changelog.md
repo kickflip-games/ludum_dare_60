@@ -6,10 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
-- In progress: Simplify cannon controls to hold E / press F, shorten sextant
-  focus to 0.8 seconds and require a 0.6-second R hold while sailing. Preserve
-  sailing, waves, ballistics and navigation; input regressions and native
-  before/after review are being updated.
+- Simplified cannon controls to hold E / press F with immediate steering on
+  release, Space priority and no buffered/autofire shots. Sextant focus now takes
+  0.8 seconds; sailing restarts require a continuous 0.6-second R hold.
+  Updated menu, hints and regression/capture fixtures without physics changes.
+  Validation: 17 suites passed; native before/after and camera sequence inspected.
+  An inherited coastal-foam hash check still fails on the unchanged baseline;
+  human playtesting remains outstanding. See the [controls review](artifacts/controls_review.md).
 
 - Required a dedicated branch and immediate draft web PR for every task, an
   initial check for overlapping open PRs, and screenshots visible in each PR.

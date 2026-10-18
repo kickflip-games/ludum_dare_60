@@ -47,7 +47,7 @@ func capture(label: String) -> void:
 		"01-sailing", "07-sailing-again":
 			valid = valid and game.camera_mode == game.CameraMode.SAILING and not game.hud.instrument.visible and game.hud.star_guidance().is_empty()
 		"02-cannon":
-			valid = valid and game.cannon.aiming and game.aim_camera_blend == 1.0 and game.cannon.shots_fired == 0
+			valid = valid and game.cannon.aiming and game.aim_camera_blend > 0.999 and game.cannon.shots_fired == 0
 		"03-firing":
 			valid = valid and game.cannon.aiming and game.cannon.shots_fired == 1 and game.cannon.flash.visible
 		"04-returning":

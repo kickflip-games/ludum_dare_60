@@ -27,6 +27,8 @@ func _run() -> void:
 	var emitted: int = fx.emitted
 	check(not game.cannon.fire() and fx.emitted == emitted, "reload rejection emits nothing")
 	check(game.cannon.projectiles.size() == 1 and game.cannon.cooldown == 1.5, "effects preserve ball and reload")
+	fx.smoke(game.boat.position + Vector3.UP * 3)
+	check(fx.emitted == emitted + 3, "damaged flagship smoke reuses three bounded rising cubes")
 	fx.reset()
 	check(game.take_damage(1, "test") and fx.emitted == 25, "accepted hull damage emits timber, smoke and foam")
 	emitted = fx.emitted

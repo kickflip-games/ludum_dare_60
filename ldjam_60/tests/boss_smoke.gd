@@ -1,0 +1,266 @@
+extends SceneTree
+## Real scene, movement, ballistic volleys, hazards and authoritative ending checks.
+var game
+var manager
+var boss
+var checks := 0
+var failures := 0
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+func check(ok: bool, label: String) -> void:
+	checks += 1
+	if not ok: failures += 1
+	print(("PASS: " if ok else "FAIL: ") + label)
+
+func fresh() -> void:
+	game.restart()
+	game.state = game.State.SAILING
+	game.wave_encounters.enabled = false
+	game.boat.position = game.arena_center() + Vector3(0, 0, 112)
+	game.boat.velocity = Vector3(7.5, 0, 0)
+	game.heading = PI / 2
+
+func final_wave() -> void:
+	for i in 5: manager._begin_wave()
+
+func setup_guns(kind: int) -> void:
+	fresh()
+	boss.begin(game.arena_center() + Vector3(0, 0, 70))
+	boss.heading = PI / 2
+	boss.rotation.y = -boss.heading
+	boss._speed = 7.5
+	boss.velocity = boss.forward() * boss._speed
+	boss.pattern = kind
+	boss.salvo = 0
+	boss.projectiles.clear()
+
+func _run() -> void:
+	game = load("res://game/crossing.tscn").instantiate()
+	root.add_child(game)
+	game.set_physics_process(false)
+	game.cannon.set_physics_process(false)
+	game.hud.set_process(false)
+	manager = game.enemy_encounters
+	boss = manager.boss
+	if not is_instance_valid(boss) or not boss.has_method("update_ship"):
+		quit(2)
+		return
+	await physics_frame
+	fresh()
+	check(is_instance_valid(boss.flagship_model) and is_equal_approx(boss.collision_shape.shape.radius, 4.8) and boss.get_meta("target_radius") == 6.2, "imported large ship and matching hull/target metadata load")
+	check(boss.hull == 9 and boss.sailing_speed == 8.7 and boss.turning_speed < manager.ship.turning_speed, "nine-hit flagship has heavier tunable navigation")
+	for i in 6:
+		manager.ships[i].begin(game.arena_center() + Vector3(-100 + i * 20, 0, -100), true)
+	final_wave()
+	check(manager.boss_active() and boss.visible and boss.hull == 9, "Wave 5 flagship spawns immediately with six earlier survivors")
+	check(manager.ships.size() == 6 and manager.living_ships().size() == 7 and not manager.director.owners.has(boss), "dedicated boss keeps all ordinary pool slots and uses no director slot")
+	check(manager._boss_spawn_clear(boss.position) and boss.position.distance_to(game.boat.position) >= 65, "arrival clears water, lighthouse and player")
+	check(manager.ships.all(func(ship): return ship.position.distance_to(boss.position) >= 34), "arrival separates from all surviving hulls")
+	check(manager.survival_settings.wave_rosters[4] == PackedStringArray(["skiff", "cutter"]), "final roster adds just two tunable staggered escorts")
+	manager.director.clock = 10
+	manager.director.next_warning = 0
+	check(manager.director.request_boss_warning(2.8) and manager.director.next_warning >= 12.8, "boss reserves readable warning spacing without an attack slot")
+
+	for hz in [30, 60, 120]:
+		for kind in [boss.Pattern.ROLLING, boss.Pattern.DOUBLE, boss.Pattern.SCATTER]:
+			setup_guns(kind)
+			await physics_frame
+			check(boss._prepare_volley(1.6), "%d Hz pattern %d commits clear ballistic lanes" % [hz, kind])
+			var snapshot: Array = boss.volley.duplicate(true)
+			boss._update_tell()
+			check(boss.warnings.filter(func(line): return line.visible).size() == snapshot.size(), "each projectile has its own warning")
+			var previous: Vector3 = boss.position
+			var frames := roundi((2.6 if kind != boss.Pattern.DOUBLE else 3.1) * hz)
+			for tick in frames:
+				boss.position += boss.forward() * boss._speed / hz
+				game.boat.position += game.boat.velocity / hz
+				boss._update_weapon(1.0 / hz)
+			check(boss.shots_fired == (4 if kind == boss.Pattern.DOUBLE else 5), "%d Hz pattern %d launches intended physical projectile count" % [hz, kind])
+			check(boss.weapon_state == boss.Weapon.RELOAD and boss.position.distance_to(previous) > 10, "pattern completes and recovers while sailing")
+			check(boss.passes > 0 and boss.navigation_state == boss.Navigation.ATTACK_RUN, "broadside commits a sustained navigation pass")
+			var matched := true
+			for shot in boss.launch_history:
+				var flat: Vector3 = shot.velocity * Vector3(1, 0, 1)
+				matched = matched and flat.normalized().dot(shot.direction) > 0.9999 and shot.origin.distance_to(shot.warning_origin) < 0.3
+			check(matched, "origins and physical travel match committed warnings")
+			if kind == boss.Pattern.ROLLING:
+				check(snapshot[0].origin.distance_to(snapshot[4].origin) > 10 and snapshot[4].time > 0.8, "rolling shots traverse five separated hull muzzles over 0.84 seconds")
+			if kind == boss.Pattern.SCATTER:
+				check((snapshot[0].origin + snapshot[0].direction * boss.minimum_attack_distance).distance_to(snapshot[1].origin + snapshot[1].direction * boss.minimum_attack_distance) > 7.0, "scatter leaves over seven metres between rays at minimum attack range")
+			var shot: Dictionary = boss.projectiles[0]
+			var velocity: Vector3 = shot.velocity
+			game.boat.position += Vector3(30, 0, 20)
+			boss._advance_shots(1.0 / hz)
+			check(shot.velocity.x == velocity.x and shot.velocity.z == velocity.z, "moving player never homes a launched shot")
+			boss.clear_hazards()
+	setup_guns(boss.Pattern.ROLLING)
+	await physics_frame
+	check(not boss._volley_lane_clear(game.arena_center() + Vector3(-50, 2, 0), game.arena_center() + Vector3(50, 2, 0)), "solid lighthouse obstructs cannon lanes")
+	for hit in 5: boss.take_hit()
+	check(boss.phase_two and boss.phase_bursts == 1 and boss.hull == 4, "half-health phase transition bursts once and remains vulnerable")
+	boss.take_hit()
+	check(boss.hull == 3 and boss.phase_bursts == 1, "phase transition grants no invulnerability or repeat burst")
+
+	fresh()
+	game.boat.position += Vector3(65, 0, 0)
+	boss.begin(game.arena_center() + Vector3(0, 0, 100))
+	boss.heading = PI / 2
+	boss.rotation.y = -boss.heading
+	await physics_frame
+	check(boss.deploy_mine() and boss.mines.size() == 1, "safe stern water accepts an imported mine")
+	var mine = boss.mines[0]
+	var fixed: Vector3 = mine.position
+	boss.position += Vector3(20, 0, 0)
+	mine.update_mine(0.79)
+	check(not mine.armed() and mine.position == fixed and is_equal_approx(mine.get_meta("ring_radius"), 7.0), "arming delay, stationary planar position and exact seven-metre ring")
+	mine.update_mine(0.02)
+	check(mine.armed(), "mine arms after 0.8 seconds")
+	game.sea_time += 1
+	game.ocean.wave_time = game.sea_time
+	mine.update_visuals()
+	check(is_equal_approx(mine.model.position.y, game.ocean.height_at(Vector2(fixed.x, fixed.z)) + 0.65), "mine bobs with actual ocean height; ring uses shared wave shader")
+	check(not mine.is_in_group("cannon_targets"), "mines never compete for player cannon acquisition")
+	game.boat.position = mine.position + Vector3(7.1, 0, 0)
+	mine.update_mine(0.01)
+	check(not mine.spent, "outside the advertised trigger ring is safe")
+	var hull: int = game.hull
+	game.boat.position = mine.position + Vector3(6.9, 0, 0)
+	mine.update_mine(0.01)
+	mine.update_mine(0.1)
+	check(mine.spent and game.hull == hull - 1, "armed entry detonates once through normal damage pathway")
+	var extra = boss.MINE.instantiate()
+	extra.game = game
+	manager.add_child(extra)
+	extra.position = game.boat.position
+	extra.age = 1
+	extra.update_mine(0.01)
+	check(extra.spent and game.hull == hull - 1, "immunity consumes a second mine without extra damage")
+	check(not boss.mine_position_valid(game.boat.position) and not boss.mine_position_valid(game.arena_center()) and not boss.mine_position_valid(game.arena_center() + Vector3(200, 0, 0)), "mine deployment rejects player, lighthouse and outside arena")
+	await process_frame
+	fresh()
+	game.boat.position += Vector3(65, 0, 0)
+	boss.begin(game.arena_center() + Vector3(0, 0, 100))
+	boss.heading = PI / 2
+	boss.rotation.y = -boss.heading
+	boss.maximum_mines = 2
+	await physics_frame
+	for i in 3:
+		boss.position = game.arena_center() + Vector3(-35 + i * 22, 0, 100)
+		check(boss.deploy_mine(), "separated mine %d deploys" % i)
+	check(boss.mines.size() == 2, "active cap expires oldest mine")
+	boss.mines[0].update_mine(19)
+	check(boss.mines[0].spent, "lifetime expiry is harmless")
+	boss.maximum_mines = 6
+
+	setup_guns(boss.Pattern.ROLLING)
+	await physics_frame
+	boss.cooldown = 0.0
+	boss.weapon_state = boss.Weapon.READY
+	boss._update_weapon(0.0)
+	check(boss.pattern == boss.Pattern.ROLLING and boss.weapon_state == boss.Weapon.TELEGRAPH, "production rotation starts with rolling broadside")
+	var phase_plan: Array = boss.volley.duplicate(true)
+	for i in 5: boss.take_hit()
+	check(boss.phase_two and boss.volley == phase_plan and boss.weapon_state == boss.Weapon.TELEGRAPH, "phase transition preserves the active locked warning")
+	boss._finish_pattern()
+	boss.cooldown = 0.0
+	boss.weapon_state = boss.Weapon.READY
+	manager.director.clock += 10
+	boss._update_weapon(0.0)
+	check(boss.pattern == boss.Pattern.SCATTER and boss.weapon_state == boss.Weapon.TELEGRAPH, "production phase-two rotation introduces scatter on next valid attack")
+
+	fresh()
+	game.boat.position += Vector3(65, 0, 0)
+	boss.begin(game.arena_center() + Vector3(-25, 0, 100))
+	boss.heading = PI / 2
+	boss.rotation.y = -boss.heading
+	await physics_frame
+	boss._update_mines(5.99)
+	check(boss.mines.is_empty(), "initial mine interval gives six seconds of grace")
+	boss._update_mines(0.02)
+	check(boss.mines.size() == 1, "first mine drops at six seconds")
+	check(not boss.mine_position_valid(boss.mines[0].position), "overlapping trigger areas reject a repeated drop")
+	boss.phase_two = true
+	boss.mine_clock = 0.0
+	boss.position += Vector3(25, 0, 0)
+	boss._update_mines(4.49)
+	check(boss.mines.size() == 1, "phase two retains its full 4.5-second drop interval")
+	boss._update_mines(0.02)
+	check(boss.mines.size() == 2, "phase two drops a safely separated mine after 4.5 seconds")
+	fresh()
+	boss.begin(game.arena_center() + Vector3(-107, 0, -42))
+	boss.heading = PI
+	boss.rotation.y = -boss.heading
+	game.damage_immunity = 1000
+	await physics_frame
+	var blocked_start: Vector3 = boss.position
+	for i in 30 * 60:
+		game.sea_time += 1.0 / 60
+		boss.update_ship(1.0 / 60)
+	check(boss.position.distance_to(blocked_start) > 15 and boss.contact_frames < 30 and game.archipelago.get_node("Terrain").terrain_height_at(boss.position) < -3, "blocked reef approach recovers into water without repeated obstacle contact")
+
+	for hz in [30, 60, 120]:
+		fresh()
+		final_wave()
+		game.damage_immunity = 1000
+		var start: Vector3 = boss.position
+		var max_step := 0.0
+		var max_turn := 0.0
+		var bounds := true
+		for tick in 25 * hz:
+			var previous: Vector3 = boss.position
+			var heading: float = boss.heading
+			game.advance_sailing(1.0 / hz, 0.12)
+			max_step = maxf(max_step, boss.position.distance_to(previous))
+			max_turn = maxf(max_turn, absf(wrapf(boss.heading - heading, -PI, PI)))
+			bounds = bounds and boss.position.distance_to(game.arena_center()) <= game.arena_radius - 4.5
+		check(max_step <= boss.sailing_speed * 1.13 / hz + 0.02 and max_turn <= boss.turning_speed / hz + 0.001, "%d Hz navigation neither teleports nor snaps heading" % hz)
+		check(bounds and boss.position.distance_to(start) > 10, "%d Hz flagship sails sustained bounded routes" % hz)
+		print("BOSS NAV %dHz shots=%d passes=%d contacts=%d recoveries=%d" % [hz, boss.shots_fired, boss.passes, boss.contact_frames, boss.recoveries])
+
+	fresh()
+	final_wave()
+	# Drain the two escort arrivals while leaving the boss alive.
+	for tick in 400: manager._update_arena(1.0 / 60)
+	for ship in manager.ships:
+		if ship.visible:
+			while ship.hull > 0: ship.take_hit()
+	check(game.state == game.State.SAILING and boss.hull == 9, "killing normal escorts never wins with flagship alive")
+	game.hud._process(0)
+	check(game.hud.boss_health.visible and game.hud.boss_health.value == 9, "boss HUD reads actual health")
+	# Live escort + real incoming shot must be cleared immediately on boss defeat.
+	manager.ships[0].begin(game.arena_center() + Vector3(-90, 0, 80))
+	boss.pattern = boss.Pattern.ROLLING
+	boss._prepare_volley(1.6)
+	boss.deploy_mine()
+	var ball = game._box(game, Vector3.ONE, game.boat.position + Vector3.UP, game._material(Color.WHITE))
+	manager.ships[0].projectiles.append({"node":ball, "position":ball.position, "velocity":Vector3.ZERO, "ttl":4.0})
+	while boss.hull > 0: boss.take_hit()
+	check(game.state == game.State.ARRIVED and manager.phase == manager.Phase.COMPLETE and boss.navigation_state == boss.Navigation.SINKING, "boss defeat immediately wins with living escort and pending projectile; sinking starts")
+	check(not manager.has_projectiles() and boss.mines.is_empty() and boss.volley.is_empty() and manager.spawn_queue.is_empty(), "victory cancels all shots, pending volleys, mines and arrivals")
+	boss.update_ship(10.0)
+	check(boss.projectiles.is_empty() and boss.volley.is_empty(), "boss death prevents any pending firing sequence from resuming")
+	manager.on_ship_sunk(boss)
+	manager._complete_boss_encounter()
+	check(manager.victory_transitions == 1, "repeated defeat callbacks leave one victory transition")
+	check(not game.take_damage(1, "late hazard"), "late hazards cannot damage after victory")
+	game.hud._process(0)
+	check(not game.hud.boss_health.visible and game.hud.menu_title.text == "THE SEA IS YOURS", "victory preserves presentation and hides boss HUD")
+	fresh()
+	final_wave()
+	game.damage_immunity = 0
+	game.take_damage(game.hull_capacity, "prior fatal hit")
+	while boss.hull > 0:
+		# A queued external defeat notification must also respect already lost state.
+		boss.hull -= 1
+	manager.on_ship_sunk(boss)
+	check(game.state == game.State.LOST and manager.victory_transitions == 0, "already fatal player damage takes priority over boss callback")
+	fresh()
+	check(boss.hull == 9 and not boss.phase_two and boss.pattern_index == 0 and boss.volley.is_empty() and boss.mines.is_empty() and boss.navigation_state == boss.Navigation.DORMANT, "retry restores health, phases, weapon sequence, rotation, mines and navigation")
+	game.hud._process(0)
+	check(not game.hud.boss_health.visible and manager.wave_number == 0, "retry hides boss health and restores wave one scheduler")
+	print("BOSS CHECK: %d checks, %d failures" % [checks, failures])
+	game.queue_free()
+	await process_frame
+	quit(0 if failures == 0 else 1)

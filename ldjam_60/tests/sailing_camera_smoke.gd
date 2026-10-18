@@ -144,6 +144,8 @@ func _run() -> void:
 	check(absf(game.camera.basis.x.y) < 0.00001, "turning does not tilt the horizon")
 	# Real moving crests rock the visible ship while the camera stays level.
 	place(Vector3(390,0,350),0)
+	check(game.deck_response.impact_count == 0 and game.turbulence_effects.emitted == 0,
+		"calm chase view does not invent wave contacts or spray bursts")
 	game.ocean.wave_field.add_wave(Vector2(390,365),Vector2(0,-1),1.85,9,45,8,0)
 	var previous_y: float = game.camera.position.y
 	var max_y_step := 0.0
@@ -160,6 +162,8 @@ func _run() -> void:
 		horizon_safe = horizon_safe and absf(game.camera.basis.x.y)<0.00001
 		max_roll = maxf(max_roll,absf(game.boat_motion.pitch)+absf(game.boat_motion.roll))
 	check(max_roll > 0.02 and horizon_safe, "moving wave crests rock the hull without inheriting camera pitch or roll")
+	check(game.deck_response.impact_count > 0 and game.turbulence_effects.emitted == game.deck_response.impact_count,
+		"actual descending crest still drives synchronized contact spray in chase view")
 	check(water_safe and max_y_step < 0.06, "wave-following camera clears water without vertical jolts (max %.4fm/frame)" % max_y_step)
 	# Stress the water floor with the maximum allowed simultaneous crests.
 	game.ocean.wave_field.clear()

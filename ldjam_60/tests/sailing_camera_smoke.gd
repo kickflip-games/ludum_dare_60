@@ -13,6 +13,76 @@ func settle(seconds: float = 1.0) -> void:
 	for i in range(roundi(seconds*60)):
 		game._update_view(1.0/60)
 
+func arena_step(seconds: float) -> void:
+	for frame in roundi(seconds * 60):
+		game._physics_process(1.0 / 60.0)
+		game.cannon.advance(1.0 / 60.0)
+
+func check_arena() -> void:
+	game = load("res://game/crossing.tscn").instantiate()
+	root.add_child(game)
+	game.set_physics_process(false)
+	game.cannon.set_physics_process(false)
+	game.hud.set_process(false)
+	await physics_frame
+	game.enemy_encounters.enabled = false
+	game.wave_encounters.enabled = false
+	check(game.arena_mode and game.sailing_camera_rig == game.SailingCameraRig.CHASE,
+		"normal arena scene selects the restored chase rig by default")
+	var sail: Node3D = game.boat_visual.get_node("SailBoatPlayer/RootNode/Sail")
+	check(sail.is_visible_in_tree() and not game.boat_visual.has_node("PlankedDeck"),
+		"original canvas is visible and the deck-view floor is absent")
+	action("begin_crossing", true)
+	action("begin_crossing", false)
+	arena_step(1.4)
+	var at: Vector3 = game.boat.position
+	var bearing: float = game.heading
+	arena_step(1.0)
+	check(game.boat.position.distance_to(at) > 5 and absf(game.heading - bearing) < 0.0001,
+		"without steering, automatic forward sailing preserves its course")
+	action("steer_starboard", true)
+	arena_step(1.0)
+	action("steer_starboard", false)
+	check(game.heading > bearing + 0.4 and game.camera_mode == game.CameraMode.SAILING,
+		"held D turns the actual boat while the chase camera follows")
+	for size: Vector2i in [Vector2i(960,720), Vector2i(1280,720), Vector2i(1440,720)]:
+		root.size = size
+		settle()
+		var visible := true
+		for point: Vector3 in ship_bounds(game.boat_visual):
+			visible = visible and not game.camera.is_position_behind(point) and root.get_visible_rect().grow(-16).has_point(game.camera.unproject_position(point))
+		check(visible, "whole restored sailboat fits the arena view at %s" % size)
+	action("watch_starboard", true)
+	arena_step(0.5)
+	check(game.cannon.aiming and game.camera_mode == game.CameraMode.CANNON and game.aim_camera_blend == 1,
+		"held E retains the precision gun view from the chase rig")
+	action("fire_starboard", true)
+	action("fire_starboard", false)
+	arena_step(1.0 / 60.0)
+	check(game.cannon.shots_fired == 1, "fresh F still fires the actual cannon")
+	action("astrolabe", true)
+	arena_step(0.1)
+	check(not game.reading and game.cannon.aiming, "arena Space remains inactive and does not override gun view")
+	action("astrolabe", false)
+	action("steer_port", true)
+	action("watch_starboard", false)
+	arena_step(0.5)
+	check(not game.cannon.aiming and game.turn_input == -1 and game.aim_camera_blend == 0,
+		"release E immediately restores held A and returns to chase view")
+	action("steer_port", false)
+	game.damage_immunity = 0
+	game.take_damage(3, "Camera retry check")
+	arena_step(1.0)
+	check(game.state == game.State.LOST and game.camera.transform.is_finite(), "loss retains its finite ending camera")
+	action("restart_crossing", true)
+	action("restart_crossing", false)
+	arena_step(1.4)
+	var center: Vector3 = game.boat.to_global(game.BoatWaveMotion.HULL_CENTER)
+	check(game.state == game.State.SAILING and game.hull == game.hull_capacity and game._sailing_anchor.distance_to(center) < 1.1 and sail.is_visible_in_tree(),
+		"retry restores hull, sail and chase history at the arena spawn")
+	game.queue_free()
+	await process_frame
+
 func _run() -> void:
 	root.size = Vector2i(1280,720)
 	game = load("res://tests/legacy_voyage.tscn").instantiate()
@@ -23,15 +93,26 @@ func _run() -> void:
 	await physics_frame
 	await process_frame
 	check(game.get_viewport().get_camera_3d() == game.camera, "the existing main Camera3D remains the active transform writer")
+	var min_height := INF
+	var max_height := 0.0
 	for degrees in [0,90,180,-90]:
 		place(Vector3(390,0,350),deg_to_rad(degrees))
 		game.actual_speed = game.SPEED
 		settle()
-		var bow: Vector2 = game.camera.unproject_position(game.boat_visual.to_global(Vector3(0,0.95,-4.4)))
-		var lamp: Vector2 = game.camera.unproject_position(game.boat_visual.to_global(Vector3(-1.05,1.3,-2.9)))
-		var gun: Vector2 = game.camera.unproject_position(game.cannon.global_position)
-		check(bow.y > 360 and bow.y < 680 and lamp.x < 640 and gun.x > 640 and root.get_visible_rect().has_point(lamp) and root.get_visible_rect().has_point(gun), "deck below the horizon, lantern left and real cannon right at heading %d" % degrees)
-		check(game.camera.position.distance_to(game.helm_anchor.global_position) < 0.16, "eye follows its coherent hull-local marker at heading %d" % degrees)
+		var rect := Rect2()
+		var first := true
+		var all_visible := true
+		for point: Vector3 in ship_bounds(game.boat_visual):
+			all_visible = all_visible and not game.camera.is_position_behind(point)
+			var at: Vector2 = game.camera.unproject_position(point)
+			all_visible = all_visible and root.get_visible_rect().grow(-20).has_point(at)
+			rect = Rect2(at,Vector2.ZERO) if first else rect.expand(at)
+			first = false
+		var fraction := rect.size.y/root.get_visible_rect().size.y
+		min_height = minf(min_height,fraction)
+		max_height = maxf(max_height,fraction)
+		check(all_visible and fraction > 0.40 and fraction < 0.56, "whole sailboat including its tall mast fits within 40-56 percent height at heading %d (%.1f%%)" % [degrees,fraction*100])
+		check(absf(game.camera.basis.x.y) < 0.00001, "level horizon at heading %d" % degrees)
 	place(Vector3(390,0,350),0)
 	settle()
 	var rest_fov: float = game.camera.fov
@@ -59,9 +140,9 @@ func _run() -> void:
 	var center: Vector3 = game.boat.position+Basis(Vector3.UP,-game.heading)*game.BoatWaveMotion.HULL_CENTER
 	var lag: float = absf(wrapf(game.heading-game._sailing_heading,-PI,PI))
 	check(game._sailing_anchor.distance_to(center) < 1.1, "follow lag stays below 1.1m at cruising speed")
-	check(lag < 0.0001, "actual steering remains the deck camera's authoritative heading")
-	check(absf(game.camera.basis.x.y) < 0.04, "artificial turn heel is inherited only at a small fraction")
-	# Real moving crests lift and pitch the deck camera.
+	check(lag > deg_to_rad(2) and lag < deg_to_rad(8), "maximum-rate turns keep a responsive cinematic heading lag (%.2f degrees)" % rad_to_deg(lag))
+	check(absf(game.camera.basis.x.y) < 0.00001, "turning does not tilt the horizon")
+	# Real moving crests rock the visible ship while the camera stays level.
 	place(Vector3(390,0,350),0)
 	game.ocean.wave_field.add_wave(Vector2(390,365),Vector2(0,-1),1.85,9,45,8,0)
 	var previous_y: float = game.camera.position.y
@@ -69,7 +150,6 @@ func _run() -> void:
 	var water_safe := true
 	var horizon_safe := true
 	var max_roll := 0.0
-	var max_camera_pitch := 0.0
 	for frame in range(240):
 		game.sea_time = frame/60.0
 		game._update_view(1.0/60)
@@ -77,11 +157,10 @@ func _run() -> void:
 		previous_y = game.camera.position.y
 		var at: Vector3 = game.camera.position
 		water_safe = water_safe and at.y > game.ocean.height_at(Vector2(at.x,at.z))+1.19
-		horizon_safe = horizon_safe and absf(game.camera.rotation.z)<0.15
-		max_camera_pitch = maxf(max_camera_pitch,absf(game.camera.rotation.x+deg_to_rad(7)))
+		horizon_safe = horizon_safe and absf(game.camera.basis.x.y)<0.00001
 		max_roll = maxf(max_roll,absf(game.boat_motion.pitch)+absf(game.boat_motion.roll))
-	check(max_roll > 0.02 and max_camera_pitch > 0.02 and horizon_safe, "moving crests visibly pitch the attached deck view with bounded roll")
-	check(water_safe and max_y_step < 0.12, "deck camera clears ordinary waves with bounded vertical response (max %.4fm/frame)" % max_y_step)
+	check(max_roll > 0.02 and horizon_safe, "moving wave crests rock the hull without inheriting camera pitch or roll")
+	check(water_safe and max_y_step < 0.06, "wave-following camera clears water without vertical jolts (max %.4fm/frame)" % max_y_step)
 	# Stress the water floor with the maximum allowed simultaneous crests.
 	game.ocean.wave_field.clear()
 	for i in range(4):
@@ -105,8 +184,7 @@ func _run() -> void:
 	wall.position = anchor.lerp(wanted.origin,0.6)
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	# This is a short deck arm: keep the obstacle clear of its sweep origin.
-	box.size = Vector3(5,0.15,0.15)
+	box.size = Vector3(5,8,1)
 	shape.shape = box
 	wall.add_child(shape)
 	game.add_child(wall)
@@ -165,7 +243,8 @@ func _run() -> void:
 	game.restart()
 	var departure_center: Vector3 = game.boat.position+Basis(Vector3.UP,-game.heading)*game.BoatWaveMotion.HULL_CENTER
 	check(game._sailing_anchor.distance_to(departure_center)<0.02 and is_equal_approx(game._sailing_heading,game.START_HEADING) and is_equal_approx(game._camera_clear_fraction,1.0), "replay resets follow history to the actual departure")
-	print("SAILING CAMERA: %d checks, %d failures" % [checks,failures])
 	game.queue_free()
 	await process_frame
+	await check_arena()
+	print("SAILING CAMERA: %d checks, %d failures; ship bounds %.1f-%.1f%%" % [checks,failures,min_height*100,max_height*100])
 	quit(0 if failures == 0 else 1)

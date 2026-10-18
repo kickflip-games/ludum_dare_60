@@ -1,106 +1,47 @@
-# Agent instructions — Latitude Lines (Ludum Dare 60)
+# Agent instructions — Latitude Lines
 
-These instructions apply to the whole repository. This is an existing playable Godot game, **not** a greenfield prototype. Make focused improvements without silently redesigning working systems.
+This is an existing playable Godot game. Make focused changes and preserve working systems.
 
-## Branch and pull request workflow
+## Workflow
 
-- **Check for overlap first:** At the start of every task, inspect all open PRs, including drafts. Read relevant descriptions and changed files, and inform the user if someone is already working on the same or overlapping task. Include the PR link, author and overlapping scope before starting implementation; do not silently duplicate or take over their work.
-- **Create the branch and draft PR immediately:** Do all work on a dedicated task branch, never directly on the default branch. Push the branch and open a draft PR on GitHub at task start, before substantive implementation, so teammates can see what is being worked on. If GitHub requires a difference to open the PR, make the smallest task-relevant initial commit first. Share the PR link immediately and state the intended scope and planned checks in its description.
-- **Every task must have a web PR:** This includes documentation, tooling and maintenance. Keep the same PR updated with the changes, actual validation results and remaining gaps as work progresses.
-- **Include screenshots in every PR:** Embed screenshots in the PR description or a linked PR comment where teammates can view them on the web; local file paths alone are insufficient. Capture the relevant result, including rendered instructions for documentation tasks, and include comparable before/after views for visual changes where useful. Upload captures as PR attachments where possible; do not commit temporary captures unless needed for durable review evidence.
-- Keep the PR in draft while work is in progress. Before requesting review, ensure its scope, screenshots and validation describe the current changes. If PR access, creation or screenshot publication is blocked, report the exact limitation promptly and do not claim the workflow is complete.
+- Work locally by default. A new branch, initial commit, push, draft PR, or screenshot upload is **not required** to start or complete a task. Follow the user's requested Git workflow; publish only when requested.
+- Check Git status first and preserve unrelated or concurrent work. Use a separate branch or worktree when useful, rather than requiring one for every edit.
+- Read `README.md` and recent `changelog.md` entries before changes. For gameplay work, inspect `ldjam_60/game/crossing.gd`, the relevant scenes and subsystem docs. Current code takes precedence over stale documentation.
+- Keep changes small. Avoid extra planning documents, repeated checklists, or unrelated redesigns.
+- Update `changelog.md` for gameplay, visuals, controls, assets, tooling or instruction changes. Use concise, newest-first `YYYY-MM-DD` bullets; distinguish work in progress from committed changes. Include the entry with its changes if committing.
+- Never SSH to OzSTAR; provide scripts for the user to run manually.
+- Do not add AI branding, attribution, or co-author trailers to branches, commits, PRs or artifacts.
 
-## Project orientation
+## Project and gameplay
 
-- **Current game name:** Latitude Lines (the root README still uses the earlier title, The Last Bearing).
-- **Engine:** Godot 4.8; open `ldjam_60/project.godot`. Main scene: `res://game/crossing.tscn`.
-- **Gameplay:** a compact, first-person-ish/boat-view, star-guided sailing journey through an archipelago. Steering, maintaining/recovering a heading, coping with directional waves, and reaching the lighthouse are central. Optional cutter combat and hazards provide pressure; the sextant/star sightings provide navigation.
-- Read the root `README.md`, recent entries in `changelog.md`, `ldjam_60/game/crossing.gd`, relevant scene(s), and subsystem docs **before** changing a feature. Confirm behavior against code when documentation is stale.
-- Preserve existing input contracts and navigation affordances unless the task expressly changes them. Examples: automatic forward motion; A/D steering; hold Space to sight stars; hold E to aim; F to fire while aiming; hold R to restart while sailing, or press R to retry after an ending. Do not introduce waypoint arrows, instant perfect navigation, or automatic steering as an unrequested shortcut.
-- Treat game readability and satisfying *player decisions* as goals, not merely attractive water or passing smoke tests.
+- Godot 4.8; open `ldjam_60/project.godot`. Main scene: `res://game/crossing.tscn`.
+- Consult the README and current code for the active game mode, controls and retained legacy scenarios.
+- Preserve automatic sailing, steering, cannon controls, restart behaviour and navigation affordances unless the task changes them. Check held input, key transitions, simultaneous inputs and focus loss when touching controls or cameras.
+- Keep player decisions and readable feedback central. Do not add unrequested navigation shortcuts or new mechanics.
+- Keep wave sampling and rendering consistent: `game/ocean/wave_field.gd` and `waves.gdshaderinc` must agree on wave profile and time. Read `ldjam_60/game/ocean/README.md` before changing them.
+- Preserve countersteering and finite wave encounters. Keep planar collisions separate from cosmetic heave, pitch and roll; use frame-rate-consistent motion and retain the lightweight analytical sea.
+- Retry, win, loss, damage immunity, encounter timers and temporary effects must reset cleanly.
+- Reuse existing licensed assets and preserve `CREDITS.md`. Keep temporary captures, imported caches and large dependencies out of Git unless requested or needed as durable project assets.
 
-## Changelog upkeep
+## Validation and reporting
 
-- Before making changes, read `changelog.md` for recent decisions, preserved behavior and work in progress; verify its claims against the current code and Git state.
-- Update `changelog.md` for each task that changes gameplay, visuals, controls, assets, tooling or project instructions. Include the update in the same commit as the changes it describes.
-- Keep entries concise, newest first, using `YYYY-MM-DD` dates and short bullets describing what changed and why. Link existing review documents for detail instead of duplicating them.
-- Clearly distinguish committed changes from work in progress. Record relevant validation results or remaining gaps accurately; never describe an unrun check or human playtest as passed. Move or revise in-progress entries when the work is completed or abandoned.
+- For nontrivial changes, identify the requested behaviour, what must stay unchanged, and observable acceptance checks. Keep this in working notes or a concise final report; no formal template is required.
+- Run relevant existing smoke tests from the README, checking that scripts exist first. Add a focused regression check for new or broken gameplay behaviour.
+- Gameplay checks should cover the intended interaction, a negative or edge case, affected lifecycle/reset behaviour, and adjacent working behaviour. Importing alone does not prove a mechanic works.
+- Inspect actual rendered frames or gameplay for visual changes. Use comparable before/after captures when helpful; local evidence is sufficient unless publication is requested.
+- Documentation-only edits need a diff and formatting check, not gameplay tests or screenshots.
+- Report what changed, checks actually run and any remaining gaps. Do not claim human playtesting, balance, screenshots, commits or publication without evidence. If a required tool is unavailable, continue useful checks and state what was not run.
 
-## Operating method: requirements -> code -> play -> evidence
-
-For each nontrivial task, use this **small contract** in your working notes or final report (do not create extra permanent planning documents unless useful):
-
-1. **Player experience:** What should the player perceive, decide, and do differently?
-2. **Current baseline:** Where is the behavior implemented? What already works? Include relevant controls, scenes, scripts, assets, and existing tests.
-3. **Requirements and invariants:** Enumerate every requested behavior, important edge case, and behavior that must remain unchanged. Identify constraints (performance, input, visuals, difficulty, compatibility).
-4. **Implementation freedom:** State which choices can be tuned and which are fixed. Prefer the smallest coherent patch; do not expand the scope into a new architecture or game mechanic without a reason.
-5. **Acceptance evidence:** Give each requirement an observable check: an input/action or trigger, an expected *game state change*, expected visual/audio feedback where appropriate, and at least one negative/edge case.
-6. **Run and inspect:** Implement, execute relevant tests, review actual rendered frames or a gameplay clip for visual tasks, fix failures, and rerun affected checks.
-7. **Report truthfully:** Map requirements to changed files and passing/failing/not-run checks. State any gaps, limitations, or manual verification still needed. Do not claim a gameplay test or screenshot review unless it actually happened.
-
-Prefer a concise requirement-to-evidence table for multi-part tasks:
-
-| ID | Requirement / preserved behavior | Trigger / action | Observable expected result | Evidence / status |
-| --- | --- | --- | --- | --- |
-| R1 | Example: strong oblique crest changes heading | Sail into a crest | World heading changes, steering can counter it | Test name + actual result |
-| R2 | Example: unaffected restart | Press R after damage | Hull, encounter timers, wave events and view reset | Test name + actual result |
-
-This guards against the most common coding-agent failure mode: **missing a requested requirement while delivering plausible-looking code**.
-
-## Project-specific implementation constraints
-
-- **Water / wave authority:** `ldjam_60/game/ocean/wave_field.gd` and its shader counterpart `waves.gdshaderinc` must remain consistent. Surface sampling, visuals, boat motion, and projectile-water contacts must agree on wave profile and time. Consult `ldjam_60/game/ocean/README.md`.
-- **Directional encounters:** `wave_encounters.gd` controls finite, seeded regional crests and recovery; `wave_sailing.gd` controls drift, yaw, and countersteering. Preserve the intended ability for player input to counter disturbances. Avoid hidden currents or unrelated forced yaw.
-- **Physics / rendering:** Keep planar boat collisions separate from cosmetic heave/pitch/roll, and prefer frame-rate-consistent motion. Do not replace the lightweight analytical sea with expensive physics or third-party dependencies without explicit approval. The current wave field caps simultaneous events at four.
-- **Input / camera priorities:** Be particularly careful when modifying simultaneous steering, stargazing, cannon view, enemy encounters, and reset/focus-loss handling. Recheck input edge transitions as well as held input.
-- **State lifecycle:** Retry, win, loss, damage immunity, encounter completion, timer resets and transient VFX should not leak across sessions.
-- **Assets:** Reuse existing Godot resources and licensed assets first; preserve attribution and licenses in `CREDITS.md`. Avoid committing generated screenshots/videos, temporary outputs, large dependencies or imported caches unless explicitly required.
-
-## Testing strategy
-
-**Do not equate “the game imports” with “the mechanic works.”** Prefer controlled in-engine tests that exercise input, interactions, state transitions and preserved behavior.
-
-From the repository root, with an installed compatible Godot executable (substitute its actual command/path if necessary):
+Example checks from the repository root (use the installed Godot executable):
 
 ```sh
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/crossing_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/wave_encounter_smoke.gd
 ```
 
-Use the **relevant** smoke tests from the root `README.md` for touched systems rather than always running every test: e.g. `sailing_smoke.gd`, `cannon_aim_smoke.gd`, `ship_smoke.gd`, `combat_smoke.gd`, `hud_smoke.gd`, `stargazing_smoke.gd`, `ocean_smoke.gd`. Verify the script exists before invoking it. Add or update a narrowly scoped `ldjam_60/tests/*_smoke.gd` regression check when behavior is new or has been broken.
-
-For any meaningful gameplay change, include:
-- **Positive interaction:** the trigger causes the intended state change, e.g. wave contact -> measurable drift/yaw -> possible player correction.
-- **Negative/control:** without the necessary input or trigger, the same outcome must *not* happen accidentally. In particular, scripted success should depend on the advertised player action, not time passing or a fixture bypass.
-- **Boundaries:** initial conditions, missed/late input, mixed key presses, collisions, cool-downs and frame-rate differences as relevant.
-- **Lifecycle:** fresh start, failure or damage, retry, and successful completion when affected.
-- **Preservation:** rerun a representative formerly working sailing route or adjacent combat/sighting scenario after changing shared code.
-
-For visuals and interaction feedback, use a **real renderer**, not only headless tests or static code inspection. Existing capture entry points include:
+Capture scripts, when relevant:
 
 ```sh
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/gameplay_previews.gd -- --output=/tmp/latitude-lines-review
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/ui_previews.gd -- --output=/tmp/latitude-lines-ui
 ```
-
-Where helpful, capture comparable **before/after** frames at the same camera, weather, encounter seed and viewport. Inspect readability (heading and star cues, upcoming obstacles, crest direction, foam, feedback, contrast) as well as aesthetics. Scripted fixtures establish reproducibility, **not human fun, fairness, or balance**; flag human playtesting as outstanding where appropriate.
-
-If Godot, a display, an asset, or a required test runner is unavailable, continue with static checks where possible and report **not run** explicitly. Never fabricate passes, screenshots, videos, timings or playtest results.
-
-## Completion checklist
-
-- [ ] Open PRs, including drafts, were checked at task start and any overlapping work was reported with links.
-- [ ] Work is on a task branch with a web PR opened as a draft at task start, and its link was shared.
-- [ ] The PR includes web-visible screenshots, current scope, actual validation results and remaining gaps.
-- [ ] All requested behaviors were mapped to a code change or consciously left unchanged with explanation.
-- [ ] The configured project still imports/launches, if runtime access was available.
-- [ ] Relevant input-driven positive and negative scenarios were checked.
-- [ ] Adjacent working gameplay and session restart/reset were regression-checked as appropriate.
-- [ ] Visual changes were reviewed in rendered captures when possible; before/after evidence supplied where useful.
-- [ ] No unrelated rework, temporary files, broken links, or unlicensed assets were introduced.
-- [ ] `changelog.md` was read before the task and updated to reflect the actual changes and validation status.
-- [ ] Final report includes files changed, test commands and actual outcomes, remaining limitations, and commit hash/branch if committed.
-
-## Why this workflow
-
-Adapted from **Chen et al., _SWE-Game: Can Coding Agents Build the Games We Want?_**, [arXiv:2609.33678v3](https://arxiv.org/abs/2609.33678v3). That study found requirement omissions, gameplay-logic mistakes and engine-integration failures in coding-agent game development, and used executable behavior checks plus separate visual rubrics. We adopt those *principles* in a lightweight workflow, **not** the paper's benchmark-specific `gb_*` instrumentation, scoring harness or manifest files.

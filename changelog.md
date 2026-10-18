@@ -7,8 +7,10 @@ recorded evidence and limitations.
 ## 2026-10-18
 
 - Planning only: proposed reference-matched turquoise rolling water, consistent
-  encounter-wave styling and optional non-stacking 25% flow zones for the latest
-  lighthouse arena. Gameplay unchanged; implementation checks remain pending.
+  encounter-wave styling and optional 25% flow rewards that persist after leaving
+  a zone, for the latest lighthouse arena; recommends one reward per run.
+  Inspected native baseline helm/layout captures; documentation whitespace
+  check passes. Gameplay unchanged; implementation checks remain pending.
   See the [water and flow proposal](artifacts/turquoise_water_flow_plan.md).
 
 - Replaced the pending lighthouse-defence design and single-cutter scheduler

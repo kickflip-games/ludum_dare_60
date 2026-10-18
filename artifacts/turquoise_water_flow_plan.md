@@ -181,7 +181,8 @@ Native unchanged baseline, captured on this branch with the existing arena fixtu
   only the two selected baseline views are retained for durable web review.
 - Documentation whitespace check (`git diff --check`) passed. No gameplay
   smoke suite was rerun for this documentation-only proposal.
-- GitHub-rendered proposal review is in progress; a review screenshot will
-  be included in the draft PR before completing this planning task.
+- GitHub-rendered proposal inspected, including the persistent-flow section;
+  its [review screenshot](turquoise_water_flow/proposal-review.png) is retained
+  for the draft PR. Reference and baseline image links resolve in the repository.
 - Gameplay changes, boosted behavior tests, new-style renders, human playtesting
   and performance acceptance remain pending design agreement/implementation.

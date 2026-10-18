@@ -7,6 +7,10 @@ var _splash_ring_mesh: TorusMesh
 var _splash_spray_mesh: SphereMesh
 const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
+const SHOT_GRAVITY: float = 0.9
+const SHOT_LIFT: float = 0.35
+const SHOT_LIFETIME: float = 1.8
+var trajectory: Dictionary = {}
 signal aiming_started
 signal aiming_ended
 signal fired(direction: Vector3)
@@ -53,7 +57,7 @@ var targets_hit: int = 0
 
 func _ready() -> void:
 	position = Vector3(0.8, 1.17, -2.6)
-	_fire_held = Input.is_action_pressed("fire_starboard")
+	_fire_held = false if game.arena_mode else Input.is_action_pressed("fire_starboard")
 	yaw_pivot = Node3D.new()
 	yaw_pivot.name = "AimYaw"
 	add_child(yaw_pivot)
@@ -110,6 +114,11 @@ func set_aim_held(pressed: bool) -> void:
 
 
 func set_fire_held(pressed: bool) -> void:
+	if game.arena_mode:
+		if pressed and not _fire_held and game.state == game.State.SAILING and cooldown <= 0.0:
+			_fire_pending = true
+		_fire_held = pressed
+		return
 	# Resolve fresh edges on the next physics tick so E + F works in either order.
 	# Reload/Space presses are discarded at receipt, never deferred until ready.
 	if pressed and not _fire_held and cooldown <= 0.0 and game.state == game.State.SAILING and not game.reading and not (not game.arena_mode and Input.is_action_pressed("astrolabe")):
@@ -128,6 +137,16 @@ func cancel_aim() -> void:
 
 
 func update_aim(delta: float) -> void:
+	if game.arena_mode:
+		if game.state == game.State.SAILING:
+			if _fire_held or _fire_pending:
+				fire()
+			sweep_elapsed = fposmod(sweep_elapsed + delta, sweep_period)
+			var wave := sin(sweep_elapsed * TAU / sweep_period)
+			aim_degrees = max_aim_degrees * signf(wave) * (1.0 - pow(1.0 - absf(wave), sweep_easing)) * (1.0 if initial_sweep_direction == 0 else -1.0)
+			yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
+		_fire_pending = false
+		return
 	var fire_pressed := _fire_pending
 	_fire_pending = false
 	if not _aim_held or game.reading or (not game.arena_mode and Input.is_action_pressed("astrolabe")) or game.state != game.State.SAILING:
@@ -180,7 +199,7 @@ func _update_target_highlights(enabled: bool) -> void:
 
 
 func fire() -> bool:
-	if not aiming or not _aim_held or game.state != game.State.SAILING or cooldown > 0.0 or game.reading or (not game.arena_mode and Input.is_action_pressed("astrolabe")):
+	if game.state != game.State.SAILING or cooldown > 0.000001 or (not game.arena_mode and (not aiming or not _aim_held or game.reading or Input.is_action_pressed("astrolabe"))):
 		return false
 	shots_fired += 1
 	game.shake(camera_shake_strength)
@@ -195,7 +214,7 @@ func fire() -> bool:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
-	projectiles.append({"node": ball, "velocity": aimed_direction() * SHOT_SPEED + Vector3.UP * 0.35, "ttl": 1.8,
+	projectiles.append({"node": ball, "velocity": launch_velocity(), "ttl": SHOT_LIFETIME,
 		"physics_position": shot_origin(), "trail_clock": 0.0})
 	# Existing effect lifetime system also owns the short muzzle smoke burst.
 	for i in range(5):
@@ -239,7 +258,7 @@ func advance(delta: float) -> void:
 		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
 			hit = {}
 		shot.ttl -= delta
-		shot.velocity.y -= 0.9 * delta
+		shot.velocity.y -= SHOT_GRAVITY * delta
 		if not hit.is_empty():
 			_impact(hit.collider, hit.position)
 			ball.queue_free()
@@ -404,8 +423,10 @@ func _splinters(at: Vector3, timber: bool) -> void:
 
 
 func reset() -> void:
+	trajectory = {}
+	_fire_pending = false
 	set_aim_held(false)
-	_fire_held = Input.is_action_pressed("fire_starboard")
+	_fire_held = false if game.arena_mode else Input.is_action_pressed("fire_starboard")
 	aim_degrees = 0.0
 	sweep_elapsed = 0.0
 	mode_seconds = 0.0
@@ -450,3 +471,34 @@ func _audio(frequency: float, noise_level: float, volume: float) -> AudioStreamP
 	player.volume_db = volume
 	add_child(player)
 	return player
+
+
+func launch_velocity() -> Vector3:
+	return aimed_direction() * SHOT_SPEED + Vector3.UP * SHOT_LIFT
+
+
+func predict_trajectory() -> Dictionary:
+	# Match the projectile's explicit Euler steps and first-hit ordering. Predict
+	# moving water at flight time; solids use their current pose, never target lock.
+	var points := PackedVector3Array([shot_origin()])
+	var velocity := launch_velocity()
+	var at := shot_origin()
+	var step := 1.0 / Engine.physics_ticks_per_second
+	var time := 0.0
+	var target: Object = null
+	while time < SHOT_LIFETIME - 0.000001:
+		var next := at + velocity * step
+		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(at, next, 5))
+		var water: Dictionary = game.ocean.water_hit(at, next, step, game.ocean.wave_time + time + step)
+		if not water.is_empty() and (hit.is_empty() or at.distance_squared_to(water.position) < at.distance_squared_to(hit.position)):
+			points.append(water.position)
+			break
+		if not hit.is_empty():
+			points.append(hit.position)
+			target = hit.collider
+			break
+		points.append(next)
+		at = next
+		velocity.y -= SHOT_GRAVITY * step
+		time += step
+	return {"points": points, "enemy": is_instance_valid(target) and target.get_meta("target_kind", "") == "ship"}

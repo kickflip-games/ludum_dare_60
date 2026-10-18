@@ -6,6 +6,21 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Darkened the sea, finite crests, wake and splash foam to a navy night palette.
+  Hold Shift now adds 50% to earned propulsion continuously until release, with
+  pale tailwind ribbons around the ship. No timeout/cooldown; release preserves
+  permanent flow rewards, and focus loss/endings/retry clear boost and wind.
+- Arena waves now arrive in finite pairs during combat and aiming: 6–8 s initial
+  grace, 2 s between crests, full expiry then 4–6 s of calm. Retained terrain
+  checks, directional audio, countersteering and four-event cap; shelter is now
+  the actual island's inner 40 m. Reviewed native dark-water, tailwind, crest,
+  cannon and small-window control views. See the
+  [follow-up report](artifacts/night_shift_report.md) for checks and limitations.
+- Validation: 501 checks across nine suites pass, including real Shift input at
+  30/60/120 Hz, a continuous 12 s hold, release/focus/damage/reset, full-speed
+  arena return, real wave contacts and combat/aim scheduling. Human fun/balance
+  and Web profiling remain unverified.
+
 - Implemented night-blue rolling water and matching crest/wake/splash colors on
   the latest arena/chase-camera baseline. User-requested modulation is 4x the
   first implementation (0.22 -> 0.88). The final palette is slightly darker and

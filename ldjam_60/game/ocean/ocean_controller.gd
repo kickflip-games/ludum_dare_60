@@ -184,6 +184,10 @@ func update_turbulence(encounters: RefCounted, delta: float) -> void:
 	# A fixed region footprint; neither its position nor its phase follows the mesh.
 	var target := 0.0
 	if encounters.busy():
+		if encounters.region_id == -2 and not wave_field.waves.is_empty():
+			var wave: Dictionary = wave_field.waves[0]
+			turbulence_center = wave.origin+wave.direction*wave.speed*3.0
+			turbulence_radius = 70.0
 		if _turbulence_region != encounters.region_id:
 			for r: Vector4 in encounters.REGIONS:
 				if int(r.w)==encounters.region_id:

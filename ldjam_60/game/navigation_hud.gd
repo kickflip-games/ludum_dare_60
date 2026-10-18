@@ -145,7 +145,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	var controls := [["A / D", "Steer"], ["Hold E", "Aim cannon"], ["F", "Fire"]]
+	var controls := [["A / D", "Steer"], ["Hold Shift", "Speed +50%"], ["Hold E", "Aim cannon"], ["F", "Fire"]]
 	if not game.arena_mode:
 		controls.insert(1, ["Hold Space", "Find the guiding star"])
 	for pair: Array in controls:

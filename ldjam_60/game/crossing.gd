@@ -10,6 +10,7 @@ const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
 const DeckCameraResponse = preload("res://game/ocean/deck_camera_response.gd")
 const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
+const BoostWind = preload("res://game/boost_wind.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 const ArenaReturn = preload("res://game/arena_return.gd")
@@ -19,6 +20,7 @@ var arena_return := ArenaReturn.new()
 var wave_sailing := WaveSailing.new()
 var wave_encounters := WaveEncounters.new()
 var actual_speed := 0.0
+var boosting := false
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
@@ -216,6 +218,7 @@ var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
 var boat_damage := BoatDamage.new()
+var boost_wind: MeshInstance3D
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
@@ -304,6 +307,7 @@ func _configure_inputs() -> void:
 		"astrolabe": [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
 		"fire_starboard": [KEY_F], "watch_starboard": [KEY_E],
+		"boost_sailing": [KEY_SHIFT],
 	}
 	for action: String in bindings:
 		if not InputMap.has_action(action):
@@ -362,11 +366,13 @@ func _notification(what: int) -> void:
 
 
 func _clear_player_controls() -> void:
-	for action: String in ["watch_starboard", "fire_starboard", "astrolabe", "steer_port", "steer_starboard"]:
+	for action: String in ["watch_starboard", "fire_starboard", "astrolabe", "steer_port", "steer_starboard", "boost_sailing"]:
 		Input.action_release(action)
 	cannon.set_aim_held(false)
 	cannon.set_fire_held(false)
 	reading = false
+	boosting = false
+	if is_instance_valid(boost_wind): boost_wind.reset()
 	turn_input = 0.0
 	focus_elapsed = 0.0
 	focus_strength = 0.0
@@ -530,6 +536,7 @@ func restart() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_restart_hold(delta)
+	boosting = state == State.SAILING and Input.is_action_pressed("boost_sailing")
 	if state != State.SAILING:
 		sea_time += delta
 	reading = not arena_mode and state == State.SAILING and Input.is_action_pressed("astrolabe")
@@ -650,7 +657,8 @@ func advance_sailing(delta: float, steering: float) -> void:
 
 
 func propulsion_speed() -> float:
-	return sailing_speed * flow_zones.multiplier() if arena_mode else sailing_speed
+	var rewarded_speed := sailing_speed * flow_zones.multiplier() if arena_mode else sailing_speed
+	return rewarded_speed * (1.5 if boosting and state == State.SAILING else 1.0)
 
 
 func is_repairing_hull() -> bool:
@@ -757,6 +765,7 @@ func _update_view(delta: float) -> void:
 	# Let sail-driven heel settle in gun view; sampled wave rocking still applies.
 	var trim_speed := 0.0 if cannon.aiming else speed_factor
 	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
+	boost_wind.update_wind(boosting and state==State.SAILING,sea_time,delta,camera,motion_setting==1,cannon.aiming)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
@@ -1053,6 +1062,9 @@ func _build_boat() -> void:
 	boat_visual = Node3D.new()
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
+	boost_wind = BoostWind.new()
+	boost_wind.name = "BoostTailwind"
+	boat_visual.add_child(boost_wind)
 	helm_anchor = Marker3D.new()
 	helm_anchor.name = "HelmEye"
 	helm_anchor.position = helm_eye

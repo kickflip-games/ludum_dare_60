@@ -12,7 +12,7 @@ enemy to win; entering the old harbour never wins.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
 - **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
-  together share one reload. Steering, camera look and cannon sweep are independent.
+  together share one reload. Steering, camera look and firing are independent.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
@@ -35,14 +35,14 @@ enemy to win; entering the old harbour never wins.
   The final wave has no victory timer: all **11** enemies, sinking animations and
   incoming shots must resolve while the player remains alive.
 - A small top-centre wave label, final-15-second countdown and brief announcements
-  carry progress. A thin ballistic guide, incoming-fire warning and visible damage remain;
+  carry progress. A faint starboard cone, incoming-fire warning and visible damage remain;
   no hull bar, lighthouse health or navigation overlay is added.
 - Voyage progression, sextant and old territory triggers are inactive. Ambient
   sea motion, occasional open-water crests, damage and self-repair remain.
 - Coral cutters take two hits; smaller blue-green, single-banded skiffs take one;
   larger ochre, double-banded heavy attackers take three and warn for 2.3 seconds.
-  The trajectory turns pale green when it intersects an enemy’s current hull.
-  Solids and predicted moving water stop the guide; it never redirects fire.
+  Eligible enemy sails glow subtly inside the firing cone; solid obstacles block
+  acquisition. Camera visibility does not affect targeting.
   Confirmed hits flash the sail, throw splinters and culminate in a visible tilted descent.
 
 | Wave | Ships |
@@ -63,11 +63,16 @@ preserves tuning and resets session progress. Archetype resources live in
 `game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
 response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
 wave forces, surface and rocking muzzle. Existing crests keep moving while firing.
-The one starboard cannon sweeps ±30° every three seconds, including during
-steering, firing and reload. The subtle line starts at the real rocking muzzle
-and uses the projectile’s velocity, gravity, lifetime and physics step. Its small
-endpoint marks the first solid/water contact or lifetime limit; moving targets
-may leave the indicated path before a shot arrives. There is no auto-aim.
+The single starboard cannon uses a **±25° firing cone with a 65 m range**.
+The translucent water sector and two thin boundaries rotate with the boat.
+Each shot selects an eligible hull centre by alignment with starboard first,
+then distance for equal alignment. The barrel rotates before launch and applies
+approximate movement lead, clamped to the cone. With no target it fires straight
+starboard. Cannonballs retain real ballistic collision and never home; moving
+ships, waves and intervening hulls can still make a shot miss. Shots expire at
+the 65 m planar limit measured from the mount at launch. There is no idle sweep.
+Tune `cone_half_angle` and `cone_range` on `game/broadside_cannon.tscn`; the overlay,
+acquisition and projectile range use those same settings.
 
 Tune **Arcade chase look** on the crossing: yaw limit, degrees per mouse pixel,
 look response, idle delay, recentring rate and port/starboard framing offsets.
@@ -81,6 +86,7 @@ history and the [arena review](artifacts/lighthouse_arena_review.md) for
 the preserved geometry work. Human combat balance remains untested.
 
 ```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_cone_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
@@ -93,7 +99,9 @@ The arcade suite covers physical A/D/arrows/Space/click events, overlapping held
 fire, reload, camera limits/recentring/full heading rotations, projectile parity,
 obstructions, focus/reset and a scripted moving-cutter duel with simultaneous
 steering, mouse look and firing. Native previews capture both look limits,
-default sailing, the impact guide and firing. Scripted checks are not human
+default sailing, the firing cone and firing. The cone suite checks angular/range
+boundaries, alignment/distance ranking, empty shots, clamped movement lead,
+non-homing flight, actual moving-target hits, camera independence and retry. Scripted checks are not human
 playtesting or a combat balance assessment.
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,

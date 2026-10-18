@@ -1,5 +1,5 @@
 extends Node3D
-## One sweeping starboard cannon. Sailing and gun view share the existing weapon.
+## One starboard cannon: bounded arena targeting, retained legacy voyage sweep.
 
 const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const SPLASH_SHADER = preload("res://game/ocean/splash.gdshader")
@@ -10,12 +10,18 @@ const SHOT_SPEED: float = 55.0
 const SHOT_GRAVITY: float = 0.9
 const SHOT_LIFT: float = 0.35
 const SHOT_LIFETIME: float = 1.8
-var trajectory: Dictionary = {}
 signal aiming_started
 signal aiming_ended
 signal fired(direction: Vector3)
 
-@export_group("Automatic broadside sweep")
+@export_group("Starboard firing cone")
+@export_range(1.0, 45.0, 1.0) var cone_half_angle: float = 25.0
+@export_range(10.0, 100.0, 1.0) var cone_range: float = 65.0
+var selected_target: Node3D
+var cone_elevation: float = 0.0
+var cone_visual: MeshInstance3D
+
+@export_group("Legacy voyage sweep")
 @export_range(1.0, 45.0, 1.0) var max_aim_degrees: float = 30.0
 @export_range(1.5, 6.0, 0.1) var sweep_period: float = 3.0
 ## 1 is sinusoidal; higher values linger longer at each end, with continuous velocity.
@@ -86,6 +92,10 @@ func _ready() -> void:
 	flash_light.omni_range = 9.0
 	flash_light.visible = false
 	muzzle.add_child(flash_light)
+	if game.arena_mode:
+		cone_visual = load("res://game/firing_cone.gd").new()
+		cone_visual.cannon = self
+		game.add_child(cone_visual)
 	if DisplayServer.get_name() != "headless":
 		_shot_audio = _audio(68.0, 0.8, -13.0)
 		_impact_audio = _audio(135.0, 0.9, -17.0)
@@ -98,8 +108,8 @@ func starboard_direction() -> Vector3:
 
 
 func aimed_direction() -> Vector3:
-	# The same world-space barrel axis drives visuals, sight and projectile physics,
-	# including hull yaw, wave pitch/roll and heave. Camera transforms never enter it.
+	# The real world-space barrel axis drives both visuals and projectile physics.
+	# Arena orientation compensates hull rocking; camera transforms never enter it.
 	return yaw_pivot.global_basis.x.normalized()
 
 
@@ -141,10 +151,6 @@ func update_aim(delta: float) -> void:
 		if game.state == game.State.SAILING:
 			if _fire_held or _fire_pending:
 				fire()
-			sweep_elapsed = fposmod(sweep_elapsed + delta, sweep_period)
-			var wave := sin(sweep_elapsed * TAU / sweep_period)
-			aim_degrees = max_aim_degrees * signf(wave) * (1.0 - pow(1.0 - absf(wave), sweep_easing)) * (1.0 if initial_sweep_direction == 0 else -1.0)
-			yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
 		_fire_pending = false
 		return
 	var fire_pressed := _fire_pending
@@ -201,6 +207,8 @@ func _update_target_highlights(enabled: bool) -> void:
 func fire() -> bool:
 	if game.state != game.State.SAILING or cooldown > 0.000001 or (not game.arena_mode and (not aiming or not _aim_held or game.reading or Input.is_action_pressed("astrolabe"))):
 		return false
+	if game.arena_mode:
+		_prepare_cone_shot()
 	shots_fired += 1
 	game.shake(camera_shake_strength)
 	cooldown = RELOAD_SECONDS
@@ -215,7 +223,8 @@ func fire() -> bool:
 	shape.rings = 4
 	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
 	projectiles.append({"node": ball, "velocity": launch_velocity(), "ttl": SHOT_LIFETIME,
-		"physics_position": shot_origin(), "trail_clock": 0.0})
+		"physics_position": shot_origin(), "trail_clock": 0.0,
+		"range_origin": cone_origin(), "range": cone_range if game.arena_mode else 0.0})
 	# Existing effect lifetime system also owns the short muzzle smoke burst.
 	for i in range(5):
 		var smoke_shape := SphereMesh.new()
@@ -252,6 +261,9 @@ func advance(delta: float) -> void:
 		var ball: MeshInstance3D = shot.node
 		var from: Vector3 = shot.physics_position
 		var to: Vector3 = from + shot.velocity * delta
+		var ranged: Vector3 = limit_shot_range(from, to, shot.get("range_origin", from), shot.get("range", 0.0))
+		var range_ended := ranged.distance_squared_to(to) > 0.00000001
+		to = ranged
 		var ray := PhysicsRayQueryParameters3D.create(from, to, 5)
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
 		var water: Dictionary = game.ocean.water_hit(from, to, delta)
@@ -263,7 +275,7 @@ func advance(delta: float) -> void:
 			_impact(hit.collider, hit.position)
 			ball.queue_free()
 			projectiles.remove_at(i)
-		elif shot.ttl <= 0.0 or not water.is_empty():
+		elif shot.ttl <= 0.0 or range_ended or not water.is_empty():
 			water_splash(water.position if not water.is_empty() else to)
 			feedback = "SPLASH  ·  SHOT WIDE"
 			feedback_time = 0.9
@@ -423,7 +435,10 @@ func _splinters(at: Vector3, timber: bool) -> void:
 
 
 func reset() -> void:
-	trajectory = {}
+	selected_target = null
+	cone_elevation = 0.0
+	if is_instance_valid(cone_visual):
+		cone_visual.visible = false
 	_fire_pending = false
 	set_aim_held(false)
 	_fire_held = false if game.arena_mode else Input.is_action_pressed("fire_starboard")
@@ -432,7 +447,7 @@ func reset() -> void:
 	mode_seconds = 0.0
 	entries = 0
 	indicator_alpha = 0.0
-	yaw_pivot.rotation.y = 0.0
+	yaw_pivot.rotation = Vector3.ZERO
 	_recoil_left = 0.0
 	barrel.position = Vector3.ZERO
 	for shot: Dictionary in projectiles:
@@ -488,6 +503,9 @@ func predict_trajectory() -> Dictionary:
 	var target: Object = null
 	while time < SHOT_LIFETIME - 0.000001:
 		var next := at + velocity * step
+		var ranged := limit_shot_range(at, next, cone_origin(), cone_range if game.arena_mode else 0.0)
+		var range_ended := ranged.distance_squared_to(next) > 0.00000001
+		next = ranged
 		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(at, next, 5))
 		var water: Dictionary = game.ocean.water_hit(at, next, step, game.ocean.wave_time + time + step)
 		if not water.is_empty() and (hit.is_empty() or at.distance_squared_to(water.position) < at.distance_squared_to(hit.position)):
@@ -498,7 +516,110 @@ func predict_trajectory() -> Dictionary:
 			target = hit.collider
 			break
 		points.append(next)
+		if range_ended:
+			break
 		at = next
 		velocity.y -= SHOT_GRAVITY * step
 		time += step
 	return {"points": points, "enemy": is_instance_valid(target) and target.get_meta("target_kind", "") == "ship"}
+
+
+func cone_origin() -> Vector3:
+	return global_position
+
+
+func cone_point(angle_degrees: float, distance: float) -> Vector3:
+	return cone_origin() + starboard_direction().rotated(Vector3.UP, deg_to_rad(angle_degrees)) * distance
+
+
+func cone_candidate(body: Node3D) -> Dictionary:
+	if body.get_meta("target_kind", "") != "ship" or body.get_meta("destroyed", true) or not body.is_visible_in_tree():
+		return {}
+	var point: Vector3 = body.collision_shape.global_position
+	var offset := point - cone_origin()
+	var flat := Vector3(offset.x, 0, offset.z)
+	var distance := flat.length()
+	var angle := rad_to_deg(atan2(starboard_direction().cross(flat).y, starboard_direction().dot(flat)))
+	if distance < 0.01 or distance > cone_range + 0.00001 or absf(angle) > cone_half_angle + 0.00001:
+		return {}
+	# Shore and solid obstacles block eligibility; camera visibility never does.
+	var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(cone_origin(), point, 1))
+	if not hit.is_empty():
+		return {}
+	return {"body": body, "point": point, "angle": angle, "distance": distance}
+
+
+func choose_cone_target() -> Dictionary:
+	var best: Dictionary = {}
+	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
+		var candidate := cone_candidate(body)
+		if candidate.is_empty():
+			continue
+		# Ignore sub-millidegree noise when otherwise equally aligned.
+		if best.is_empty() or absf(candidate.angle) < absf(best.angle) - 0.001 or (absf(absf(candidate.angle) - absf(best.angle)) <= 0.001 and candidate.distance < best.distance):
+			best = candidate
+	return best
+
+
+func update_cone_feedback() -> void:
+	if not game.arena_mode:
+		return
+	var active: bool = game.state == game.State.SAILING
+	_orient_cone_barrel()
+	var candidate := choose_cone_target() if active else {}
+	selected_target = candidate.get("body")
+	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
+		if body.has_method("set_aim_highlight"):
+			body.set_aim_highlight(active and not cone_candidate(body).is_empty())
+	cone_visual.visible = active
+	if active:
+		cone_visual.update_surface()
+
+
+func _prepare_cone_shot() -> void:
+	var target := choose_cone_target()
+	selected_target = target.get("body")
+	aim_degrees = 0.0
+	cone_elevation = 0.0
+	_orient_cone_barrel()
+	if target.is_empty():
+		return
+	var point: Vector3 = target.point
+	var velocity: Vector3 = selected_target.velocity
+	velocity.y = 0.0
+	# A short intercept iteration is sufficient at the existing ship/shot speeds.
+	# Recompute from the rotated muzzle; clamp lead to the same visible cone.
+	var flight := point.distance_to(shot_origin()) / SHOT_SPEED
+	for iteration in 3:
+		var offset := point + velocity * flight - shot_origin()
+		var flat := Vector3(offset.x, 0, offset.z)
+		flight = flat.length() / SHOT_SPEED
+		aim_degrees = clampf(rad_to_deg(atan2(starboard_direction().cross(flat).y, starboard_direction().dot(flat))), -cone_half_angle, cone_half_angle)
+		var vertical_speed := offset.y / maxf(flight, 0.01) + SHOT_GRAVITY * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second) * 0.5 - SHOT_LIFT
+		cone_elevation = asin(clampf(vertical_speed / SHOT_SPEED, -0.25, 0.25))
+		_orient_cone_barrel()
+
+
+func _orient_cone_barrel() -> void:
+	var direction := starboard_direction().rotated(Vector3.UP, deg_to_rad(aim_degrees)) * cos(cone_elevation) + Vector3.UP * sin(cone_elevation)
+	var up := (Vector3.UP - direction * direction.dot(Vector3.UP)).normalized()
+	# The real barrel points along local +X. Compensate visual hull rocking so
+	# both empty shots and led shots stay inside the boat-relative planar limits.
+	yaw_pivot.global_basis = Basis(direction, up, direction.cross(up)).orthonormalized()
+
+
+func limit_shot_range(from: Vector3, to: Vector3, origin: Vector3, radius: float) -> Vector3:
+	if radius <= 0.0:
+		return to
+	var start := Vector2(from.x - origin.x, from.z - origin.z)
+	var end := Vector2(to.x - origin.x, to.z - origin.z)
+	if end.length_squared() <= radius * radius:
+		return to
+	var travel := end - start
+	var a := travel.length_squared()
+	if a < 0.00000001:
+		return from
+	var b := 2.0 * start.dot(travel)
+	var c := start.length_squared() - radius * radius
+	var fraction := (-b + sqrt(maxf(0.0, b * b - 4.0 * a * c))) / (2.0 * a)
+	return from.lerp(to, clampf(fraction, 0.0, 1.0))

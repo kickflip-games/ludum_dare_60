@@ -596,8 +596,8 @@ func _physics_process(delta: float) -> void:
 		reading = false
 		turn_input = 0.0
 	_update_view(delta)
-	if arena_mode and state == State.SAILING:
-		cannon.trajectory = cannon.predict_trajectory()
+	if arena_mode:
+		cannon.update_cone_feedback()
 	hud.queue_redraw()
 
 

@@ -6,6 +6,18 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Replaced the active arena cannon sweep and ballistic guide
+  with a boat-relative ±25° / 65 m starboard cone. Fire prioritises alignment,
+  then distance, rotates the real barrel and applies bounded movement lead;
+  empty shots go straight starboard. Added a translucent water sector, thin
+  boundaries and eligible-hull highlights. Kept held Space/click fire, steering,
+  chase look, reload, damage, effects and non-homing flight. The explicit legacy
+  voyage retains its sweep. Updated control/damage fixtures and added cone,
+  ranking, lead, range, reset and camera-independence regressions. Six headless
+  suites pass 452 checks; the native cone run passes 38, including simultaneous
+  steering/look/fire against a moving cutter. Five rendered frames inspected.
+  Human balance and Web remain untested.
+
 - Simplified active arena controls to A/D or arrows, bounded mouse look and
   Space/click held fire. The single starboard cannon sweeps continuously through
   steering, firing and reload; F/E and sextant activation are disabled in arena

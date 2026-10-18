@@ -61,26 +61,26 @@ func profile_hits() -> void:
 		var at: Vector3 = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
 		ship.position = Vector3(at.x, 0, at.z)
 		ship.rotation.y = 0.0
+		ship.velocity = Vector3.ZERO # This damage fixture holds the target stationary.
 		await physics_frame
 		for frame in 120:
 			game.cannon.advance(1.0 / 60.0)
-		check(ship.hull == profile.hull and game.cannon.targets_hit == 0, kind + ": idle cannon sweep cannot cause a hit")
+		check(ship.hull == profile.hull and game.cannon.targets_hit == 0, kind + ": idle cannon cannot cause a hit")
 		var accurate := true
 		for hit_index in profile.hull:
 			game.cannon.update_aim(0.0)
-			var direction: Vector3 = game.cannon.aimed_direction()
 			action("fire_starboard", true)
 			game.cannon.update_aim(0.0)
 			action("fire_starboard", false)
 			var velocity: Vector3 = game.cannon.projectiles.back().velocity
-			accurate = accurate and velocity.is_equal_approx(direction * game.cannon.SHOT_SPEED + Vector3.UP * 0.35)
+			accurate = accurate and velocity.is_equal_approx(game.cannon.launch_velocity())
 			for frame in 100:
 				game.cannon.advance(1.0 / 60.0)
 			check(ship.hull == profile.hull - hit_index - 1 and game.cannon.targets_hit == hit_index + 1,
 				kind + ": real Space-fired ballistic hit %d has the expected hull effect" % (hit_index + 1))
 			check(ship.hit_reaction > 0.45 and ship.sail_material.emission_energy_multiplier > profile.sail_fill + 0.4,
 				kind + ": accepted hit immediately flashes the cloth")
-		check(accurate, kind + ": illumination never redirects the rocking muzzle's launch vector")
+		check(accurate, kind + ": selected aim is the visible barrel's launch vector")
 		check(ship.mode == ship.Mode.SINKING and ship.get_meta("destroyed") and not ship.aim_highlight and ship.collision_layer == 0,
 			kind + ": death cancels target illumination, collision and attacks")
 		var accepted: int = game.cannon.targets_hit
@@ -116,7 +116,7 @@ func illumination() -> void:
 	ship.position = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
 	ship.position.y = 0.0
 	await physics_frame
-	check(game.cannon.predict_trajectory().enemy, "barrel trajectory intersects the enemy hull")
+	check(not game.cannon.choose_cone_target().is_empty(), "cone can acquire the enemy hull")
 	var blocker := StaticBody3D.new()
 	blocker.collision_layer = 1
 	var collision := CollisionShape3D.new()
@@ -127,22 +127,22 @@ func illumination() -> void:
 	game.add_child(blocker)
 	blocker.position = game.cannon.shot_origin().lerp(ship.position, 0.5)
 	await physics_frame
-	check(not game.cannon.predict_trajectory().enemy, "solid obstruction stops the indicator before the enemy")
+	check(game.cannon.choose_cone_target().is_empty(), "solid obstruction prevents cone acquisition")
 	blocker.queue_free()
 	await physics_frame
 	ship.position = game.boat.position + Vector3(-36, 0, -5)
 	await physics_frame
-	check(not game.cannon.predict_trajectory().enemy, "port-side enemy cannot colour the starboard trajectory")
+	check(game.cannon.choose_cone_target().is_empty(), "port-side enemy cannot be acquired")
 	ship.position = game.boat.position + Vector3(110, 0, -5)
 	await physics_frame
-	check(not game.cannon.predict_trajectory().enemy, "beyond-lifetime target cannot colour the trajectory")
+	check(game.cannon.choose_cone_target().is_empty(), "beyond-range enemy cannot be acquired")
 	ship.position = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
 	ship.position.y = 0.0
 	ship.take_hit()
 	ship.take_hit()
 	await physics_frame
-	check(not game.cannon.predict_trajectory().enemy, "sinking hull no longer intercepts the trajectory")
-	check(not ship.aim_highlight, "no broad-sector glow or targeting boxes in continuous chase view")
+	check(game.cannon.choose_cone_target().is_empty(), "sinking hull cannot be acquired")
+	check(not ship.aim_highlight, "sinking target highlight is cleared")
 	release()
 	game.queue_free()
 	await process_frame
@@ -268,7 +268,7 @@ func combat_crests() -> void:
 	game.wave_encounters.update(game, 1.0 / 60.0)
 	var crest: Vector2 = wave.origin + wave.direction * wave.speed * 2.0
 	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.sample(crest, 2.0).x > 0.2,
-		"continuous cannon sweep never erases or freezes an already visible wave")
+		"cone targeting never erases or freezes an already visible wave")
 	game.ocean.wave_field.clear()
 	game.cannon.set_aim_held(false)
 	game.boat.position = game.arena_center() + Vector3(0, 0, 75)

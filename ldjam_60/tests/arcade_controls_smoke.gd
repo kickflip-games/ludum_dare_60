@@ -60,7 +60,7 @@ func fresh() -> void:
 	game.heading = 0.0
 	step(0.05)
 	game._update_view(1.0)
-	game.cannon.trajectory = game.cannon.predict_trajectory()
+	game.cannon.update_cone_feedback()
 
 func capture(label: String) -> void:
 	if output.is_empty():
@@ -89,7 +89,7 @@ func _run() -> void:
 		fresh()
 		key(KEY_A, true)
 		step(0.5, hz)
-		check(game.heading < -0.2 and game.turn_input == -1 and absf(game.cannon.aim_degrees) > 20, "%d Hz: A steers during automatic sweep" % hz)
+		check(game.heading < -0.2 and game.turn_input == -1 and is_zero_approx(game.cannon.aim_degrees), "%d Hz: A steers with a fixed starboard cannon" % hz)
 		key(KEY_A, false)
 		key(KEY_D, true)
 		key(KEY_SPACE, true)
@@ -97,7 +97,7 @@ func _run() -> void:
 		check(game.cannon.shots_fired == 1 and game.turn_input == 1 and not game.reading, "%d Hz: Space fires while D steers, never raises sextant" % hz)
 		var yaw: float = game.heading
 		step(0.5, hz)
-		check(game.heading > yaw + 0.2 and game.cannon.cooldown > 0 and game.cannon.shots_fired == 1, "%d Hz: steering and sweep remain live during reload" % hz)
+		check(game.heading > yaw + 0.2 and game.cannon.cooldown > 0 and game.cannon.shots_fired == 1, "%d Hz: steering remains live during reload" % hz)
 		step(2.6, hz)
 		check(game.cannon.shots_fired == 3, "%d Hz: held fire repeats at 1.5-second reload" % hz)
 		key(KEY_SPACE, false)
@@ -183,25 +183,25 @@ func trajectory_cases() -> void:
 	fresh()
 	game.boat_visual.rotation.z = -0.25
 	game.boat_visual.rotation.x = 0.12
+	game.cannon.update_cone_feedback()
 	var predicted: Dictionary = game.cannon.predict_trajectory()
-	check(predicted.points[1].is_equal_approx(game.cannon.shot_origin() + game.cannon.launch_velocity() / Engine.physics_ticks_per_second), "prediction uses pitched/rolled muzzle and launch lift")
+	check(predicted.points[1].is_equal_approx(game.cannon.shot_origin() + game.cannon.launch_velocity() / Engine.physics_ticks_per_second), "ballistic diagnostic uses the actual muzzle and launch lift")
 	var end: Vector3 = predicted.points[predicted.points.size() - 1]
-	check(end.y < 0.3 and predicted.points.size() < 109, "downward rocking shot terminates on predicted water")
+	check(Vector2(end.x - game.cannon.cone_origin().x, end.z - game.cannon.cone_origin().z).length() <= 65.001, "ballistic endpoint obeys the visible cone range")
 	game.cannon.fire()
-	for frame in predicted.points.size():
+	for frame in 120:
 		game.ocean.wave_time += 1.0 / 60
 		game.cannon.advance(1.0 / 60)
-	check(game.cannon.projectiles.is_empty() and game.cannon.feedback.contains("SPLASH"), "predicted water crossing produces actual splash")
+	check(game.cannon.projectiles.is_empty() and game.cannon.feedback.contains("SPLASH"), "untargeted real shot ends in water or at its range limit")
 	fresh()
 	var ship = game.enemy_encounters.ship
-	ship.begin(game.cannon.shot_origin() + game.cannon.aimed_direction() * 18)
+	ship.begin(game.cannon.cone_point(0, 18))
 	ship.position.y = 0
 	ship.rotation.y = 0
 	await physics_frame
 	await process_frame
-	game.cannon.trajectory = game.cannon.predict_trajectory()
-	print("TRAJECTORY: origin=%s end=%s ship=%s" % [game.cannon.shot_origin(), game.cannon.trajectory.points[-1], ship.position])
-	check(game.cannon.trajectory.enemy, "enemy intersected by trajectory changes indicator colour")
+	game.cannon.update_cone_feedback()
+	check(ship.aim_highlight and game.cannon.selected_target == ship, "eligible enemy receives subtle cone highlight")
 	await capture("03-aiming-indicator")
 	var obstacle := StaticBody3D.new()
 	obstacle.collision_layer = 1
@@ -211,10 +211,11 @@ func trajectory_cases() -> void:
 	collision.shape = box
 	obstacle.add_child(collision)
 	game.add_child(obstacle)
-	obstacle.position = game.cannon.shot_origin() + game.cannon.aimed_direction() * 12
+	obstacle.position = game.cannon.cone_point(0, 12)
 	await physics_frame
-	predicted = game.cannon.predict_trajectory()
-	check(not predicted.enemy and predicted.points[predicted.points.size()-1].distance_to(game.cannon.shot_origin()) < 14, "nearer obstacle stops preview and hides enemy colour")
+	await process_frame
+	game.cannon.update_cone_feedback()
+	check(not ship.aim_highlight and game.cannon.selected_target == null, "nearer obstacle blocks target selection and highlight")
 	obstacle.queue_free()
 	await physics_frame
 

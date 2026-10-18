@@ -8,7 +8,8 @@ recorded evidence and limitations.
 
 - Page update: published itch.io description, controls, credits and five-wave
   tagline; saved matching Ludum Dare draft copy. Retained existing itch artwork.
-  Ludum cover/gallery upload awaits browser file access; entry remains unpublished.
+  Uploaded the gameplay cover and three screenshots to the Ludum draft;
+  entry remains unpublished.
 
 - Home-menu combat warm-up now exercises the real viewport with invisible
   clipped copies and isolated lighting. Matched Web first-shot frame: 17.7→8.4 ms;

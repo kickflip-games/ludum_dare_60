@@ -22,6 +22,16 @@ const ISLANDS := [
 # Shallow coastal indentations, not cuts through an island or new channels.
 const COVES := [Vector4(48, 43, 23, 13), Vector4(-119, -23, 17, 11),
 	Vector4(211, 61, 18, 11), Vector4(-211, 109, 14, 9)]
+# Nearby scenery beyond the 170 m arena: varied silhouettes with open sea gaps.
+# Keep every shelf outside the combat ring and inside the baked map edges.
+const ARENA_ISLANDS := [
+	ISLANDS[7],
+	[265, 15, 50, 35, 28, 1.2, -0.20, -0.12, -0.40],
+	[427, 82, 42, 34, 32, 2.5, 0.10, -0.18, 0.55],
+	[423, 421, 40, 36, 25, 0.7, -0.18, 0.08, -0.30],
+	[125, 431, 46, 37, 32, 3.2, 0.16, -0.14, 0.40],
+	[42, 236, 43, 58, 38, 1.8, -0.16, -0.20, -0.65],
+]
 
 func island_height(p: Vector2, island: Array) -> float:
 	var q := (p - Vector2(island[0], island[1])) / Vector2(island[2], island[3])
@@ -53,9 +63,7 @@ func _initialize() -> void:
 		for x in range(SIZE):
 			var p := Vector2(x - (SIZE - 1) * 0.5, z - (SIZE - 1) * 0.5) * SPACING
 			var h := -14.0
-			for island in ISLANDS:
-				if arena and island != ISLANDS[7]:
-					continue
+			for island in (ARENA_ISLANDS if arena else ISLANDS):
 				h = maxf(h, island_height(p, island))
 			for cove: Vector4 in ([] if arena else COVES):
 				h -= smoothstep(cove.z, 0.0, p.distance_to(Vector2(cove.x, cove.y))) * cove.w

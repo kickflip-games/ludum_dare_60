@@ -26,6 +26,43 @@ recorded evidence and limitations.
   input-only full run defeats all 11 ships through 22 physical hits. Native
   comparisons and combat clips reviewed; human balance remains open. See the
   [combat review](artifacts/combat_feel_review.md).
+- Increased arena waves to 2/3/4/5/6 ships (20 total), with five active slots
+  and 2.5-second arrivals. Safe spawns favour shorter clear approaches; faster
+  cutter/skiff/heavy pursuit, crossing broadsides and shorter return legs keep
+  pressure on the player. Crowded hulls yield speed and hold recovery headings.
+  Preserved full warnings, non-homing shots, hull values, player controls and
+  the retained voyage AI. At 30/60/120 Hz, first fire fell from 48.1–48.2 s to
+  9.5–9.6 s; 90-second shots rose from 1–3 to 7–11 in the protected no-input
+  fixture. After integrating the latest arcade controls, all 544 checks across
+  nine suites pass; four native gameplay views were inspected. Human balance
+  and Web/mobile performance remain untested.
+
+- Simplified active arena controls to A/D or arrows, bounded mouse look and
+  Space/click held fire. The single starboard cannon sweeps continuously through
+  steering, firing and reload; F/E and sextant activation are disabled in arena
+  play. Added a port-quarter chase view with ±45° yaw, 1.5-second idle delay,
+  smooth recentring and retained shore/water guards, plus a muzzle-derived
+  ballistic guide that changes colour on enemy intersection. Kept physics, AI,
+  waves, hull damage and the explicit legacy voyage fixture intact.
+  Native captures show the full ship, both yaw limits, trajectory and firing;
+  the scripted simultaneous-input duel sinks a moving cutter. Ten smoke suites
+  pass 632 checks; the native run passes 13 capture/gameplay checks. The naval
+  AI suite still has two pre-existing multi-ship failures, reproduced with
+  identical measurements on the untouched commit. Human balance and Web remain
+  untested.
+
+- Added five nearby rocky islands and 69 pines in the
+  earlier archipelago style, with matching terrain, collision and shoreline
+  foam. New shores leave the combat ring and a 10 m outer margin clear.
+  Native scenery checks (20), arena (139), survival (85) and retained voyage
+  composition (21) pass; eight native views inspected. Human playtesting and
+  Web/mobile performance remain untested.
+
+- In progress: Improve combat readability with folded, brighter sails, aim-only
+  visibility/occlusion-checked cloth illumination and confirmed hit/sinking
+  feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;
+  preserved physical cannon fire and wave forces. Initial combat/naval checks
+  pass; timed-roster integration and final rendered evidence remain pending.
 - Raised player cruise from 6.3 to 9 m/s (43% faster), including
   while aiming. Movement and arena return share the configurable speed; tighter
   chase follow keeps the boat readable. Retained voyage fixtures explicitly

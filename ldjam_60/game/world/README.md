@@ -3,8 +3,10 @@
 ## Active lighthouse arena
 
 Normal play is five-wave player survival inside a 170 m circle centred on
-`Landmarks/Lighthouse` (world X/Z 275/250). Only the existing central island,
-lighthouse, jetty and matching coast bake remain from the voyage. The lantern
+`Landmarks/Lighthouse` (world X/Z 275/250). The existing central island,
+lighthouse and jetty are framed by five nearby pine-covered rocky islands.
+Their shores remain beyond the combat boundary and its 10 m clearance margin;
+the inner routes and enemy sectors are unchanged. The lantern
 is always lit and has no health. The player starts 75 m north, heading 100°.
 
 `arena_layout.tscn` is the editable obstacle/spawn scene. No runtime random
@@ -17,7 +19,8 @@ layout generation is used:
 - **LowIslets:** three low rock outcrops north/northeast with alternative gaps.
 - **EnemySectors:** four 143 m cardinal markers, each with a configurable 16°
   spread. Spawn selection checks 12 m solid clearance and 65 m player separation;
-  an obstructed sector is skipped rather than spawning inside geometry.
+  an obstructed sector is skipped rather than spawning inside geometry. Among safe
+  candidates, shorter clear approaches take priority.
 
 Each obstacle's collider is built from its visible mesh faces. Solid reefs,
 islets and wreck sections stop both sides' cannonballs; both sides shatter
@@ -28,19 +31,20 @@ Return rudder begins at 132.6 m with a latched turn side and gradual blend.
 32 m swept hull-width probes select a clear return course when rocks are ahead.
 Normal inner sailing stays manual. Movement is bounded **before** collision
 sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
-including while E is held. No boundary collider or teleport is used.
+including while firing. No boundary collider or teleport is used.
 
-Three reusable hulls target the player and stay until sunk. Data-driven
+Five reusable hulls target the player and stay until sunk. Data-driven
 cutter/skiff/heavy profiles supply two/one/three-hit hulls, different sail bands,
 size, speed, turn acceleration, approach and warned broadside timing. The
-scheduler queues 1/2/2/3/3 arrivals, caps living combatants at three and normally
-staggers spawns eight seconds apart. Deadlines 40/50/65/80 start overlapping waves
+scheduler queues 2/3/4/5/6 arrivals, caps living combatants at five and normally
+staggers spawns 2.5 seconds apart. Deadlines 40/50/65/80 start overlapping waves
 without resetting survivors. A safe early all-clear gives one capped hull repair
-and a three-second pause; final victory waits for all 11 kills, sinking and
+and a three-second pause; final victory waits for all 20 kills, sinking and
 incoming shots. Old harbour victory remains disabled. Settings are authored in
 `game/survival_settings.tres`; archetypes are in `game/enemies/`. Long blocked
 approaches use cached, terrain-clear outer detours; local hull-width probes and
-predictive lateral yielding still govern the actual bounded rudder. See the
+predictive lateral yielding still govern the actual bounded rudder. Ships also
+slow for crossing traffic and hold collision recovery headings to avoid oscillation. See the
 [combat review](../../../artifacts/combat_feel_review.md). Original territories/discoveries stay inactive;
 the old journey remains accessible through `tests/legacy_voyage.tscn`.
 
@@ -49,6 +53,18 @@ Separate resources preserve the original voyage terrain and foam:
 ```sh
 godot --headless --path ldjam_60 --script res://tools/bake_archipelago.gd -- --arena
 godot --headless --path ldjam_60 --script res://tools/bake_coastal_foam.gd -- --arena
+```
+
+`ARENA_ISLANDS` in the terrain recipe and `ARENA_GROVES` in `island_dressing.gd`
+author the surrounding islands and sparse vegetation. The arena has 69 batched
+pines, including two beside the lighthouse; the original voyage dressing is
+retained. Terrain, full collision and shoreline foam are baked together.
+Run the focused scenery check and eight composition views with the native
+renderer (headless dummy MultiMeshes cannot return tree transforms):
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arena_island_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arena_island_previews.gd -- --output=/tmp/latitude-islands/after
 ```
 
 Run `tests/arena_smoke.gd` and render `tests/arena_previews.gd`. The overhead

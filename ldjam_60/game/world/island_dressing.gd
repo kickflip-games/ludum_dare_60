@@ -10,6 +10,11 @@ const GROVES := [
 	Vector4(239, 14, 24, 6), Vector4(38, 210, 16, 2),
 	Vector4(64, -95, 7, 1), Vector4(-101, -57, 7, 1),
 ]
+const ARENA_GROVES := [
+	Vector4(263, 14, 24, 14), Vector4(426, 81, 22, 12),
+	Vector4(422, 420, 21, 12), Vector4(126, 430, 24, 14),
+	Vector4(41, 233, 28, 18), Vector4(252, 270, 9, 4),
+]
 # A few embedded angular buttresses, sized in metres. No new offshore barriers.
 const OUTCROPS := [Vector4(-112, 8, 5, 7), Vector4(-76, 38, 6, 5),
 	Vector4(31, 53, 6, 6), Vector4(69, -54, 6, 10), Vector4(-28, -143, 7, 9),
@@ -29,7 +34,8 @@ func _build() -> void:
 	var trees: Array[Transform3D] = []
 	var stones: Array[Transform3D] = []
 	var grasses: Array[Transform3D] = []
-	for grove: Vector4 in GROVES:
+	var arena: bool = get_parent().arena_mode
+	for grove: Vector4 in (ARENA_GROVES if arena else GROVES):
 		var placed := 0
 		for attempt in range(roundi(grove.w * density) * 6):
 			if placed >= roundi(grove.w * density):
@@ -38,7 +44,7 @@ func _build() -> void:
 			var radius := sqrt(_rng.randf()) * grove.z
 			var xz := Vector2(grove.x, grove.y) + Vector2.from_angle(angle) * radius
 			var height := _height(xz)
-			if height < 7.0 or _slope(xz) < 0.68:
+			if height < 7.0 or _slope(xz) < 0.68 or (arena and _near_landmark(xz)):
 				continue
 			var crowded := false
 			for tree: Transform3D in trees:
@@ -46,13 +52,13 @@ func _build() -> void:
 					crowded = true
 			if crowded:
 				continue
-			var size := _rng.randf_range(0.65, 1.45)
+			var size := _rng.randf_range(0.85, 1.65) if arena else _rng.randf_range(0.65, 1.45)
 			trees.append(_pose(Vector3(xz.x, height - 0.35, xz.y), Vector3(size * _rng.randf_range(0.75, 1.1), size, size * 0.85)))
 			placed += 1
 	# Sparse terrain-only scatter. Footprints are checked on all four sides so
 	# boulders and grass cannot disguise a navigable channel or the shoreline.
-	for z in range(-282, 290, 16):
-		for x in range(-310, 321, 16):
+	for z in range(-24 if arena else -282, 481 if arena else 290, 16):
+		for x in range(-16 if arena else -310, 481 if arena else 321, 16):
 			var xz := Vector2(x, z) + Vector2(_rng.randf_range(-7, 7), _rng.randf_range(-7, 7))
 			var height := _height(xz)
 			if height < 4.5 or _near_landmark(xz):

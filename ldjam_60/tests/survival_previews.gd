@@ -83,7 +83,9 @@ func _run() -> void:
 	game.state=game.State.SAILING
 	game.damage_immunity=10000
 	var waves=game.enemy_encounters
-	waves.update_encounters(1.0/60)
+	# Let both opening arrivals spawn before staging the early all-clear.
+	for frame in ceili((waves.survival_settings.spawn_interval + 0.1) * 60):
+		waves.update_encounters(1.0/60)
 	for cutter in waves.living_ships():
 		while cutter.hull>0:game.cannon._impact(cutter,cutter.position)
 	waves.update_encounters(1.0/60)

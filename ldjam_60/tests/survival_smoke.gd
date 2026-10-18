@@ -74,13 +74,13 @@ func _run() -> void:
 	enemies=game.enemy_encounters
 	await physics_frame
 	var config=enemies.survival_settings
-	check(config.enemy_counts==PackedInt32Array([1,2,2,3,3]) and config.deadlines==PackedFloat32Array([40,50,65,80,0]), "authored defaults are exactly five waves: 1/2/2/3/3 at 40/50/65/80/final")
-	check(config.maximum_living==6 and config.spawn_interval>=6 and config.spawn_interval<=10 and config.early_clear_pause==3
+	check(config.enemy_counts==PackedInt32Array([2,3,4,5,6]) and config.deadlines==PackedFloat32Array([40,50,65,80,0]), "authored defaults are exactly five waves: 2/3/4/5/6 at 40/50/65/80/final")
+	check(config.maximum_living==6 and config.spawn_interval==2.5 and config.early_clear_pause==3
 		and config.attack_slots==PackedInt32Array([1,1,2,2,2]),
-		"six-live capacity, wave-specific attack slots, original spawn stagger and early pause")
+		"six-live capacity, wave-specific slots, current 2.5-second arrivals and three-second pause")
 	check(enemies.ships.size()==6 and game.get_tree().get_nodes_in_group("cannon_targets").filter(func(n):return n.get_meta("target_kind","")=="ship").size()==6,
 		"exactly six reusable enemy instances, without duplicate cannon targets")
-	config.maximum_living=3
+	config.maximum_living=5
 	check(game.get("lighthouse_health")==null and game.get("lighthouse_integrity")==null,
 		"lighthouse has no health/integrity gameplay state")
 	fresh()
@@ -96,13 +96,15 @@ func _run() -> void:
 	check(enemies.wave_number==2 and first.hull==1 and first.position==before_position and first.visible
 		and enemies.records[0].defeated==0 and not enemies.records[0].repair_awarded and game.hull==2,
 		"deadline starts wave two while preserving previous ship/health and grants no repair or kill")
-	check(enemies.records[1].started-enemies.records[0].started>=40 and enemies.records[1].count==2,
+	check(enemies.records[1].started-enemies.records[0].started>=40 and enemies.records[1].count==3,
 		"each wave gets its own countdown beginning at its start")
-	check(enemies.living_ships().size()==2, "timed start adds one arrival immediately without filling the arena at once")
-	schedule(7.5)
-	check(enemies.living_ships().size()==2, "queued third cutter does not arrive before its eight-second stagger")
-	schedule(0.6)
-	check(enemies.living_ships().size()==3 and enemies.records[1].spawned==2, "wave two staggers two new ships while old survivor occupies capacity")
+	check(enemies.living_ships().size()==3, "timed start adds one arrival immediately without filling the arena at once")
+	schedule(2.3)
+	check(enemies.living_ships().size()==3, "queued arrival waits for its 2.5-second stagger")
+	schedule(0.3)
+	check(enemies.living_ships().size()==4 and enemies.records[1].spawned==2, "wave two staggers its second arrival")
+	schedule(2.6)
+	check(enemies.living_ships().size()==5 and enemies.records[1].spawned==3, "wave two fills five slots while both old survivors remain")
 	var positions: Array[Vector3]=[]
 	for cutter in enemies.living_ships(): positions.append(cutter.position)
 	var separated:=true
@@ -112,18 +114,18 @@ func _run() -> void:
 	check(separated and positions.all(func(at):return at.distance_to(game.boat.position)>=65 and game.archipelago.water_clear(at,12)),
 		"simultaneous arrivals are separated from player, other ships, terrain and edge")
 	schedule(50)
-	check(enemies.wave_number==3 and enemies.spawn_queue.size()==2 and enemies.living_ships().size()==3,
+	check(enemies.wave_number==3 and enemies.spawn_queue.size()==4 and enemies.living_ships().size()==5,
 		"capped wave-three arrivals stay queued instead of replacing or despawning survivors")
 	schedule(145)
-	check(enemies.wave_number==5 and enemies.spawn_queue.size()==8 and enemies.ships_sunk==0
-		and enemies.living_ships().size()==3 and game.state==game.State.SAILING,
-		"all timed waves join the encounter; 8 queued + 3 survivors remain without free kills or victory")
-	check(max_living<=3, "no scheduler tick exceeds three living combat enemies")
+	check(enemies.wave_number==5 and enemies.spawn_queue.size()==15 and enemies.ships_sunk==0
+		and enemies.living_ships().size()==5 and game.state==game.State.SAILING,
+		"all timed waves join the encounter; 15 queued + 5 survivors remain without free kills or victory")
+	check(max_living<=5, "no scheduler tick exceeds five living combat enemies")
 	transitions.assign(enemies.records.duplicate(true))
 	clean_retry("overlapping combat")
 	fresh()
 	await physics_frame
-	schedule(0.02)
+	schedule(2.6)
 	game.hull=1
 	sink_all()
 	schedule(0.02)
@@ -137,7 +139,7 @@ func _run() -> void:
 	clean_retry("early intermission")
 	fresh()
 	await physics_frame
-	schedule(0.02)
+	schedule(2.6)
 	sink_all()
 	schedule(0.02)
 	check(game.hull==game.hull_capacity, "early-clear hull reward is capped at capacity")
@@ -147,15 +149,15 @@ func _run() -> void:
 		fresh()
 		await physics_frame
 		schedule(90.1,hz)
-		check(enemies.wave_number==3 and enemies.living_ships().size()==3 and enemies.records[2].count==2,
+		check(enemies.wave_number==3 and enemies.living_ships().size()==5 and enemies.records[2].count==4,
 			"%d Hz wave deadlines and living cap are consistent"%hz)
 	fresh()
 	enemies.survival_settings.maximum_living=2
 	await physics_frame
 	schedule(91)
-	check(enemies.living_ships().size()==2 and enemies.spawn_queue.size()==3,
+	check(enemies.living_ships().size()==2 and enemies.spawn_queue.size()==7,
 		"configured two-living limit keeps remaining enemies queued without changing counts")
-	enemies.survival_settings.maximum_living=3
+	enemies.survival_settings.maximum_living=5
 	fresh()
 	await physics_frame
 	schedule(0.02)
@@ -187,7 +189,7 @@ func _run() -> void:
 		"wave announcement fades out")
 	await _projectile_and_multi_ship_checks()
 	await _completion_checks()
-	enemies.survival_settings.spawn_interval=8.0
+	enemies.survival_settings.spawn_interval=2.5
 	# No input, real arena movement and AI: time cannot win the session.
 	fresh()
 	await physics_frame
@@ -198,7 +200,7 @@ func _run() -> void:
 		no_input_seconds+=1.0/60
 		peak=maxi(peak,enemies.living_ships().size())
 		if game.state!=game.State.SAILING: break
-	check(game.state!=game.State.ARRIVED and enemies.ships_sunk==0 and peak<=3,
+	check(game.state!=game.State.ARRIVED and enemies.ships_sunk==0 and peak<=5,
 		"bounded no-input real sailing/AI cannot satisfy survival victory")
 	print("NO INPUT: %.2fs state=%d kills=%d peak=%d"%[no_input_seconds,game.state,enemies.ships_sunk,peak])
 	game.damage_immunity=0
@@ -211,6 +213,7 @@ func _run() -> void:
 	check(game.hud.menu_title.text=="SHIP SUNK", "defeat end screen uses SHIP SUNK")
 	clean_retry("defeat")
 	for repeat in 4: clean_retry("repeated session %d"%repeat)
+	DirAccess.make_dir_recursive_absolute("/tmp/latitude-timed-waves")
 	var file:=FileAccess.open("/tmp/latitude-timed-waves/survival.json",FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"max_living":max_living,"timed_records":transitions,"no_input_seconds":no_input_seconds},"\t"))
 	print("SURVIVAL CHECK: %d checks, %d failures"%[checks,failures])
@@ -274,7 +277,7 @@ func _projectile_and_multi_ship_checks() -> void:
 	check(game.hull==hull, "original automatic hull repair remains available outside live combat/incoming shots")
 
 func _completion_checks() -> void:
-	# Controlled rapid clock for complete real 11-ship kill/spawn accounting.
+	# Controlled rapid clock for complete real 20-ship kill/spawn accounting.
 	fresh()
 	await physics_frame
 	enemies.survival_settings.spawn_interval=0.1
@@ -283,7 +286,7 @@ func _completion_checks() -> void:
 		for tick in 1200:
 			enemies.update_encounters(1.0/60)
 			if enemies.wave_number==wave: break
-		check(enemies.wave_number==wave and enemies.records.back().count==[1,2,2,3,3][wave-1], "wave %d begins with its exact configured count"%wave)
+		check(enemies.wave_number==wave and enemies.records.back().count==[2,3,4,5,6][wave-1], "wave %d begins with its exact configured count"%wave)
 		if wave==5:
 			game.hud._process(0)
 			check(enemies.announcement=="FINAL WAVE" and not game.hud.wave_countdown.visible, "final wave has brief FINAL WAVE banner and no victory countdown")
@@ -296,13 +299,13 @@ func _completion_checks() -> void:
 				while cutter.hull>0: game.cannon._impact(cutter,cutter.position+Vector3.UP)
 			enemies.update_encounters(1.0/60)
 			max_living=maxi(max_living,enemies.living_ships().size())
-		check(enemies.records.back().spawned==[1,2,2,3,3][wave-1] and enemies.records.back().defeated==[1,2,2,3,3][wave-1],
+		check(enemies.records.back().spawned==[2,3,4,5,6][wave-1] and enemies.records.back().defeated==[2,3,4,5,6][wave-1],
 			"wave %d spawns and genuinely sinks every queued cutter exactly once"%wave)
 		check(PackedStringArray(observed) == enemies.survival_settings.wave_rosters[wave-1],
 			"wave %d deploys the exact cutter/skiff/heavy roster in order through the shared pool" % wave)
-		total+=[1,2,2,3,3][wave-1]
+		total+=[2,3,4,5,6][wave-1]
 		check(enemies.ships_sunk==total and (game.state==game.State.ARRIVED)==(wave==5), "only final all-resolved clear can win after wave %d"%wave)
-	check(enemies.ships_sunk==11 and enemies.spawn_queue.is_empty() and not enemies.has_projectiles(), "all 11 required kills are accounted without duplicate instances or stale shots")
+	check(enemies.ships_sunk==20 and enemies.spawn_queue.is_empty() and not enemies.has_projectiles(), "all 20 required kills are accounted without duplicate instances or stale shots")
 	game.hud._process(0)
 	check(game.hud.menu_title.text=="THE SEA IS YOURS", "victory screen uses THE SEA IS YOURS")
 	action("restart_crossing",true)

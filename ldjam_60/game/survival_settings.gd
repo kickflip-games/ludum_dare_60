@@ -6,11 +6,11 @@ const ARCHETYPES := {
 	"heavy": preload("res://game/enemies/heavy.tres")
 }
 @export var wave_rosters: Array[PackedStringArray] = [
-	PackedStringArray(["cutter"]),
-	PackedStringArray(["cutter", "cutter"]),
 	PackedStringArray(["cutter", "skiff"]),
-	PackedStringArray(["cutter", "skiff", "heavy"]),
-	PackedStringArray(["heavy", "cutter", "cutter"])
+	PackedStringArray(["cutter", "skiff", "cutter"]),
+	PackedStringArray(["cutter", "skiff", "heavy", "skiff"]),
+	PackedStringArray(["skiff", "cutter", "heavy", "skiff", "cutter"]),
+	PackedStringArray(["heavy", "skiff", "cutter", "heavy", "skiff", "cutter"])
 ]
 var enemy_counts: PackedInt32Array:
 	get:
@@ -19,7 +19,7 @@ var enemy_counts: PackedInt32Array:
 			counts.append(roster.size())
 		return counts
 @export var deadlines := PackedFloat32Array([40.0, 50.0, 65.0, 80.0, 0.0])
-@export_range(0.05, 15.0, 0.05) var spawn_interval := 8.0
+@export_range(0.05, 15.0, 0.05) var spawn_interval := 2.5
 @export_range(1, 6, 1) var maximum_living := 6
 @export var attack_slots := PackedInt32Array([1, 1, 2, 2, 2])
 @export_range(1.0, 3.0, 0.1) var warning_interval := 1.6

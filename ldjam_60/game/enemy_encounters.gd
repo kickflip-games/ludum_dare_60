@@ -10,6 +10,7 @@ var ships_sunk: int = 0
 var enabled: bool = true
 var visited: Array[String] = []
 const ARENA_WAVES := 5
+const POOL_SIZE := 6
 @export var survival_settings: Resource = preload("res://game/survival_settings.tres")
 enum Phase { PREPARING, ACTIVE, EARLY_CLEAR, COMPLETE, STOPPED }
 var phase := Phase.PREPARING
@@ -35,7 +36,7 @@ var wave_in_progress: bool:
 func _ready() -> void:
 	survival_settings = survival_settings.duplicate(true)
 	director.manager = self
-	for i in (6 if game.arena_mode else 1):
+	for i in (POOL_SIZE if game.arena_mode else 1):
 		var cutter: CharacterBody3D = SHIP.instantiate()
 		cutter.game = game
 		cutter.director = director
@@ -294,6 +295,9 @@ func _spawn_queued() -> void:
 
 func arena_spawn() -> Vector3:
 	var sectors: Array[Node] = game.archipelago.arena_layout.get_node("EnemySectors").get_children()
+	var best := Vector3.INF
+	var best_score := INF
+	var best_sector := sector_index
 	for attempt in range(sectors.size()):
 		var index: int = (sector_index + attempt) % sectors.size()
 		var marker: Marker3D = sectors[index]
@@ -311,6 +315,15 @@ func arena_spawn() -> Vector3:
 					occupied = true
 			if occupied:
 				continue
-			sector_index = (index + 1) % sectors.size()
-			return candidate
-	return Vector3.INF
+			# Prefer a short clear approach over alternating to the far side of the island.
+			# Existing sector order breaks ties; occupied hulls spread arrivals naturally.
+			var score := candidate.distance_to(game.boat.global_position)
+			if not ship._water_lane_clear(candidate, game.boat.global_position):
+				score += game.arena_radius
+			if score < best_score:
+				best = candidate
+				best_score = score
+				best_sector = index
+	if best.is_finite():
+		sector_index = (best_sector + 1) % sectors.size()
+	return best

@@ -1,5 +1,16 @@
 # Credits
 
+## Menu typography and graphics
+
+**IM Fell English SC**, by Igino Marini, and **Barlow Semi Condensed**, by
+The Barlow Project Authors, are bundled unmodified from the
+[Google Fonts repository](https://github.com/google/fonts) under the SIL Open
+Font License 1.1. Font files and both licenses: `ldjam_60/assets/ui/fonts/`.
+
+The small lighthouse mark, enemy ship icon and engraved wave divider in `ldjam_60/assets/ui/`
+are original SVG source graphics for Latitude Lines. The supplied menu image
+was used as a visual reference; it is not bundled as a game background.
+
 ## Boot splash
 
 **Kickflip Games logo**, used unmodified from the [provided PNG](https://raw.githubusercontent.com/kickflip-games/kickflip-games/main/logo.png).

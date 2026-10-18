@@ -8,26 +8,47 @@ var ships_sunk: int = 0
 var enabled: bool = true
 var visited: Array[String] = []
 const ARENA_WAVES := 5
-@export var first_wave_delay := 5.0
-@export var intermission_seconds := 10.0
-@export var minimum_spawn_distance := 65.0
+@export var survival_settings: Resource = preload("res://game/survival_settings.tres")
+enum Phase { PREPARING, ACTIVE, EARLY_CLEAR, COMPLETE, STOPPED }
+var phase := Phase.PREPARING
+var ships: Array[CharacterBody3D] = []
+var spawn_queue: Array[int] = []
+var records: Array[Dictionary] = []
 var wave_number := 0
 var cleared_waves := 0
-var next_wave_in := 5.0
-var sector_index := 0
-var wave_in_progress := false
-
+var wave_remaining := 0.0
+var next_wave_in := 0.0
+var spawn_remaining := 0.0
+var clock := 0.0
+var sector_index := 1
+var announcement_left := 0.0
+var announcement := ""
+var wave_in_progress: bool:
+	get: return phase == Phase.ACTIVE
 
 func _ready() -> void:
-	ship = SHIP.instantiate()
-	ship.game = game
-	add_child(ship)
-	next_wave_in = first_wave_delay
+	survival_settings = survival_settings.duplicate(true)
+	for i in (3 if game.arena_mode else 1):
+		var cutter: CharacterBody3D = SHIP.instantiate()
+		cutter.game = game
+		add_child(cutter)
+		ships.append(cutter)
+		if game.arena_mode:
+			cutter.collision_mask = 7
+			cutter.broadside_separation = 30.0 + i * 10.0
+	ship = ships.front() # Compatibility for the explicit single-cutter voyage fixture.
+	reset()
 
 func update_encounters(delta: float) -> void:
 	if not enabled:
 		return
-	ship.update_ship(delta)
+	if game.arena_mode and game.state != game.State.SAILING:
+		return
+	for cutter in ships:
+		cutter.update_ship(delta)
+		if game.arena_mode and game.state != game.State.SAILING:
+			stop()
+			return
 	if game.arena_mode:
 		_update_arena(delta)
 		return
@@ -72,74 +93,169 @@ func _engagement_spawn(authored: Vector3) -> Vector3:
 	return authored
 
 func reset() -> void:
-	ship.reset()
+	if is_instance_valid(game._wave_audio):
+		game._wave_audio.stop()
+	for cutter in ships:
+		cutter.reset()
 	encounter_index = 0
 	ships_sunk = 0
 	visited.clear()
 	wave_number = 0
 	cleared_waves = 0
-	next_wave_in = first_wave_delay
-	sector_index = 0
-	wave_in_progress = false
+	clock = 0.0
+	wave_remaining = 0.0
+	next_wave_in = survival_settings.first_wave_delay
+	spawn_remaining = 0.0
+	sector_index = 1
+	spawn_queue.clear()
+	records.clear()
+	phase = Phase.PREPARING
+	announcement = ""
+	announcement_left = 0.0
 
 func debug_cutter() -> void:
 	if not game.development_tools or not game.arena_mode or not enabled:
 		return
-	if ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED] or not ship.projectiles.is_empty():
-		return
-	var candidate := _engagement_spawn(game.arena_center() + Vector3(90, 0, 0))
-	if candidate.distance_to(game.arena_center()) > game.arena_radius - 12.0:
-		candidate = game.arena_center() + Vector3(90, 0, 0)
-	ship.begin(candidate)
-	ship.territory = game.arena_center()
+	# Use the normal queue/accounting instead of inventing an untracked enemy.
+	if phase == Phase.PREPARING:
+		next_wave_in = 0.0
 
 func stop() -> void:
-	ship.reset()
+	if is_instance_valid(game._wave_audio):
+		game._wave_audio.stop()
+	for cutter in ships:
+		cutter.reset()
+	spawn_queue.clear()
+	announcement = ""
+	announcement_left = 0.0
+	if phase != Phase.COMPLETE:
+		phase = Phase.STOPPED
+
+func living_ships() -> Array[CharacterBody3D]:
+	var result: Array[CharacterBody3D] = []
+	for cutter in ships:
+		if cutter.hull > 0 and cutter.mode not in [cutter.Mode.DORMANT, cutter.Mode.ESCAPED, cutter.Mode.SINKING]:
+			result.append(cutter)
+	return result
+
+func has_projectiles() -> bool:
+	return ships.any(func(cutter): return not cutter.projectiles.is_empty())
 
 func battle_active() -> bool:
-	# A defeated or escaped cutter's last shot can still hit the player.
-	return enabled and (ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] or not ship.projectiles.is_empty())
+	return enabled and (not living_ships().is_empty() or has_projectiles())
+
+func focus_ship(threat_only := false) -> CharacterBody3D:
+	var selected: CharacterBody3D = null
+	var best := INF
+	for cutter in ships:
+		var incoming: bool = cutter.mode == cutter.Mode.TELEGRAPH or not cutter.projectiles.is_empty()
+		if threat_only and not incoming:
+			continue
+		if not threat_only and cutter not in living_ships():
+			continue
+		var distance: float = cutter.position.distance_squared_to(game.boat.position)
+		if threat_only:
+			for shot in cutter.projectiles:
+				distance = minf(distance, shot.position.distance_squared_to(game.boat.position))
+		if distance < best:
+			best = distance
+			selected = cutter
+	return selected if selected != null else ship
 
 func approach_warning() -> String:
-	return ship.warning() if enabled else ""
+	return focus_ship().warning() if enabled else ""
 
 func update_visuals(delta: float) -> void:
-	ship.update_visuals(delta)
+	for cutter in ships:
+		cutter.update_visuals(delta)
 
+func on_ship_sunk(cutter: CharacterBody3D) -> void:
+	ships_sunk += 1
+	var id: int = cutter.get_meta("wave_id", 0)
+	if game.arena_mode and id > 0 and id <= records.size():
+		records[id-1].defeated += 1
+		cleared_waves = records.filter(func(record): return record.defeated == record.count).size()
+
+func _begin_wave() -> void:
+	wave_number += 1
+	phase = Phase.ACTIVE
+	wave_remaining = survival_settings.deadlines[wave_number-1]
+	next_wave_in = wave_remaining
+	var count: int = survival_settings.enemy_counts[wave_number-1]
+	records.append({"wave":wave_number, "count":count, "spawned":0,
+		"defeated":0, "started":clock, "expired":false, "repair_awarded":false})
+	for i in count:
+		spawn_queue.append(wave_number)
+	announcement = "FINAL WAVE" if wave_number == ARENA_WAVES else "WAVE %d INCOMING" % wave_number
+	announcement_left = 2.0
+	game.cue_sound("wave")
 
 func _update_arena(delta: float) -> void:
-	if game.state != game.State.SAILING:
+	if game.state != game.State.SAILING or game.hull <= 0:
 		return
-	if wave_in_progress:
-		# A clock or retreat never clears a wave. Resolve the last incoming shot
-		# and sinking animation before intermission or the fifth-wave ending.
-		if ship.mode != ship.Mode.ESCAPED or ship.hull > 0 or not ship.projectiles.is_empty():
+	clock += delta
+	announcement_left = maxf(0.0, announcement_left-delta)
+	spawn_remaining = maxf(0.0, spawn_remaining-delta)
+	if phase in [Phase.STOPPED, Phase.COMPLETE]:
+		return
+	if phase in [Phase.PREPARING, Phase.EARLY_CLEAR]:
+		next_wave_in = maxf(0.0, next_wave_in-delta)
+		if next_wave_in > 0.0:
 			return
-		cleared_waves += 1
-		wave_in_progress = false
-		if cleared_waves == ARENA_WAVES:
+		if phase == Phase.EARLY_CLEAR:
+			spawn_remaining = 0.0
+		_begin_wave()
+	elif phase == Phase.ACTIVE:
+		if wave_number < ARENA_WAVES:
+			wave_remaining = maxf(0.0, wave_remaining-delta)
+			next_wave_in = wave_remaining
+		var clear := spawn_queue.is_empty() and living_ships().is_empty() and not has_projectiles() and records.all(func(record): return record.defeated == record.count)
+		if clear and wave_number == ARENA_WAVES:
+			# Sinking remains visible and a last in-flight lethal shot resolves first.
+			if ships.any(func(cutter): return cutter.mode == cutter.Mode.SINKING):
+				return
+			phase = Phase.COMPLETE
 			game.state = game.State.ARRIVED
 			game.cue_sound("victory")
 			return
-		next_wave_in = intermission_seconds
-		game.show_discovery("Wave %d cleared · catch your breath" % cleared_waves, 3.0)
-		return
-	next_wave_in = maxf(0.0, next_wave_in - delta)
-	if next_wave_in > 0.0:
-		return
-	var spawn := arena_spawn()
-	if not spawn.is_finite():
-		return # Wait for clear water rather than falling back onto a rock/player.
-	ship.begin(spawn)
-	ship.territory = game.arena_center()
-	var toward: Vector3 = game.boat.global_position - spawn
-	ship.heading = atan2(toward.x, -toward.z)
-	ship.rotation.y = -ship.heading
-	wave_number += 1
-	encounter_index += 1
-	wave_in_progress = true
-	game.show_discovery("Wave %d / %d · hostile cutter" % [wave_number, ARENA_WAVES], 3.0)
+		if clear and wave_remaining > 0.0:
+			records.back().repair_awarded = true
+			game.restore_hull(1)
+			game.cue_sound("victory")
+			phase = Phase.EARLY_CLEAR
+			announcement_left = 0.0
+			announcement = ""
+			next_wave_in = survival_settings.early_clear_pause
+			return
+		if wave_number < ARENA_WAVES and wave_remaining <= 0.0:
+			records.back().expired = true
+			_begin_wave() # Old living ships, health, projectiles and queue survive.
+	if phase == Phase.ACTIVE and not spawn_queue.is_empty() and spawn_remaining <= 0.0:
+		_spawn_queued()
 
+func _spawn_queued() -> void:
+	if living_ships().size() >= mini(3, survival_settings.maximum_living):
+		return
+	var available: CharacterBody3D = null
+	for cutter in ships:
+		if cutter.mode in [cutter.Mode.DORMANT, cutter.Mode.ESCAPED] and cutter.projectiles.is_empty():
+			available = cutter
+			break
+	if available == null:
+		return
+	var at := arena_spawn()
+	if not at.is_finite():
+		return
+	var id: int = spawn_queue.pop_front()
+	available.begin(at)
+	available.set_meta("wave_id", id)
+	available.territory = game.arena_center()
+	var toward: Vector3 = game.boat.position-at
+	available.heading = atan2(toward.x,-toward.z)
+	available.rotation.y = -available.heading
+	encounter_index += 1
+	records[id-1].spawned += 1
+	spawn_remaining = maxf(0.05, survival_settings.spawn_interval)
 
 func arena_spawn() -> Vector3:
 	var sectors: Array[Node] = game.archipelago.arena_layout.get_node("EnemySectors").get_children()
@@ -150,9 +266,15 @@ func arena_spawn() -> Vector3:
 		var spread: float = deg_to_rad(marker.get_meta("spread_degrees", 16.0))
 		for angle: float in [0.0, -spread, spread]:
 			var candidate: Vector3 = game.arena_center() + offset.rotated(Vector3.UP, angle)
-			if candidate.distance_to(game.boat.global_position) < minimum_spawn_distance:
+			if candidate.distance_to(game.boat.global_position) < survival_settings.player_spawn_separation:
 				continue
 			if not game.archipelago.water_clear(candidate, 12.0):
+				continue
+			var occupied := false
+			for cutter in ships:
+				if cutter.visible and cutter.position.distance_to(candidate) < survival_settings.ship_spawn_separation:
+					occupied = true
+			if occupied:
 				continue
 			sector_index = (index + 1) % sectors.size()
 			return candidate

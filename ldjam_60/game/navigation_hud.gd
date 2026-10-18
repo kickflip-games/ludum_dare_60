@@ -21,6 +21,8 @@ var menu_footer: Label
 var motion_choice: OptionButton
 var cannon_gauge: Control
 var gameplay_hud: Control
+var wave_countdown: Label
+var wave_announcement: Label
 var wave_label: Label
 var threat_label: Label
 var notice: Label
@@ -54,14 +56,30 @@ func _ready() -> void:
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cannon_gauge = _gauge("StarboardCannon", Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
 	wave_label = _label(gameplay_hud, "SurvivalWave", "", 16, BRASS)
-	wave_label.position = Vector2(24, 24)
+	for label: Label in [wave_label]:
+		label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		label.offset_left=-180
+		label.offset_right=180
+		label.offset_top=20
+		label.offset_bottom=44
+		label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	wave_countdown = _label(gameplay_hud,"WaveCountdown","",13,MUTED)
+	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",26,INK,true)
+	for entry in [[wave_countdown,48,72],[wave_announcement,88,126]]:
+		var label: Label = entry[0]
+		label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		label.offset_left=-260
+		label.offset_right=260
+		label.offset_top=entry[1]
+		label.offset_bottom=entry[2]
+		label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	threat_label = _label(gameplay_hud, "IncomingThreat", "", 16, CORAL)
 	notice = _label(gameplay_hud, "ContextNotice", "", 17)
 	notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	notice.offset_left = -300
 	notice.offset_right = 300
-	notice.offset_top = 40
-	notice.offset_bottom = 90
+	notice.offset_top = 142 if game.arena_mode else 40
+	notice.offset_bottom = 180 if game.arena_mode else 90
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_build_instrument()
@@ -214,9 +232,10 @@ func _sync_button() -> void:
 	if intro and game.arena_mode:
 		menu_kicker.text = "FIVE WAVES AT SEA"
 		menu_body.text = "Survive five waves of hostile cutters.\nSail, turn and fire. The light marks the centre."
-	if won and game.arena_mode:
-		menu_title.text = "Waters clear."
-		menu_body.text = "Five waves defeated. You survived the night."
+	if not intro and game.arena_mode:
+		menu_title.text = "THE SEA IS YOURS" if won else "SHIP SUNK"
+		menu_title.add_theme_font_size_override("font_size",36)
+		menu_body.text = "All five waves defeated. You survived the night." if won else game.failure_reason
 	menu_controls.visible = intro
 	menu_details.visible = won
 	menu_details.text = ("Survived   %02d:%02d" if game.arena_mode else "Voyage time   %02d:%02d") % [int(game.elapsed) / 60, int(game.elapsed) % 60]
@@ -237,12 +256,7 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(game) or not is_instance_valid(gameplay_hud):
 		return
 	_sync_button()
-	if game.arena_mode:
-		var waves = game.enemy_encounters
-		wave_label.text = "WAVE %d / 5" % waves.wave_number if waves.wave_in_progress else "NEXT WAVE  ·  %ds" % ceili(waves.next_wave_in)
-		wave_label.visible = game.state == game.State.SAILING
-	else:
-		wave_label.visible = false
+	_update_wave_ui()
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
 	menu.modulate.a = _menu_alpha
 	if game.state != game.State.SAILING:
@@ -310,16 +324,16 @@ func _update_notice() -> void:
 	elif game.discovery_left > 0:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
-	elif game.enemy_encounters.ship.age < 4.0 and game.enemy_encounters.battle_active():
+	elif not game.arena_mode and game.enemy_encounters.focus_ship().age < 4.0 and game.enemy_encounters.battle_active():
 		value = "Cutter nearby · Hold E to aim"
-		alpha = clampf(4.0 - game.enemy_encounters.ship.age, 0.0, 1.0)
+		alpha = clampf(4.0 - game.enemy_encounters.focus_ship().age, 0.0, 1.0)
 	notice.text = value
 	notice.modulate.a = alpha
 	notice.visible = not value.is_empty()
 
 
 func _update_threat() -> void:
-	var ship = game.enemy_encounters.ship
+	var ship = game.enemy_encounters.focus_ship(true)
 	_has_threat = game.enemy_encounters.enabled and (ship.mode == ship.Mode.TELEGRAPH or not ship.projectiles.is_empty())
 	threat_label.visible = _has_threat
 	if not _has_threat:
@@ -490,3 +504,26 @@ func star_horizon_line() -> Dictionary:
 	if end_y <= at.y + 18.0:
 		return {}
 	return {"from": at + Vector2(0, 13), "to": Vector2(at.x, end_y)}
+
+
+func _update_wave_ui() -> void:
+	var waves = game.enemy_encounters
+	var active: bool = game.arena_mode and game.state == game.State.SAILING
+	wave_label.visible=active
+	wave_countdown.visible=false
+	wave_announcement.visible=false
+	if not active:
+		return
+	wave_label.text="WAVE %d / 5" % maxi(1,waves.wave_number)
+	if waves.phase == waves.Phase.EARLY_CLEAR:
+		wave_countdown.text="WAVE CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
+		wave_countdown.visible=true
+	elif waves.wave_number < 5 and waves.next_wave_in>0 and waves.next_wave_in<=15:
+		var seconds := ceili(waves.next_wave_in)
+		wave_countdown.text="NEXT WAVE IN %02d:%02d" % [seconds/60,seconds%60]
+		wave_countdown.visible=true
+	if waves.announcement_left>0:
+		wave_announcement.text=waves.announcement
+		wave_announcement.visible=true
+		var elapsed: float = 2.0-waves.announcement_left
+		wave_announcement.modulate.a=minf(clampf(elapsed/0.25,0,1),clampf(waves.announcement_left/0.5,0,1))

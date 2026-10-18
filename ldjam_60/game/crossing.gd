@@ -133,6 +133,7 @@ var last_sighting_time: float = 0.0
 var _last_thunder: int = -1
 var world_environment: WorldEnvironment
 var moon: DirectionalLight3D
+var _wave_audio: AudioStreamPlayer
 var _victory_audio: AudioStreamPlayer
 var _danger_audio: AudioStreamPlayer
 var hull: int = 3
@@ -269,6 +270,7 @@ func _ready() -> void:
 	_build_audio()
 	if DisplayServer.get_name() != "headless":
 		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
+		_wave_audio = cannon._audio(110.0, 0.55, -22.0)
 		_victory_audio = cannon._audio(440.0, 0.03, -16.0)
 		_danger_audio = cannon._audio(66.0, 0.8, -16.0)
 	_update_view(1.0)
@@ -381,8 +383,6 @@ func start_crossing() -> void:
 	transition_elapsed = 0.0
 	_transition_from = camera.transform
 	state = State.CASTING_OFF
-	if arena_mode:
-		show_discovery("Cutters incoming · survive five waves", 3.5)
 
 
 func arena_center() -> Vector3:
@@ -841,7 +841,7 @@ func _camera_shore_anchor() -> Vector3:
 
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	# Compose poses for the single transform writer in _update_view; never change gun yaw.
-	var ship = enemy_encounters.ship
+	var ship = enemy_encounters.focus_ship()
 	var combat: bool = ocean.wave_field.waves.is_empty() and not wave_encounters.busy() and is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
 	camera_mode = CameraMode.STARGAZING if reading else CameraMode.CANNON if cannon.aiming else CameraMode.COMBAT if combat else CameraMode.SAILING
 	var aiming: bool = camera_mode == CameraMode.CANNON
@@ -1094,7 +1094,9 @@ func _apply_night_illumination() -> void:
 func cue_sound(kind: String) -> void:
 	if not _sound_enabled:
 		return
-	if kind == "victory" and is_instance_valid(_victory_audio):
+	if kind == "wave" and is_instance_valid(_wave_audio):
+		_wave_audio.play()
+	elif kind == "victory" and is_instance_valid(_victory_audio):
 		_victory_audio.play()
 	elif kind in ["enemy_shot", "damage", "thunder"] and is_instance_valid(_danger_audio):
 		_danger_audio.pitch_scale = 0.7 if kind == "thunder" else 1.0

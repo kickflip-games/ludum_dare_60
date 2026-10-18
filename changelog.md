@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Add lighthouse defence on the integrated arena: five data-driven
+  cutter waves (1/2/2/3/3), staggered spawns, five lighthouse integrity, warned
+  breaches, intermissions and complete endings/retry. Planned checks include
+  real projectile interceptions, no-fire defeat, multi-ship lifecycle and
+  rendered combat/end screens. This follow-up implementation and its dedicated
+  defence-mode checks remain pending.
+
 - Refined the lighthouse arena to a 170 m, five-wave player-survival loop with
   a safe 75 m spawn, editable curved reef, broken wreck/cargo and three low
   islets. Four clear-water sectors spawn the existing cutter; the lighthouse

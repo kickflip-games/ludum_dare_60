@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Add lighthouse defence on the integrated arena: five data-driven
+  cutter waves (1/2/2/3/3), staggered spawns, five lighthouse integrity, warned
+  breaches, intermissions and complete endings/retry. Planned checks include
+  real projectile interceptions, no-fire defeat, multi-ship lifecycle and
+  rendered combat/end screens. Implementation awaits the arena integration;
+  no defence-mode checks have run yet.
+
 - In progress: Pivot normal play to a lighthouse-centred arena with a safe
   spawn, circular rudder return and hard radial containment. Retain voyage
   systems for reuse, disable their normal progression, and preserve cannon,

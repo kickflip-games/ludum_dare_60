@@ -170,11 +170,13 @@ void sky() {
 		float radius = mix(0.0008, 0.0018, focus);
 		float core = 1.0 - smoothstep(radius, radius + pixel_angle, separation);
 		float glow = exp(-separation * separation / mix(0.000016, 0.000090, focus));
-		starlight += guiding_star_color.rgb * (core * (0.8 + focus * 1.6) + glow * (0.035 + focus * 0.32)) * pulse;
+		vec3 navigation_light = (vec3(1.0,0.96,0.89)*core*3.0 + guiding_star_color.rgb*glow*0.95)*pulse*focus;
 
 		night += starlight * smoothstep(0.015, 0.15, d.y) * mix(1.0, 0.78, storm);
 		vec4 clouds = procedural_clouds ? toon_clouds(d) : painted_clouds(d);
-		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning);
+		// Magical guiding light remains readable in low cloud and storm. This is
+		// the same ray as the sextant/halo, without a focus key or horizon fade.
+		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning) + navigation_light;
 		if (cloud_debug == 1) { COLOR = vec3(clouds.a); }
 		if (cloud_debug == 2) { COLOR = night; }
 		if (cloud_debug == 3) { COLOR = clouds.rgb; }

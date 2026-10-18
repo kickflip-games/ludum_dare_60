@@ -6,12 +6,12 @@ const CASES := [
 	["casting-off", "Casting off", "Casting off… appears; menus and sailing gauges are hidden."],
 	["sailing", "Quiet sailing", "No hull symbols, compass, course line or cannon prompt."],
 	["drift", "Wave drift", "Wave drift leaves the HUD quiet; the boat and water carry the motion."],
-	["searching", "Sextant / searching", "Delicate graduated sextant and alignment notch; no guiding halo before focus."],
-	["star-wreck", "Focused star / Wreck", "Gold star with two broken halo segments; thin vertical guide fades toward the lower edge."],
-	["star-peaks", "Focused star / Twin Peaks", "Blue star with three broken halo segments."],
-	["star-harbour", "Focused star / Harbour", "Coral star with four broken halo segments."],
-	["star-port", "Off-screen star / port", "Peripheral glimmer on the left; no arrow or bearing text."],
-	["star-starboard", "Off-screen star / starboard", "Peripheral glimmer on the right."],
+	["searching", "Sextant / always visible", "Lower-left sextant reads the live angle; no focus delay or sighting button."],
+	["star-wreck", "Guiding star / red", "Bright red star with three halo segments, above the normal helm horizon."],
+	["star-peaks", "Guiding star / blue", "Bright blue star with four halo segments."],
+	["star-harbour", "Guiding star / harbour", "Red final star follows the actual lighthouse harbour."],
+	["star-port", "Off-screen star / port", "Star is offscreen; the permanent sextant reads the turn left."],
+	["star-starboard", "Off-screen star / starboard", "Star is offscreen; the permanent sextant reads the turn right."],
 	["cutter", "Cutter encounter / target", "Brief encounter notice; no target brackets or enemy hull dots."],
 	["incoming-port", "Incoming / port", "Port warning and left edge chevron."],
 	["incoming-starboard", "Incoming / starboard", "Starboard warning and right edge chevron."],
@@ -32,12 +32,12 @@ const CASES := [
 	["victory", "Safe harbour", "Arrival menu with voyage time and Retry; no numeric hull health."],
 	["defeat", "Lost at sea", "Defeat menu with failure text and Retry."],
 	["healthy-hull", "Healthy hull", "Normal boat appearance with no hull tooltip or indicator."],
-	["star-horizon", "Star / visible horizon", "Projected star column ends on the visible world horizon."],
-	["star-release", "Sextant / release", "Lowered instrument and guide disappear immediately, even while the camera returns."],
+	["star-horizon", "Star / visible horizon", "Low star and real sea horizon share the ordinary deck view."],
+	["star-release", "Sextant / no activation", "Instrument and star remain visible without held sighting input."],
 	["tooltip-reload", "Authored tooltip / cannon reload", "Reload hover text (hover is enabled by this test only)."],
 	["star-left", "Focused star / left", "Guide uses the actual off-centre star X coordinate."],
 	["star-right", "Focused star / right", "Guide uses the actual off-centre star X coordinate."],
-	["star-focusing", "Sextant / partial focus", "The true star and its line appear gradually after the search delay."],
+	["star-focusing", "Star / immediate guidance", "Guiding light is bright immediately; no partial-focus stage."],
 	["sighting-repair", "Sextant / repairs", "Sextant stays clear during automatic repairs; no health UI is added."],
 	["discovery-fading", "Discovery / fading", "Brief discovery text fades without revealing the next destination."],
 	["development-chart", "Development chart (F2)", "Optional development-only map, landmark labels and wave zones."],
@@ -94,6 +94,7 @@ func apply(index: int) -> void:
 		"searching", "star-wreck", "star-peaks", "star-harbour", "star-port", "star-starboard", "sighting-danger", "star-horizon", "star-release", "star-left", "star-right", "star-focusing", "sighting-repair":
 			var stage: int = 1 if id == "star-peaks" else 2 if id == "star-harbour" else 0
 			game.voyage.stage = stage
+			game.voyage.leg = 1 if id == "star-peaks" else 10 if id == "star-harbour" else 0
 			game.voyage.set_target(game)
 			game.heading = game.destination_bearing()
 			if id == "star-port":
@@ -101,7 +102,7 @@ func apply(index: int) -> void:
 			elif id == "star-starboard":
 				game.heading -= PI * 0.75
 			if id in ["star-left", "star-right"]:
-				game.heading += 0.65 if id == "star-left" else -0.65
+				game.heading += 0.4 if id == "star-left" else -0.4
 			game.reading = true
 			game._update_view(0.3 if id == "searching" else 0.6 if id == "star-focusing" else 1.8)
 			if id == "star-release":
@@ -150,6 +151,7 @@ func apply(index: int) -> void:
 					game.archipelago.update_discoveries()
 		"wreck-found", "peaks-found", "victory":
 			game.voyage.stage = 0 if id == "wreck-found" else 1 if id == "peaks-found" else 2
+			game.voyage.leg = 2 if id == "wreck-found" else 6 if id == "peaks-found" else 10
 			game.voyage.set_target(game)
 			game.boat.position = game.target
 			game.voyage.update_progress(game)
@@ -170,8 +172,6 @@ func apply(index: int) -> void:
 	game._update_view(0.0 if game.reading else 0.1)
 	if id in ["cannon", "reload", "tooltip-reload", "cutter", "incoming-port", "incoming-starboard"]:
 		game._update_view(0.5)
-	if id == "star-horizon":
-		game.camera.rotation.x = deg_to_rad(30.0)
 	game.hud._process(0.1)
 	game.hud._menu_alpha = 1.0
 	game.hud.menu.modulate.a = 1.0
@@ -212,11 +212,11 @@ func problem(index: int) -> String:
 	match id:
 		"title": ok = hud.menu.visible and hud.action_button.has_focus() and not hud.gameplay_hud.visible
 		"casting-off": ok = game.state == game.State.CASTING_OFF and not hud.menu.visible and not hud.gameplay_hud.visible
-		"sailing": ok = hud.gameplay_hud.visible and not hud.notice.visible and not hud.instrument.visible and not hud.cannon_gauge.visible and hud.get_node_or_null("SailingHUD/HeadingCompass") == null
+		"sailing": ok = hud.gameplay_hud.visible and not hud.notice.visible and hud.instrument.visible and not hud.cannon_gauge.visible and hud.get_node_or_null("SailingHUD/HeadingCompass") == null
 		"drift": ok = game.wave_sailing.drift.length() > 0.3
-		"searching": ok = hud.instrument.visible and game.focus_strength == 0.0 and hud.star_guidance().is_empty()
+		"searching": ok = hud.instrument.visible and game.focus_strength == 1.0 and not hud.star_guidance().is_empty()
 		"star-wreck", "star-peaks", "star-harbour", "sighting-danger", "star-left", "star-right", "star-horizon", "sighting-repair":
-			ok = game.focus_strength == 1.0 and hud.star_guidance().get("visible", false) and not hud.star_horizon_line().is_empty()
+			ok = game.focus_strength == 1.0 and hud.star_guidance().get("visible", false) and hud.instrument.visible
 			if id == "sighting-danger":
 				ok = ok and hud.threat_label.visible and game.boat_damage.severity == 2
 		"star-port", "star-starboard":
@@ -233,15 +233,15 @@ func problem(index: int) -> String:
 		"critical": ok = game.boat_damage.severity == 2
 		"repair": ok = game.boat_damage.severity == 2 and is_equal_approx(game.hull_repair_elapsed, 4.0)
 		"repaired", "full-hull": ok = game.boat_damage.severity == (0 if id == "full-hull" else 1) and game.hull == (3 if id == "full-hull" else 2)
-		"wreck-found", "peaks-found": ok = hud.notice.text == ("The Wreck found" if id == "wreck-found" else "Twin Peaks found")
+		"wreck-found", "peaks-found": ok = hud.notice.text.contains("The Wreck" if id == "wreck-found" else "Twin Peaks") and hud.notice.text.contains("new star")
 		"salvage": ok = hud.notice.text.contains("salvage recovered") and game.hull == 2
 		"boundary": ok = hud.notice.text.contains("turn back")
 		"storm": ok = game.storm_blend > 0.6
 		"victory": ok = hud.menu.visible and hud.menu_title.text == "Safe harbour." and hud.menu_details.text.contains("01:42") and not hud.gameplay_hud.visible
 		"defeat": ok = hud.menu.visible and hud.menu_title.text == "Lost at sea." and not hud.gameplay_hud.visible
 		"development-chart": ok = game.archipelago.debug_layer.visible
-		"star-focusing": ok = 0.0 < game.focus_strength and game.focus_strength < 1.0 and not hud.star_horizon_line().is_empty()
-		"star-release": ok = not hud.instrument.visible and hud.star_horizon_line().is_empty() and game.read_blend > 0.0
+		"star-focusing": ok = game.focus_strength == 1.0 and hud.star_guidance().get("visible",false)
+		"star-release": ok = hud.instrument.visible and not hud.star_guidance().is_empty() and game.read_blend == 0.0
 		"discovery-fading": ok = hud.notice.visible and hud.notice.modulate.a > 0.0 and hud.notice.modulate.a < 0.5
 		"healthy-hull": ok = game.boat_damage.severity == 0 and hud.gameplay_hud.get_node_or_null("Hull") == null
 	return "" if ok else "Fixture does not show its expected state: " + id

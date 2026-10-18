@@ -182,6 +182,14 @@ func clear_turbulence() -> void:
 func update_turbulence(encounters: RefCounted, delta: float) -> void:
 	# A fixed region footprint; neither its position nor its phase follows the mesh.
 	var target := 0.0
+	if encounters.journey_mode:
+		turbulence_center = encounters.zone_center
+		turbulence_radius = encounters.zone_radius
+		_turbulence_active = not encounters.star_zones.is_empty()
+		# Zero exactly at the end of the 70% window; no cosmetic recovery tail.
+		turbulence_intensity = 1.0 if _turbulence_active else 0.0
+		material.set_shader_parameter("turbulence_area",Vector4(turbulence_center.x,turbulence_center.y,turbulence_radius,turbulence_intensity))
+		return
 	if encounters.busy():
 		if _turbulence_region != encounters.region_id:
 			for r: Vector4 in encounters.REGIONS:

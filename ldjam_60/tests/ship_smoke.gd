@@ -267,7 +267,13 @@ func _run() -> void:
 	await retreat()
 	await boundaries()
 	await safety()
-	var report := FileAccess.open("/tmp/latitude-enemy-motion.json", FileAccess.WRITE)
+	var output := ProjectSettings.globalize_path("res://").path_join("../build/navigation_review").simplify_path()
+	DirAccess.make_dir_recursive_absolute(output)
+	var report := FileAccess.open(output.path_join("latitude-enemy-motion.json"), FileAccess.WRITE)
+	if report == null:
+		check(false,"enemy-motion report can be written")
+		quit(1)
+		return
 	report.store_string(JSON.stringify(traces, "\t"))
 	print("SHIP CHECK: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

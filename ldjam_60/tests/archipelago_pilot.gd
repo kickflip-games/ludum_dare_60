@@ -14,13 +14,5 @@ func route(stage: int) -> Array:
 	return (WRECK_SHORTCUT if alternate else WEST_START) if stage == 0 else (SOUTH_ROUTE if alternate else NORTH_ROUTE) if stage == 1 else (INNER_ROUTE if alternate else EAST_ROUTE)
 
 func steering(game: Node3D) -> float:
-	if game.voyage.stage != previous_stage:
-		previous_stage = game.voyage.stage
-		point = 0
-	var points := route(mini(game.voyage.stage, 2))
-	var boat := Vector2(game.boat.position.x, game.boat.position.z)
-	while point < points.size() - 1 and boat.distance_to(points[point]) < 14.0:
-		point += 1
-	var offset: Vector2 = points[point] - boat
-	var desired := atan2(offset.x, -offset.y)
-	return clampf(wrapf(desired - game.heading, -PI, PI) * 2.8, -1.0, 1.0)
+	# New navigation has real intermediate stars; no hidden pilot-only detours.
+	return clampf(game.destination_turn()*3.0-game.wave_sailing.yaw_rate*0.7,-1.0,1.0)

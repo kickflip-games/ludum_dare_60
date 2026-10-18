@@ -1,6 +1,9 @@
 # Navigation redesign proposal
 
-18 October 2026. Planning only; no gameplay implementation is authorized by this document.
+18 October 2026. Original planning proposal, subsequently approved by the user.
+Implementation and actual checks are recorded in the
+[journey report](navigation_journey_report.md), including the later requirement
+for turbulence lasting 70% of each nominal star leg.
 The user confirmed that this work keeps the lighthouse journey while another team
 works on the arena. The recommendations below remain proposed tuning.
 

@@ -83,6 +83,7 @@ func debug_spawn(stage: int) -> void:
 	game.restart()
 	game.state = game.State.SAILING
 	game.voyage.stage = stage
+	game.voyage.leg = [2,6,10][stage]
 	game.voyage.set_target(game)
 	game.boat.position = $SpawnPoints.get_child(stage + 1).position
 	game.heading = game.destination_bearing()

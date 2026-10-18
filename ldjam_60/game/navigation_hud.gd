@@ -124,7 +124,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
+	for pair: Array in [["A / D", "Follow the bright star"], ["Sextant", "0° means straight ahead"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -179,10 +179,14 @@ func _gauge(node_name: String, preset: int, rect: Rect2) -> Control:
 
 func _build_instrument() -> void:
 	instrument = Control.new()
-	instrument.name = "Astrolabe"
+	instrument.name = "Sextant"
 	instrument.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gameplay_hud.add_child(instrument)
-	instrument.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	instrument.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	instrument.offset_left = 20
+	instrument.offset_right = 210
+	instrument.offset_top = -148
+	instrument.offset_bottom = -20
 
 
 func _sync_button() -> void:
@@ -233,12 +237,12 @@ func _process(delta: float) -> void:
 		_last_cooldown = game.cannon.cooldown
 		queue_redraw()
 		return
-	_reading_alpha = smoothstep(0.0, 1.0, game.read_blend) if game.reading else 0.0
+	_reading_alpha = 1.0
 	if _last_cooldown > 0.0 and game.cannon.cooldown == 0.0:
 		cannon_gauge.pulse = 0.5
 	_last_cooldown = game.cannon.cooldown
 	cannon_gauge.update_presentation(delta)
-	cannon_gauge.visible = not game.reading and (game.cannon.aiming or game.cannon.cooldown > 0.0 or cannon_gauge.pulse > 0.0)
+	cannon_gauge.visible = game.cannon.aiming or game.cannon.cooldown > 0.0 or cannon_gauge.pulse > 0.0
 	instrument.modulate.a = _reading_alpha
 	instrument.visible = _reading_alpha > 0.01
 	_update_threat()
@@ -253,7 +257,7 @@ func _star_screen_position() -> Vector2:
 
 func star_guidance() -> Dictionary:
 	# Presentation geometry only; every ray comes from the authoritative bearing.
-	if not game.reading or game.state != game.State.SAILING or game.focus_strength <= 0.0:
+	if game.state != game.State.SAILING:
 		return {}
 	var direction: Vector3 = game.guiding_star_direction()
 	var at := _star_screen_position()
@@ -348,11 +352,10 @@ func _draw() -> void:
 		var color := Color(CORAL, 0.8 + sin(game.sea_time * 14) * 0.2)
 		_line(at + Vector2(-6 * side, -12), at + Vector2(6 * side, 0), color, 3)
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
-	if game.reading and _reading_alpha > 0.01:
-		_draw_instrument()
-	else:
-		if game.cannon.aiming and game.cannon.indicator_alpha > 0.01:
-			_draw_cannon_sight()
+	_draw_instrument()
+	_draw_star()
+	if game.cannon.aiming and game.cannon.indicator_alpha > 0.01:
+		_draw_cannon_sight()
 
 
 func _draw_damage_edges() -> void:
@@ -401,56 +404,38 @@ func _draw_cannon_sight() -> void:
 
 
 func _draw_instrument() -> void:
-	var alpha: float = _reading_alpha
-	var center := Vector2(size.x * 0.5, size.y - 154)
-	var radius := 104.0
-	var brass := Color(BRASS, alpha * 0.72)
-	# An open sextant frame leaves the sky visible. No live needle or course
-	# bubble gives away the solution during the searching stage.
-	var a := PI * 0.20
-	var b := PI * 0.80
-	draw_arc(center, radius, a, b, 48, brass, 1.3, true)
-	draw_arc(center, radius - 12, a, b, 48, Color(BRASS, alpha * 0.25), 1, true)
-	for tick in range(25):
-		var angle := lerpf(a, b, tick / 24.0)
-		var direction := Vector2(cos(angle), sin(angle))
-		var length_value: float = 9 if tick % 4 == 0 else 4
-		draw_line(center + direction * (radius - length_value), center + direction * radius, brass, 1, true)
-	for angle: float in [a, b]:
-		_line(center, center + Vector2(cos(angle), sin(angle)) * radius, Color(BRASS, alpha * 0.4), 1.0)
-	# Central alignment notch belongs to the sextant, never a second crosshair.
-	_line(center + Vector2(-10, -2), center + Vector2(-3, -2), brass, 1.2)
-	_line(center + Vector2(3, -2), center + Vector2(10, -2), brass, 1.2)
-	_line(center + Vector2(0, -7), center + Vector2(0, 3), brass, 1.2)
-	if not game.reading or game.focus_strength <= 0.0:
-		return
+	var center := Vector2(86,size.y-72)
+	var brass := Color(BRASS,0.95)
+	draw_circle(center,55,Color(DARK,0.78),true,-1,true)
+	draw_arc(center,45,PI,TAU,48,brass,1.6,true)
+	for tick in range(13):
+		var angle := PI+PI*tick/12.0
+		var ray := Vector2(cos(angle),sin(angle))
+		_line(center+ray*39,center+ray*45,brass,1)
+	var turn: float = game.destination_turn()
+	var needle := -PI/2+clampf(turn,-PI/2,PI/2)
+	_line(center,center+Vector2(cos(needle),sin(needle))*35,game.guiding_star_color(),2.5)
+	_text(center+Vector2(0,17),sextant_reading(),17,INK,true)
+	_text(center+Vector2(0,41),"SEXTANT",11,BRASS,true)
+
+func sextant_reading() -> String:
+	var degrees := roundi(rad_to_deg(game.destination_turn()))
+	return "0° · aligned" if absi(degrees) <= 2 else "%d° %s" % [absi(degrees),"left" if degrees < 0 else "right"]
+
+func _draw_star() -> void:
 	var guidance := star_guidance()
 	if guidance.is_empty():
 		return
-	var focus: float = game.focus_strength
 	var at: Vector2 = guidance.position
 	var tint: Color = game.guiding_star_color()
-	var pulse := 0.92 + sin(game.sea_time * (1.7 + game.voyage.stage * 0.3)) * 0.08
-	var glint := Color(tint, alpha * focus * game.target_highlight_strength * pulse)
+	var pulse := 0.92 + sin(game.sea_time*2.0)*0.08
+	var glint := Color(tint,pulse)
 	if not guidance.visible:
-		# A little peripheral shimmer, never an arrow, word or sailing marker.
-		for layer in range(5, 0, -1):
-			draw_circle(at, layer * 2.8, Color(tint, glint.a * 0.035 * (6 - layer)), true, -1, true)
-		draw_circle(at, 1.8, glint, true, -1, true)
-		draw_line(at + Vector2(-5, 0), at + Vector2(5, 0), Color(tint, glint.a * 0.6), 1, true)
 		return
-	var guide := star_horizon_line()
-	if not guide.is_empty():
-		# Fade down the actual projected column; never a world-space waypoint.
-		var from: Vector2 = guide.from
-		var to: Vector2 = guide.to
-		for step in range(32):
-			var t := step / 32.0
-			var opacity := 0.30 * alpha * focus * (1.0 - smoothstep(0.60, 1.0, t))
-			draw_line(from.lerp(to, t), from.lerp(to, (step + 1) / 32.0), Color(INK, opacity), 1.0, true)
-	# Small broken halos distinguish stages by shape as well as colour.
-	var segments: int = 2 + mini(game.voyage.stage, 2)
-	var halo_radius := 10.0 + sin(game.sea_time * 1.7) * 0.5
+	# Both the halo and the actual sky light share the authoritative world ray.
+	var segments: int = 3 if game.voyage.leg%2 == 0 else 4
+	var halo_radius: float = 12.0+game.voyage.handoff_left*8.0
+	draw_circle(at,2.2,Color("fff5e5"),true,-1,true)
 	for segment in range(segments):
 		var angle: float = segment * TAU / segments + game.sea_time * 0.08
 		draw_arc(at, halo_radius, angle, angle + TAU / segments - 0.6, 20, glint, 1.0, true)

@@ -6,6 +6,16 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Implemented the approved lighthouse journey with a permanent
+  sextant, bright low red/blue stars, ordered short water passages, 9.5 m/s
+  cruising and optional wind lanes. Each new alignment summons a fixed zone
+  ahead for 70% of the nominal 15-second leg (10.5 seconds). Eleven physical
+  legs end at the actual harbour. Adjusted cutter transit speed for the faster
+  player and fixed the ship-test report path on Windows. 848 checks across
+  fifteen suites pass; native voyage arrives in 2:15 with full hull. Import and
+  rendered HUD/wave/arrival review pass. Human playtesting and Web profiling
+  remain open; see the [journey report](artifacts/navigation_journey_report.md).
+
 - Planning only: opened the [navigation redesign proposal](artifacts/navigation_redesign_plan.md)
   for a permanent sextant, helm-visible stars, short route legs and faster sailing.
   The lighthouse-arena PR overlaps the voyage direction; gameplay remains unchanged.

@@ -38,6 +38,7 @@ func _run() -> void:
 		await process_frame
 	var pilot := Pilot.new()
 	pilot.alternate = alternate
+	game.wind_regions.enabled = not alternate
 	var cadence: Array[float] = []
 	var previous: int = Time.get_ticks_usec()
 	var stages: Array[int] = [0]
@@ -47,29 +48,23 @@ func _run() -> void:
 		Input.action_release("steer_starboard")
 		if absf(steering) > 0.01:
 			Input.action_press("steer_port" if steering < 0 else "steer_starboard", absf(steering))
-		if fmod(game.elapsed, 17.0) < 1.9:
-			Input.action_press("astrolabe")
-		else:
-			Input.action_release("astrolabe")
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 		game.hud._process(1.0 / 60.0)
-		if game.reading and game.focus_strength >= 1:
+		if game.state == game.State.SAILING:
 			guidance_checks += 1
 			var ray: Vector3 = game.sky_material.get_shader_parameter("guiding_star")
 			var toward: Vector3 = (game.target - game.boat.global_position).normalized()
 			if Vector3(ray.x, 0, ray.z).normalized().dot(toward) < 0.9999 or game.hud.star_guidance().is_empty():
 				guidance_failures += 1
-		elif not game.reading and not game.hud.star_guidance().is_empty():
-			guidance_failures += 1
 		await process_frame
 		var now := Time.get_ticks_usec()
 		cadence.append((now - previous) / 1000.0)
 		previous = now
 		if game.elapsed > 5 and game.elapsed < 6:
 			await capture("01-departure")
-		if game.reading and game.focus_strength >= 1:
-			await capture("star-stage-%d" % game.voyage.stage)
+		if game.state == game.State.SAILING:
+			await capture("star-leg-%02d" % game.voyage.leg)
 		if stages.back() != game.voyage.stage:
 			stages.append(game.voyage.stage)
 			await capture("discovery-%d" % game.voyage.stage)

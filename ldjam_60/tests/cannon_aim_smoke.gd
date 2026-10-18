@@ -46,6 +46,7 @@ func _run() -> void:
 	game.current_strength = 0
 	game.gust_strength = 0
 	game.enemy_encounters.enabled = false
+	game.wave_encounters.enabled = false
 	game.start_crossing()
 	step(1.3)
 	game.boat.position = Vector3(400, 0, 360)
@@ -167,7 +168,7 @@ func _run() -> void:
 	c.update_aim(0.1)
 	check(c.aim_degrees < 0, "Inspector initial direction reverses the predictable sweep")
 	c.initial_sweep_direction = 0
-	# Space cancels pending fire regardless of event order; held F cannot leak through.
+	# The retired sighting action cannot interfere with E/F in either event order.
 	for fire_first in [true, false]:
 		c.cooldown = 0
 		shots = c.shots_fired
@@ -178,7 +179,7 @@ func _run() -> void:
 			action("astrolabe", true)
 			action("fire_starboard", true)
 		step(0.4)
-		check(not c.aiming and c.shots_fired == shots and game.camera_mode == game.CameraMode.STARGAZING, "Space has priority over pending shot")
+		check(c.aiming and c.shots_fired == shots+1 and game.camera_mode == game.CameraMode.CANNON, "retired Space action does not suppress a fresh cannon shot")
 		# Isolate camera shake from the intentional rudder momentum after earlier turns.
 		game.wave_sailing.reset()
 		var bearing: float = game.last_reading
@@ -187,7 +188,7 @@ func _run() -> void:
 		check(game.last_reading == bearing, "camera shake cannot change navigation bearing")
 		action("astrolabe", false)
 		step(0.6)
-		check(c.aiming and c.shots_fired == shots and game.camera_mode == game.CameraMode.CANNON, "Space release resumes held E without firing held F")
+		check(c.aiming and c.shots_fired == shots+1 and game.camera_mode == game.CameraMode.CANNON, "Space release does not repeat a held F shot")
 		action("fire_starboard", false)
 		step()
 		step()
@@ -321,6 +322,11 @@ func _run() -> void:
 		check(ship.hull < ship.hull_capacity, "timed shot hits moving hull at sweep phase %.2f" % phase)
 	ship.reset()
 	game.damage_immunity = 0
+	# Establish a nonlethal vulnerability case independently of earlier hazards.
+	game.state = game.State.SAILING
+	game.hull = game.hull_capacity
+	c.set_aim_held(true)
+	c.update_aim(0)
 	var hull: int = game.hull
 	game.take_damage(1, "Gun view vulnerability")
 	check(game.hull == hull - 1 and c.aiming, "taking damage remains active in cannon mode")

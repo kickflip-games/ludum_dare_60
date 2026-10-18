@@ -17,7 +17,9 @@ func trial(height: float, direction: Vector2, hz: int, counter: bool = false, de
 	var field := Field.new()
 	var sailing := Sailing.new()
 	var d := direction.normalized()
-	field.add_wave(Vector2(0, -18.9) - d * 24.0, d, height, 4.0, 26.0, 8.0, 0.0, 8.0)
+	# Preserve the established isolated 6.3 m/s force-profile regression.
+	# star_turbulence_smoke exercises full production speed and summoned crests.
+	field.add_wave(Vector2(0,-18.9) - d * 24.0, d, height, 4.0, 26.0, 8.0, 0.0, 8.0)
 	var p := Vector2.ZERO
 	var heading := 0.0
 	var max_yaw := 0.0
@@ -26,7 +28,7 @@ func trial(height: float, direction: Vector2, hz: int, counter: bool = false, de
 		var steer := 0.0
 		if counter and time >= delay:
 			steer = clampf(-heading * 3.0 - p.x * 0.12 - sailing.drift.x * 0.22, -1, 1)
-		heading = sailing.step(field, p, heading, steer, time, 1.0 / hz)
+		heading = sailing.step(field, p, heading, steer, time, 1.0 / hz,6.3)
 		p += sailing.displacement
 		max_yaw = maxf(max_yaw, absf(heading))
 	return {"x": p.x, "z": p.y, "heading": heading, "max_yaw": max_yaw}

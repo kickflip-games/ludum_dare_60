@@ -100,7 +100,35 @@ Calm's existing five-point response uses damping 12/s and pitch/roll strengths 0
 
 Player and enemy cannonballs find the first sampled surface crossing along each segment, refine it in space/time, and compare it with solid impacts. Launch still follows the actual rocking muzzle. Splash rings remain short-lived visual effects.
 
-## Encounters and tuning
+## Current journey encounters
+
+Normal journeys use alignment-summoned regions in `wave_encounters.gd`.
+Each star held within 8° for 0.35 s creates exactly one world-fixed region
+centred 45 m ahead of the boat. The nominal star leg is 15 s; its turbulence
+budget is 70%, or 10.5 s, including the approach and crest fade. The player can
+leave the zone; its centre and directions never chase the boat. Faster handoffs
+can overlap region lifetimes, with the shared four-wave limit retained.
+
+Finite crests are launched from a captured trajectory through that fixed region,
+using the existing terrain safety checks and 0.70/1.10/0.85/1.35 m heights.
+Launches stop when fewer than four seconds remain; every emitted crest's
+lifetime is capped at the zone endpoint. No old ambient/regional scheduler runs
+in this mode. Actual physical leg travel time can be longer or shorter than
+the nominal budget. New stars reset the alignment latch; realigning the same
+star cannot restart a region. Retry/win/loss clear live regions and wave events.
+
+Movement takes its authoritative cruise from `wave_sailing.gd` (9.5 m/s);
+optional wind supplies a bounded speed argument up to 12.5 m/s. The analytical
+profile, sampled boat response, projectile contacts and CPU/GPU authority stay
+unchanged. `star_turbulence_smoke.gd` covers actual new-speed counterplay;
+the isolated 6.3 m/s regression in `wave_encounter_smoke.gd` preserves the
+established force-profile comparison separately.
+
+## Development regional encounters and tuning
+
+The older regional behavior below is available through the F6 development
+fixture. It no longer schedules normal journey waves.
+
 
 `wave_encounters.gd` contains 14 independently identified zones, two curated directional patterns and the tuning values. Zones cover western/northern/southern/eastern passages, inner channels, and four outer open-sea areas. Each zone can activate once per voyage regardless of discovery stage; visiting one never consumes another zone's encounter. Departure and harbour remain protected.
 

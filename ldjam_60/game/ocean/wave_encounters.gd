@@ -1,6 +1,7 @@
 extends RefCounted
 ## Seeded open-water events, finite regional sets, and a guaranteed quiet recovery.
 enum Phase { CALM, WARNING, ACTIVE, DRAINING, RECOVERY }
+const CRUISE_SPEED := preload("res://game/ocean/wave_sailing.gd").CRUISE_SPEED
 const PATTERNS := [[-1, 1, 0, -2, 2, -1, 1, 0, -2, 2], [1, -1, 0, 2, -2, 1, -1, 0, 2, -2]]
 # Alternate sizes immediately, then build to larger late-set crests.
 const CREST_HEIGHTS := [0.65, 1.1, 0.8, 1.5, 0.95, 1.65, 1.15, 1.8, 1.35, 1.85]
@@ -34,6 +35,13 @@ var warning_direction := Vector2.ZERO
 var warning_until := 0.0
 var rng := RandomNumberGenerator.new()
 var enabled := true
+## Normal voyages summon fixed, short zones after each new star alignment.
+## The old regional mode remains available only to the F6 development fixture.
+var journey_mode := true
+var star_zones: Array[Dictionary] = []
+var star_history: Array[Dictionary] = []
+var zone_center := Vector2.ZERO
+var zone_radius := 40.0
 
 func reset(seed_value: int) -> void:
 	rng.seed = seed_value
@@ -47,6 +55,9 @@ func reset(seed_value: int) -> void:
 	phase_until = 0.0
 	sequence_deadline = 0.0
 	warning_until = 0.0
+	star_zones.clear()
+	star_history.clear()
+	zone_center = Vector2.ZERO
 
 func busy() -> bool:
 	return phase in [Phase.WARNING, Phase.ACTIVE, Phase.DRAINING]
@@ -55,6 +66,7 @@ func stop(field: RefCounted) -> void:
 	field.clear()
 	phase = Phase.CALM
 	warning_until = 0.0
+	star_zones.clear()
 
 func warning(time: float, heading: float = 0.0) -> String:
 	if phase == Phase.WARNING:
@@ -73,6 +85,7 @@ func warning(time: float, heading: float = 0.0) -> String:
 	return ""
 
 func begin_region(id: int, forward: Vector2, time: float) -> void:
+	journey_mode = false
 	region_id = id
 	completed.append(id)
 	launched = 0
@@ -87,6 +100,9 @@ func update(game: Node3D, _delta: float) -> void:
 	var field = game.ocean.wave_field
 	field.advance(time)
 	if not enabled:
+		return
+	if journey_mode:
+		_update_star_zones(game)
 		return
 	var ship = game.enemy_encounters.ship
 	var combat: bool = ship.visible and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING]
@@ -138,7 +154,52 @@ func update(game: Node3D, _delta: float) -> void:
 			var forward := Vector2(sin(game.heading), -cos(game.heading))
 			spawn(game, [-2, -1, 0, 1, 2][rng.randi_range(0, 4)], rng.randf_range(0.32, 0.6), forward, rng.randf_range(-12.0, 12.0))
 
-func spawn(game: Node3D, kind: int, height: float, forward: Vector2, lateral_offset: float = 0.0) -> bool:
+func summon_for_star(game: Node3D, leg: int, duration: float) -> void:
+	if not enabled or not journey_mode:
+		return
+	for existing: Dictionary in star_history:
+		if existing.leg == leg:
+			return
+	var forward := Vector2(sin(game.heading),-cos(game.heading))
+	var start := Vector2(game.boat.position.x,game.boat.position.z)
+	var zone := {"leg":leg,"origin":start,"center":start+forward*45.0,
+		"forward":forward,"start":game.sea_time,"end":game.sea_time+duration,
+		"next":game.sea_time+0.6,"launched":0}
+	star_zones.append(zone)
+	star_history.append(zone.duplicate())
+	zone_center = zone.center
+	region_id = leg
+	phase = Phase.WARNING
+	game.cue_sound("warning")
+
+func _update_star_zones(game: Node3D) -> void:
+	var time: float = game.sea_time
+	star_zones = star_zones.filter(func(z: Dictionary) -> bool: return time < z.end)
+	if star_zones.is_empty():
+		phase = Phase.RECOVERY
+		return
+	zone_center = star_zones.back().center
+	region_id = int(star_zones.back().leg)
+	phase = Phase.ACTIVE if time >= star_zones.back().start+0.6 else Phase.WARNING
+	for zone: Dictionary in star_zones:
+		# Every crest must finish fading inside its zone's exact 70% window.
+		var remaining: float = zone.end-time
+		if time < zone.next or remaining < 4.0 or game.ocean.wave_field.waves.size() >= game.ocean.wave_field.MAX_WAVES:
+			continue
+		var forward: Vector2 = zone.forward
+		var virtual_position: Vector2 = zone.origin+forward*CRUISE_SPEED*(time-zone.start)
+		var kind: int = [-2,2,0,-1,1][int(zone.launched)%5]
+		var height: float = [0.70,1.1,0.85,1.35,1.0][int(zone.launched)%5]
+		if spawn(game,kind,height,forward,0.0,virtual_position,forward*CRUISE_SPEED,minf(7.0,remaining)):
+			zone.launched += 1
+			launched += 1
+			for record: Dictionary in star_history:
+				if record.leg == zone.leg:
+					record.launched = zone.launched
+		zone.next = time+1.7
+
+func spawn(game: Node3D, kind: int, height: float, forward: Vector2, lateral_offset: float = 0.0,
+		fixed_center: Vector2 = Vector2.INF, fixed_velocity: Vector2 = Vector2.INF, max_lifetime: float = 7.0) -> bool:
 	var right := Vector2(-forward.y, forward.x)
 	var direction := -forward
 	if kind != 0:
@@ -149,6 +210,9 @@ func spawn(game: Node3D, kind: int, height: float, forward: Vector2, lateral_off
 	var center3: Vector3 = game.boat.to_global(Vector3(0, 0, -2.1))
 	var center := Vector2(center3.x, center3.z)
 	var velocity := Vector2(game.boat.velocity.x, game.boat.velocity.z)
+	if fixed_center.is_finite():
+		center = fixed_center
+		velocity = fixed_velocity
 	var lead := 3.0
 	var speed := 8.0
 	var width := 4.0 + height * 0.8
@@ -156,7 +220,7 @@ func spawn(game: Node3D, kind: int, height: float, forward: Vector2, lateral_off
 	var terrain = game.archipelago.get_node("Terrain")
 	# Test the whole moving strip, including its trailing trough, before launch.
 	for span: float in [26.0, 18.0, 12.0]:
-		var lifetime := 7.0
+		var lifetime := max_lifetime
 		var safe := true
 		for along in range(-3, 17):
 			var distance := along * 4.0

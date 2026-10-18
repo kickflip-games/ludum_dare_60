@@ -1,6 +1,12 @@
 # Latitude Lines: the island sea
 
-One authored 1,024 × 1,024 m map, with 6.3 m/s sailing and a roughly 10 m turning radius. After the 18 October composition pass, the main outer route takes about 3:48 in scripted play; the longer inner detour takes about 4:31. Exploration has no time limit.
+One authored 1,024 × 1,024 m map. The current eleven-star route cruises at
+9.5 m/s, with three optional wind lanes capped at 12.5 m/s. Current input-driven
+checks reach Lighthouse Harbour in about 2:20 at cruise and 2:15 with wind,
+without terrain/obstacle impacts. Physical legs average roughly 12 seconds;
+the 15-second nominal leg sets the 10.5-second (70%) turbulence budget, not
+a forced star-switch timer. Wrong-course sailing never advances automatically.
+Earlier 3:48/4:31 route timings below are historical composition checks.
 
 | Place | World X, Z | Discovery radius |
 | --- | --- | --- |
@@ -106,23 +112,20 @@ On 18 October, all 21 composition checks and 65 full-voyage checks passed. Both 
 
 ## Navigation and development controls
 
-`voyage_director.gd` owns WRECK → TWIN_PEAKS → LIGHTHOUSE → COMPLETE. Discovery uses a generous radial test against the actual CharacterBody3D position. Early visits cannot skip stages; sinking cannot trigger victory. Replay resets stages, enemy territories, navigation memory and salvage.
+`voyage_director.gd` owns ordered `POINTS` through navigable channels. The last
+point always reads the actual Lighthouse region marker. Swept region entry
+prevents boosted boats skipping a trigger; only the current point can advance.
+The Wreck/Twin Peaks/Lighthouse stages are coarse voyage areas, not the number
+of stars. Wreck and Twin Peaks scenery remain visual anchors; salvage retains
+its independent once-per-voyage reward. Retry clears all progression and zones.
 
-Hold Space to search the sky. After 0.40 seconds, one guiding star gradually
-brightens over 0.40 seconds. Its world direction uses `destination_bearing()`
-(north = -Z, east = +X), at a constant 60° elevation. The shader, focus halo and
-camera projection share that ray. Boat movement updates it exactly; heading
-changes rotate the view naturally. Ordinary stars retain their world-fixed hashes.
-The star is pale gold for Wreck, pale blue for Twin Peaks and soft coral for the
-harbour, with two/three/four small halo segments. There are no star names,
-numerical readings or turn instructions. A focused star outside the actual
-camera frustum gives a faint edge glimmer. Astern glimmers choose the reachable
-rudder side (port for the exact tie); vertical exits use projected top/bottom.
-Release clears assistance immediately, and discovery/focus loss/retry clear focus.
-The ordinary compass shows bow heading only. Sailing has no destination overlay.
-Stars indicate orientation, including through land; players choose their detour.
-Discoveries still acknowledge the place found without announcing the next stop.
-
+The star ray, sky glow and halo use the live target azimuth at 12° elevation.
+The fixed lower-left sextant reads signed horizontal turn relative to the bow.
+Space has no activation or camera effect. Stars alternate red/blue with distinct
+halo shapes, and remain bright in cloud/storm. No automatic steering is added.
+Each star aligned for 0.35 s within 8° summons a fixed short turbulence region
+ahead; it expires after 70% of a nominal 15-second leg (10.5 s). See the
+[journey report](../../../artifacts/navigation_journey_report.md).
 
 For development only, enable `development_tools` on the crossing or launch with:
 

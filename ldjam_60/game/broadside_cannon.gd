@@ -112,7 +112,7 @@ func set_aim_held(pressed: bool) -> void:
 func set_fire_held(pressed: bool) -> void:
 	# Resolve fresh edges on the next physics tick so E + F works in either order.
 	# Reload/Space presses are discarded at receipt, never deferred until ready.
-	if pressed and not _fire_held and cooldown <= 0.0 and game.state == game.State.SAILING and not game.reading and not Input.is_action_pressed("astrolabe"):
+	if pressed and not _fire_held and cooldown <= 0.0 and game.state == game.State.SAILING:
 		_fire_pending = true
 	_fire_held = pressed
 
@@ -129,7 +129,7 @@ func cancel_aim() -> void:
 func update_aim(delta: float) -> void:
 	var fire_pressed := _fire_pending
 	_fire_pending = false
-	if not _aim_held or game.reading or Input.is_action_pressed("astrolabe") or game.state != game.State.SAILING:
+	if not _aim_held or game.state != game.State.SAILING:
 		cancel_aim()
 	else:
 		if not aiming:
@@ -153,7 +153,7 @@ func update_aim(delta: float) -> void:
 
 
 func fire() -> bool:
-	if not aiming or not _aim_held or game.state != game.State.SAILING or cooldown > 0.0 or game.reading or Input.is_action_pressed("astrolabe"):
+	if not aiming or not _aim_held or game.state != game.State.SAILING or cooldown > 0.0:
 		return false
 	shots_fired += 1
 	game.shake(camera_shake_strength)

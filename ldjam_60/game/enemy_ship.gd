@@ -6,7 +6,7 @@ const SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const CANNON = preload("res://assets/pirate_kit/cannon.glb")
 enum Mode { DORMANT, APPROACH, POSITION, TELEGRAPH, FIRE, REPOSITION, SINKING, ESCAPED, DISENGAGING }
 
-@export var sailing_speed: float = 7.0
+@export var sailing_speed: float = 10.5
 @export var turning_speed: float = 0.42
 @export var turn_acceleration: float = 0.65
 @export var broadside_separation: float = 34.0

@@ -1,50 +1,55 @@
-# The Last Bearing — Ludum Dare 60
+# Latitude Lines — Ludum Dare 60
 
-Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
-Find the Wreck, cross Twin Peaks, then reach Lighthouse Harbour. Sailing has no
-destination labels or route instructions. Hold Space until a guiding star glows,
-remember its direction, then steer. Quiet sailing has no hull indicators.
-Discovery notices acknowledge the place you found without announcing the next stop.
-Reach the lighthouse by recovering your course after reefs and directional waves,
-with optional cutter duels. The sea is mostly calm, interrupted by sparse travelling
-crests and regional wave sets. Scripted routes take approximately 3½–4½ minutes.
-The astrolabe is a game abstraction rather than a historical simulator.
-The ship stays inside the island sea. At the outer edge, outward movement stops
-and a turn-back notice appears; steering remains available to sail back in.
+Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**.
+Steer toward the bright red or blue star from the ordinary deck view. The small
+sextant stays in the lower-left corner and reads the horizontal angle from the
+bow to the next star: **0° means aligned**. Eleven ordered short water passages
+lead past the Wreck and Twin Peaks waters to the lighthouse. Reaching each
+passage reveals the next star with a chime, halo pulse and a brief notice.
+Victory requires physically entering Lighthouse Harbour after all the legs.
 
 - **Play / Enter:** cast off; forward motion is automatic.
-- **A / D or arrows:** steer. Counter wave-induced turning and adjust your heading to recover from sideways drift.
-- **Hold Space:** raise the sextant; search briefly, then hold to focus. Movement and danger continue.
-- **Hold E:** aim the existing starboard cannon; release to return to steering immediately. The cannon sweeps automatically; sailing and danger continue while manual steering is suspended.
-- **F:** fire once while holding E. Holding F never repeats fire; reload presses are discarded. Reload remains 1.5 seconds.
-- **Space** takes priority over E and F; A/D can steer while sighting. If E stays held, gun view resumes after Space is released without a queued shot.
-- **Hold R for 0.6 seconds:** restart during sailing; release early to cancel. After sinking or winning, press **R / Retry** immediately. **M:** mute. **Esc:** quit.
+- **A / D or arrows:** steer toward the star and counter wave-induced turning.
+- **Hold E:** aim the starboard cannon; release to restore steering immediately.
+- **F:** fire once while holding E. Held F never repeats; reload presses are discarded.
+- **Hold R for 0.6 seconds:** restart while sailing; release early to cancel.
+  After sinking or arriving, press **R / Retry** immediately.
+- **M:** mute. **Esc:** quit.
 
-There is no sailing compass, numeric heading or course line. After 0.40 seconds of
-holding Space, one magical star brightens over 0.40 seconds. Its horizontal direction
-is always the live direction from the boat to the next destination, at 60° elevation.
-The Wreck's star is pale gold, Twin Peaks' pale blue, and the harbour's soft coral;
-two, three and four broken halo segments also distinguish them. There are no star
-names, bearings or turn instructions in the sky. An off-screen star produces a
-small peripheral glimmer only after focus begins. Use A/D to bring it into view.
-A thin vertical line descends from the actual visible focused star toward the
-horizon, fading near the lower edge when the horizon is outside the view. The
-graduated brass sextant appears only while Space is held. Releasing Space
-immediately clears the instrument and guidance; every hold starts afresh.
-Remember the direction and choose your own path around islands. The star does not
-provide a safe route, turn the boat or rotate the sky. Discoveries reset focus and
-briefly acknowledge the place found for 2.8 seconds. See the world documentation
-for the shared bearing convention and scripted navigation checks.
-The open instrument has no instant bearing needle or course bubble. Hull damage
-appears on the boat: two small stern scratches after one hit, with extra gunwale
-splintering at one remaining hull point. A brief warm wood flash and the existing
-hit sound/edge tint acknowledge accepted hits. There are no hull icons, health
-numbers or repair bars. The cannon ring appears only during gun view, reload and
-a brief ready pulse. Incoming-fire cues remain readable while sighting. There are
-no idle target marks.
-The lighthouse's stone silhouette can be glimpsed in the distance; its warm lantern
-and sweeping beam activate on the final approach. There is no waypoint arrow or
-progress readout. Actual entry into its broad harbour region is required to win.
+There is no sextant activation button or look-up camera. The magical guiding star
+is always bright, at 12° above the horizon. Red stars have three halo segments;
+blue stars have four. The sky light, halo and sextant use the same live direction.
+An offscreen star becomes visible by turning left or right; the sextant continues
+to show its turn angle, including when the star is astern or while aiming.
+The instrument never steers the boat. Missed destinations remain recoverable;
+elapsed time and early visits to later points cannot skip the route.
+
+Cruise speed is 9.5 m/s. Three optional pale-gold wind lanes have visible flowing
+streaks: entering eases speed toward 12.5 m/s, leaving returns it smoothly to
+cruise, and overlapping/re-entered lanes cannot multiply the boost. Wake and wind
+audio respond to speed. There is no boost button or fuel resource.
+
+Each new star aligned within 8° for 0.35 seconds summons one fixed turbulence
+zone centred 45 m ahead of the boat. It lasts **70% of the nominal 15-second
+star leg: 10.5 seconds**, including approach and final crest fades. All remaining
+crests expire within that window. The zone stays in the world when you turn
+away and realigning the same star cannot summon another. Waves retain real
+countersteerable drift/yaw, terrain safety and the maximum of four simultaneous
+events. Short physical legs can hand off before a previous zone expires; the
+shared event cap still applies. Sailing off course can extend a star's actual
+travel time without extending its turbulence window.
+
+The full scripted input route takes about **2:20 at cruise / 2:15 with wind**,
+with waves and optional pirates active. These checks establish reachability;
+human pacing, comfort and fairness still need playtesting. See the
+[journey implementation report](artifacts/navigation_journey_report.md) for
+requirements, evidence, screenshots and remaining gaps.
+
+Hull damage is shown on the boat, with scratches, splintering and a brief wood
+flash. The cannon ring appears during gun view, reload and a short ready pulse.
+The lighthouse silhouette is visible at a distance; its lantern and beam light
+on the final approach. Map-edge protection stops outward movement while
+allowing steering back into the island sea.
 
 Three significant hits sink the player. Glancing contacts slide and a 2.2-second
 immunity window prevents per-frame damage. Pale timber can be shattered; rocks and
@@ -71,11 +76,11 @@ the water, warning sounds and incoming cannon-fire cues carry the danger.
 
 ## Difficulty tuning
 
-Select `TheLastBearing` in `game/crossing.tscn`:
+Select `LatitudeLines` in `game/crossing.tscn`:
 
 - **Sailing difficulty:** encounter seed. Wave timing, safe regions and patterns are
   in `game/ocean/wave_encounters.gd`; momentum and rudder response are in
-  `wave_sailing.gd`. Steering smoothly approaches 0.64 rad/s.
+  `wave_sailing.gd`. Steering smoothly approaches 0.72 rad/s.
 - **Hull:** capacity 3, contact damage 1, immunity 2.2 seconds, repair interval 8 seconds.
 - **Voyage presentation:** weather controls sky/lighting independently of wave encounters.
 - **Sailing camera:** a hull-mounted deck eye at `(0, 2.05, 0.45)` frames the
@@ -86,37 +91,33 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   Reduced softens angles, impacts and streaks without changing wave forces.
   Shores and the 1.2 m water guard still protect every final camera pose.
   See the [deck camera report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md).
-- **Stargazing sky:** world-fixed star density, twinkle, drifting cloud density/speed,
-  upward pitch (`stargazing_pitch_degrees`, 25°), and sky FOV (94°). The sighting
-  camera stays 2.55 m high and 4.5 m toward the bow; an aligned star appears about
-  17% down the view with the real sea horizon about 72% down. Yaw follows the hull.
-  Procedural toon cloud banks drift in world space;
-  a broad wind lane keeps the active star readable in storm weather. See the cloud
-  controls and review notes below.
-- **Sextant assistance:** focus delay/ramp (0.40/0.40 s), highlight strength (0.65).
-  Each release, discovery, focus loss and retry resets the search. Sky mode
-  suppresses cannon view and damps shock motion without changing sailing/damage.
+- **Guiding sky:** world-fixed background stars, twinkle and cloud controls.
+  Active stars are 12° above the horizon with a bright white core and red/blue
+  halos, readable in storm/cloud. No focus delay or sighting camera is used.
+- **Sextant:** permanent lower-left signed turn reading. `voyage_director.gd`
+  owns short leg coordinates, 18 m handoff radius, the 15-second nominal leg,
+  alignment hold and the 70% turbulence fraction.
+- **Wind lanes:** `wind_regions.gd` owns the three authored strips, capped
+  speed and entry/exit easing. `wave_sailing.gd` owns the shared cruising speed.
 - **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-0.6, 1.0, -0.6)
-  from the existing starboard mount. The level camera tracks 15% of sweep yaw.
-  Priority: stargazing → gun view → nearby-hostile combat → sailing. Active
-  steering suppresses automatic combat framing while the camera returns.
+  from the starboard mount. Holding E takes priority over manual rudder input;
+  releasing returns steering. Space has no navigation or cannon effect.
 - **Ocean:** authoritative shared wave resource and quality. See
   [ocean tuning](ldjam_60/game/ocean/README.md).
   The nighttime surface has movement-driven curved wakes, baked shoreline foam
   and brief water-impact splashes; see the [water review](artifacts/night_ocean_review.md).
 
-`game/voyage_director.gd` tracks regional discoveries. The wave director schedules
-finite curved crests from left, right and ahead. Regional sets budget ten crests,
-then drain to 20 seconds of protected calm. Unsafe wave lanes are retried; sheltered
-sets have a deadline, and arrival ends remaining waves. New pirate encounters wait
-until active waves finish. See [wave mechanics and tuning](ldjam_60/game/ocean/README.md).
+`game/voyage_director.gd` tracks eleven spatial star legs and actual final
+harbour arrival. Alignment summons finite crests through `wave_encounters.gd`;
+the analytical field and CPU/GPU profile are unchanged. New pirates wait until
+active wave sets finish. All route, alignment, wave and wind state resets on retry.
 
-There are 14 independent wave zones across the map. With `development_tools` enabled,
-**F6** jumps into the next zone for testing and **F2** shows their locations on the chart.
-Waves now apply force ahead of the hull's lateral resistance, creating a lasting
-heading change that needs countersteering, as well as sideways drift.
+The original 14 regional wave fixtures remain for development only. With
+`development_tools` enabled, **F6** restarts in one of these regions and starts
+its old ten-crest sequence; **F2** shows the chart. Normal journeys use the new
+alignment-triggered zones. F6 does not change release gameplay.
 
-`game/enemy_ship.tscn` is the reusable cutter. Its Inspector exports speed 7 m/s,
+`game/enemy_ship.tscn` is the reusable cutter. Its Inspector exports speed 10.5 m/s,
 turning 0.42 rad/s (rudder acceleration 0.65 rad/s²), hull 2, firing range 62 m,
 reload 3.8 s, telegraph 1.65 s and projectile speed 24 m/s. Engagement budget is
 55 s, broadside spacing 34 m (26 m near a blocked shore lane), attack run 6 s and
@@ -136,7 +137,7 @@ reload and firing. Recoil is 0.3 m and camera shake 0.055. Projectile speed
 (55 m/s), gravity (0.9 m/s²), initial lift (0.35 m/s), lifetime and damage are
 retained. Launch position/direction now follow the actual rocking muzzle, so
 visible and physical cannonballs coincide. The small sight indicates direction;
-it does not predict impact. E release, Space, focus loss, retry, sinking and victory
+it does not predict impact. E release, focus loss, retry, sinking and victory
 clear gun mode and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
 
 ## Quick UI review
@@ -149,13 +150,13 @@ freezes 39 presentation states from the existing game; no sailing is required.
 - **S** or **Screenshot:** save a clean frame to `build/ui_review/current/`.
 - **Esc:** quit. Normal gameplay inputs are disabled in this test scene.
 
-Coverage: title/controls, casting off, sailing/drift, searching and all three star
-halos, off-screen glimmers, cutter/incoming cues, gun view/reload, damage,
+Coverage: title/controls, casting off, sailing/drift, continuous red/blue star
+halos, off-screen turn readings, cutter/incoming cues, gun view/reload, damage,
 critical hull, repair, discoveries/salvage, boundary, storm, victory and defeat.
 Two authored tooltip states enable hover **in the test only** (normal gauges
 ignore mouse input). Former heading/idle-cannon tooltip slots check the visible
 horizon and immediate release instead. Added states cover off-centre stars,
-partial focus, sighting repairs and fading discovery. The last state is the
+immediate guidance, repairs with guidance and fading discovery. The last state is the
 development-only chart.
 
 Capture all states with the real renderer and create a clickable screenshot gallery:
@@ -173,6 +174,8 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/ui_review_s
 ```
 
 These are staged UI fixtures, not evidence of a human playthrough or game balance.
+The current navigation review uses `journey_previews.gd`; legacy capture scripts
+with sighting names are retained as historical fixtures.
 Generated captures stay in the ignored `build/` folder.
 
 ## Validation
@@ -196,7 +199,7 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   hold-E aiming, timed F presses and release-E steering; results in `/tmp`.
   Legacy current/gust fixture assignments no longer affect sailing.
 - `--script res://tests/controls_lifecycle_smoke.gd`: 30/60/120 Hz restart tap/hold/cancel,
-  Space/E/F event ordering, focus loss, active waves/collisions and ending/retry cleanup.
+  E/F ordering with retired Space inert, focus loss, active waves/collisions and ending/retry cleanup.
 - `--script res://tests/combat_smoke.gd`: collision damage, immunity, sinking,
   broadside timber hits, water feedback, and retry.
 - `--script res://tests/recovery_smoke.gd`: post-duel repairs, escape, lingering
@@ -204,13 +207,12 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
 - `--script res://tests/ship_smoke.gd`: moving AI, incoming shots, warned evasion,
   two actual projectile hits, sinking and reset.
 - `--script res://tests/hud_smoke.gd`: menu actions, responsive bounds,
-  minimal sailing HUD, reload/damage feedback, sighting priorities and result screens.
+  permanent sextant, reload/damage feedback, continuous guidance and result screens.
 - `--script res://tests/damage_smoke.gd`: health-derived scratches, accepted-hit flash,
   immunity/non-damage controls, threshold boundaries, repairs, sinking and retry.
-- `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
-  repeated checks, live-star/edge projection across headings/window sizes, text-free
-  focus stages, star/horizon framing, 30/60/120 Hz camera transitions, active enemy
-  fire, camera precedence and vulnerability.
+- `--script res://tests/stargazing_smoke.gd`: compatibility entry point for
+  continuous low-star guidance, inert Space, viewport/motion modes, cannon
+  coexistence and focus-loss cleanup.
 - `--script res://tests/sailing_camera_smoke.gd`: deck/lantern/real-cannon framing,
   attachment, steering, wave pitch, and terrain/water clearance in sailing and sighting.
 - `--script res://tests/turbulence_camera_smoke.gd`: front/side/oblique/four-wave
@@ -221,7 +223,7 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   direction, independent hull-axis bearing checks, moving readings and discoveries.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
 
-Controls review: use the real renderer with `--fixed-fps 60 --script
+Historical pre-journey controls review: use the real renderer with `--fixed-fps 60 --script
 res://tests/controls_previews.gd -- --output=/tmp/latitude-controls/after`.
 Captures and a 20 fps frame sequence cover the opening controls, sailing, held E,
 firing, release-to-steer and full sextant focus at 0.8 seconds. See the
@@ -354,11 +356,32 @@ This captures search, partial/full focus, left/right stars, both peripheral side
 all three colours, discoveries, release and combat. `navigation_smoke.gd` checks
 the shared ray against live destinations, wrong-way sailing, rudder recovery,
 vertical/behind-camera projection and wraparound. The full `archipelago_voyage.gd`
-uses actual Space/A/D inputs with test-only route choices; `--alternate` takes the
-longer island detour. These establish scripted reachability, not human intuition.
+uses actual A/D inputs to follow the current stars; `--alternate` retains the
+same current star route at cruise without wind. Current per-leg and native
+acceptance evidence comes from `journey_previews.gd` and `journey_smoke.gd`.
 
 Boat damage captures (normal gameplay camera): `--script
 res://tests/damage_previews.gd -- --output=/tmp/latitude-lines-damage`. Healthy,
 impact, damaged, heavy, storm, both repair stages, repeat-hit, loss and retry frames
 use the same comparison pose. Add `--size=900x506` for the small window. These are
 scripted fixtures, not human playtesting.
+
+## Current lighthouse journey checks
+
+Use the installed Godot with `--headless --path ldjam_60 --fixed-fps 60`:
+
+- `--script res://tests/journey_smoke.gd`: complete input-driven cruise/boost
+  voyages, missed/early destinations, alignment timing and retry.
+- `--script res://tests/star_turbulence_smoke.gd`: real summoned-zone forces,
+  countersteering, 30/60/120 Hz, exact expiry and defeat cleanup.
+- `--script res://tests/guiding_star_smoke.gd`: continuous forward guidance,
+  viewport/motion modes, inert Space, cannon view and focus loss.
+
+Native review (requires a real renderer):
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/journey_previews.gd -- --voyage
+```
+
+Writes local captures to `build/navigation_review/after/`, checks star shader
+pixels separately from its halo, and physically sails to the actual lighthouse.

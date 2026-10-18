@@ -39,7 +39,7 @@ func _run() -> void:
 	var controls: Array[String] = []
 	for label: Label in hud.menu_controls.get_children():
 		controls.append(label.text)
-	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists only the current four controls")
+	check(controls == ["A / D", "Follow the bright star", "Sextant", "0° means straight ahead", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists only the current four controls")
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
@@ -71,10 +71,10 @@ func _run() -> void:
 	var before_heading: float = game.heading
 	game.heading += 0.6
 	hud._process(0.1)
-	check(game.heading == before_heading + 0.6 and hud.star_horizon_line().is_empty(), "UI preserves authoritative heading without drawing sailing guidance")
+	check(game.heading == before_heading + 0.6 and hud.instrument.visible, "UI preserves authoritative heading without drawing sailing guidance")
 	game.target += Vector3(200, 0, -200)
 	hud._process(0.0)
-	check(not hud.instrument.visible and hud.star_guidance().is_empty(), "destination changes cannot produce a sailing guide")
+	check(hud.instrument.visible and not hud.star_guidance().is_empty(), "destination changes keep the permanent instrument available")
 	game.voyage.set_target(game)
 	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
@@ -98,13 +98,13 @@ func _run() -> void:
 	game._physics_process(0.3)
 	Input.action_release("astrolabe")
 	hud._process(0.2)
-	check(hud.instrument.visible and hud.instrument.get_child_count() == 0, "early sighting shows the instrument without giving away a bearing")
+	check(hud.instrument.visible and hud.instrument.get_child_count() == 0, "retired Space action leaves the instrument visible")
 	Input.action_press("astrolabe")
 	game._physics_process(game.focus_delay + game.focus_duration)
 	Input.action_release("astrolabe")
 	hud._process(0.2)
 	check(game.focus_strength == 1 and not hud.star_guidance().is_empty(), "continued hold reveals the live star")
-	check(hud.instrument.get_child_count() == 0, "focused instrument contains no text or number labels")
+	check(hud.instrument.get_child_count() == 0, "sextant draws its angle without creating redundant child labels")
 	check_inside(hud.instrument, "text-free instrument fits the small window")
 	check(not hud.cannon_gauge.visible and hud.gameplay_hud.get_node_or_null("Hull") == null, "sighting keeps the instrument and threat UI without health indicators")
 	var ship = game.enemy_encounters.ship
@@ -118,7 +118,7 @@ func _run() -> void:
 	check(not hud.threat_label.visible, "threat cue disappears when the threat clears")
 	game.reading = false
 	hud._process(0.0)
-	check(not hud.instrument.visible and hud.star_horizon_line().is_empty(), "release hides the whole instrument immediately, despite residual camera blend")
+	check(hud.instrument.visible and not hud.star_guidance().is_empty(), "release leaves the corner sextant and live star available")
 	game.damage_immunity = 0.0
 	game.take_damage(1, "UI regression hit")
 	await settle()
@@ -134,9 +134,11 @@ func _run() -> void:
 	game.boat.position = game.target
 	game.voyage.update_progress(game)
 	hud._process(0.1)
-	check(game.voyage.stage == game.voyage.Stage.TWIN_PEAKS and hud.notice.text == "The Wreck found" and hud.star_guidance().is_empty(), "finding the wreck acknowledges discovery without revealing or directing the next stop")
+	check(game.voyage.leg == 1 and hud.notice.text.contains("new star") and not hud.star_guidance().is_empty(), "reaching a point announces the next star")
 	game.elapsed = 102.0
 	game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
+	game.voyage.leg = game.voyage.POINTS.size()-1
+	game.voyage.leg = game.voyage.POINTS.size()-1
 	game.voyage.set_target(game)
 	game.boat.position = game.target + Vector3(0,0,-5)
 	game.advance_sailing(0.001, 0.0)

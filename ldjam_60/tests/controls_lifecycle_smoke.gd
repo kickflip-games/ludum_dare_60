@@ -101,18 +101,19 @@ func _run() -> void:
 	step(0.4)
 	check(game.state == game.State.SAILING, "R after focus loss needs a fresh full hold")
 	action("restart_crossing", false)
-	# Every permutation of same-frame Space/E/F is suppressed; E resumes without fire.
+	# Retired Space does not affect E/F ordering or create a camera mode.
 	for order in [["watch_starboard", "fire_starboard", "astrolabe"], ["watch_starboard", "astrolabe", "fire_starboard"], ["fire_starboard", "watch_starboard", "astrolabe"], ["fire_starboard", "astrolabe", "watch_starboard"], ["astrolabe", "watch_starboard", "fire_starboard"], ["astrolabe", "fire_starboard", "watch_starboard"]]:
 		fresh()
 		for name: String in order:
 			action(name, true)
 		action("steer_starboard", true)
 		step(0.3)
-		check(game.reading and not game.cannon.aiming and game.cannon.shots_fired == 0 and game.heading > 0 and game.turn_input == 1, "Space wins all input orders and preserves actual steering: %s" % str(order))
+		var expected_shots := 1 # Same physics tick has held E and one fresh F edge.
+		check(not game.reading and game.cannon.aiming and game.cannon.shots_fired == expected_shots and game.turn_input == 0,"E/F preserve event ordering while retired Space has no effect: %s" % str(order))
 		action("steer_starboard", false)
 		action("astrolabe", false)
 		step(0.5)
-		check(game.cannon.aiming and game.cannon.shots_fired == 0 and game.hud.star_guidance().is_empty(), "held E resumes without an earlier F edge: %s" % str(order))
+		check(game.cannon.aiming and game.cannon.shots_fired == expected_shots and game.hud.instrument.visible,"held E and permanent sextant remain available without repeated fire: %s" % str(order))
 	# Sub-tick Space hold/release discards an old F press even if no sighting tick ran.
 	fresh()
 	action("watch_starboard", true)
@@ -121,12 +122,12 @@ func _run() -> void:
 	action("astrolabe", true)
 	action("astrolabe", false)
 	step(0.5)
-	check(game.cannon.aiming and game.cannon.shots_fired == 0, "sub-tick Space transition cannot leak pending fire")
+	check(game.cannon.aiming and game.cannon.shots_fired == 1,"sub-tick retired Space transition does not swallow a fresh F press")
 	# Active crests and collision hazards remain effective while aiming.
 	fresh()
 	action("watch_starboard", true)
 	var d := Vector2(1, -0.5).normalized()
-	game.ocean.wave_field.add_wave(Vector2(400, 320 - 18.9) - d * 24, d, 1.0, 4.0, 26.0, 8.0, game.sea_time, 8.0)
+	game.ocean.wave_field.add_wave(Vector2(400, 320-game.SPEED*3.0) - d * 24, d, 1.0, 4.0, 26.0, 8.0, game.sea_time, 8.0)
 	step(6.0)
 	check(game.cannon.aiming and absf(game.heading) > deg_to_rad(5) and game.turn_input == 0, "existing oblique crest still changes heading during held E")
 	fresh()
@@ -149,6 +150,7 @@ func _run() -> void:
 			game.take_damage(game.hull, "input lifecycle regression")
 		else:
 			game.voyage.stage = game.voyage.Stage.LIGHTHOUSE
+			game.voyage.leg = game.voyage.POINTS.size()-1
 			game.voyage.set_target(game)
 			game.boat.position = game.target
 			game.advance_sailing(0.001, 0.0)

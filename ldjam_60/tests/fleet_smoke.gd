@@ -127,7 +127,9 @@ func sustain(count: int, hz: int, seconds: int = 180) -> void:
 	check(identities.size() == count, "%d ships: fair queue gives every ship a turn" % count)
 	check(count == 1 or holding_travel.slice(0, count).all(func(distance): return distance > 15.0), "%d ships: waiting hulls sail real holding routes" % count)
 	check(maximum_radius <= 165.01 and not grounded and longest_stop < 2.5, "%d ships: terrain and circle recovery never leave an unreachable hull" % count)
-	check(maximum_turn <= 0.421 and maximum_step <= 11.21, "%d ships: no heading snaps, reversals or teleporting" % count)
+	check(maximum_turn <= manager.survival_settings.ARCHETYPES.cutter.turn_speed + 0.001
+		and maximum_step <= manager.survival_settings.ARCHETYPES.cutter.speed * 1.12 + 0.01,
+		"%d ships: no heading snaps, reversals or teleporting" % count)
 	check(count == 1 or minimum_clearance > 0.0, "%d ships: sustained route crossings retain physical hull clearance" % count)
 	check(warning_gaps and (count == 1 or identities.size() > 1), "%d ships: separate warning starts obey the global stagger" % count)
 	check(game.cannon.shots_fired == 0 and manager.ships_sunk == 0, "%d ships: no-fire control cannot earn wave kills" % count)

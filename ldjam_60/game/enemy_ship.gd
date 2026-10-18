@@ -27,6 +27,7 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var recovery_seconds: float = 5.0
 @export var emergency_speed: float = 2.5
 @export var terrain_margin: float = 7.0
+@export var braking_acceleration: float = 5.0
 @export var hull_capacity: int = 2
 @export var firing_range: float = 62.0
 @export var reload_seconds: float = 3.8
@@ -392,7 +393,8 @@ func update_ship(delta: float) -> void:
 			else:
 				desired = _arena_approach(_intercept_point, delta) if game.arena_mode else to_join.normalized()
 			var predicted_along := along - _intercept_velocity.dot(_run_forward()) * navigation_time
-			target_speed = clampf(run_speed + (8.0 - predicted_along) * 0.12, sailing_speed * 0.74, sailing_speed * 1.12)
+			target_speed = clampf(run_speed + (8.0 - predicted_along) * 0.18 + maxf(0.0, absf(lateral - lane_separation) - 10.0) * 0.05,
+				minf(run_speed * 0.85, sailing_speed * 0.74), sailing_speed * 1.12)
 			var actual: Vector3 = global_position - game.boat.position
 			if navigation_time > 2.0 and absf(lateral - lane_separation) < 7.0 and absf(actual.dot(_run_forward())) < 20.0 and actual.dot(_run_right()) > 24.0 and actual.dot(_run_right()) < 46.0 and forward().dot(_run_forward()) > 0.97 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0):
 				run_elapsed = 0.0
@@ -446,7 +448,9 @@ func update_ship(delta: float) -> void:
 		target_speed = minf(target_speed, sailing_speed * 0.65)
 	if archetype != null:
 		target_speed = minf(target_speed, sailing_speed * 1.12)
-	var speed_change := maxf(acceleration, 2.5) if _recovery_left > 0.0 and target_speed < _speed else acceleration
+	if game.arena_mode:
+		target_speed = _traffic_speed(target_speed)
+	var speed_change := braking_acceleration if game.arena_mode and target_speed < _speed else acceleration
 	_speed = move_toward(_speed, target_speed, delta * speed_change)
 	var before := position
 	velocity = forward() * _speed
@@ -480,6 +484,20 @@ func update_ship(delta: float) -> void:
 		_blocked_elapsed = 0.0
 	_update_weapon(delta)
 	_update_tell()
+
+
+func _traffic_speed(desired: float) -> float:
+	var vessels: Array = game.enemy_encounters.living_ships()
+	vessels.append(game.boat)
+	for other in vessels:
+		if other == self:
+			continue
+		var offset: Vector3 = other.global_position - global_position
+		if offset.length() < 42.0 and offset.length_squared() > 0.01 and forward().dot(offset.normalized()) > 0.25:
+			var clearance := player_separation if other == game.boat else ship_separation
+			var following_speed: float = maxf(0.0, other.velocity.dot(forward()))
+			desired = minf(desired, maxf(emergency_speed, following_speed + (offset.length() - clearance) * 0.45))
+	return desired
 
 
 func _change_navigation(value: Navigation) -> void:

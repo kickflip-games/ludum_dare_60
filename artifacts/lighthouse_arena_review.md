@@ -1,5 +1,10 @@
 # Lighthouse survival arena — 18 October 2026
 
+Historical geometry/foundation evidence at `577a694`. The one-cutter-per-wave
+scheduler and 143-check count below are superseded by the
+[current timed-survival implementation and validation](timed_survival_review.md).
+The authored arena geometry remains in use.
+
 Existing draft [PR #5](https://github.com/kickflip-games/ludum_dare_60/pull/5),
 branch `hacking/lighthouse-arena`. The revised specification is implemented on
 top of the unfinished arena foundation. PR #6 by EL-MZ contains a conflicting

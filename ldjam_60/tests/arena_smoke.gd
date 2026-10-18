@@ -298,10 +298,11 @@ func _enemy_checks() -> void:
 	for tick in 5400:
 		enemies.update_encounters(1.0/60)
 		game.sea_time+=1.0/60
-	check(enemies.wave_number==1 and enemies.cleared_waves==0 and game.state==game.State.SAILING
-		and ship.mode not in [ship.Mode.ESCAPED,ship.Mode.DISENGAGING], "90 seconds without firing cannot clear a wave or trigger retreat victory")
+	check(enemies.wave_number>=2 and enemies.cleared_waves==0 and game.state==game.State.SAILING
+		and enemies.ships_sunk==0 and ship.mode not in [ship.Mode.ESCAPED,ship.Mode.DISENGAGING], "90 seconds without firing advances deadlines but cannot win or despawn survivors")
 	# Exercise actual cutter navigation against each cluster from both approaches.
 	for offset in [Vector2(-65,-90),Vector2(-130,20),Vector2(60,30),Vector2(120,70),Vector2(0,-135),Vector2(70,-70)]:
+		enemies.stop()
 		ship.begin(game.arena_center()+Vector3(offset.x,0,offset.y))
 		ship.heading=atan2(-offset.x,offset.y)
 		ship.rotation.y=-ship.heading
@@ -342,21 +343,4 @@ func _enemy_checks() -> void:
 		game.cannon.advance(1.0/60)
 	check(ship.hull==ship.hull_capacity-1 and game.cannon.targets_hit==1, "real held E/fresh F launches a physical cannonball that damages the arena cutter")
 	action("watch_starboard",false)
-	# Restart for full five-wave state lifecycle; kill via the real cannon impact.
-	stage(Vector2(0,-75),PI/2)
-	await physics_frame
-	enemies.enabled=true
-	for wave in range(1,6):
-		for tick in 700:
-			enemies.update_encounters(1.0/60)
-			if enemies.wave_in_progress:
-				break
-		check(enemies.wave_number==wave and enemies.wave_in_progress, "wave %d begins after clear-water intermission" % wave)
-		while ship.hull>0:
-			game.cannon._impact(ship,ship.position+Vector3.UP)
-		for tick in 220:
-			enemies.update_encounters(1.0/60)
-		check(enemies.cleared_waves==wave and (game.state==game.State.ARRIVED)==(wave==5),
-			"wave %d requires sunk cutter and finished sinking; only fifth awards survival" % wave)
-	game.hud._process(0)
-	check(game.hud.menu_title.text=="Waters clear.", "ending describes surviving all five waves")
+	# Full timed-wave/21-kill lifecycle now lives in survival_smoke.gd.

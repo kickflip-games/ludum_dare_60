@@ -132,6 +132,8 @@ func _ready() -> void:
 
 
 func reset() -> void:
+	if has_meta("wave_id"):
+		remove_meta("wave_id")
 	for shot: Dictionary in projectiles:
 		shot.node.queue_free()
 	projectiles.clear()
@@ -265,6 +267,8 @@ func _turn_toward(direction: Vector3, delta: float) -> void:
 
 func update_ship(delta: float) -> void:
 	_advance_shots(delta)
+	if game.arena_mode and game.state != game.State.SAILING:
+		return
 	if mode in [Mode.DORMANT, Mode.ESCAPED]:
 		return
 	timer += delta
@@ -447,7 +451,7 @@ func _path_clear(direction: Vector3, distance: float = 30.0) -> bool:
 		return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 	for offset in [Vector3.ZERO, side, -side]:
 		var origin: Vector3 = global_position + offset + Vector3.UP * 0.5
-		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * distance, 1)
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * distance, 5, [get_rid()])
 		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 			return false
 	return true
@@ -474,6 +478,17 @@ func _hold_avoidance(direction: Vector3, seconds: float) -> void:
 
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
 	_avoid_left = maxf(0.0, _avoid_left - delta)
+	if game.arena_mode:
+		for other in game.enemy_encounters.living_ships():
+			if other == self:
+				continue
+			var relative: Vector3 = global_position-other.global_position
+			var motion_delta: Vector3 = forward()*_speed-other.velocity
+			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,3)
+			if relative.length()<16 or (relative.length()<34 and (relative+motion_delta*closest).length()<12):
+				var away := (relative.normalized()+_run_forward()*0.4).normalized()
+				_hold_avoidance(away if _path_clear(away) else _clear_course(),1.5)
+				break
 	if _avoid_left > 0.0:
 		return _direction(_avoid_heading)
 	if not _path_clear(forward()) or not _path_clear(desired):
@@ -584,7 +599,7 @@ func take_hit() -> void:
 		flash.visible = false
 		_change(Mode.SINKING)
 		set_aim_highlight(false)
-		game.enemy_encounters.ships_sunk += 1
+		game.enemy_encounters.on_ship_sunk(self)
 		game.cue_sound("victory")
 	_update_cloth()
 

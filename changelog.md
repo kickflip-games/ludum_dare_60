@@ -12,12 +12,17 @@ recorded evidence and limitations.
   preserved physical cannon fire and wave forces. Initial combat/naval checks
   pass; timed-roster integration and final rendered evidence remain pending.
 
-- In progress: Add lighthouse defence on the integrated arena: five data-driven
-  cutter waves (1/2/2/3/3), staggered spawns, five lighthouse integrity, warned
-  breaches, intermissions and complete endings/retry. Planned checks include
-  real projectile interceptions, no-fire defeat, multi-ship lifecycle and
-  rendered combat/end screens. This follow-up implementation and its dedicated
-  defence-mode checks remain pending.
+- Replaced the pending lighthouse-defence design and single-cutter scheduler
+  with player-only timed survival: configurable 1/2/4/6/8 waves, 40/50/65/80 s
+  deadlines, carried survivors/queues, three living enemies and staggered entry.
+  Early safe clears skip the remaining timer, pause three seconds and restore
+  one capped hull point. Final victory waits for all kills and incoming shots;
+  the lighthouse retains no health/damage system.
+- Added multi-cutter avoidance, camera/warning/repair selection, complete pooled
+  cleanup, restrained wave/countdown banners and THE SEA IS YOURS / SHIP SUNK
+  endings. 740 checks pass (80 survival, 132 arena, 528 adjacent); native early/middle/final
+  gameplay, countdowns and endings were inspected. Human balance and browser/mobile performance
+  remain open. See the [timed-survival review](artifacts/timed_survival_review.md).
 
 - Refined the lighthouse arena to a 170 m, five-wave player-survival loop with
   a safe 75 m spawn, editable curved reef, broken wreck/cargo and three low

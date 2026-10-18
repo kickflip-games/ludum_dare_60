@@ -25,6 +25,9 @@ var wave_countdown: Label
 var wave_announcement: Label
 var wave_label: Label
 var threat_label: Label
+var storm_warning: VBoxContainer
+var storm_title: Label
+var storm_instruction: Label
 var notice: Label
 var instrument: Control
 var _last_state: int = -1
@@ -82,6 +85,20 @@ func _ready() -> void:
 	notice.offset_bottom = 180 if game.arena_mode else 90
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	storm_warning = VBoxContainer.new()
+	storm_warning.name = "StormWarning"
+	storm_warning.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gameplay_hud.add_child(storm_warning)
+	storm_warning.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	storm_warning.offset_left = -224
+	storm_warning.offset_right = 224
+	storm_warning.offset_top = 132
+	storm_warning.offset_bottom = 210
+	storm_title = _label(storm_warning, "StormTitle", "STORMY AHEAD", 28, CORAL)
+	storm_instruction = _label(storm_warning, "StormInstruction", "", 17, INK)
+	for label: Label in [storm_title, storm_instruction]:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_build_instrument()
 	_sync_button()
 	_process(0.0)
@@ -258,6 +275,7 @@ func _process(delta: float) -> void:
 		return
 	_sync_button()
 	_update_wave_ui()
+	_update_storm_warning()
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
 	menu.modulate.a = _menu_alpha
 	if game.state != game.State.SAILING:
@@ -317,6 +335,35 @@ func star_guidance() -> Dictionary:
 	return {"visible": false, "position": center + outward * scale_to_edge}
 
 
+func _update_storm_warning() -> void:
+	var strength: float = game.storm_warning_strength()
+	storm_warning.visible = strength > 0.001
+	storm_warning.modulate.a = smoothstep(0.0, 0.18, strength)
+	storm_instruction.text = "RETURN TO THE LIGHTHOUSE" if game.outside_storm_line() else "Do not cross the red line · return to the lighthouse"
+	notice.offset_top = 222 if storm_warning.visible else (142 if game.arena_mode else 40)
+	notice.offset_bottom = notice.offset_top + 48
+
+
+func storm_screen_alpha() -> float:
+	if not game.outside_storm_line():
+		return 0.0
+	# A slow 1.8-second pulse; Reduced motion keeps a steady red wash.
+	return 0.11 if game.motion_setting == 1 else 0.07 + 0.09 * (0.5 + 0.5 * sin(game.elapsed * TAU / 1.8))
+
+
+func _draw_storm_warning() -> void:
+	var alpha := storm_screen_alpha()
+	if alpha <= 0.0:
+		return
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.015, 0.025, alpha))
+	for i in 28:
+		var color := Color(1.0, 0.06, 0.08, alpha * 1.8 * (1.0 - i / 28.0))
+		draw_rect(Rect2(i * 2, 0, 2, size.y), color)
+		draw_rect(Rect2(size.x - i * 2 - 2, 0, 2, size.y), color)
+		draw_rect(Rect2(0, i, size.x, 1), color)
+		draw_rect(Rect2(0, size.y - i - 1, size.x, 1), color)
+
+
 func _update_notice() -> void:
 	var value := ""
 	var alpha: float = 1.0
@@ -373,6 +420,7 @@ func _draw() -> void:
 		_text(Vector2(size.x * 0.5, size.y - 65), "Casting off…", 25, INK, true, true)
 		return
 	_draw_weather()
+	_draw_storm_warning()
 	if game.hit_flash > 0.0:
 		_draw_damage_edges()
 	if _has_threat:

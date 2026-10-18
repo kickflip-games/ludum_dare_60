@@ -14,6 +14,7 @@ const BoatDamage = preload("res://game/boat_damage.gd")
 const BoostWind = preload("res://game/boost_wind.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
+## Retained for enemy navigation bounds; never applied to the player.
 const ArenaReturn = preload("res://game/arena_return.gd")
 const FlowZones = preload("res://game/flow_zones.gd")
 var flow_zones := FlowZones.new()
@@ -51,9 +52,9 @@ const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 @export var encounter_seed: int = 60
 @export_group("Lighthouse arena")
 @export var arena_mode: bool = false
+## Warning line for the player; retained as the enemy navigation radius.
 @export_range(140.0, 200.0, 1.0) var arena_radius: float = 170.0
-@export_range(0.75, 0.8, 0.01) var arena_soft_fraction: float = 0.78
-@export_range(0.25, 0.7, 0.05) var arena_inward_bias: float = 0.5
+@export_range(20.0, 70.0, 1.0) var storm_warning_margin: float = 38.0
 @export_range(7.0, 12.0, 0.5) var arena_rudder_response: float = 9.0
 # Legacy fixture properties; no invisible current or gust forces in gameplay.
 var current_strength := 0.0
@@ -634,8 +635,7 @@ func _physics_process(delta: float) -> void:
 
 
 func advance_sailing(delta: float, steering: float) -> void:
-	# Bound long frames as well as normal ticks: collision sweeps and return
-	# steering stay continuous even after a stalled frame.
+	# Bound long frames so real obstacle collision sweeps remain continuous.
 	if arena_mode and delta > 1.0 / 30.0 + 0.00001:
 		var steps := ceili(delta * 60.0)
 		for step in steps:
@@ -669,19 +669,6 @@ func advance_sailing(delta: float, steering: float) -> void:
 	# Only the retained voyage fixture has a gun-view steering gate.
 	if not arena_mode and cannon.aiming:
 		steering = 0.0
-	if arena_mode:
-		var offset := boat.global_position - arena_center()
-		var was_returning: bool = arena_return.active
-		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
-			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
-			arena_soft_fraction, arena_inward_bias, forward_speed)
-		if arena_return.active:
-			steering = archipelago.safe_return_rudder(steering)
-		if arena_return.active and not was_returning and not _at_sailing_boundary:
-			show_discovery("Returning to the light", 2.5)
-			_at_sailing_boundary = true
-		elif not arena_return.active and arena_return.blend == 0.0:
-			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	wave_sailing.rudder_response = arena_rudder_response if arena_mode else 7.0
 	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, forward_speed)
@@ -689,8 +676,6 @@ func advance_sailing(delta: float, steering: float) -> void:
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position
 	var travel := boat.velocity * delta
-	if arena_mode:
-		travel = arena_return.bounded_motion(boat.global_position - arena_center(), travel, arena_radius)
 	var hit := boat.move_and_collide(travel, false, 0.001, arena_mode)
 	if hit:
 		take_damage(contact_damage, "Hull struck %s" % hit.get_collider().get_meta("hazard_name", "wreckage"))
@@ -701,10 +686,6 @@ func advance_sailing(delta: float, steering: float) -> void:
 	boat.position.y = 0.0
 	_constrain_sailing_area()
 	boat.velocity = (boat.position - previous_position) / maxf(delta, 0.0001)
-	if arena_mode:
-		var radial := (boat.global_position - arena_center()).normalized()
-		if boat.global_position.distance_to(arena_center()) >= arena_radius - 0.001 and boat.velocity.dot(radial) > 0.0:
-			boat.velocity = boat.velocity.slide(radial)
 	actual_speed = boat.velocity.length()
 	if reading and focus_strength >= 1.0:
 		# This snapshot is a focused landmark reading, not the bow's heading.
@@ -727,6 +708,21 @@ func advance_sailing(delta: float, steering: float) -> void:
 		wave_sailing.reset()
 		flow_zones.reset()
 	_update_hull_recovery(delta)
+
+
+func storm_distance() -> float:
+	var offset := boat.global_position - arena_center()
+	return Vector2(offset.x, offset.z).length()
+
+
+func storm_warning_strength() -> float:
+	if not arena_mode or state != State.SAILING:
+		return 0.0
+	return smoothstep(arena_radius - storm_warning_margin, arena_radius, storm_distance())
+
+
+func outside_storm_line() -> bool:
+	return arena_mode and state == State.SAILING and storm_distance() >= arena_radius
 
 
 func propulsion_speed() -> float:
@@ -762,11 +758,6 @@ func _update_hull_recovery(delta: float) -> void:
 
 func _constrain_sailing_area() -> void:
 	if arena_mode:
-		var offset := boat.global_position - arena_center()
-		var distance := offset.length()
-		if distance >= arena_radius - 0.001:
-			var radial := offset / maxf(distance, 0.001)
-			wave_sailing.slide(Vector2(-radial.x, -radial.z))
 		return
 	var at_boundary := false
 	for axis: int in [Vector3.AXIS_X, Vector3.AXIS_Z]:
@@ -817,6 +808,8 @@ func shake(amount: float) -> void:
 
 func _update_view(delta: float) -> void:
 	flow_zones.present(water_material, arena_mode and state == State.SAILING)
+	var light := arena_center()
+	water_material.set_shader_parameter("storm_boundary", Vector4(light.x, light.z, arena_radius, storm_warning_strength()))
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
 	boat_damage.update(hull, hull_capacity, hit_flash)
@@ -1253,8 +1246,10 @@ func _update_weather(delta: float) -> void:
 	if not weather_enabled:
 		return
 	var strength: float = [0.0, 0.25, 0.45, 0.15][phase]
+	if arena_mode and state == State.SAILING:
+		strength = smoothstep(arena_radius - 8.0, arena_radius + 24.0, storm_distance()) * 0.8
 	storm_blend = lerpf(storm_blend, strength, 1.0 - exp(-0.6 * delta))
-	# Lighting follows voyage progress; wave difficulty belongs to the encounter director.
+	# Storm presentation never changes wave forces or player controls.
 	sky_material.set_shader_parameter("storm", storm_blend)
 	var flash: float = maxf(0.0, 1.0 - fmod(elapsed, 9.0) / 0.16) if phase == 2 else 0.0
 	sky_material.set_shader_parameter("lightning", flash * 0.3)

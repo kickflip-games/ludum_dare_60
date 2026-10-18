@@ -28,6 +28,9 @@ uniform int flow_count = 0;
 uniform vec4 flow_frames[3]; // centre XZ, sin heading, cos heading (precomputed)
 uniform vec4 flow_shapes[3]; // width, bend, collected, length
 
+// Presentation on the existing displaced water: centre XZ, warning radius, opacity.
+uniform vec4 storm_boundary = vec4(0.0);
+
 varying vec3 surface_world;
 varying vec3 surface_normal;
 varying float crest_fraction;
@@ -115,6 +118,13 @@ void fragment() {
 	water = mix(water,cap_color,max(cap_foam*foam_grain*0.88,coast));
 	water = mix(water,crest_color.rgb,flow_style.x * 0.25);
 	water = mix(water,foam_color.rgb,flow_style.y * 0.34 + flow_style.z * 0.24);
+	// A continuous red line with a soft storm-side band. Uses the actual water
+	// surface, so crests cannot hide a separate flat warning plane.
+	float storm_offset = length(p - storm_boundary.xy) - storm_boundary.z;
+	float aa = max(0.15, fwidth(storm_offset));
+	float line = 1.0 - smoothstep(0.65, 0.65 + aa, abs(storm_offset));
+	float storm_band = smoothstep(-0.5, 1.0, storm_offset) * (1.0 - smoothstep(2.0, 8.0, storm_offset));
+	water = mix(water, vec3(0.95, 0.055, 0.065), storm_boundary.w * max(line * 0.95, storm_band * 0.2));
 	float distance_to_eye = distance(surface_world, CAMERA_POSITION_WORLD);
 	float haze = smoothstep(48.0, 180.0, distance_to_eye);
 	ALBEDO = mix(water * mix(1.0, 0.76, storm_shading), horizon_color, haze);

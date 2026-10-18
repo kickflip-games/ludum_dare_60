@@ -22,7 +22,7 @@ prevents repeated frames, overlap or re-entry duplicating a reward. Base speed
 is 7.5 m/s, reaching 9.375/11.71875/14.6484375 m/s. Nonfatal damage, aiming and
 exit retain rewards; win/loss/retry clear them. `SPEED` stays the unboosted
 accessor for existing cutter tuning; `propulsion_speed()` drives the player
-integrator and speed-aware boundary return. No flow multiplier is applied to
+integrator. No flow multiplier is applied to
 enemies, projectiles, reloads or survival timers.
 
 Holding Shift multiplies the player's earned propulsion by **1.5 continuously**:
@@ -52,8 +52,8 @@ oblique sides with terrain-safe broadside fallback. Three-second approach/audio
 warnings, fixed world trajectories, terrain checks, an eight-second retry budget
 and the four-event cap remain. Combat and cannon aiming no longer veto launches.
 Only the actual central island's inner 40 m remains sheltered. Voyage ten-crest
-sets retain their own schedule. Arena return feeds a blended rudder into the
-unchanged `wave_sailing.step()`.
+sets retain their own schedule. The storm warning circle is drawn on the shared
+displaced water surface; it never changes `wave_sailing.step()` or player input.
 The field, shader, hull sampler and cannon-water authority remain shared.
 The static coastal foam texture matches the lighthouse and surrounding islands.
 The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.

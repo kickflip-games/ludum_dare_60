@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Replaced player arena containment and automatic return steering
+  with a red storm line that fades in on approach, STORMY AHEAD, and a persistent
+  return-to-lighthouse warning beyond 170 m. Slow red screen pulses (steady in
+  Reduced motion) and storm lighting leave sailing, steering and firing free.
+  560 checks pass across eight suites; eight native views inspected. Two legacy
+  voyage terrain failures reproduce on untouched a049381. Human playtesting and Web
+  remain untested.
+
 - Naval AI: committed navigation and independent weapons,
   six pooled ships, fair slots and staggered warnings preserve the current
   controls/rosters. Fixed stale interception and latched contact recovery;

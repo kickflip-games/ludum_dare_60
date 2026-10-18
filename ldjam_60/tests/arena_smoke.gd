@@ -161,59 +161,55 @@ func _run() -> void:
 		var a := i*TAU/48.0
 		circle.append(Vector2(sin(a),-cos(a))*126.0)
 	check(route(circle), "full arena circumnavigation with input; no reef contact or boundary trap")
+	# The former containment radius is now an advisory storm line.
 	for hz in [30,60,120]:
 		for sector in range(8):
 			var bearing := sector*TAU/8
 			stage(Vector2(sin(bearing),-cos(bearing))*136, bearing)
 			await physics_frame
-			var result := sail(28,hz)
-			check(result.max_radius <= 170.001 and radius() < 150 and game.hits_taken == 0 and result.longest_stop < 0.3,
-				"%d Hz sector %d: automatic curve stays clear of rocks and contains ship" % [hz,sector])
-			check(result.max_turn < 1.3/hz and result.max_step < 11.0/hz,
-				"%d Hz sector %d: no heading snap or position teleport" % [hz,sector])
+			var result := sail(6,hz)
+			check(radius() > 179 and game.hits_taken == 0 and result.longest_stop < 0.3,
+				"%d Hz sector %d: player crosses storm line without containment" % [hz,sector])
+			check(result.max_turn < 0.0001 and result.max_step < 11.0/hz,
+				"%d Hz sector %d: no automatic rudder or position teleport" % [hz,sector])
 		stage(Vector2(169.95,0),PI/2)
 		await physics_frame
 		game.wave_sailing.drift = Vector2(3.6,1.2)
-		for crest in 4:
-			game.ocean.wave_field.add_wave(Vector2(420+crest*5,250),Vector2.RIGHT,2,4.8,52,8,0,14)
-		var result := sail(16,hz,0,true)
-		check(result.max_radius <= 170.001 and game.wave_sailing.drift.is_finite() and game.hits_taken == 0,
-			"%d Hz maximum crests, drift and outward-seeking helm stay contained" % hz)
-		await process_frame
+		var result := sail(2,hz)
+		check(radius() > 184 and game.wave_sailing.drift.is_finite() and game.hits_taken == 0,
+			"%d Hz outward momentum crosses warning circle freely" % hz)
 	stage(Vector2(169.99,0),PI/4)
 	await physics_frame
 	game.wave_sailing.drift=Vector2(2,-1)
 	game.advance_sailing(1.0/60,0)
 	var radial: Vector3 = (game.boat.position-game.arena_center()).normalized()
-	check(radius()<=170.001 and game.boat.velocity.dot(radial)<=0.001
-		and game.wave_sailing.drift.dot(Vector2(radial.x,radial.z))<=0.001 and game.actual_speed>3,
-		"hard limit removes outward velocity and drift while preserving tangible forward/tangent motion")
+	check(radius()>170 and game.boat.velocity.dot(radial)>3
+		and game.wave_sailing.drift.dot(Vector2(radial.x,radial.z))>0 and game.actual_speed>3,
+		"storm line preserves outward velocity and drift")
 	var at: Vector3 = game.boat.position
 	game.advance_sailing(2.0,0)
-	check(radius()<=170.001 and at.distance_to(game.boat.position)<20 and game.hits_taken==0,
-		"stalled two-second frame is substepped without edge escape, snapping or obstacle impact")
+	check(radius()>180 and at.distance_to(game.boat.position)<20 and game.hits_taken==0,
+		"stalled two-second frame crosses line with continuous collision sweeps")
 	stage(Vector2(75,0),0)
 	await physics_frame
 	var before: float = game.heading
 	sail(2,60)
-	check(not game.arena_return.active and absf(game.heading-before)<0.0001, "no automatic helm correction without the outer trigger")
-	stage(Vector2(150,0),-PI/2)
+	check(absf(game.heading-before)<0.0001, "no automatic helm correction in safe water")
+	stage(Vector2(180,0),-PI/2)
 	await physics_frame
 	sail(2,60)
-	check(not game.arena_return.active and radius()<140, "inward-facing helm remains responsive in warning zone")
-	stage(Vector2(136,0),PI/2)
+	check(radius()<170, "player can manually return across the storm line")
+	stage(Vector2(180,0),PI/2)
 	await physics_frame
 	game.cannon.update_aim(0.0)
 	action("steer_port",true)
-	var contained := true
-	for frame in 720:
+	for frame in 60:
 		game._physics_process(1.0/60)
-		contained = contained and radius()<=170.001
-	check(not game.cannon.aiming and game.turn_input==-1 and contained and radius()<150 and game.hits_taken==0,
-		"cone targeting and held A preserve steering and arena containment")
+	check(not game.cannon.aiming and game.turn_input==-1 and game.heading<PI/2-0.5 and game.hits_taken==0,
+		"cone targeting and held A preserve manual steering outside storm line")
 	action("fire_starboard",true)
 	game._physics_process(1.0/60)
-	check(game.cannon.shots_fired==1 and game.cannon.projectiles.size()==1, "Space still fires during the return turn")
+	check(game.cannon.shots_fired==1 and game.cannon.projectiles.size()==1, "Space still fires outside the storm line")
 	check(game.cannon.projectiles[0].velocity.normalized().dot(game.cannon.aimed_direction())>0.99, "cannon shot follows the actual barrel")
 	action("fire_starboard",false)
 	game._physics_process(1.0/60)

@@ -1,5 +1,5 @@
 extends SceneTree
-## Actual Shift input, finite arena scheduling, lifecycle and high-speed return.
+## Actual Shift input, finite arena scheduling, lifecycle and unrestricted storm-line crossing.
 var game
 var checks := 0
 var failures := 0
@@ -192,7 +192,7 @@ func _run() -> void:
 	for frame in 720:
 		game._physics_process(1.0/60)
 		radius = maxf(radius,game.boat.position.distance_to(game.arena_center()))
-	check(radius<=game.arena_radius+0.001 and game.state==game.State.SAILING, "full flow plus Shift remains inside arena through existing curved return")
+	check(radius>game.arena_radius+100 and game.state==game.State.SAILING, "full flow plus Shift crosses storm line without automatic return")
 	check(game.boosting and is_equal_approx(game.propulsion_speed(),21.97265625) and game.boost_wind.visible, "continuous twelve-second hold retains full boost and wind without timeout or cooldown")
 	game.restart()
 	check(director.total_launched==0 and game.ocean.wave_field.waves.is_empty() and director.history.is_empty(), "retry clears wave clock, finite events, history and boost")

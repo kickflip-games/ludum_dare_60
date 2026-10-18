@@ -82,8 +82,8 @@ func _run() -> void:
 	# immediately after this overview. Rings are review annotations, not barriers.
 	game.world_environment.environment.fog_enabled=false
 	ring(170,Color("e7c893"))
-	ring(132.6,Color("679cba"))
-	label_at("170 m LIMIT · 132.6 m WARNING\nReview overlay; no gameplay walls",game.arena_center()+Vector3(-168,0,172))
+	ring(132,Color("679cba"))
+	label_at("170 m STORM LINE · 132 m WARNING\nReview overlay; player movement is unrestricted",game.arena_center()+Vector3(-168,0,172))
 	label_at("LIGHTHOUSE",game.arena_center()+Vector3(0,0,5))
 	label_at("JAGGED REEF",game.arena_center()+Vector3(-119,0,-44))
 	label_at("BROKEN WRECK",game.arena_center()+Vector3(88,0,62))
@@ -117,7 +117,7 @@ func _run() -> void:
 	for frame in 720:
 		game._physics_process(1.0/60)
 		if frame%60==0:
-			await capture("sequence/return-%02d"%(frame/60))
+			await capture("sequence/storm-%02d"%(frame/60))
 	# One visible cutter from a normal sector, still targeting only the player.
 	game.restart()
 	await physics_frame

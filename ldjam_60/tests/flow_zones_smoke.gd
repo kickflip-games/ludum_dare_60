@@ -147,25 +147,25 @@ func _run() -> void:
 	action("restart_crossing",false)
 	check(flow.collected.is_empty() and game.propulsion_speed()==7.5 and game.state==game.State.CASTING_OFF,
 		"held R resets collected rewards and speed through the real input path")
-	# Maximum-speed return at representative open rim approaches, with drift and
-	# long-frame cases. Real collisions remain enabled; no health protection.
+	# All reward levels cross the advisory storm line, including a long frame.
+	# Real collisions remain enabled; no health protection.
 	for hz in [30,60,120]:
 		for level in [0,1,2,3]:
-			stage(Vector2(136,0), PI/2)
+			stage(Vector2(161,0), PI/2)
 			for i in level: flow.collect_at(original[i].center)
 			await physics_frame
 			var max_radius := 0.0
-			for frame in hz * 12:
+			for frame in hz * 2:
 				game.advance_sailing(1.0/hz,0)
 				max_radius = maxf(max_radius,game.boat.position.distance_to(game.arena_center()))
-			check(max_radius <= 170.01 and game.hits_taken == 0 and game.state == game.State.SAILING,
-				"%d Hz level %d: boosted return stays bounded without obstacle hits" % [hz,level])
+			check(max_radius > 175 and game.hits_taken == 0 and game.state == game.State.SAILING,
+				"%d Hz level %d: earned speed crosses storm line without obstacle hits" % [hz,level])
 	stage(Vector2(161,0), PI/2)
 	for zone: Dictionary in original: flow.collect_at(zone.center)
 	game.wave_sailing.drift = Vector2(3.8,0)
 	game.wave_sailing.yaw_rate = 0.56
 	game.advance_sailing(0.75,0)
-	check(game.boat.position.distance_to(game.arena_center()) <= 170.01, "long frame plus strong drift stays within swept arena boundary")
+	check(game.boat.position.distance_to(game.arena_center()) > 170.01, "long frame plus strong drift crosses storm line freely")
 	# Exact 50% force gain, including the former saturation case. This calculates
 	# the old vector independently, then compares the production force at contact.
 	for count in [1,4]:

@@ -34,10 +34,11 @@ enemy to win; entering the old harbour never wins.
 - Five nearby rocky islands with pine groves frame the arena, using the earlier
   archipelago style. Their shores sit beyond the combat boundary; the inner
   sailing routes and enemy sectors remain clear.
-- The outer limit is a **170 m circle centred on the lighthouse**. Beyond
-  **132.6 m**, outward sailing blends in a curved rudder return, including while
-  firing. Its obstacle probes favour clear water. Inward steering remains
-  effective. The hard limit bounds swept movement while retaining tangent motion.
+- A red **storm warning circle**, 170 m from the lighthouse, fades in across the
+  final 38 m of approach. **STORMY AHEAD** warns against crossing; beyond the line,
+  **RETURN TO THE LIGHTHOUSE** stays visible with a slow red screen pulse and
+  stormier lighting. Reduced motion uses a steady tint. The player can sail
+  freely across the line: no automatic rudder, wall, speed clamp or storm damage.
 - Waves contain **2 / 3 / 4 / 5 / 6** ships (compositions below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
   three seconds after a safe early all-clear. Up to five living ships can be
@@ -77,7 +78,7 @@ aim point; launched shots never home. Crowded ships yield speed as well as turni
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
-Cruise speed (`sailing_speed`, default 7.5 m/s), radius and return settings are
+Cruise speed (`sailing_speed`, default 7.5 m/s), warning radius and approach margin are
 exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five rosters/deadlines, spawn interval,
 maximum living enemies (1–6), early-clear pause and spawn separation. Retry
@@ -125,6 +126,7 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_c
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/storm_boundary_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/night_boost_wave_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/flow_zones_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd

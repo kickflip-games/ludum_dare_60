@@ -6,9 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
-- In progress: implement the approved deck camera and turbulence plan on
-  `codex/turbulence-deck-camera`, based on `4f464ec`. Preserve wave forces,
-  cannon input, star navigation and planar collisions. Runtime validation pending.
+- Added the hull-mounted deck view, directional wave inertia and contact-driven
+  spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the
+  obstructing canvas, retained the real cannon and added a fitted planked floor.
+  Wave forces, controls and planar collisions are preserved. Fixed Web staging's
+  omission of the runtime terrain addon and Web ambient audio playback.
+  527 automated checks and 51,840 GPU comparisons pass; the rendered voyage
+  reaches harbour without shore impacts. Browser measurements and human comfort testing remain
+  in progress. See the [implementation report](artifacts/water_review/TURBULENCE_CAMERA_REPORT.md).
 - Required a dedicated branch and immediate draft web PR for every task, an
   initial check for overlapping open PRs, and screenshots visible in each PR.
   Added a [rendered workflow capture](artifacts/pr_workflow/agent-workflow.jpg)

@@ -72,7 +72,7 @@ func trial(height: float, hz: int, preset_path: String = "res://game/ocean/prese
 		if first_push < 0 and game.wave_sailing.drift.length() > 0.005:
 			first_push = game.sea_time
 		clock_ok = clock_ok and is_equal_approx(game.ocean.wave_time,game.sea_time)
-		camera_ok = camera_ok and absf(game.camera.rotation.z)<0.0001 and game.camera.position.y>=game.ocean.height_at(Vector2(game.camera.position.x,game.camera.position.z))+1.19
+		camera_ok = camera_ok and absf(game.camera.rotation.z)<0.15 and game.camera.position.y>=game.ocean.height_at(Vector2(game.camera.position.x,game.camera.position.z))+1.19
 		limits_ok = limits_ok and absf(game.boat_motion.pitch)<=deg_to_rad(game.ocean_settings.pitch_limit_degrees)+0.0001 and absf(game.boat_motion.roll)<=deg_to_rad(game.ocean_settings.roll_limit_degrees)+0.0001
 		if frame%12==0:
 			await process_frame
@@ -127,7 +127,7 @@ func _run() -> void:
 	check(absf(slow.max_heave_m-fast.max_heave_m)<0.08 and absf(slow.x-fast.x)<0.15 and absf(slow.heading-fast.heading)<0.01,
 		"moving hull response and wave pressure agree at 30, 60 and 120 Hz")
 	check(large.camera_ok and slow.camera_ok and fast.camera_ok and large.limits_ok,
-		"large encounters keep a level, clear camera and preserve the 8/12-degree hull limits")
+		"large encounters keep a bounded, clear deck camera and preserve the 8/12-degree hull limits")
 	check(game.boat.position.y==0 and game.boat.rotation.x==0 and game.boat.rotation.z==0,
 		"wave motion never rotates or lifts the planar collision root")
 	var baseline_path := ProjectSettings.globalize_path("res://../artifacts/water_review/dynamic_toon/baseline/source/ldjam_60/game/ocean/presets/calm.tres")

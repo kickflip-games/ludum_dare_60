@@ -18,6 +18,7 @@ var menu_body: Label
 var menu_controls: GridContainer
 var menu_details: Label
 var menu_footer: Label
+var motion_choice: OptionButton
 var cannon_gauge: Control
 var gameplay_hud: Control
 var threat_label: Label
@@ -151,6 +152,15 @@ func _build_menu() -> void:
 	action_button.pressed.connect(_on_action_pressed)
 	column.add_child(action_button)
 	menu_footer = _label(column, "Footer", "Automatic sailing · avoid reefs · 3 hits sink\nR retry     M mute     Esc quit", 14, MUTED)
+	motion_choice = OptionButton.new()
+	motion_choice.name = "MotionSetting"
+	motion_choice.add_item("Motion: Full")
+	motion_choice.add_item("Motion: Reduced")
+	motion_choice.selected = game.motion_setting
+	motion_choice.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	motion_choice.tooltip_text = "Reduced softens banking and impacts. Waves and steering stay the same."
+	motion_choice.item_selected.connect(func(index: int): game.motion_setting = index)
+	column.add_child(motion_choice)
 
 
 func _gauge(node_name: String, preset: int, rect: Rect2) -> Control:

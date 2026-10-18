@@ -119,6 +119,7 @@ func set_fire_held(pressed: bool) -> void:
 
 func cancel_aim() -> void:
 	_fire_pending = false
+	_update_target_highlights(false)
 	if not aiming:
 		return
 	aiming = false
@@ -150,6 +151,32 @@ func update_aim(delta: float) -> void:
 		aim_degrees = max_aim_degrees * eased * (1.0 if initial_sweep_direction == 0 else -1.0)
 		yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
 	indicator_alpha = move_toward(indicator_alpha, 1.0 if aiming else 0.0, delta * (10.0 if aiming else 5.0))
+	_update_target_highlights(aiming)
+
+
+func visible_in_firing_sector(body: Node3D) -> bool:
+	if not aiming or game.state != game.State.SAILING or not body.is_visible_in_tree() or body.get_meta("destroyed", true):
+		return false
+	var offset := body.global_position - shot_origin()
+	var flat := Vector3(offset.x, 0, offset.z)
+	if flat.length() < 3.0 or flat.length() > 90.0 or flat.normalized().dot(starboard_direction()) < cos(deg_to_rad(max_aim_degrees + 10.0)):
+		return false
+	var size: float = body.get_meta("target_radius", 4.2) / 4.2
+	for height in [1.3, 4.3]:
+		var point := body.to_global(Vector3(0, height, -1.8) * size)
+		if not game.camera.is_position_in_frustum(point):
+			continue
+		var query := PhysicsRayQueryParameters3D.create(game.camera.global_position, point, 5)
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or hit.collider == body:
+			return true
+	return false
+
+
+func _update_target_highlights(enabled: bool) -> void:
+	for body: Node3D in get_tree().get_nodes_in_group("cannon_targets"):
+		if body.has_method("set_aim_highlight"):
+			body.set_aim_highlight(enabled and visible_in_firing_sector(body))
 
 
 func fire() -> bool:
@@ -253,6 +280,10 @@ func advance(delta: float) -> void:
 					effect.node.material_override.set_shader_parameter("opacity",remaining*remaining)
 				elif effect.get("smoke", false):
 					effect.node.scale += Vector3.ONE * delta * 1.5
+				elif effect.get("impact_smoke", false):
+					var remaining: float = effect.ttl / effect.lifetime
+					effect.node.scale += Vector3.ONE * delta * 0.8
+					effect.node.material_override.albedo_color.a = remaining * 0.45
 				else:
 					effect.velocity.y -= delta * 2.0
 					effect.node.scale = Vector3.ONE * minf(1.0, effect.ttl * 3.0)
@@ -261,10 +292,14 @@ func advance(delta: float) -> void:
 func _impact(body: Object, at: Vector3) -> void:
 	var ship: bool = body.get_meta("target_kind", "") == "ship"
 	var destructible: bool = body.get_meta("destructible", false)
+	if (ship or destructible) and body.get_meta("destroyed", false):
+		return
 	if ship:
 		targets_hit += 1
 		body.take_hit()
-		feedback = "CUTTER SUNK" if body.hull <= 0 else "HULL HIT  ·  %d MORE" % body.hull
+		feedback = "%s SUNK" % body.display_name().to_upper() if body.hull <= 0 else "HULL HIT  ·  %d MORE" % body.hull
+		if body.hull <= 0:
+			_sinking_burst(at)
 	elif destructible:
 		targets_hit += 1
 		body.visible = false
@@ -280,6 +315,22 @@ func _impact(body: Object, at: Vector3) -> void:
 	var audio: AudioStreamPlayer = _ship_audio if ship else _impact_audio
 	if is_instance_valid(audio) and game._sound_enabled:
 		audio.play()
+
+
+func _sinking_burst(at: Vector3) -> void:
+	_splinters(at + Vector3.UP, true)
+	for puff_index in 3:
+		var material = game._material(Color("c6bda6"))
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.albedo_color.a = 0.45
+		var shape := SphereMesh.new()
+		shape.radius = 0.7
+		shape.height = 1.4
+		shape.radial_segments = 8
+		shape.rings = 4
+		var smoke = game._mesh(game, shape, at + Vector3(0, puff_index * 0.5, 0), material)
+		effects.append({"node": smoke, "ttl": 1.2, "lifetime": 1.2,
+			"velocity": Vector3(0.3, 1.4 + puff_index * 0.4, 0.2), "impact_smoke": true})
 
 
 func aim_target() -> Dictionary:

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/enemy_archetype.gd" id="1"]
+
+[resource]
+resource_name = "Skiff"
+script = ExtResource("1")
+display_name = "Skiff"
+hull = 1
+speed = 8.4
+turn_speed = 0.60
+turn_acceleration = 1.0
+acceleration = 1.6
+size = 0.82
+sail_color = Color(0.50, 0.80, 0.82, 1)
+sail_fill = 0.24
+sail_bands = 1
+broadside_separation = 29.0
+approach_lead = 40.0
+approach_angle = -0.8
+reposition_angle = 1.0
+attack_run_seconds = 5.0
+return_seconds = 7.0
+telegraph_seconds = 1.8

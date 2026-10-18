@@ -4,6 +4,7 @@ var drift := Vector2.ZERO
 var yaw_rate := 0.0
 var rudder_rate := 0.0
 var displacement := Vector2.ZERO
+var rudder_response := 7.0
 const DRAG := 0.85
 const YAW_DRAG := 2.1
 # The wave's centre of pressure is forward of the hull's lateral resistance.
@@ -47,7 +48,7 @@ func _integrate_forces(field: RefCounted, center: Vector2, heading: float, steer
 	drift = (drift * drag_decay + acceleration * (1.0 - drag_decay) / DRAG).limit_length(3.8)
 	var yaw_decay := exp(-YAW_DRAG * delta)
 	yaw_rate = clampf(yaw_rate * yaw_decay + torque * (1.0 - yaw_decay) / YAW_DRAG, -MAX_WAVE_YAW_RATE, MAX_WAVE_YAW_RATE)
-	rudder_rate = lerpf(rudder_rate, clampf(steering, -1.0, 1.0) * 0.72, 1.0 - exp(-7.0 * delta))
+	rudder_rate = lerpf(rudder_rate, clampf(steering, -1.0, 1.0) * 0.72, 1.0 - exp(-rudder_response * delta))
 
 func slide(normal: Vector2) -> void:
 	if drift.dot(normal) < 0.0:

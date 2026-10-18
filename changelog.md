@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Improve combat readability with folded, brighter sails, aim-only
+  visibility/occlusion-checked cloth illumination and confirmed hit/sinking
+  feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;
+  preserved physical cannon fire and wave forces. Initial combat/naval checks
+  pass; timed-roster integration and final rendered evidence remain pending.
+
 - In progress: Add lighthouse defence on the integrated arena: five data-driven
   cutter waves (1/2/2/3/3), staggered spawns, five lighthouse integrity, warned
   breaches, intermissions and complete endings/retry. Planned checks include

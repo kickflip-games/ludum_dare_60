@@ -98,6 +98,15 @@ func _run() -> void:
 			game._update_view(DT)
 		physics_results.append(Vector3(game.boat.position.x,game.heading,game.boat.position.z))
 	check(physics_results[0].distance_to(physics_results[1])<0.00001,"Full and Reduced produce identical physical movement under the same wave and steering input")
+	place()
+	game.boat.transform = Transform3D(Basis.IDENTITY,OPEN)
+	await physics_frame
+	crest(Vector2.RIGHT,1.85)
+	for frame in range(168):
+		game.advance_sailing(DT,0.0)
+		game._update_view(DT)
+	var rail: Vector3 = game.boat_visual.to_global(Vector3(-1.45,0.98,-2.0))
+	check(rail.y-game.ocean.height_at(Vector2(rail.x,rail.z))>0.02,"bounded edge support keeps the visible port gunwale above a strong incoming crest")
 	# A long browser pause snaps history rather than integrating stale derivatives.
 	game.deck_response.impact_velocity = Vector3(2,-2,0)
 	game.sea_time += 5.0

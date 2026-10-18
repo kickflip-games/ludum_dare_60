@@ -12,6 +12,9 @@ while artificial sailing trim uses only 0.25/0.12. Heading remains the actual
 steering heading. The analytic damped response snaps across teleports, reversed
 clocks and gaps over 0.25 seconds. Final water/terrain/near-plane protection runs
 after presentation offsets. Gunner and star modes retain their precision poses.
+The same five flotation samples supply up to 0.35 m of extra visual edge support
+when a side crest reaches the gunwale before the centre rises. Existing damping,
+tilt limits, planar collisions and wave forces are retained.
 
 Per-wave height, peak and filtered descent detect one compression per crest.
 The same ID, direction and intensity drive head compression, spray and generated
@@ -44,11 +47,13 @@ godot --headless --path ldjam_60 --script res://tests/turbulence_effects_smoke.g
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/turbulence_camera_previews.gd -- --clip --no-effects
 ```
 
-Preview options: `--views-only`, `--clip`, `--no-effects`, `--output=/absolute/path`.
+Preview options: `--views-only`, `--clip`, `--no-effects`, `--no-camera`,
+`--no-spray`, `--no-overlays`, `--no-sound`, `--output=/absolute/path`.
 The `turbulence_browser.tscn` fixture is only for a separate development staging
 export: it alternates baseline/final, Low/Standard, calm/four-wave runs, each with
 ten seconds warmup and thirty seconds measurement. It needs the accompanying
-local report server; it is not a normal gameplay entry point.
+local report server; it is not a normal gameplay entry point. Prepare and serve
+it with `tools/turbulence_web_review.py` from the repository root (use `--help`).
 
 ## Night water and foam
 

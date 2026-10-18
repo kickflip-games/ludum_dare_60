@@ -2,6 +2,10 @@ extends "res://tests/dynamic_water_previews.gd"
 ## Development-only production fixture. No fixture or control ships in release.
 var views_only := false
 var effects := true
+var camera_response := true
+var spray := true
+var overlays := true
+var sound := true
 
 func _initialize() -> void:
 	output = ProjectSettings.globalize_path("res://../artifacts/water_review/turbulence_camera/after")
@@ -10,6 +14,10 @@ func _initialize() -> void:
 		if arg == "--clip": record_clip = true
 		if arg == "--views-only": views_only = true
 		if arg == "--no-effects": effects = false
+		if arg == "--no-camera": camera_response = false
+		if arg == "--no-spray": spray = false
+		if arg == "--no-overlays": overlays = false
+		if arg == "--no-sound": sound = false
 	_run.call_deferred()
 
 func action(name: String,pressed: bool) -> void:
@@ -19,6 +27,10 @@ func action(name: String,pressed: bool) -> void:
 	event.strength = 1.0 if pressed else 0.0
 	Input.parse_input_event(event)
 	Input.flush_buffered_events()
+
+func capture(label: String) -> void:
+	await super.capture(label)
+	frames[label].merge({"mode":game.camera_mode,"aiming":game.cannon.aiming,"shots_fired":game.cannon.shots_fired})
 
 func advance(seconds: float, steering: float = 0.0, clip: bool = false) -> void:
 	for frame in range(roundi(seconds/DT)):
@@ -49,10 +61,10 @@ func _run() -> void:
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)
 	game.development_tools = true
-	if "development_spray" in game:
-		game.development_spray = effects
-		game.development_overlays = effects
-		game.development_sound = effects
+	game.development_camera_response = camera_response
+	game.development_spray = effects and spray
+	game.development_overlays = effects and overlays
+	game.development_sound = effects and sound
 	await physics_frame
 	place()
 	await capture("01-calm-deck")

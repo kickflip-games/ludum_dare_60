@@ -1,7 +1,9 @@
 # Turbulence, deck camera, and boat presentation: implementation plan
 
 Date: 2026-10-18 (Pacific/Auckland)
-Status: approved direction translated into an implementation plan; implementation and new playtests have not been performed.
+Status: technical implementation delivered on `codex/turbulence-deck-camera`;
+see [implementation evidence](TURBULENCE_CAMERA_REPORT.md). Full browser-performance
+acceptance and human playtesting remain open.
 
 ## 1. Objective and source of truth
 

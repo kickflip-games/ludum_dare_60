@@ -31,6 +31,9 @@ var credits_back: Button
 var credits_open := false
 var settings_button: Button
 var main_menu_button: Button
+var settings_frame: PanelContainer
+var credits_frame: PanelContainer
+var motion_selector: OptionButton
 var settings_panel: VBoxContainer
 var settings_back: Button
 var menu_spacer: Control
@@ -217,27 +220,24 @@ func _menu_button(parent: Node, node_name: String, caption: String, primary: boo
 	var button := Button.new()
 	button.name = node_name
 	button.text = caption
-	button.custom_minimum_size.y = 48 if primary else 42
+	button.custom_minimum_size = Vector2(300 if primary else 260, 54 if primary else 44)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	if primary:
-		for slot: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-			button.add_theme_color_override(slot, NauticalTheme.NAVY)
-		for kind: String in ["normal", "hover", "pressed", "focus"]:
-			button.add_theme_stylebox_override(kind, NauticalTheme.button_style(kind, true))
+	NauticalTheme.style_button(button, primary)
 	parent.add_child(button)
 	return button
 
 
 func _build_menu() -> void:
 	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, 0.32, 0.58, 1.0])
-	gradient.colors = PackedColorArray([Color(NauticalTheme.NAVY, 0.65), Color(NauticalTheme.NAVY, 0.28), Color(NauticalTheme.NAVY, 0.0), Color(NauticalTheme.NAVY, 0.4)])
+	gradient.offsets = PackedFloat32Array([0.0, 0.28, 0.52, 0.72, 1.0])
+	gradient.colors = PackedColorArray([Color(DARK, 0.88), Color(DARK, 0.67), Color(DARK, 0.12), Color(DARK, 0.0), Color(DARK, 0.0)])
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient
-	texture.width = 1
-	texture.height = 512
+	texture.width = 512
+	texture.height = 1
 	texture.fill_from = Vector2.ZERO
-	texture.fill_to = Vector2.DOWN
+	texture.fill_to = Vector2.RIGHT
 	menu_shade = TextureRect.new()
 	menu_shade.name = "MenuTint"
 	menu_shade.texture = texture
@@ -250,7 +250,7 @@ func _build_menu() -> void:
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(menu)
 	menu_column = VBoxContainer.new()
-	menu_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	menu_column.alignment = BoxContainer.ALIGNMENT_BEGIN
 	menu_column.add_theme_constant_override("separation", 12)
 	menu_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	menu.add_child(menu_column)
@@ -262,15 +262,15 @@ func _build_menu() -> void:
 	menu_details = _label(menu_column, "VoyageDetails", "", 18, NauticalTheme.BRASS)
 	menu_details.visible = false
 	for label: Label in [menu_title, menu_body, menu_details]:
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	menu_spacer = Control.new()
 	menu_spacer.name = "LighthouseBreathingRoom"
 	menu_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	menu_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	menu_spacer.custom_minimum_size.y = 22
 	menu_column.add_child(menu_spacer)
 	menu_actions = VBoxContainer.new()
 	menu_actions.name = "MenuActions"
-	menu_actions.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	menu_actions.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	menu_actions.add_theme_constant_override("separation", 10)
 	menu_column.add_child(menu_actions)
 	action_button = _menu_button(menu_actions, "StartOrReplay", "SET SAIL", true)
@@ -297,23 +297,69 @@ func _build_menu() -> void:
 	menu_footer = _label(menu_column, "Footer", "", 16, NauticalTheme.SEA_GLASS)
 	menu_footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	settings_frame = PanelContainer.new()
+	settings_frame.name = "SettingsFrame"
+	settings_frame.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	settings_frame.add_theme_stylebox_override("panel", NauticalTheme.panel_style())
+	settings_frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	settings_frame.custom_minimum_size.x = 430
+	menu_column.add_child(settings_frame)
 	settings_panel = VBoxContainer.new()
 	settings_panel.name = "SettingsAndControls"
-	settings_panel.add_theme_constant_override("separation", 15)
-	settings_panel.visible = false
-	menu_column.add_child(settings_panel)
-	_label(settings_panel, "ControlsHeading", "CONTROLS", 15, NauticalTheme.BRASS)
-	var help_text := "A / D or arrows   Steer\nShift   Boost while held\nMouse   Look around\nClick / Space   Fire\nE   Switch camera\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Pause / resume"
+	settings_panel.add_theme_constant_override("separation", 12)
+	settings_frame.add_child(settings_panel)
+	_label(settings_panel, "ControlsHeading", "CONTROLS", 13, BRASS)
+	var controls := GridContainer.new()
+	controls.name = "FullControls"
+	controls.columns = 2
+	controls.add_theme_constant_override("h_separation", 14)
+	controls.add_theme_constant_override("v_separation", 6)
+	settings_panel.add_child(controls)
+	var bindings := [["A / D or arrows", "Steer"], ["Shift", "Boost while held"], ["Mouse", "Look around"], ["Click / Space", "Fire"], ["E", "Switch camera"], ["Hold R", "Restart voyage"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
 	if not game.arena_mode:
-		help_text = "A / D   Steer\nShift   Boost while held\nHold Space   Find the guiding star\nHold E   Aim cannon\nF   Fire\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Pause / resume"
-	_label(settings_panel, "FullControls", help_text, 17, NauticalTheme.IVORY)
+		bindings = [["A / D", "Steer"], ["Shift", "Boost while held"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"], ["Hold R", "Restart voyage"], ["M", "Mute / unmute"], ["Esc", "Pause / resume"]]
+	for index in bindings.size():
+		var cap := PanelContainer.new()
+		cap.name = "Key%d" % index
+		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cap.custom_minimum_size = Vector2(142, 28)
+		cap.add_theme_stylebox_override("panel", NauticalTheme.keycap_style())
+		controls.add_child(cap)
+		var key := _label(cap, "Input", bindings[index][0], 14, INK)
+		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		key.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		var action := _label(controls, "Action%d" % index, bindings[index][1], 17, INK)
+		action.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var motion_row := HBoxContainer.new()
+	motion_row.add_theme_constant_override("separation", 16)
+	settings_panel.add_child(motion_row)
+	var motion_label := _label(motion_row, "MotionLabel", "MOTION", 13, BRASS)
+	motion_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	motion_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	motion_selector = OptionButton.new()
+	motion_selector.name = "MotionPreference"
+	motion_selector.custom_minimum_size = Vector2(158, 32)
+	motion_selector.add_theme_font_size_override("font_size", 16)
+	motion_selector.add_item("Full")
+	motion_selector.add_item("Reduced")
+	motion_selector.select(game.motion_setting)
+	motion_selector.item_selected.connect(func(index: int): game.motion_setting = index)
+	motion_row.add_child(motion_selector)
 	settings_back = _menu_button(settings_panel, "SettingsBack", "BACK")
+	settings_back.custom_minimum_size.x = 160
 	settings_back.pressed.connect(func(): _show_settings(false))
+	credits_frame = PanelContainer.new()
+	credits_frame.name = "CreditsFrame"
+	credits_frame.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	credits_frame.add_theme_stylebox_override("panel", NauticalTheme.panel_style())
+	credits_frame.custom_minimum_size.x = 430
+	credits_frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	menu_column.add_child(credits_frame)
 	credits_panel = VBoxContainer.new()
 	credits_panel.name = "GameCredits"
 	credits_panel.visible = false
 	credits_panel.add_theme_constant_override("separation", 10)
-	menu_column.add_child(credits_panel)
+	credits_frame.add_child(credits_panel)
 	for entry in [
 		["Models", "3D MODELS", "Kenney · Quaternius"],
 		["Coding", "CODING", "Mehdi Zahroui\nAvi Vajpeyi"],
@@ -321,8 +367,8 @@ func _build_menu() -> void:
 		["Music", "MUSIC", "YD GDeshko"],
 		["Sfx", "SOUND EFFECTS", "jdsherbert"],
 	]:
-		var heading := _label(credits_panel, entry[0] + "Heading", entry[1], 14, BRASS)
-		var names := _label(credits_panel, entry[0] + "Names", entry[2], 21, INK)
+		var heading := _label(credits_panel, entry[0] + "Heading", entry[1], 13, BRASS)
+		var names := _label(credits_panel, entry[0] + "Names", entry[2], 19, INK)
 		for label: Label in [heading, names]:
 			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		names.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -330,13 +376,16 @@ func _build_menu() -> void:
 	additional.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	additional.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credits_back = _menu_button(credits_panel, "CreditsBack", "BACK")
+	credits_back.custom_minimum_size.x = 160
 	credits_back.pressed.connect(func(): _show_credits(false))
 	_layout_menu()
 
 
 func _show_settings(open: bool) -> void:
 	settings_open = open
-	if open: credits_open = false
+	if open:
+		credits_open = false
+		motion_selector.select(game.motion_setting)
 	_refresh_menu_copy()
 	if open:
 		settings_back.grab_focus()
@@ -367,32 +416,31 @@ func _input(event: InputEvent) -> void:
 
 func _layout_menu() -> void:
 	if not is_instance_valid(menu) or size.x < 1.0 or size.y < 1.0: return
-	var compact := size.y < 640
 	var subpage_open := settings_open or credits_open
-	var title_screen: bool = game.arena_mode and game.state == game.State.READY and not subpage_open
-	var width := minf(560.0, size.x * 0.60) if title_screen else minf(420.0, size.x * 0.43)
-	menu_actions.custom_minimum_size.x = minf(420.0, width)
-	var left := (size.x - width) * 0.5
+	var width := minf(480, size.x - 48)
+	var left := clampf(size.x * 0.05, 24, 80)
+	menu_actions.custom_minimum_size.x = minf(300, width)
 	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	menu.position = Vector2(left, 20)
-	var bottom := size.y * 0.84 if game.arena_mode and not subpage_open else size.y - 20
-	menu.size = Vector2(width, maxf(maxf(0, bottom - 20), menu_column.get_combined_minimum_size().y))
-	menu_column.add_theme_constant_override("separation", 7 if compact else 10)
-	menu_actions.add_theme_constant_override("separation", 7 if compact else 10)
-	menu_spacer.visible = game.arena_mode and not subpage_open
-	var title_size := (75 if compact else 93) if game.state == game.State.READY else (48 if compact else 62)
-	if not game.arena_mode: title_size = 48 if compact else 58
-	if subpage_open: title_size = 38 if compact else 48
+	menu_column.add_theme_constant_override("separation", 12)
+	menu_actions.add_theme_constant_override("separation", 10)
+	menu_spacer.visible = not subpage_open
+	var title_size := 68 if game.state == game.State.READY else 48
+	if subpage_open: title_size = 42
 	var widest := 1.0
 	for line: String in menu_title.text.split("\n"):
 		widest = maxf(widest, serif.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x)
 	title_size = mini(title_size, floori(title_size * width / widest))
 	menu_title.add_theme_font_size_override("font_size", title_size)
-	menu_title.add_theme_constant_override("line_spacing", -12)
-	menu_body.add_theme_font_size_override("font_size", 18 if compact else 21)
-	menu_footer.add_theme_font_size_override("font_size", 15 if compact else 16)
-	settings_panel.add_theme_constant_override("separation", 8 if compact else 15)
-	credits_panel.add_theme_constant_override("separation", 5 if compact else 10)
+	menu_title.add_theme_constant_override("line_spacing", -8)
+	menu_body.add_theme_font_size_override("font_size", 18)
+	menu_footer.add_theme_font_size_override("font_size", 14)
+	settings_panel.add_theme_constant_override("separation", 12)
+	credits_panel.add_theme_constant_override("separation", 6)
+	var needed := menu_column.get_combined_minimum_size().y
+	var preferred_top := 48.0 if subpage_open else size.y * 0.14
+	var top := minf(preferred_top, maxf(20, size.y - needed - 24))
+	menu.position = Vector2(left, top)
+	menu.size = Vector2(width, maxf(needed, size.y - top - 24))
 	menu.queue_sort()
 	menu_column.queue_sort()
 
@@ -412,7 +460,9 @@ func _refresh_menu_copy() -> void:
 	walkthrough_button.visible = intro and game.arena_mode
 	menu_controls.visible = intro and not game.arena_mode and not subpage_open
 	menu_footer.text = "A/D steer · Shift boost · Mouse look\nClick/Space fire · Enter set sail" if intro and game.arena_mode else "Enter set sail · M mute · Esc pause / resume" if intro else "R retry · M mute · Esc pause / resume"
+	settings_frame.visible = settings_open
 	settings_panel.visible = settings_open
+	credits_frame.visible = credits_open
 	credits_panel.visible = credits_open
 	menu_actions.visible = not subpage_open
 	menu_footer.visible = not subpage_open and not game.arena_mode

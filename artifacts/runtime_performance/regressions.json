@@ -1,0 +1,48 @@
+{
+  "arcade_controls_smoke": [
+    "ARCADE CONTROLS: 74 checks, 0 failures"
+  ],
+  "boss_smoke": [
+    "BOSS CHECK: 139 checks, 0 failures"
+  ],
+  "cannon_arc_smoke": [
+    "FAIL: warning still flashes and keeps its fixed aim point",
+    "CANNON ARC: 25 checks, 1 failures"
+  ],
+  "combat_particles_smoke": [
+    "COMBAT PARTICLES: 44 checks, 0 failures"
+  ],
+  "combat_smoke": [
+    "FAIL: a missed cannonball gives distinct water-hit feedback",
+    "COMBAT CHECK: FAIL"
+  ],
+  "controls_lifecycle_smoke": [
+    "CONTROLS LIFECYCLE: 46 checks, 0 failures"
+  ],
+  "enemy_armament_smoke": [
+    "ENEMY ARMAMENT: 224 checks, 0 failures"
+  ],
+  "enemy_pressure_smoke": [
+    "ENEMY PRESSURE: 27 checks, 0 failures"
+  ],
+  "pause_smoke": [
+    "PAUSE: 50 checks, 0 failures"
+  ],
+  "runtime_pool_smoke": [
+    "RUNTIME POOLS: 532 checks, 0 failures"
+  ],
+  "starboard_cone_smoke": [
+    "STARBOARD CONE: 33 checks, 0 failures"
+  ],
+  "floating_hazards_smoke": [
+    "FLOATING HAZARDS: 1896 checks, 0 failures"
+  ],
+  "baseline_failures": {
+    "combat": [
+      "FAIL: a missed cannonball gives distinct water-hit feedback"
+    ],
+    "cannon_arc": [
+      "FAIL: warning still flashes and keeps its fixed aim point"
+    ]
+  }
+}

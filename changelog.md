@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Runtime combat optimization: shared preallocated cannonball visuals, recycled
+  flagship/ordinary mines and private offscreen material warm-up. Final paired
+  Web maxima: first shot 110.9→33.7 ms, first mine 55.0→12.4 ms; warm-up costs
+  0.29–0.59 s after first presentation. Gameplay and assets retained. All 3,065
+  checks in ten suites pass; two additional legacy failures also fail at baseline.
+  See [runtime performance evidence](artifacts/runtime_performance/report.md).
+
 - Work in progress: added Discussion credits for Kieran Davidson and Rachel Coxhead
   in the game and credit notes.
 

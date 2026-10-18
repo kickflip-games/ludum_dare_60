@@ -108,11 +108,12 @@ func run() -> void:
 	attacker.begin(game.boat.position+Vector3(30,0,0))
 	attacker.locked_point = game.boat.position+Vector3.UP
 	await physics_frame
+	await process_frame
+	await physics_frame
 	game.hull = 1
 	game.damage_immunity = 0
 	attacker._launch_ball(game.boat.position+Vector3(6,1,0))
 	attacker._advance_shots(0.3)
-	print("FATAL DEBUG ", game.state, " hull ",game.hull," shots ",attacker.projectiles.size()," leased ",pool.leased.size()," layer ",game.boat.collision_layer)
 	check(game.state == game.State.LOST and attacker.projectiles.is_empty() and pool.leased.is_empty(), "Fatal real projectile collision safely clears every lease during callback")
 	fresh()
 	await process_frame

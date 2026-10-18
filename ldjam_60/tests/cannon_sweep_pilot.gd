@@ -29,14 +29,12 @@ func update(game, delta: float) -> void:
 	var right: Vector3 = c.starboard_direction()
 	var desired: float = rad_to_deg(atan2(right.cross(flat).y, right.dot(flat)))
 	if game.arena_mode:
-		# Steer the boat to keep the moving target within the sweep, then time
-		# real fire edges. No barrel, projectile, enemy or camera transforms change.
+		# Steer the boat to keep the moving target in its cone and hold fire.
+		# No barrel, projectile, enemy or camera transforms change.
 		var sector := 65.0 if offset.length() > 42.0 else 0.0
 		action("steer_port", desired > sector + 8.0)
 		action("steer_starboard", desired < sector - 8.0)
-		var travel: Vector3 = c.launch_velocity() * flight - Vector3.UP * 0.45 * flight * flight
-		if (travel - offset).length() < 2.8 and c.cooldown <= 0.000001:
-			tap()
+		action("fire_starboard", not c.choose_cone_target().is_empty())
 		return
 	# One deliberate warned dodge per trial tests the cost of leaving gun view.
 	if not evaded and (c.aiming or game.arena_mode) and ship.mode == ship.Mode.TELEGRAPH and ship.timer > 0.8:

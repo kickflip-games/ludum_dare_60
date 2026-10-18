@@ -26,6 +26,40 @@ recorded evidence and limitations.
   input-only full run defeats all 11 ships through 22 physical hits. Native
   comparisons and combat clips reviewed; human balance remains open. See the
   [combat review](artifacts/combat_feel_review.md).
+- Replaced the active arena cannon sweep and ballistic guide
+  with a boat-relative ±25° / 65 m starboard cone. Fire prioritises alignment,
+  then distance, rotates the real barrel and applies bounded movement lead;
+  empty shots go straight starboard. Added a translucent water sector, thin
+  boundaries and eligible-hull highlights. Kept held Space/click fire, steering,
+  chase look, reload, damage, effects and non-homing flight. The explicit legacy
+  voyage retains its sweep. Updated control/damage fixtures and added cone,
+  ranking, lead, range, reset and camera-independence regressions. Initial six
+  headless suites passed 452 checks. Integration with current enemy pressure
+  and particles passes 257 checks across five suites, plus 38 native checks
+  including simultaneous steering/look/fire against a moving cutter. Rendered
+  cone and combined firing effects inspected.
+  Human balance and Web remain untested.
+
+- Added a visible 0.32-second damage shake to the chase camera,
+  including lethal hits. It fades quickly, respects Reduced motion and camera
+  clearance, ignores immune contacts and clears on retry; cannon feedback and
+  steering remain independent. Damage-camera (51), damage (38), controls (50)
+  and native checks (56) pass; before/impact/settled frames inspected. The older
+  sailing-camera suite retains two superseded-control failures, reproduced on
+  the unchanged source. Human comfort and Web remain untested.
+
+- Added blocky muzzle sparks/smoke, enemy shot trails, stronger timber
+  hits/sinking bursts and player damage spray. Replaced individual smoke, trail
+  and splinter nodes with one shader-animated, 192-cube pool; idle effects sleep,
+  all particles expire within 1.25 seconds and retry clears them. Kept water
+  splashes with a 24-mesh cap. Controls, warnings and projectile physics remain.
+  483 checks pass across ten suites; the one coastal-foam metadata failure also
+  occurs on the untouched base. Nine native effect views inspected; Web export
+  passes. Chrome at 2253×1047 holds 8.3 ms median in all three idle/stress pairs;
+  saturation adds one draw call, about 0.09–0.10 ms CPU/frame and no node growth.
+  Low-end mobile and human playtesting remain untested. See
+  [browser measurements](artifacts/combat_particles_web.json).
+
 - Increased arena waves to 2/3/4/5/6 ships (20 total), with five active slots
   and 2.5-second arrivals. Safe spawns favour shorter clear approaches; faster
   cutter/skiff/heavy pursuit, crossing broadsides and shorter return legs keep

@@ -91,7 +91,7 @@ func holding_target(index: int) -> void:
 		await physics_frame
 	pilot.release()
 	check(target.hull == 0 and game.cannon.targets_hit == 2 and game.cannon.shots_fired == 2,
-		"pool hull %d: two ordinary F-fired projectiles sink a naturally moving holding cutter" % index)
+		"pool hull %d: two ordinary fire-input projectiles sink a naturally moving holding cutter" % index)
 	check(never_owned and manager.records[0].defeated == 1 and manager.ships_sunk == 1,
 		"pool hull %d: killing a waiting enemy counts exactly once without an attack slot" % index)
 	manager.on_ship_sunk(target)

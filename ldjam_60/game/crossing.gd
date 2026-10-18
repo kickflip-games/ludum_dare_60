@@ -9,6 +9,7 @@ const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
 const DeckCameraResponse = preload("res://game/ocean/deck_camera_response.gd")
 const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
+const CombatParticles = preload("res://game/combat_particles.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
@@ -34,6 +35,8 @@ const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
 const RESTART_HOLD_SECONDS: float = 0.6
+const DAMAGE_SHAKE_SECONDS: float = 0.32
+const DAMAGE_SHAKE_DISTANCE: float = 0.28
 # Leave room for the hull and camera inside the terrain's 512 m edges.
 const SAILING_LIMIT: float = 480.0
 const GUIDING_STAR_ELEVATION: float = PI / 3.0
@@ -167,6 +170,7 @@ var hull: int = 3
 var damage_immunity: float = 0.0
 var hit_flash: float = 0.0
 var shake_strength: float = 0.0
+var damage_shake_left: float = 0.0
 var hit_message: String = ""
 var hits_taken: int = 0
 var hull_repair_elapsed: float = 0.0
@@ -228,6 +232,7 @@ var cannon: Node3D
 var enemy_encounters: Node3D
 var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
+var combat_particles: Node3D
 var boat_damage := BoatDamage.new()
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
@@ -264,6 +269,9 @@ func _ready() -> void:
 	add_child(archipelago)
 	archipelago.configure(self)
 	_place_player()
+	combat_particles = CombatParticles.new()
+	combat_particles.name = "CombatParticles"
+	add_child(combat_particles)
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
@@ -496,6 +504,7 @@ func journey_progress() -> float:
 
 
 func restart() -> void:
+	combat_particles.reset()
 	_clear_player_controls()
 	cannon.reset()
 	wave_sailing.reset()
@@ -508,6 +517,7 @@ func restart() -> void:
 	damage_immunity = 0.0
 	hit_flash = 0.0
 	shake_strength = 0.0
+	damage_shake_left = 0.0
 	hits_taken = 0
 	hull_repair_elapsed = 0.0
 	_last_hull_damage_time = 0.0
@@ -596,8 +606,8 @@ func _physics_process(delta: float) -> void:
 		reading = false
 		turn_input = 0.0
 	_update_view(delta)
-	if arena_mode and state == State.SAILING:
-		cannon.trajectory = cannon.predict_trajectory()
+	if arena_mode:
+		cannon.update_cone_feedback()
 	hud.queue_redraw()
 
 
@@ -741,7 +751,7 @@ func take_damage(amount: int, reason: String) -> bool:
 	hit_flash = 0.8
 	boat_damage.update(hull, hull_capacity, hit_flash)
 	hit_message = reason.to_upper()
-	shake(0.16)
+	damage_shake_left = DAMAGE_SHAKE_SECONDS
 	cue_sound("damage")
 	if hull == 0:
 		wave_encounters.stop(ocean.wave_field)
@@ -750,6 +760,7 @@ func take_damage(amount: int, reason: String) -> bool:
 		state = State.LOST
 		_clear_player_controls()
 		cannon.reset()
+	combat_particles.damage(boat_visual.to_global(Vector3(0, 1.0, -1.8)), hull == 0)
 	return true
 
 
@@ -762,6 +773,7 @@ func _update_view(delta: float) -> void:
 	hit_flash = maxf(0.0, hit_flash - delta)
 	boat_damage.update(hull, hull_capacity, hit_flash)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
+	damage_shake_left = maxf(0.0, damage_shake_left - delta)
 	_update_weather(delta)
 	_apply_night_illumination()
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
@@ -815,14 +827,22 @@ func _update_view(delta: float) -> void:
 	else:
 		camera.transform = helm_pose
 	if state == State.SAILING:
-		# Keep damage shake restrained on deck; retain dedicated gun feedback.
+		# Keep generic firing/impact shake restrained; retain dedicated gun recoil.
 		var sailing_shake := lerpf(0.22, 1.0, maxf(aim_camera_blend, combat_camera_blend))
 		var sight_shake := shake_strength * lerpf(sailing_shake, 0.15, sky_blend) * motion_amount()
 		camera.position += camera.basis.x * sin(sea_time * 73.0) * sight_shake
 		camera.position.y += cos(sea_time * 91.0) * sight_shake * 0.5
 		camera.position -= cannon.aimed_direction() * _cannon_impulse * 0.18 * (1.0 - sky_blend)
+	if state == State.SAILING or state == State.LOST:
+		# A separate hit envelope makes hull damage readable in the chase view,
+		# including the killing blow, without amplifying cannon recoil or rolling the horizon.
+		var hit_envelope := pow(damage_shake_left / DAMAGE_SHAKE_SECONDS, 2.0)
+		var hit_time := DAMAGE_SHAKE_SECONDS - damage_shake_left
+		var rig_scale := 1.0 if sailing_camera_rig == SailingCameraRig.CHASE else 0.22
+		var hit_amount := DAMAGE_SHAKE_DISTANCE * hit_envelope * lerpf(rig_scale, 0.15, sky_blend) * motion_amount()
+		camera.position += (camera.basis.x * cos(hit_time * 67.0) + camera.basis.y * sin(hit_time * 89.0) * 0.5) * hit_amount
 		camera.position.y = maxf(camera.position.y, ocean.height_at(Vector2(camera.position.x, camera.position.z)) + 1.2)
-		# Final safety includes the sky transition and the small recoil displacement.
+		# Final safety includes sky transitions, recoil and damage displacement.
 		camera.position = _camera_obstruction_limit(camera.position)
 	_cannon_impulse *= exp(-16.0 * delta)
 	turbulence_effects.update_effects(self,delta)

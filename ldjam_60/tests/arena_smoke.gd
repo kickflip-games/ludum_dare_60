@@ -210,7 +210,7 @@ func _run() -> void:
 		game._physics_process(1.0/60)
 		contained = contained and radius()<=170.001
 	check(not game.cannon.aiming and game.turn_input==-1 and contained and radius()<150 and game.hits_taken==0,
-		"continuous sweep and held A preserve steering and arena containment")
+		"cone targeting and held A preserve steering and arena containment")
 	action("fire_starboard",true)
 	game._physics_process(1.0/60)
 	check(game.cannon.shots_fired==1 and game.cannon.projectiles.size()==1, "Space still fires during the return turn")
@@ -342,7 +342,7 @@ func _enemy_checks() -> void:
 		check(max_stopped<90 and max_radius<=165.001 and shore_frames==0,
 			"cutter approach %s navigates solids without grounding, edge escape or prolonged stop" % offset)
 		print("ENEMY NAV: start=%s max_radius=%.2f max_stop=%.2f shore=%d shots=%d" % [offset,max_radius,max_stopped/60.0,shore_frames,ship.shots_fired])
-	# Real fire input and ballistic flight must damage a cutter; idle sweep must not.
+	# Real fire input and ballistic flight must damage a cutter; idle cannon must not.
 	stage(Vector2(0,100),0)
 	await physics_frame
 	ship.begin(game.boat.position+Vector3(30,0,-2))
@@ -352,10 +352,11 @@ func _enemy_checks() -> void:
 	ship.position=game.cannon.shot_origin()+game.cannon.aimed_direction()*28
 	ship.position.y=0
 	ship.rotation.y=-game.heading
+	ship.velocity=Vector3.ZERO # Stationary damage fixture; moving duels live in combat_feel_smoke.
 	await physics_frame
 	for tick in 30:
 		game.cannon.advance(1.0/60)
-	check(ship.hull==ship.hull_capacity, "idle sweep never damages the cutter")
+	check(ship.hull==ship.hull_capacity, "idle cannon never damages the cutter")
 	action("fire_starboard",true)
 	game._physics_process(1.0/60)
 	action("fire_starboard",false)

@@ -382,9 +382,7 @@ func _draw() -> void:
 		_line(at + Vector2(6 * side, 0), at + Vector2(-6 * side, 12), color, 3)
 	if game.reading and _reading_alpha > 0.01:
 		_draw_instrument()
-	elif game.arena_mode:
-		_draw_trajectory()
-	else:
+	elif not game.arena_mode:
 		if game.cannon.aiming and game.cannon.indicator_alpha > 0.01:
 			_draw_cannon_sight()
 
@@ -529,19 +527,3 @@ func _update_wave_ui() -> void:
 		wave_announcement.visible=true
 		var elapsed: float = 2.0-waves.announcement_left
 		wave_announcement.modulate.a=minf(clampf(elapsed/0.25,0,1),clampf(waves.announcement_left/0.5,0,1))
-
-
-func _draw_trajectory() -> void:
-	var prediction: Dictionary = game.cannon.trajectory
-	if prediction.is_empty():
-		return
-	var points: PackedVector3Array = prediction.points
-	var color := Color("a6d9ba") if prediction.enemy else Color(BRASS)
-	color.a = 0.48
-	for i in range(1, points.size()):
-		if game.camera.is_position_behind(points[i - 1]) or game.camera.is_position_behind(points[i]):
-			continue
-		draw_line(game.camera.unproject_position(points[i - 1]), game.camera.unproject_position(points[i]), color, 1.4, true)
-	var endpoint := points[points.size() - 1]
-	if not game.camera.is_position_behind(endpoint):
-		draw_arc(game.camera.unproject_position(endpoint), 4.0, 0, TAU, 20, color, 1.3, true)

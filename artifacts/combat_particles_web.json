@@ -1,0 +1,73 @@
+{
+  "capacity": 192,
+  "nodes_end": 486,
+  "nodes_start": 486,
+  "phases": [
+    {
+      "draw_calls": 189,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.4,
+      "particle_cpu_mean_us": 4.28061831153389,
+      "particle_cpu_p95_us": 0,
+      "samples": 841,
+      "saturated": false
+    },
+    {
+      "draw_calls": 190,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.4,
+      "particle_cpu_mean_us": 104.057279236277,
+      "particle_cpu_p95_us": 800,
+      "samples": 838,
+      "saturated": true
+    },
+    {
+      "draw_calls": 189,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.5,
+      "particle_cpu_mean_us": 2.97265160523187,
+      "particle_cpu_p95_us": 0,
+      "samples": 841,
+      "saturated": false
+    },
+    {
+      "draw_calls": 190,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.3,
+      "particle_cpu_mean_us": 92.9761904761905,
+      "particle_cpu_p95_us": 700,
+      "samples": 840,
+      "saturated": true
+    },
+    {
+      "draw_calls": 189,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.9,
+      "particle_cpu_mean_us": 1.78571428571429,
+      "particle_cpu_p95_us": 0,
+      "samples": 840,
+      "saturated": false
+    },
+    {
+      "draw_calls": 190,
+      "median_ms": 8.3,
+      "nodes": 486,
+      "p95_ms": 9.3,
+      "particle_cpu_mean_us": 87.1702637889688,
+      "particle_cpu_p95_us": 700,
+      "samples": 834,
+      "saturated": true
+    }
+  ],
+  "renderer": "WebKit WebGL",
+  "viewport": "(2253, 1047)",
+  "date": "2026-10-18",
+  "environment": "Chrome, WebGL 2 Compatibility, Apple M4 Pro host",
+  "method": "Three alternating idle/saturated pairs, fixed gameplay camera, 10 s phases, first 3 s of each phase excluded; 2,450 emitted particles per second when saturated.",
+  "limits": "Steady-state local desktop measurement; no low-end mobile, human playtest, or first-use shader compilation guarantee."
+}

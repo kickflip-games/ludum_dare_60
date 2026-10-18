@@ -79,15 +79,9 @@ func update(game, delta: float) -> void:
 	var error := wrapf(preferred - game.heading, -PI, PI)
 	if game.arena_mode:
 		helm(error * 3.0)
-		if target != null and game.cannon.cooldown <= 0.000001:
-			var offset: Vector3 = target.collision_shape.global_position - game.cannon.shot_origin()
-			var flight: float = offset.length() / game.cannon.SHOT_SPEED
-			offset += target.velocity * flight
-			var query := PhysicsRayQueryParameters3D.create(game.cannon.shot_origin(), game.cannon.shot_origin() + offset, 1)
-			var travel: Vector3 = game.cannon.launch_velocity() * flight - Vector3.UP * 0.45 * flight * flight
-			if (travel - offset).length() < target.collision_shape.shape.radius - 0.45 and game.get_world_3d().direct_space_state.intersect_ray(query).is_empty():
-				action("fire_starboard", true)
-				action("fire_starboard", false)
+		if not game.cannon.choose_cone_target().is_empty() and game.cannon.cooldown <= 0.000001:
+			action("fire_starboard", true)
+			action("fire_starboard", false)
 		return
 	if target != null and absf(error) < deg_to_rad(8.0 if game.cannon.aiming else 3.0):
 		action("steer_port", false)

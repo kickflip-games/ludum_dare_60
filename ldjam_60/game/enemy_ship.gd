@@ -396,7 +396,11 @@ func update_ship(delta: float) -> void:
 			target_speed = clampf(run_speed + (8.0 - predicted_along) * 0.18 + maxf(0.0, absf(lateral - lane_separation) - 10.0) * 0.05,
 				minf(run_speed * 0.85, sailing_speed * 0.74), sailing_speed * 1.12)
 			var actual: Vector3 = global_position - game.boat.position
-			if navigation_time > 2.0 and absf(lateral - lane_separation) < 7.0 and absf(actual.dot(_run_forward())) < 20.0 and actual.dot(_run_right()) > 24.0 and actual.dot(_run_right()) < 46.0 and forward().dot(_run_forward()) > 0.97 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0):
+			var player_forward := _direction(game.heading)
+			var player_right := Vector3(cos(game.heading), 0, sin(game.heading))
+			if navigation_time > 2.0 and absf(actual.dot(player_forward)) < 24.0 and actual.dot(player_right) > 24.0 and actual.dot(player_right) < 46.0 and forward().dot(player_forward) > 0.90 and _avoid_left <= 0.0 and _path_clear(player_forward, 32.0):
+				run_heading = game.heading
+				run_speed = minf(sailing_speed * 0.96, clampf(game.boat.velocity.length(), game.SPEED * 0.85, game.SPEED * 1.05))
 				run_elapsed = 0.0
 				_pass_fired = false
 				passes += 1
@@ -457,13 +461,13 @@ func update_ship(delta: float) -> void:
 	var travel := velocity * delta
 	if game.arena_mode:
 		travel = game.arena_return.bounded_motion(global_position - game.arena_center(), travel, game.arena_radius - 5.0)
-	var collision := move_and_collide(travel)
+	var collision := move_and_collide(travel, false, 0.08)
 	if collision:
 		contact_frames += 1
 		if not _contacting:
 			collisions += 1
 		var normal := Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()
-		move_and_collide(collision.get_remainder().slide(normal))
+		move_and_collide(collision.get_remainder().slide(normal), false, 0.08)
 		if _recovery_left <= 0.0:
 			_recovery_heading = atan2(normal.x, -normal.z)
 			_recovery_left = recovery_seconds
@@ -792,7 +796,8 @@ func _fire() -> void:
 	shape.radial_segments = 8
 	shape.rings = 4
 	var ball = game._mesh(game, shape, from, game._material(Color("ffad66"), 1.5))
-	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0})
+	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0, "trail_clock": 0.0})
+	game.combat_particles.muzzle(from, launch.normalized(), true)
 	shots_fired += 1
 	cooldown = reload_seconds
 	game.cue_sound("enemy_shot")
@@ -823,6 +828,10 @@ func _advance_shots(delta: float) -> void:
 		else:
 			shot.position = to
 			shot.node.global_position = to
+			shot.trail_clock = shot.get("trail_clock", 0.0) + delta
+			if shot.trail_clock >= 0.07:
+				shot.trail_clock = 0.0
+				game.combat_particles.trail(to, true)
 
 
 func take_hit() -> void:

@@ -6,6 +6,10 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Required a dedicated branch and immediate draft web PR for every task, an
+  initial check for overlapping open PRs, and screenshots visible in each PR.
+  Documentation diff and workflow requirements checked; gameplay tests were
+  not run for this instructions-only update.
 - Polished cutter encounters: predictable starboard passes, smooth return turns,
   visible retreat after a 55-second fighting budget, fair fixed-shot warnings,
   and complete reset/next-patrol handling. See the

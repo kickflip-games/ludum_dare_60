@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Stage 2 adds a six-hull pool, fair attack slots, independent
+  lighthouse holding routes and 1.6-second warning coordination. Physical
+  cannon tests sink all six holding hulls; fleet stress exposed contact and
+  stale-interception issues still under tuning. Concurrent arcade controls,
+  faster transit profiles and the new main-branch roster will be preserved.
+
 - In progress: Naval AI stage 1 separates navigation from cannon readiness,
   warning, fire and reload. Interception commits to a predicted course; straight
   passes end in bounded forward turns, with terrain-first steering and explicit

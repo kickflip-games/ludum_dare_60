@@ -1,6 +1,8 @@
 extends Node3D
 ## Five player-targeted arena waves, retaining the original voyage patrols.
 const SHIP = preload("res://game/enemy_ship.tscn")
+const Director = preload("res://game/enemy_director.gd")
+var director := Director.new()
 var game: Node3D
 var ship: CharacterBody3D
 var encounter_index: int = 0
@@ -23,19 +25,24 @@ var clock := 0.0
 var sector_index := 1
 var announcement_left := 0.0
 var announcement := ""
+var _focus: CharacterBody3D
+var _focus_until := 0.0
+@export var focus_hold_seconds := 2.5
+@export var focus_switch_ratio := 0.60
 var wave_in_progress: bool:
 	get: return phase == Phase.ACTIVE
 
 func _ready() -> void:
 	survival_settings = survival_settings.duplicate(true)
-	for i in (3 if game.arena_mode else 1):
+	director.manager = self
+	for i in (6 if game.arena_mode else 1):
 		var cutter: CharacterBody3D = SHIP.instantiate()
 		cutter.game = game
+		cutter.director = director
 		add_child(cutter)
 		ships.append(cutter)
 		if game.arena_mode:
 			cutter.collision_mask = 7
-			cutter.broadside_separation = 30.0 + i * 10.0
 	ship = ships.front() # Compatibility for the explicit single-cutter voyage fixture.
 	reset()
 
@@ -44,6 +51,8 @@ func update_encounters(delta: float) -> void:
 		return
 	if game.arena_mode and game.state != game.State.SAILING:
 		return
+	if game.arena_mode:
+		director.update(delta)
 	for cutter in ships:
 		cutter.update_ship(delta)
 		if game.arena_mode and game.state != game.State.SAILING:
@@ -97,6 +106,9 @@ func reset() -> void:
 		game._wave_audio.stop()
 	for cutter in ships:
 		cutter.reset()
+	director.reset()
+	_focus = null
+	_focus_until = 0.0
 	encounter_index = 0
 	ships_sunk = 0
 	visited.clear()
@@ -125,6 +137,9 @@ func stop() -> void:
 		game._wave_audio.stop()
 	for cutter in ships:
 		cutter.reset()
+	director.reset()
+	_focus = null
+	_focus_until = 0.0
 	spawn_queue.clear()
 	announcement = ""
 	announcement_left = 0.0
@@ -148,18 +163,29 @@ func focus_ship(threat_only := false) -> CharacterBody3D:
 	var selected: CharacterBody3D = null
 	var best := INF
 	for cutter in ships:
-		var incoming: bool = cutter.mode == cutter.Mode.TELEGRAPH or not cutter.projectiles.is_empty()
+		var incoming: bool = cutter.weapon_state == cutter.Weapon.TELEGRAPH or not cutter.projectiles.is_empty()
 		if threat_only and not incoming:
 			continue
 		if not threat_only and cutter not in living_ships():
 			continue
-		var distance: float = cutter.position.distance_squared_to(game.boat.position)
+		var distance: float = cutter.position.distance_to(game.boat.position)
 		if threat_only:
+			if cutter.weapon_state == cutter.Weapon.TELEGRAPH:
+				distance = -1000.0 + cutter.telegraph_seconds - cutter.weapon_time
 			for shot in cutter.projectiles:
-				distance = minf(distance, shot.position.distance_squared_to(game.boat.position))
+				distance = minf(distance, shot.position.distance_to(game.boat.position))
 		if distance < best:
 			best = distance
 			selected = cutter
+	if threat_only:
+		return selected if selected != null else ship
+	if _focus != null and _focus in living_ships():
+		var previous_distance := _focus.position.distance_to(game.boat.position)
+		if previous_distance < 100.0 and (clock < _focus_until or best > previous_distance * focus_switch_ratio):
+			return _focus
+	if selected != _focus:
+		_focus = selected
+		_focus_until = clock + focus_hold_seconds
 	return selected if selected != null else ship
 
 func approach_warning() -> String:
@@ -170,6 +196,10 @@ func update_visuals(delta: float) -> void:
 		cutter.update_visuals(delta)
 
 func on_ship_sunk(cutter: CharacterBody3D) -> void:
+	if cutter.get_meta("defeat_recorded", false):
+		return
+	cutter.set_meta("defeat_recorded", true)
+	director.on_defeated(cutter)
 	ships_sunk += 1
 	var id: int = cutter.get_meta("wave_id", 0)
 	if game.arena_mode and id > 0 and id <= records.size():
@@ -234,7 +264,7 @@ func _update_arena(delta: float) -> void:
 		_spawn_queued()
 
 func _spawn_queued() -> void:
-	if living_ships().size() >= mini(3, survival_settings.maximum_living):
+	if living_ships().size() >= mini(ships.size(), survival_settings.maximum_living):
 		return
 	var available: CharacterBody3D = null
 	for cutter in ships:
@@ -249,12 +279,14 @@ func _spawn_queued() -> void:
 	var id: int = spawn_queue.pop_front()
 	var ordinal: int = records[id-1].spawned
 	var kind: String = survival_settings.wave_rosters[id-1][ordinal]
-	available.configure_archetype(survival_settings.ARCHETYPES[kind], ships.find(available) * 10.0)
-	available.begin(at)
+	available.configure_archetype(survival_settings.ARCHETYPES[kind])
+	available.begin(at, true)
 	available.set_meta("wave_id", id)
+	available.set_meta("enemy_id", encounter_index + 1)
+	director.register(available)
 	available.territory = game.arena_center()
-	var toward: Vector3 = game.boat.position-at
-	available.heading = atan2(toward.x,-toward.z)
+	var radial: Vector3 = at - game.arena_center()
+	available.heading = atan2(radial.x, -radial.z) + available.holding_direction * PI / 2.0
 	available.rotation.y = -available.heading
 	encounter_index += 1
 	records[id-1].spawned += 1

@@ -14,13 +14,19 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 @export var broadside_separation: float = 34.0
 @export var attack_run_seconds: float = 6.0
 @export var return_seconds: float = 8.5
-@export var approach_timeout: float = 22.0
+@export var approach_timeout: float = 14.0
 @export var turn_away_seconds: float = 4.0
 @export var turn_away_angle: float = 1.05
 @export var player_separation: float = 19.0
 @export var ship_separation: float = 16.0
 @export var steering_commitment: float = 1.5
 @export var speed_variation: float = 0.35
+@export var holding_speed: float = 7.0
+@export var holding_arc: float = 0.42
+@export var holding_leg_seconds: float = 9.0
+@export var recovery_seconds: float = 5.0
+@export var emergency_speed: float = 2.5
+@export var terrain_margin: float = 7.0
 @export var hull_capacity: int = 2
 @export var firing_range: float = 62.0
 @export var reload_seconds: float = 3.8
@@ -111,13 +117,24 @@ var _route_point := Vector3.INF
 var _route_check_left := 0.0
 var _intercept_origin := Vector3.ZERO
 var _intercept_velocity := Vector3.ZERO
+var _intercept_point := Vector3.ZERO
 var _staging_point := Vector3.ZERO
 var _avoid_priority := 0
 var safety_priority := 0
 var collisions := 0
+var contact_frames := 0
 var recoveries := 0
 var cancelled_shots := 0
 var last_abort := ""
+var director: RefCounted
+var managed_by_director := false
+var holding_radius := 130.0
+var holding_direction := 1.0
+var _holding_point := Vector3.INF
+var _holding_time := 0.0
+var _recovery_left := 0.0
+var _recovery_heading := 0.0
+var _contacting := false
 
 
 func _ready() -> void:
@@ -181,6 +198,12 @@ func _ready() -> void:
 func reset() -> void:
 	if has_meta("wave_id"):
 		remove_meta("wave_id")
+	if director != null:
+		director.release(self)
+	set_meta("defeat_recorded", false)
+	managed_by_director = false
+	_holding_point = Vector3.INF
+	_holding_time = 0.0
 	for shot: Dictionary in projectiles:
 		shot.node.queue_free()
 	projectiles.clear()
@@ -227,13 +250,18 @@ func reset() -> void:
 	_route_check_left = 0.0
 	_intercept_origin = Vector3.ZERO
 	_intercept_velocity = Vector3.ZERO
+	_intercept_point = Vector3.ZERO
 	_staging_point = Vector3.ZERO
 	_avoid_priority = 0
 	safety_priority = 0
 	collisions = 0
+	contact_frames = 0
 	recoveries = 0
 	cancelled_shots = 0
 	last_abort = ""
+	_recovery_left = 0.0
+	_recovery_heading = 0.0
+	_contacting = false
 	set_aim_highlight(false)
 	_update_cloth()
 
@@ -286,16 +314,18 @@ func _update_cloth() -> void:
 	sail_material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
 
 
-func begin(at: Vector3 = Vector3.INF) -> void:
+func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
 	reset()
-	_capture_course()
+	managed_by_director = coordinated
+	run_heading = game.heading
 	position = at if at.is_finite() else game.boat.position + _run_forward() * 16.0 + _run_right() * 60.0
+	_capture_course()
 	territory = position
 	heading = run_heading + approach_angle
 	rotation.y = -heading
 	_speed = sailing_speed
 	velocity = forward() * _speed
-	_change_navigation(Navigation.APPROACH)
+	_change_navigation(Navigation.HOLDING if coordinated else Navigation.APPROACH)
 	visible = true
 	collision_layer = 4
 	set_meta("destroyed", false)
@@ -353,14 +383,16 @@ func update_ship(delta: float) -> void:
 	var target_speed := run_speed
 	match navigation_state:
 		Navigation.APPROACH:
-			var predicted: Vector3 = _intercept_origin + _intercept_velocity * navigation_time
-			var relative: Vector3 = global_position - predicted
+			var relative: Vector3 = global_position - _intercept_origin
 			var along := relative.dot(_run_forward())
 			var lateral := relative.dot(_run_right())
-			var goal_ahead := clampf(along + approach_lead, -12.0, approach_lead) if game.arena_mode else along + approach_lead
-			var goal: Vector3 = predicted + _run_forward() * goal_ahead + _run_right() * lane_separation
-			desired = _arena_approach(goal, delta) if game.arena_mode else (goal - global_position).normalized()
-			target_speed = clampf(run_speed + (8.0 - along) * 0.12, sailing_speed * 0.74, sailing_speed * 1.12)
+			var to_join := _intercept_point - global_position
+			if to_join.length() < approach_lead or to_join.dot(_run_forward()) < 0.0:
+				desired = (_run_forward() * approach_lead + _run_right() * (lane_separation - lateral)).normalized()
+			else:
+				desired = _arena_approach(_intercept_point, delta) if game.arena_mode else to_join.normalized()
+			var predicted_along := along - _intercept_velocity.dot(_run_forward()) * navigation_time
+			target_speed = clampf(run_speed + (8.0 - predicted_along) * 0.12, sailing_speed * 0.74, sailing_speed * 1.12)
 			var actual: Vector3 = global_position - game.boat.position
 			if navigation_time > 2.0 and absf(lateral - lane_separation) < 7.0 and absf(actual.dot(_run_forward())) < 20.0 and actual.dot(_run_right()) > 24.0 and actual.dot(_run_right()) < 46.0 and forward().dot(_run_forward()) > 0.97 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0):
 				run_elapsed = 0.0
@@ -388,8 +420,14 @@ func update_ship(delta: float) -> void:
 			desired = _arena_approach(_staging_point, delta) if game.arena_mode else (_staging_point - global_position).normalized()
 			target_speed = sailing_speed * 0.92
 			if navigation_time >= maxf(3.0, return_seconds - turn_away_seconds) or global_position.distance_to(_staging_point) < 14.0:
-				_capture_course()
-				_change_navigation(Navigation.APPROACH)
+				if managed_by_director:
+					_holding_point = Vector3.INF
+					_change_navigation(Navigation.HOLDING)
+				else:
+					receive_attack_slot()
+		Navigation.HOLDING:
+			desired = _holding_course(delta)
+			target_speed = minf(holding_speed, sailing_speed * 0.85)
 		Navigation.RETREAT:
 			desired = _direction(_departure_heading)
 			target_speed = sailing_speed
@@ -402,9 +440,14 @@ func update_ship(delta: float) -> void:
 		last_abort = "unsafe attack lane"
 		_start_turn()
 	_turn_toward(desired, delta)
+	if _recovery_left > 0.0:
+		target_speed = emergency_speed
+	elif safety_priority >= 2:
+		target_speed = minf(target_speed, sailing_speed * 0.65)
 	if archetype != null:
 		target_speed = minf(target_speed, sailing_speed * 1.12)
-	_speed = move_toward(_speed, target_speed, delta * acceleration)
+	var speed_change := maxf(acceleration, 2.5) if _recovery_left > 0.0 and target_speed < _speed else acceleration
+	_speed = move_toward(_speed, target_speed, delta * speed_change)
 	var before := position
 	velocity = forward() * _speed
 	var travel := velocity * delta
@@ -412,16 +455,25 @@ func update_ship(delta: float) -> void:
 		travel = game.arena_return.bounded_motion(global_position - game.arena_center(), travel, game.arena_radius - 5.0)
 	var collision := move_and_collide(travel)
 	if collision:
-		collisions += 1
+		contact_frames += 1
+		if not _contacting:
+			collisions += 1
 		var normal := Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()
 		move_and_collide(collision.get_remainder().slide(normal))
-		_hold_avoidance((normal + forward() * 0.35).normalized(), 2.5, 3)
+		if _recovery_left <= 0.0:
+			_recovery_heading = atan2(normal.x, -normal.z)
+			_recovery_left = recovery_seconds
+			recoveries += 1
+	_contacting = collision != null
 	position.y = 0.0
 	velocity = (position - before) / maxf(delta, 0.0001)
 	_blocked_elapsed = _blocked_elapsed + delta if velocity.length() < _speed * 0.3 else 0.0
 	if _blocked_elapsed > 1.0:
-		recoveries += 1
-		_hold_avoidance(_clear_course(), 3.0, 3)
+		if _recovery_left <= 0.0:
+			var clear := _clear_course()
+			_recovery_heading = atan2(clear.x, -clear.z)
+			_recovery_left = recovery_seconds
+			recoveries += 1
 		if navigation_state not in [Navigation.RETREAT, Navigation.TURN_AWAY]:
 			last_abort = "blocked route recovery"
 			_start_turn()
@@ -436,7 +488,34 @@ func _change_navigation(value: Navigation) -> void:
 
 
 func _start_turn() -> void:
+	if managed_by_director and navigation_state == Navigation.APPROACH:
+		director.release(self)
 	_change_navigation(Navigation.TURN_AWAY)
+
+
+func receive_attack_slot() -> void:
+	_capture_course()
+	_change_navigation(Navigation.APPROACH)
+
+
+func _holding_course(delta: float) -> Vector3:
+	_holding_time += delta
+	if not _holding_point.is_finite() or global_position.distance_to(_holding_point) < 14.0 or _holding_time >= holding_leg_seconds:
+		_holding_time = 0.0
+		var radial: Vector3 = global_position - game.arena_center()
+		var angle := atan2(radial.x, -radial.z)
+		_holding_point = Vector3.INF
+		for radius: float in [holding_radius, game.arena_radius - 25.0, game.arena_radius - 15.0]:
+			for arc: float in [holding_arc, holding_arc * 1.5]:
+				var candidate: Vector3 = game.arena_center() + _direction(angle + arc * holding_direction) * radius
+				if _water_lane_clear(global_position, candidate):
+					_holding_point = candidate
+					break
+			if _holding_point.is_finite():
+				break
+		if not _holding_point.is_finite():
+			_holding_point = global_position + _clear_course() * 25.0
+	return (_holding_point - global_position).normalized()
 
 
 func _change_weapon(value: Weapon) -> void:
@@ -463,6 +542,8 @@ func _update_weapon(delta: float) -> void:
 				return
 			_lock_shot()
 			if not _shot_lane_valid(locked_point):
+				return
+			if managed_by_director and not director.request_warning(self):
 				return
 			_change_weapon(Weapon.TELEGRAPH)
 			game.cue_sound("warning")
@@ -549,11 +630,14 @@ func _capture_course() -> void:
 		run_speed = minf(run_speed, sailing_speed * 0.96)
 	_course_age = 0.0
 	lane_separation = clampf(broadside_separation, 25.0, 45.0)
+	var joining_distance: float = (global_position - (_intercept_origin + _run_right() * lane_separation)).length()
+	var prediction := clampf(joining_distance / maxf(1.0, sailing_speed), 2.5, 6.0)
+	_intercept_point = _intercept_origin + _intercept_velocity * prediction + _run_right() * lane_separation
 
 
 func _path_clear(direction: Vector3, distance: float = 30.0) -> bool:
 	var terrain = game.archipelago.get_node("Terrain")
-	var side := Vector3(-direction.z, 0, direction.x) * 4.5
+	var side := Vector3(-direction.z, 0, direction.x) * terrain_margin
 	for step in [0.35, 0.7, 1.0]:
 		var at: Vector3 = global_position + direction * distance * step
 		for offset in [Vector3.ZERO, side, -side]:
@@ -597,7 +681,11 @@ func _separation_course(away: Vector3) -> Vector3:
 
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
 	_avoid_left = maxf(0.0, _avoid_left - delta)
+	_recovery_left = maxf(0.0, _recovery_left - delta)
 	safety_priority = 0
+	if _recovery_left > 0.0:
+		safety_priority = 3
+		return _direction(_recovery_heading)
 	var committed := _direction(_avoid_heading)
 	if _avoid_left > 0.0 and _avoid_priority == 3:
 		safety_priority = 3
@@ -619,11 +707,11 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 			continue
 		var relative: Vector3 = global_position - other.global_position
 		var relative_velocity: Vector3 = forward() * _speed - other.velocity
-		var horizon := clampf(1.2 / turning_speed, 3.0, 5.0)
+		var horizon := clampf(1.7 / turning_speed, 4.0, 6.0)
 		var closest_time := clampf(-relative.dot(relative_velocity) / maxf(0.01, relative_velocity.length_squared()), 0.0, horizon)
 		var predicted: float = (relative + relative_velocity * closest_time).length()
 		var separation := player_separation if other == game.boat else ship_separation
-		if relative.length() < separation or (relative.length() < 55.0 and predicted < separation - 2.0):
+		if relative.length() < separation or (relative.length() < 80.0 and predicted < separation):
 			if predicted < nearest:
 				nearest = predicted
 				closest_away = relative

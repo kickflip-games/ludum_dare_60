@@ -55,12 +55,12 @@ func clean_retry(label: String) -> void:
 	var marker: Marker3D=game.archipelago.get_node("SpawnPoints/ArenaSpawn")
 	check(game.state==game.State.CASTING_OFF and enemies.phase==enemies.Phase.PREPARING
 		and enemies.wave_number==0 and enemies.clock==0 and enemies.spawn_queue.is_empty()
-		and enemies.records.is_empty() and enemies.ships.size()==3
+		and enemies.records.is_empty() and enemies.ships.size()==6
 		and enemies.ships.all(func(c):return c.mode==c.Mode.DORMANT and c.projectiles.is_empty() and not c.tell_line.visible)
 		and not enemies.has_projectiles() and enemies.announcement_left==0
 		and game.boat.global_position.is_equal_approx(marker.global_position) and game.hull==game.hull_capacity
 		and game.ocean.wave_field.waves.is_empty() and game.cannon.projectiles.is_empty(),
-		label+": retry restores queues, all three ships, hull, spawn, waves and transient effects")
+		label+": retry restores queues, all six ships, hull, spawn, waves and transient effects")
 	game.hud._process(0)
 	check(not game.hud.wave_announcement.visible and not game.hud.wave_countdown.visible,
 		label+": retry hides old banners/countdowns")
@@ -75,10 +75,12 @@ func _run() -> void:
 	await physics_frame
 	var config=enemies.survival_settings
 	check(config.enemy_counts==PackedInt32Array([1,2,2,3,3]) and config.deadlines==PackedFloat32Array([40,50,65,80,0]), "authored defaults are exactly five waves: 1/2/2/3/3 at 40/50/65/80/final")
-	check(config.maximum_living==3 and config.spawn_interval>=6 and config.spawn_interval<=10 and config.early_clear_pause==3,
-		"default three-live cap, eight-second spawn stagger and three-second early pause")
-	check(enemies.ships.size()==3 and game.get_tree().get_nodes_in_group("cannon_targets").filter(func(n):return n.get_meta("target_kind","")=="ship").size()==3,
-		"exactly three reusable enemy instances, without duplicate cannon targets")
+	check(config.maximum_living==6 and config.spawn_interval>=6 and config.spawn_interval<=10 and config.early_clear_pause==3
+		and config.attack_slots==PackedInt32Array([1,1,2,2,2]),
+		"six-live capacity, wave-specific attack slots, original spawn stagger and early pause")
+	check(enemies.ships.size()==6 and game.get_tree().get_nodes_in_group("cannon_targets").filter(func(n):return n.get_meta("target_kind","")=="ship").size()==6,
+		"exactly six reusable enemy instances, without duplicate cannon targets")
+	config.maximum_living=3
 	check(game.get("lighthouse_health")==null and game.get("lighthouse_integrity")==null,
 		"lighthouse has no health/integrity gameplay state")
 	fresh()
@@ -222,13 +224,15 @@ func _projectile_and_multi_ship_checks() -> void:
 	schedule(0.02)
 	var first=enemies.ship
 	first.position=game.arena_center()+Vector3(-60,0,90)
+	first.velocity=Vector3.ZERO
 	var second=enemies.ships[1]
 	second.begin(game.arena_center()+Vector3(-100,0,90))
 	second.heading=PI/2
 	second.rotation.y=-second.heading
 	second._speed=7
 	await physics_frame
-	check(not second._path_clear(Vector3.RIGHT,50), "a second cutter probes the first hull instead of sailing through it")
+	var safe: Vector3=second._safe_direction(Vector3.RIGHT,game.boat.position-second.position,1.0/60)
+	check(second.safety_priority>0 and safe.dot(Vector3.RIGHT)<0.99, "central steering yields to a predicted vessel crossing")
 	# A non-primary cutter alone must drive warnings, camera focus and repair gate.
 	first.reset()
 	second.mode=second.Mode.TELEGRAPH

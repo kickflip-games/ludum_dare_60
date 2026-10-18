@@ -113,9 +113,9 @@ func _run() -> void:
 			action("fire_starboard",firing)
 			for frame in hz*3:
 				game._physics_process(1.0/hz)
-			check(absf(start.distance_to(game.boat.position)-27.0)<0.025 and absf(game.actual_speed-9.0)<0.01
+			check(absf(start.distance_to(game.boat.position)-22.5)<0.025 and absf(game.actual_speed-7.5)<0.01
 				and is_zero_approx(game.heading) and game.hits_taken==0,
-				"%d Hz firing=%s: three seconds travels 27 m at 9 m/s without hidden yaw" % [hz,firing])
+				"%d Hz firing=%s: three seconds travels 22.5 m at 7.5 m/s without hidden yaw" % [hz,firing])
 			action("fire_starboard",false)
 	game.restart()
 	await physics_frame
@@ -251,7 +251,9 @@ func _run() -> void:
 		and game.ocean.wave_field.waves.is_empty() and not game.arena_return.active
 		and game.obstacles.size()==10 and game.ocean.floating_visuals.size()==3,
 		"retry restores spawn, obstacles, clean waves/projectiles and survival progress without duplicate floats")
-	var file := FileAccess.open("/tmp/latitude-arena-revision/measurements.json",FileAccess.WRITE)
+	var report_dir := ProjectSettings.globalize_path("res://../build/water_flow/arena")
+	DirAccess.make_dir_recursive_absolute(report_dir)
+	var file := FileAccess.open(report_dir.path_join("measurements.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"runs":measurements},"\t"))
 	print("ARENA CHECK: %d checks, %d failures" % [checks,failures])
 	game.queue_free()
@@ -349,6 +351,12 @@ func _enemy_checks() -> void:
 	await physics_frame
 	game.cannon.update_aim(0.0)
 	game._physics_process(1.0/60)
+	# The production sea now has metre-scale rolling swells. This positive
+	# cannon case uses an open-water moment; a crest in the line remains a miss.
+	game.sea_time = 2.0
+	game.ocean.wave_time = game.sea_time
+	game.boat_motion.reset()
+	for settle_frame in 90: game._update_view(1.0/60)
 	ship.position=game.cannon.shot_origin()+game.cannon.aimed_direction()*28
 	ship.position.y=0
 	ship.rotation.y=-game.heading

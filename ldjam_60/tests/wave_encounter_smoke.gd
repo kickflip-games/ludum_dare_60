@@ -21,11 +21,15 @@ func trial(height: float, direction: Vector2, hz: int, counter: bool = false, de
 	var p := Vector2.ZERO
 	var heading := 0.0
 	var max_yaw := 0.0
-	for frame in range(hz * 8):
+	# Include two seconds after the finite crest for course recovery. Correcting
+	# lateral drift can require an offset heading while the stronger crest lasts.
+	for frame in range(hz * 10):
 		var time := (frame + 1.0) / hz
 		var steer := 0.0
 		if counter and time >= delay:
 			steer = clampf(-heading * 3.0 - p.x * 0.12 - sailing.drift.x * 0.22, -1, 1)
+			if time > 8.0:
+				steer = clampf(-heading * 3.0 - sailing.yaw_rate, -1, 1)
 		heading = sailing.step(field, p, heading, steer, time, 1.0 / hz)
 		p += sailing.displacement
 		max_yaw = maxf(max_yaw, absf(heading))

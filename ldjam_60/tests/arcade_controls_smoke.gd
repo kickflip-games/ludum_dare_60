@@ -164,6 +164,8 @@ func _run() -> void:
 	game.cannon.fire()
 	var accurate := true
 	for i in range(1, mini(expected.points.size() - 1, 60)):
+		# Match the future water clock used by the ballistic prediction.
+		game.ocean.wave_time += 1.0 / 60
 		game.cannon.advance(1.0 / 60)
 		if game.cannon.projectiles.is_empty():
 			accurate = false

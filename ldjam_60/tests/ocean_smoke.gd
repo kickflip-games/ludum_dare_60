@@ -78,7 +78,8 @@ func _run() -> void:
 	for preset: String in ["calm", "choppy", "stormy"]:
 		var resource = load("res://game/ocean/presets/" + preset + ".tres")
 		heights.append(resource.maximum_displacement())
-	check(heights[0] < heights[1] and heights[1] < heights[2], "Calm, Choppy, and Stormy share progressively larger wave settings")
+	check(is_equal_approx(original.height_multiplier, 0.22 * 4.0) and heights[1] < heights[2],
+		"production rolls use requested 4x modulation; Choppy/Stormy stress presets remain ordered")
 	var min_heave: float = INF
 	var max_heave: float = -INF
 	var motion_ok: bool = true
@@ -89,7 +90,8 @@ func _run() -> void:
 		max_heave = maxf(max_heave, game.boat_motion.heave)
 		motion_ok = motion_ok and absf(game.boat_motion.pitch) <= deg_to_rad(original.pitch_limit_degrees) + 0.001
 		motion_ok = motion_ok and absf(game.boat_motion.roll) <= deg_to_rad(original.roll_limit_degrees) + 0.001
-	check(max_heave - min_heave > 0.005 and max_heave - min_heave < 0.10, "calm baseline has gentle, bounded heave")
+	check(max_heave - min_heave > 0.10 and max_heave - min_heave < original.maximum_displacement() * 2.0 + 0.05,
+		"4x rolling surface produces visible heave bounded by the authoritative displacement")
 	check(motion_ok, "wave pitch and roll remain within the configured comfort limits")
 	check(game.boat.position.y == 0.0 and absf(game.boat.rotation.x) < 0.00001 and absf(game.boat.rotation.z) < 0.00001,
 		"buoyancy leaves movement-root height and collision orientation unchanged")

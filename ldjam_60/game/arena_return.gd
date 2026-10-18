@@ -19,7 +19,9 @@ func rudder(offset: Vector2, heading: float, manual: float, drift: Vector2,
 	var forward := Vector2(sin(heading), -cos(heading))
 	var right := Vector2(cos(heading), sin(heading))
 	var outward_speed := (forward * forward_speed + drift).dot(radial)
-	var soft_radius := radius * soft_fraction
+	# At stacked speed, allow additional turning distance before the outer rim.
+	var anticipation := maxf(0.0, forward_speed - 7.5) * 1.3
+	var soft_radius := radius * soft_fraction - anticipation
 	if not active and distance >= soft_radius and outward_speed > 0.1:
 		active = true
 		var tangent := Vector2(-radial.y, radial.x)

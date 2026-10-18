@@ -63,6 +63,25 @@ metadata/height_scale = 0.4
 [node name="North" type="Marker3D" parent="EnemySectors"]
 position = Vector3(0, 0, -143)
 metadata/spread_degrees = 16.0
+
+[node name="FlowZones" type="Node3D" parent="."]
+[node name="SouthFlow" type="Marker3D" parent="FlowZones"]
+position = Vector3(5, 0, 100)
+rotation = Vector3(0, 1.5707963, 0)
+metadata/length = 52.0
+metadata/width = 20.0
+metadata/bend = 3.0
+[node name="EastFlow" type="Marker3D" parent="FlowZones"]
+position = Vector3(104, 0, -5)
+metadata/length = 46.0
+metadata/width = 20.0
+metadata/bend = -3.0
+[node name="NorthwestFlow" type="Marker3D" parent="FlowZones"]
+position = Vector3(-62, 0, -51)
+rotation = Vector3(0, 0.7853982, 0)
+metadata/length = 42.0
+metadata/width = 18.0
+metadata/bend = -3.0
 [node name="East" type="Marker3D" parent="EnemySectors"]
 position = Vector3(143, 0, 0)
 metadata/spread_degrees = 16.0

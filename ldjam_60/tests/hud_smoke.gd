@@ -39,7 +39,7 @@ func _run() -> void:
 	var controls: Array[String] = []
 	for label: Label in hud.menu_controls.get_children():
 		controls.append(label.text)
-	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists only the current four controls")
+	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold Shift", "Speed +50%", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists the current controls including held Shift boost")
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()

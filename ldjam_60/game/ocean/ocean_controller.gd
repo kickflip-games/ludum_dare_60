@@ -152,7 +152,8 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 	var actual_factor: float = wake_root.advance_path(boat_position,time,delta,speed_factor,heading)
 	wake_strength = lerpf(wake_strength, actual_factor, 1.0 - exp(-4.0 * delta))
 	wake_yaw = lerp_angle(wake_yaw, -heading, 1.0 - exp(-5.0 * delta))
-	wake_material.set_shader_parameter("strength", wake_strength)
+	for mat: ShaderMaterial in wake_root.materials:
+		mat.set_shader_parameter("strength", wake_strength * maxf(1.0, speed_factor))
 
 
 func sample_surface(p: Vector2, time: float = -1.0) -> Vector3:
@@ -183,6 +184,10 @@ func update_turbulence(encounters: RefCounted, delta: float) -> void:
 	# A fixed region footprint; neither its position nor its phase follows the mesh.
 	var target := 0.0
 	if encounters.busy():
+		if encounters.region_id == -2 and not wave_field.waves.is_empty():
+			var wave: Dictionary = wave_field.waves[0]
+			turbulence_center = wave.origin+wave.direction*wave.speed*3.0
+			turbulence_radius = 70.0
 		if _turbulence_region != encounters.region_id:
 			for r: Vector4 in encounters.REGIONS:
 				if int(r.w)==encounters.region_id:

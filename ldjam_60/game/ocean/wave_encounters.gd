@@ -34,6 +34,8 @@ var warning_direction := Vector2.ZERO
 var warning_until := 0.0
 var rng := RandomNumberGenerator.new()
 var enabled := true
+var _arena_started := false
+var _arena_set := 0
 
 func reset(seed_value: int) -> void:
 	rng.seed = seed_value
@@ -47,6 +49,8 @@ func reset(seed_value: int) -> void:
 	phase_until = 0.0
 	sequence_deadline = 0.0
 	warning_until = 0.0
+	_arena_started = false
+	_arena_set = 0
 
 func busy() -> bool:
 	return phase in [Phase.WARNING, Phase.ACTIVE, Phase.DRAINING]
@@ -87,6 +91,9 @@ func update(game: Node3D, _delta: float) -> void:
 	var field = game.ocean.wave_field
 	field.advance(time)
 	if not enabled:
+		return
+	if game.arena_mode:
+		_update_arena(game)
 		return
 	var combat: bool = game.enemy_encounters.battle_active()
 	var p := Vector2(game.boat.position.x, game.boat.position.z)
@@ -136,6 +143,56 @@ func update(game: Node3D, _delta: float) -> void:
 		if not quiet_water and not combat and not game.cannon.aiming and field.waves.is_empty():
 			var forward := Vector2(sin(game.heading), -cos(game.heading))
 			spawn(game, [-2, -1, 0, 1, 2][rng.randi_range(0, 4)], rng.randf_range(0.32, 0.6), forward, rng.randf_range(-12.0, 12.0))
+
+func _update_arena(game: Node3D) -> void:
+	# Arena combat is continuous: it must not suppress the sea's actual pressure.
+	# Two readable crests, a full drain, then 4-6 seconds of genuine recovery.
+	if game.state != game.State.SAILING:
+		return
+	var time: float = game.sea_time
+	var field = game.ocean.wave_field
+	if not _arena_started:
+		_arena_started = true
+		next_event = time + rng.randf_range(6.0,8.0)
+	if phase == Phase.DRAINING:
+		if field.waves.is_empty():
+			history.append({"region":-2,"crests":launched,"time":time})
+			phase = Phase.RECOVERY
+			phase_until = time + rng.randf_range(4.0,6.0)
+		return
+	if phase == Phase.RECOVERY:
+		if time >= phase_until:
+			phase = Phase.CALM
+			next_event = time
+		return
+	if phase == Phase.CALM:
+		if time < next_event:
+			return
+		# Protect the actual island, rather than the former 95 m quiet disk.
+		if game.boat.position.distance_to(game.arena_center()) < 40.0:
+			next_event = time + 1.0
+			return
+		phase = Phase.ACTIVE
+		region_id = -2
+		launched = 0
+		budget = 2
+		route_forward = Vector2(sin(game.heading),-cos(game.heading))
+		sequence_deadline = time + 8.0
+	if phase == Phase.ACTIVE:
+		if launched >= budget or time >= sequence_deadline:
+			phase = Phase.DRAINING
+			_arena_set += 1
+			return
+		if time < next_event or field.waves.size() >= field.MAX_WAVES:
+			return
+		var side := 1 if (_arena_set + launched)%2 == 0 else -1
+		var height := 0.90 if launched == 0 else 1.20
+		# Terrain-safe oblique approach first, then its broadside alternative.
+		if spawn(game,side*2,height,route_forward) or spawn(game,side,height,route_forward):
+			launched += 1
+			next_event = time + 2.0
+		else:
+			next_event = time + 0.75
 
 func spawn(game: Node3D, kind: int, height: float, forward: Vector2, lateral_offset: float = 0.0) -> bool:
 	var right := Vector2(-forward.y, forward.x)

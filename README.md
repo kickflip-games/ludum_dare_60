@@ -7,12 +7,23 @@ waves** of cutters, fast skiffs and heavy attackers. Enemies attack the player; 
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
-- **Play / Enter:** cast off; forward sailing is automatic at **9 m/s**.
+- **Play / Enter:** cast off; forward sailing is automatic at **7.5 m/s**.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
 - **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
   together share one reload. Steering, camera look and firing are independent.
+- **Hold Shift:** sail **50% faster for the entire hold** (11.25 m/s from base).
+  Pale tailwind streaks stream around the ship while active and fade on release.
+  No timeout, fuel or cooldown. Release restores earned cruising speed; Shift
+  multiplies permanent flow rewards without consuming or duplicating them.
+- Three bright cyan flow ribbons each grant **25% more current forward speed
+  once per run**: **9.375 / 11.719 / 14.648 m/s** after one/two/three. Rewards
+  persist outside the ribbons and while aiming or taking damage. Revisiting a
+  spent ribbon grants nothing; restart restores base speed and all rewards.
+- Dark navy night water uses **4x the first implementation's modulation**
+  (height multiplier 0.88). Existing directional crest force is **50% stronger**,
+  with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
@@ -37,8 +48,12 @@ enemy to win; entering the old harbour never wins.
 - A small top-centre wave label, final-15-second countdown and brief announcements
   carry progress. A faint starboard cone, incoming-fire warning and visible damage remain;
   no hull bar, lighthouse health or navigation overlay is added.
-- Voyage progression, sextant and old territory triggers are inactive. Ambient
-  sea motion, occasional open-water crests, damage and self-repair remain.
+- Voyage progression, sextant and old territory triggers are inactive. Visible
+  pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
+  two crests 2 s apart, then full expiry and 4–6 s of calm recovery. Three-second
+  directional audio warnings, terrain checks and the four-crest cap remain.
+  The central island's 40 m shelter prevents launching through its shoreline.
+  Damage and self-repair remain.
 - Coral cutters take two hits; smaller blue-green, single-banded skiffs take one;
   larger ochre, double-banded heavy attackers take three and warn for 2.3 seconds.
   Eligible enemy sails glow subtly inside the firing cone; solid obstacles block
@@ -62,7 +77,7 @@ aim point; launched shots never home. Crowded ships yield speed as well as turni
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
-Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
+Cruise speed (`sailing_speed`, default 7.5 m/s), radius and return settings are
 exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five rosters/deadlines, spawn interval,
 maximum living enemies (1–6), early-clear pause and spawn separation. Retry
@@ -107,6 +122,8 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_c
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/night_boost_wave_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/flow_zones_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/naval_ai_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_pressure_smoke.gd
@@ -126,6 +143,8 @@ default sailing, the firing cone and firing. The cone suite checks angular/range
 boundaries, alignment/distance ranking, empty shots, clamped movement lead,
 non-homing flight, actual moving-target hits, camera independence and retry. Scripted checks are not human
 playtesting or a combat balance assessment.
+
+See the [night water / Shift boost follow-up](artifacts/night_shift_report.md) for the earlier checks and matched native captures.
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.

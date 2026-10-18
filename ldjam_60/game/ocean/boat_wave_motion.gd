@@ -31,10 +31,10 @@ func update_motion(ocean: Node3D, boat: Node3D, visual: Node3D, delta: float, sn
 	var target_heave: float = settings.sea_level + (average_height - settings.sea_level) * settings.bob_strength
 	# The deck eye exposes the old centre-weighted hull lag at a broadside crest:
 	# the high-side gunwale vanished under water while the centre was still low.
-	# Keep the same five samples and damping, with at most 35 cm of extra support
+	# Keep the same five samples and damping, with at most 50 cm of extra support
 	# as an edge rises. This only lifts the visual pivot, never the collision root.
 	var edge_height := maxf(maxf(h_bow,h_stern),maxf(h_port,h_starboard))
-	target_heave = maxf(target_heave,minf(target_heave+0.35,edge_height-0.55))
+	target_heave = maxf(target_heave,minf(target_heave+0.50,edge_height-0.50))
 	var target_pitch: float = clampf(atan2(h_bow - h_stern, HALF_LENGTH * 2.0) * settings.pitch_strength,
 		-deg_to_rad(settings.pitch_limit_degrees), deg_to_rad(settings.pitch_limit_degrees))
 	var target_roll: float = clampf(atan2(h_starboard - h_port, HALF_BEAM * 2.0) * settings.roll_strength,

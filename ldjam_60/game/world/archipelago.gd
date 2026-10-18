@@ -255,7 +255,8 @@ func sailing_lane_clear(at: Vector3, direction: Vector3, length_value: float, ha
 
 func safe_return_rudder(steering: float) -> float:
 	var forward := Vector3(sin(game.heading), 0, -cos(game.heading))
-	if sailing_lane_clear(game.boat.global_position, forward, 32.0):
+	var lookahead: float = maxf(32.0, game.propulsion_speed() * 3.2)
+	if sailing_lane_clear(game.boat.global_position, forward, lookahead):
 		return steering
 	# Only the boundary assistant calls this. Pick a visible-water escape on
 	# either side, allowing a full turn before contact; normal inner helm is free.
@@ -263,7 +264,7 @@ func safe_return_rudder(steering: float) -> float:
 		for side in [game.arena_return.turn_side, -game.arena_return.turn_side]:
 			var bearing: float = game.heading + angle * side
 			var direction := Vector3(sin(bearing), 0, -cos(bearing))
-			var end: Vector3 = game.boat.global_position + direction * 32.0
-			if end.distance_to(game.arena_center()) < game.arena_radius - 3.0 and sailing_lane_clear(game.boat.global_position, direction, 32.0):
+			var end: Vector3 = game.boat.global_position + direction * lookahead
+			if end.distance_to(game.arena_center()) < game.arena_radius - 3.0 and sailing_lane_clear(game.boat.global_position, direction, lookahead):
 				return clampf(angle * side * 2.4, -1.0, 1.0)
 	return steering

@@ -11,13 +11,17 @@ const DeckCameraResponse = preload("res://game/ocean/deck_camera_response.gd")
 const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
 const CombatParticles = preload("res://game/combat_particles.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
+const BoostWind = preload("res://game/boost_wind.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 const ArenaReturn = preload("res://game/arena_return.gd")
+const FlowZones = preload("res://game/flow_zones.gd")
+var flow_zones := FlowZones.new()
 var arena_return := ArenaReturn.new()
 var wave_sailing := WaveSailing.new()
 var wave_encounters := WaveEncounters.new()
 var actual_speed := 0.0
+var boosting := false
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
@@ -43,7 +47,7 @@ const GUIDING_STAR_ELEVATION: float = PI / 3.0
 const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
-@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 9.0
+@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 7.5
 @export var encounter_seed: int = 60
 @export_group("Lighthouse arena")
 @export var arena_mode: bool = false
@@ -234,6 +238,7 @@ var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
 var combat_particles: Node3D
 var boat_damage := BoatDamage.new()
+var boost_wind: MeshInstance3D
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
@@ -268,6 +273,8 @@ func _ready() -> void:
 	archipelago.arena_mode = arena_mode
 	add_child(archipelago)
 	archipelago.configure(self)
+	if arena_mode:
+		flow_zones.configure(archipelago.arena_layout.get_node("FlowZones"))
 	_place_player()
 	combat_particles = CombatParticles.new()
 	combat_particles.name = "CombatParticles"
@@ -323,6 +330,7 @@ func _configure_inputs() -> void:
 		"astrolabe": [] if arena_mode else [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
 		"fire_starboard": [KEY_SPACE] if arena_mode else [KEY_F], "watch_starboard": [] if arena_mode else [KEY_E], "fire_mouse": [],
+		"boost_sailing": [KEY_SHIFT],
 	}
 	for action: String in bindings:
 		if not InputMap.has_action(action):
@@ -409,11 +417,13 @@ func _clear_player_controls() -> void:
 	look_idle = 0.0
 	if arena_mode:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	for action: String in ["watch_starboard", "fire_starboard", "fire_mouse", "astrolabe", "steer_port", "steer_starboard"]:
+	for action: String in ["watch_starboard", "fire_starboard", "fire_mouse", "astrolabe", "steer_port", "steer_starboard", "boost_sailing"]:
 		Input.action_release(action)
 	cannon.set_aim_held(false)
 	cannon.set_fire_held(false)
 	reading = false
+	boosting = false
+	if is_instance_valid(boost_wind): boost_wind.reset()
 	turn_input = 0.0
 	focus_elapsed = 0.0
 	focus_strength = 0.0
@@ -506,6 +516,7 @@ func journey_progress() -> float:
 func restart() -> void:
 	combat_particles.reset()
 	_clear_player_controls()
+	flow_zones.reset()
 	cannon.reset()
 	wave_sailing.reset()
 	arena_return.reset()
@@ -578,6 +589,7 @@ func restart() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_restart_hold(delta)
+	boosting = state == State.SAILING and Input.is_action_pressed("boost_sailing")
 	if state != State.SAILING:
 		sea_time += delta
 	reading = not arena_mode and state == State.SAILING and Input.is_action_pressed("astrolabe")
@@ -628,6 +640,22 @@ func advance_sailing(delta: float, steering: float) -> void:
 	wave_encounters.update(self, delta)
 	ocean.wave_time = sea_time
 	enemy_encounters.update_encounters(delta)
+	if state != State.SAILING:
+		_clear_player_controls()
+		cannon.reset()
+		enemy_encounters.stop()
+		wave_encounters.stop(ocean.wave_field)
+		wave_sailing.reset()
+		flow_zones.reset()
+		boat.velocity = Vector3.ZERO
+		actual_speed = 0.0
+		return
+	if arena_mode:
+		var earned := flow_zones.collect_at(Vector2(boat.global_position.x, boat.global_position.z))
+		if earned > 0:
+			show_discovery("Flow +25%% · %.1f m/s" % propulsion_speed(), 2.2)
+			cue_sound("victory")
+	var forward_speed := propulsion_speed()
 	# Only the retained voyage fixture has a gun-view steering gate.
 	if not arena_mode and cannon.aiming:
 		steering = 0.0
@@ -636,7 +664,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		var was_returning: bool = arena_return.active
 		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
 			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
-			arena_soft_fraction, arena_inward_bias, SPEED)
+			arena_soft_fraction, arena_inward_bias, forward_speed)
 		if arena_return.active:
 			steering = archipelago.safe_return_rudder(steering)
 		if arena_return.active and not was_returning and not _at_sailing_boundary:
@@ -646,7 +674,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	wave_sailing.rudder_response = arena_rudder_response if arena_mode else 7.0
-	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, SPEED)
+	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, forward_speed)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position
@@ -687,7 +715,13 @@ func advance_sailing(delta: float, steering: float) -> void:
 		enemy_encounters.stop()
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
+		flow_zones.reset()
 	_update_hull_recovery(delta)
+
+
+func propulsion_speed() -> float:
+	var rewarded_speed := sailing_speed * flow_zones.multiplier() if arena_mode else sailing_speed
+	return rewarded_speed * (1.5 if boosting and state == State.SAILING else 1.0)
 
 
 func is_repairing_hull() -> bool:
@@ -754,6 +788,9 @@ func take_damage(amount: int, reason: String) -> bool:
 	damage_shake_left = DAMAGE_SHAKE_SECONDS
 	cue_sound("damage")
 	if hull == 0:
+		flow_zones.reset()
+		boat.velocity = Vector3.ZERO
+		actual_speed = 0.0
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
@@ -769,6 +806,7 @@ func shake(amount: float) -> void:
 
 
 func _update_view(delta: float) -> void:
+	flow_zones.present(water_material, arena_mode and state == State.SAILING)
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
 	boat_damage.update(hull, hull_capacity, hit_flash)
@@ -792,6 +830,7 @@ func _update_view(delta: float) -> void:
 	# Legacy gun view settles sail heel; the arena always keeps sailing trim.
 	var trim_speed := 0.0 if not arena_mode and cannon.aiming else speed_factor
 	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
+	boost_wind.update_wind(boosting and state==State.SAILING,sea_time,delta,camera,motion_setting==1,cannon.aiming)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
@@ -1116,6 +1155,9 @@ func _build_boat() -> void:
 	boat_visual = Node3D.new()
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
+	boost_wind = BoostWind.new()
+	boost_wind.name = "BoostTailwind"
+	boat_visual.add_child(boost_wind)
 	helm_anchor = Marker3D.new()
 	helm_anchor.name = "HelmEye"
 	helm_anchor.position = helm_eye
@@ -1319,9 +1361,13 @@ func _fill_audio() -> void:
 	if not is_instance_valid(_audio_playback):
 		return
 	var frames := _audio_playback.get_frames_available()
+	var speed_gain := 1.0
+	if state == State.SAILING:
+		speed_gain += clampf(actual_speed / sailing_speed - 1.0, 0.0, 1.0) * 0.28
 	for i in range(frames):
 		_audio_phase += 1.0 / 22050.0
 		_audio_noise = lerpf(_audio_noise, _audio_rng.randf_range(-1.0, 1.0), 0.07)
 		var swell := (0.45 + 0.2 * sin(_audio_phase * 0.75)) * (1.0 + storm_blend * 0.75)
+		swell *= speed_gain
 		var sample := _audio_noise * swell + sin(_audio_phase * TAU * 57.0) * 0.015
 		_audio_playback.push_frame(Vector2(sample, sample))

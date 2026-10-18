@@ -246,6 +246,7 @@ func _run() -> void:
 	check(game.camera.position.distance_to(sight_at) < 0.001, "sighting arm clears normally after the obstruction is removed")
 	game.restart()
 	var departure_center: Vector3 = game.boat.position+Basis(Vector3.UP,-game.heading)*game.BoatWaveMotion.HULL_CENTER
+	departure_center.y += clampf((game.boat_motion.heave-game.ocean_settings.sea_level)*game.ocean_settings.camera_bob_strength,-0.18,0.18)*game.motion_amount()
 	check(game._sailing_anchor.distance_to(departure_center)<0.02 and is_equal_approx(game._sailing_heading,game.START_HEADING) and is_equal_approx(game._camera_clear_fraction,1.0), "replay resets follow history to the actual departure")
 	game.queue_free()
 	await process_frame

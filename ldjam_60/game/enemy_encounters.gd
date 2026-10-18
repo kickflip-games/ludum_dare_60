@@ -247,6 +247,7 @@ func _update_arena(delta: float) -> void:
 				return
 			phase = Phase.COMPLETE
 			game.state = game.State.ARRIVED
+			game.flow_zones.reset()
 			game.cue_sound("victory")
 			return
 		if clear and wave_remaining > 0.0:

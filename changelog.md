@@ -6,6 +6,11 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Planning only: opened the [navigation redesign proposal](artifacts/navigation_redesign_plan.md)
+  for a permanent sextant, helm-visible stars, short route legs and faster sailing.
+  The lighthouse-arena PR overlaps the voyage direction; gameplay remains unchanged.
+  Implementation and gameplay validation are pending agreement on the plan.
+
 - Added the hull-mounted deck view, directional wave inertia and contact-driven
   spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the
   obstructing canvas, retained the real cannon and added a fitted planked floor.

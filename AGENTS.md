@@ -16,7 +16,7 @@ These instructions apply to the whole repository. This is an existing playable G
 - **Engine:** Godot 4.8; open `ldjam_60/project.godot`. Main scene: `res://game/crossing.tscn`.
 - **Gameplay:** a compact, first-person-ish/boat-view, star-guided sailing journey through an archipelago. Steering, maintaining/recovering a heading, coping with directional waves, and reaching the lighthouse are central. Optional cutter combat and hazards provide pressure; the sextant/star sightings provide navigation.
 - Read the root `README.md`, recent entries in `changelog.md`, `ldjam_60/game/crossing.gd`, relevant scene(s), and subsystem docs **before** changing a feature. Confirm behavior against code when documentation is stale.
-- Preserve existing input contracts and navigation affordances unless the task expressly changes them. Examples: automatic forward motion; A/D steering; hold Space to sight stars; hold E to glance; F to enter/shoot in the cannon view; R to retry. Do not introduce waypoint arrows, instant perfect navigation, or automatic steering as an unrequested shortcut.
+- Preserve existing input contracts and navigation affordances unless the task expressly changes them. Examples: automatic forward motion; A/D steering; hold Space to sight stars; hold E to aim; F to fire while aiming; hold R to restart while sailing, or press R to retry after an ending. Do not introduce waypoint arrows, instant perfect navigation, or automatic steering as an unrequested shortcut.
 - Treat game readability and satisfying *player decisions* as goals, not merely attractive water or passing smoke tests.
 
 ## Changelog upkeep

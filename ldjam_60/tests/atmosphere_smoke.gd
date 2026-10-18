@@ -84,11 +84,18 @@ func _run() -> void:
 		var event := InputEventAction.new()
 		event.action = "restart_crossing"
 		event.pressed = true
-		game._unhandled_input(event)
+		if state == game.State.SAILING:
+			Input.action_press("restart_crossing")
+			game._physics_process(game.RESTART_HOLD_SECONDS)
+			Input.action_release("restart_crossing")
+		else:
+			game._unhandled_input(event)
 		check(game.state == game.State.CASTING_OFF and game.storm_blend == 0.0 and game.hull == game.hull_capacity,
 			"retry restores calm and healthy voyage from state %d" % state)
 		check(is_equal_approx(environment.ambient_light_energy,calm) and game.water_material.get_shader_parameter("storm_shading") == 0.0,
 			"retry immediately restores calm surface and environment from state %d" % state)
+		event.pressed = false
+		game._unhandled_input(event)
 	print("ATMOSPHERE CHECK: %d checks, %d failures" % [checks,failures])
 	game.queue_free()
 	await process_frame

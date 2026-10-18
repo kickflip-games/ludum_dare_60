@@ -145,8 +145,7 @@ func _run() -> void:
 		"game view uses measured speed and turn while keeping the camera horizon level")
 	check(game.cannon.shot_origin().is_equal_approx(game.cannon.muzzle.global_position),
 		"banked cannon still launches at its visible muzzle")
-	game.cannon.set_fire_held(true)
-	game.cannon.set_fire_held(false)
+	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
 	for i in range(180):
 		game._update_view(1.0 / 60.0)

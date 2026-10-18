@@ -64,8 +64,7 @@ func _run() -> void:
 	await capture("07-rock-foam")
 	place(Vector3(-300,0,-330),0)
 	await water_step(0.5,6.3)
-	action("fire_starboard",true)
-	action("fire_starboard",false)
+	action("watch_starboard",true)
 	await water_step(0.5,6.3)
 	await capture("08-cannon-ocean")
 	game.cannon.cooldown = 0

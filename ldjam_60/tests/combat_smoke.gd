@@ -55,6 +55,8 @@ func _run() -> void:
 	var body = game.obstacles[-1].body
 	await physics_frame
 	check(game.cannon.aim_target().get("aligned", false), "fixed broadside cue aligns with a real raycast target")
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
 	check(game.cannon.fire() and game.cannon.flash.visible, "cannon fires with visible muzzle flash")
 	check(not game.cannon.fire(), "reload prevents immediate second shot")
 	check(absf(game.cannon.projectiles[0].velocity.dot(Vector3(sin(game.heading), 0, -cos(game.heading)))) < 0.01,
@@ -92,6 +94,8 @@ func _run() -> void:
 	game.boat.position = Vector3(400, 0, 320)
 	game.boat.rotation.y = 0.0
 	game._update_view(1.0)
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
 	check(game.cannon.fire(), "barrel cluster can be targeted with the existing broadside")
 	for i in range(60):
 		game.cannon.advance(1.0 / 60.0)

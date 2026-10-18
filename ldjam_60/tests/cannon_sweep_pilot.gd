@@ -35,12 +35,14 @@ func update(game, delta: float) -> void:
 		steering_exits += 1
 	if evade_left > 0:
 		evade_left -= delta
+		action("watch_starboard", false)
 		action("steer_port", true)
 		action("steer_starboard", false)
 	elif c.aiming:
 		action("steer_port", false)
 		action("steer_starboard", false)
 		if absf(desired) > 40:
+			action("watch_starboard", false)
 			action("steer_port", desired > 0)
 			action("steer_starboard", desired < 0)
 			steering_exits += 1
@@ -51,7 +53,7 @@ func update(game, delta: float) -> void:
 	elif absf(desired) < 26:
 		action("steer_port", false)
 		action("steer_starboard", false)
-		tap()
+		action("watch_starboard", true)
 		entries += 1
 	else:
 		action("steer_port", desired > 0)
@@ -59,5 +61,5 @@ func update(game, delta: float) -> void:
 
 
 func release() -> void:
-	for name in ["fire_starboard", "steer_port", "steer_starboard", "astrolabe"]:
+	for name in ["watch_starboard", "fire_starboard", "steer_port", "steer_starboard", "astrolabe"]:
 		action(name, false)

@@ -21,9 +21,9 @@ func _ready() -> void:
 
 func update_presentation(delta: float) -> void:
 	pulse = maxf(0.0, pulse - delta)
-	status.text = "Reloading" if game.cannon.cooldown > 0 else "F · Shoot" if game.cannon.aiming else "Ready"
+	status.text = "Reloading" if game.cannon.cooldown > 0 else "F · Fire" if game.cannon.aiming else "Ready"
 	status.modulate = GOLD if game.cannon.cooldown == 0 else CREAM
-	tooltip_text = "Starboard cannon: %.1f seconds to reload" % game.cannon.cooldown if game.cannon.cooldown > 0 else "F enters gun view; press F again to shoot. A/D returns to steering. Hold Space to sight the stars."
+	tooltip_text = "Starboard cannon: %.1f seconds to reload" % game.cannon.cooldown if game.cannon.cooldown > 0 else "Hold E to aim; F to fire. Release E to steer. Hold Space to find the guiding star."
 	queue_redraw()
 
 

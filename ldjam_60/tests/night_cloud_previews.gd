@@ -95,10 +95,11 @@ func _run() -> void:
 	game._update_view(2.0)
 	game.hud._process(0.0)
 	await capture("02-sailing")
-	game.starboard_look = true
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
 	game._update_view(2.0)
 	game.hud._process(0.0)
-	await capture("03-combat-glance")
+	await capture("03-cannon")
 	# Close inspection through the actual sky shader, at an existing formation.
 	game.hud.hide()
 	var centers: PackedVector4Array = game.sky_material.get_shader_parameter("cloud_centers")

@@ -158,7 +158,7 @@ func _run() -> void:
 		if stage < 2:
 			check(game.focus_strength == 0 and game.sky_material.get_shader_parameter("target_focus") == 0 and game.hud.star_guidance().is_empty(), "stage transition immediately erases the old star highlight")
 			check(game.sky_material.get_shader_parameter("active_star") == stage + 1 and game.sky_material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()), "stage transition selects exactly one new destination star")
-			step(0.5)
+			step(0.3)
 			check(game.focus_strength == 0, "new star requires a fresh search")
 		else:
 			game._update_view(0.0)

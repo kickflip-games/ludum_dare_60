@@ -15,7 +15,10 @@ enum Pattern { ROLLING, DOUBLE, SCATTER }
 @export_group("Flagship mines")
 @export var mine_interval := 6.0
 @export var phase_two_mine_interval := 4.5
-@export var maximum_mines := 6
+@export var maximum_mines := 6:
+	set(value):
+		maximum_mines = value
+		if is_node_ready(): _build_mine_pool()
 @export var mine_lifetime := 18.0
 @export var mine_trigger_radius := 7.0
 @export var mine_arming_delay := 0.8
@@ -26,6 +29,7 @@ var salvo := 0
 var volley: Array[Dictionary] = []
 var warnings: Array[MeshInstance3D] = []
 var mines: Array[Node3D] = []
+var mine_pool: Array[Node3D] = []
 var mine_clock := 0.0
 var smoke_clock := 0.0
 var sequence_time := 0.0
@@ -41,6 +45,7 @@ var boss_materials: Array[StandardMaterial3D] = []
 
 func _ready() -> void:
 	super._ready()
+	_build_mine_pool()
 	collision_shape.shape.radius = 4.8
 	collision_shape.position = Vector3(0, 1.2, -1.8)
 	for z in [-6.0, 3.0]:
@@ -124,7 +129,7 @@ func clear_hazards() -> void:
 		if is_instance_valid(mine): mine.expire()
 	mines.clear()
 	for shot in projectiles:
-		shot.node.queue_free()
+		game.cannon.projectile_visuals.release(shot.node)
 	projectiles.clear()
 
 func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
@@ -269,12 +274,8 @@ func _fire_due() -> void:
 		var flight: float = maxf(0.2, Vector2(end.x - from.x, end.z - from.z).length() / projectile_speed)
 		var launch: Vector3 = shot.direction * projectile_speed
 		launch.y = (end.y - from.y + 2.5 * flight * flight) / flight
-		var mesh := SphereMesh.new()
-		mesh.radius = 0.4
-		mesh.height = 0.8
-		mesh.radial_segments = 8
-		mesh.rings = 4
-		var ball = game._mesh(game, mesh, from, game._material(Color("ffad66"), 1.5))
+		var ball: MeshInstance3D = game.cannon.projectile_visuals.acquire(from, true)
+		assert(ball != null, "Configured projectile budget must cover every live shot")
 		projectiles.append({"node":ball, "position":from, "velocity":launch, "ttl":4.0, "trail_clock":0.0})
 		game.combat_particles.muzzle(from, launch.normalized(), true)
 		flash.global_position = from
@@ -375,17 +376,27 @@ func deploy_mine() -> bool:
 	mines = mines.filter(func(mine): return is_instance_valid(mine) and not mine.spent)
 	while mines.size() >= maxi(1, maximum_mines):
 		mines.pop_front().expire()
-	var mine: Node3D = MINE.instantiate()
-	mine.game = game
-	mine.trigger_radius = mine_trigger_radius
-	mine.arming_delay = mine_arming_delay
-	mine.lifetime = mine_lifetime
-	# Sibling, not a child of the moving hull.
-	game.enemy_encounters.add_child(mine)
-	mine.position = at
-	mine.update_visuals()
+	var mine: Node3D = null
+	for candidate in mine_pool:
+		if candidate.spent:
+			mine = candidate
+			break
+	assert(mine != null, "Mine pool must cover configured maximum")
+	mine.activate(at)
 	mines.append(mine)
 	return true
+
+func _build_mine_pool() -> void:
+	for i in range(mine_pool.size(), maxi(1, maximum_mines)):
+		var mine: Node3D = MINE.instantiate()
+		mine.game = game
+		mine.pooled = true
+		mine.trigger_radius = mine_trigger_radius
+		mine.arming_delay = mine_arming_delay
+		mine.lifetime = mine_lifetime
+		# Fixed world-space sibling; moving the ship never moves an active mine.
+		game.enemy_encounters.add_child(mine)
+		mine_pool.append(mine)
 
 func warning() -> String:
 	return "FLAGSHIP BROADSIDE · SAIL CLEAR" if weapon_state == Weapon.TELEGRAPH else ""

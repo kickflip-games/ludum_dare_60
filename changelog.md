@@ -6,10 +6,55 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: added Discussion credits for Kieran Davidson and Rachel Coxhead
+  in the game and credit notes.
+
+- Work in progress: added Credits to title, pause and result menus, naming Kenney,
+  Quaternius, Mehdi Zahroui, Avi Vajpeyi, YD GDeshko and jdsherbert. Kept the
+  mine-model attribution; Back/Esc returns to the current menu and preserves pause.
+  All 216 menu/pause checks pass; three-size native frames and Web click-through reviewed.
+
+- Work in progress: added yd's CC0 “Enemy Ship Approaching” as quiet looping
+  background music across menus and voyages. M mutes it with existing audio;
+  pause suspends playback, and retry keeps one continuous player. Recorded
+  source, licence and the unmodified supplied file's checksum in the credits.
+
+- Work in progress: removed Quit from the Web-facing menus. Esc pauses/resumes
+  sailing and casting off; the existing menu offers Resume, Settings and Main Menu.
+  Pause freezes gameplay and HUD timers, clears held inputs and preserves the view.
+  Esc still returns from Settings; browser mouse-capture release also pauses play.
+  All 419 regression checks pass; three-size native menus and Web pause/resume
+  reviewed. Mouse capture now follows Web input gestures rather than frame ticks.
+
+- Work in progress: consolidated rigid proximity-mine parts into one mesh with
+  two material surfaces, preserving source assets, shape, colours and gameplay.
+  Six-mine fleet fixture reduces native/Web draw calls from 235 to 175; triangle
+  counts are unchanged and frame-time gains are not established. Native close-ups,
+  Web renders and geometry checks reviewed. See [asset audit](artifacts/asset_optimization/report.md).
+
+- Work in progress: softened the Kenney wave ribbon to muted rust with warm cream
+  edging using a runtime tint; retained the original artwork and ivory title text.
+
+- Work in progress: ordinary cannons use 0.50/0.40/0.75 s visible warnings,
+  measured-motion intercepts, repeat volleys and a ±38° firing arc. Active
+  attackers share a 0.7 s warning stagger; queued ships cannot fire. Kept health,
+  controls, waves, boss patterns and physical dodgeable shots. All 1,304 checks
+  pass; native hit/dodge frames inspected at desktop and small sizes. A normal
+  input pilot wins with evasion and loses without it. Web export renders, with
+  pointer-lock/Chromium errors; human balance untested.
+  See [cannon accuracy and pressure evidence](artifacts/enemy_cannon_review.md).
+
+- Work in progress: debris and barrels follow the full local water height;
+  mines bob at the current surface height without inheriting a spawn-height
+  offset. Collision bodies, mine trigger radii and lifetimes stay unchanged.
+  Flotation, mine, flagship, ocean and arena checks pass; two native frames
+  inspected. Browser and human playtesting remain untested.
+
 - Work in progress: minimal wave HUD with a brief Kenney Adventure ribbon and
   centred circles, including queued arrivals, surviving earlier ships and the
   flagship. Destructions leave hollows until the next wave; all-clear hides the
   row after one second. Existing danger, countdown and boss-health UI retained.
+  All 258 smoke checks pass; native frames at three sizes and Web artwork reviewed.
 
 - Work in progress: occasional arena lightning briefly lifts existing sky and
   moonlight, followed by delayed, synthesized rolling thunder on its own audio
@@ -31,7 +76,8 @@ recorded evidence and limitations.
 
 - Work in progress: prepared Blackwater itch.io cover, banners and icon using
   only actual gameplay screenshots and the game's bundled font. Updated the
-  Butler target to `avivajpeyi/blackwater:html5`; no upload performed.
+  Butler target to `avivajpeyi/blackwater:html5`; no upload performed. Added a
+  ship-centered favicon in ICO and PNG sizes, cropped from live gameplay.
 
 - Work in progress: the restored player sailboat's canvas gently sways with
   the same timing as enemy sails. Cloth beside the mast and boom stays pinned;

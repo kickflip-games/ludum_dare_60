@@ -25,9 +25,12 @@ var menu_details: Label
 var menu_footer: Label
 var menu_column: VBoxContainer
 var menu_actions: VBoxContainer
+var credits_button: Button
+var credits_panel: VBoxContainer
+var credits_back: Button
+var credits_open := false
 var settings_button: Button
 var main_menu_button: Button
-var quit_button: Button
 var settings_panel: VBoxContainer
 var settings_back: Button
 var menu_spacer: Control
@@ -55,6 +58,7 @@ var _storm_notice_left := 0.0
 var notice: Label
 var instrument: Control
 var _last_state: int = -1
+var _last_paused := false
 var _last_cooldown: float = 0.0
 var _reading_alpha: float = 0.0
 var _threat_direction: float = 1.0
@@ -63,7 +67,7 @@ var _menu_alpha: float = 1.0
 
 
 class FleetCircles extends Control:
-	## One draw call; encounter records, including queued arrivals, own the count.
+	## One lightweight Control; records, including queued arrivals, own the count.
 	var remaining := 0
 	var total := 0
 
@@ -86,6 +90,7 @@ class FleetCircles extends Control:
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	serif = NauticalTheme.TITLE.duplicate()
 	serif.fallbacks = [ThemeDB.fallback_font]
@@ -136,6 +141,7 @@ func _ready() -> void:
 	var ribbon := TextureRect.new()
 	ribbon.name = "AdventureRibbon"
 	ribbon.texture = WAVE_RIBBON
+	ribbon.self_modulate = Color("d4c4ac") # Muted rust cloth and warm cream edging.
 	ribbon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ribbon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	ribbon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -276,8 +282,8 @@ func _build_menu() -> void:
 	main_menu_button.pressed.connect(func(): game.restart(true))
 	settings_button = _menu_button(menu_actions, "Settings", "SETTINGS")
 	settings_button.pressed.connect(func(): _show_settings(true))
-	quit_button = _menu_button(menu_actions, "Quit", "QUIT")
-	quit_button.pressed.connect(func(): get_tree().quit())
+	credits_button = _menu_button(menu_actions, "Credits", "CREDITS")
+	credits_button.pressed.connect(func(): _show_credits(true))
 	# Legacy voyage controls remain available to retained fixtures.
 	menu_controls = GridContainer.new()
 	menu_controls.columns = 2
@@ -297,17 +303,40 @@ func _build_menu() -> void:
 	settings_panel.visible = false
 	menu_column.add_child(settings_panel)
 	_label(settings_panel, "ControlsHeading", "CONTROLS", 15, NauticalTheme.BRASS)
-	var help_text := "A / D or arrows   Steer\nShift   Boost while held\nMouse   Look around\nClick / Space   Fire\nE   Switch camera\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
+	var help_text := "A / D or arrows   Steer\nShift   Boost while held\nMouse   Look around\nClick / Space   Fire\nE   Switch camera\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Pause / resume"
 	if not game.arena_mode:
-		help_text = "A / D   Steer\nShift   Boost while held\nHold Space   Find the guiding star\nHold E   Aim cannon\nF   Fire\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Quit"
+		help_text = "A / D   Steer\nShift   Boost while held\nHold Space   Find the guiding star\nHold E   Aim cannon\nF   Fire\nHold R   Restart voyage\nM   Mute / unmute\nEsc   Pause / resume"
 	_label(settings_panel, "FullControls", help_text, 17, NauticalTheme.IVORY)
 	settings_back = _menu_button(settings_panel, "SettingsBack", "BACK")
 	settings_back.pressed.connect(func(): _show_settings(false))
+	credits_panel = VBoxContainer.new()
+	credits_panel.name = "GameCredits"
+	credits_panel.visible = false
+	credits_panel.add_theme_constant_override("separation", 10)
+	menu_column.add_child(credits_panel)
+	for entry in [
+		["Models", "3D MODELS", "Kenney · Quaternius"],
+		["Coding", "CODING", "Mehdi Zahroui\nAvi Vajpeyi"],
+		["Discussion", "DISCUSSION", "Kieran Davidson\nRachel Coxhead"],
+		["Music", "MUSIC", "YD GDeshko"],
+		["Sfx", "SOUND EFFECTS", "jdsherbert"],
+	]:
+		var heading := _label(credits_panel, entry[0] + "Heading", entry[1], 14, BRASS)
+		var names := _label(credits_panel, entry[0] + "Names", entry[2], 21, INK)
+		for label: Label in [heading, names]:
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		names.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var additional := _label(credits_panel, "AdditionalModel", "Mine model: Aaron Clifford (CC BY 3.0)", 13, MUTED)
+	additional.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	additional.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	credits_back = _menu_button(credits_panel, "CreditsBack", "BACK")
+	credits_back.pressed.connect(func(): _show_credits(false))
 	_layout_menu()
 
 
 func _show_settings(open: bool) -> void:
 	settings_open = open
+	if open: credits_open = false
 	_refresh_menu_copy()
 	if open:
 		settings_back.grab_focus()
@@ -315,29 +344,45 @@ func _show_settings(open: bool) -> void:
 		settings_button.grab_focus()
 
 
+func _show_credits(open: bool) -> void:
+	credits_open = open
+	if open: settings_open = false
+	_refresh_menu_copy()
+	if open:
+		credits_back.grab_focus()
+	else:
+		credits_button.grab_focus()
+
+
 func _input(event: InputEvent) -> void:
-	if settings_open and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		_show_settings(false)
+	if event is InputEventKey and event.pressed and not event.is_echo() and event.keycode == KEY_ESCAPE:
+		if settings_open:
+			_show_settings(false)
+		elif credits_open:
+			_show_credits(false)
+		else:
+			game.set_paused(not game.paused)
 		get_viewport().set_input_as_handled()
 
 
 func _layout_menu() -> void:
 	if not is_instance_valid(menu) or size.x < 1.0 or size.y < 1.0: return
 	var compact := size.y < 640
-	var title_screen: bool = game.arena_mode and game.state == game.State.READY and not settings_open
+	var subpage_open := settings_open or credits_open
+	var title_screen: bool = game.arena_mode and game.state == game.State.READY and not subpage_open
 	var width := minf(560.0, size.x * 0.60) if title_screen else minf(420.0, size.x * 0.43)
 	menu_actions.custom_minimum_size.x = minf(420.0, width)
 	var left := (size.x - width) * 0.5
 	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	menu.position = Vector2(left, 20)
-	var bottom := size.y * 0.84 if game.arena_mode and not settings_open else size.y - 20
+	var bottom := size.y * 0.84 if game.arena_mode and not subpage_open else size.y - 20
 	menu.size = Vector2(width, maxf(maxf(0, bottom - 20), menu_column.get_combined_minimum_size().y))
 	menu_column.add_theme_constant_override("separation", 7 if compact else 10)
 	menu_actions.add_theme_constant_override("separation", 7 if compact else 10)
-	menu_spacer.visible = game.arena_mode and not settings_open
+	menu_spacer.visible = game.arena_mode and not subpage_open
 	var title_size := (75 if compact else 93) if game.state == game.State.READY else (48 if compact else 62)
 	if not game.arena_mode: title_size = 48 if compact else 58
-	if settings_open: title_size = 38 if compact else 48
+	if subpage_open: title_size = 38 if compact else 48
 	var widest := 1.0
 	for line: String in menu_title.text.split("\n"):
 		widest = maxf(widest, serif.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x)
@@ -347,30 +392,32 @@ func _layout_menu() -> void:
 	menu_body.add_theme_font_size_override("font_size", 18 if compact else 21)
 	menu_footer.add_theme_font_size_override("font_size", 15 if compact else 16)
 	settings_panel.add_theme_constant_override("separation", 8 if compact else 15)
+	credits_panel.add_theme_constant_override("separation", 5 if compact else 10)
 	menu.queue_sort()
 	menu_column.queue_sort()
 
 
 func _refresh_menu_copy() -> void:
+	var subpage_open := settings_open or credits_open
 	var intro: bool = game.state == game.State.READY
 	var won: bool = game.state == game.State.ARRIVED
-	menu_title.text = "BLACKWATER" if intro else "YOU HELD\nTHE LIGHT" if won and game.arena_mode else "Safe harbour." if won else "LOST\nAT SEA" if game.arena_mode else "Lost at sea."
-	menu_body.text = "" if intro or won else game.failure_reason
-	menu_body.visible = not menu_body.text.is_empty() and not settings_open
-	menu_details.visible = not intro
+	menu_title.text = "PAUSED" if game.paused else "BLACKWATER" if intro else "YOU HELD\nTHE LIGHT" if won and game.arena_mode else "Safe harbour." if won else "LOST\nAT SEA" if game.arena_mode else "Lost at sea."
+	menu_body.text = "" if intro or won or game.paused else game.failure_reason
+	menu_body.visible = not menu_body.text.is_empty() and not subpage_open
+	menu_details.visible = not intro and not game.paused
 	var clock := "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
 	menu_details.text = ("ALL 5 WAVES COMPLETE" if won else "WAVE %d / 5 REACHED" % maxi(1, game.enemy_encounters.wave_number)) + "   ·   " + clock if game.arena_mode else "Voyage time   " + clock
-	action_button.text = "SET SAIL" if intro else "SAIL AGAIN" if won else "RETRY"
+	action_button.text = "RESUME" if game.paused else "SET SAIL" if intro else "SAIL AGAIN" if won else "RETRY"
 	main_menu_button.visible = not intro
-	quit_button.visible = intro and game.arena_mode
 	walkthrough_button.visible = intro and game.arena_mode
-	menu_controls.visible = intro and not game.arena_mode and not settings_open
-	menu_footer.text = "A/D steer · Shift boost · Mouse look\nClick/Space fire · Enter set sail" if intro and game.arena_mode else "Enter set sail · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
+	menu_controls.visible = intro and not game.arena_mode and not subpage_open
+	menu_footer.text = "A/D steer · Shift boost · Mouse look\nClick/Space fire · Enter set sail" if intro and game.arena_mode else "Enter set sail · M mute · Esc pause / resume" if intro else "R retry · M mute · Esc pause / resume"
 	settings_panel.visible = settings_open
-	menu_actions.visible = not settings_open
-	menu_footer.visible = not settings_open and not game.arena_mode
-	if settings_open:
-		menu_title.text = "SETTINGS"
+	credits_panel.visible = credits_open
+	menu_actions.visible = not subpage_open
+	menu_footer.visible = not subpage_open and not game.arena_mode
+	if subpage_open:
+		menu_title.text = "CREDITS" if credits_open else "SETTINGS"
 		menu_details.visible = false
 	_layout_menu()
 
@@ -398,12 +445,12 @@ func _build_instrument() -> void:
 
 
 func _sync_button() -> void:
-	var show_menu: bool = game.state in [game.State.READY, game.State.LOST, game.State.ARRIVED]
+	var show_menu: bool = game.paused or game.state in [game.State.READY, game.State.LOST, game.State.ARRIVED]
 	menu.visible = show_menu
 	menu_shade.visible = show_menu
 	action_button.visible = show_menu
-	gameplay_hud.visible = game.state == game.State.SAILING and not game.walkthrough.active
-	if not gameplay_hud.visible:
+	gameplay_hud.visible = game.state == game.State.SAILING and not game.walkthrough.active and not game.paused
+	if not gameplay_hud.visible and not game.paused:
 		boss_label.visible = false
 		boss_health.visible = false
 		fleet_status.visible = false
@@ -416,25 +463,30 @@ func _sync_button() -> void:
 			label.text = ""
 			label.visible = false
 		_has_threat = false
-	if game.state == _last_state:
+	if game.state == _last_state and game.paused == _last_paused:
 		return
 	_last_state = game.state
+	_last_paused = game.paused
 	if not show_menu:
 		settings_open = false
-		for control: Control in [action_button, settings_button, main_menu_button, quit_button, settings_back, walkthrough_button]:
+		credits_open = false
+		for control: Control in [action_button, settings_button, credits_button, main_menu_button, settings_back, credits_back, walkthrough_button]:
 			control.release_focus()
 		if game.state == game.State.CASTING_OFF:
 			cannon_gauge.pulse = 0.0
 		return
 	settings_open = false
+	credits_open = false
 	_refresh_menu_copy()
 	action_button.grab_focus()
-	_menu_alpha = 1.0 if game.state == game.State.READY or game.motion_setting == 1 else 0.0
+	_menu_alpha = 1.0 if game.paused or game.state == game.State.READY or game.motion_setting == 1 else 0.0
 
 
 func _on_action_pressed() -> void:
-	if settings_open: return
-	if game.state == game.State.READY:
+	if settings_open or credits_open: return
+	if game.paused:
+		game.set_paused(false)
+	elif game.state == game.State.READY:
 		game.start_crossing()
 	elif game.state in [game.State.ARRIVED, game.State.LOST]:
 		game.restart()
@@ -444,6 +496,10 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(game) or not is_instance_valid(gameplay_hud):
 		return
 	_sync_button()
+	if game.paused:
+		menu.modulate.a = 1.0
+		queue_redraw()
+		return
 	if game.walkthrough.active:
 		queue_redraw()
 		return
@@ -525,7 +581,10 @@ func _update_storm_warning(delta: float = 0.0) -> void:
 	if not outside or _storm_notice_left < 0.00001:
 		_storm_notice_left = 0.0
 	storm_warning.visible = outside and _storm_notice_left > 0.0
-	storm_warning.offset_top = wave_announcement.offset_bottom + 20 if wave_announcement.visible else 132
+	var occupied_bottom: float = wave_announcement.offset_bottom if wave_announcement.visible else 112
+	if wave_countdown.visible:
+		occupied_bottom = maxf(occupied_bottom, wave_countdown.offset_bottom)
+	storm_warning.offset_top = occupied_bottom + 20
 	storm_warning.offset_bottom = storm_warning.offset_top + 78
 	storm_warning.modulate.a = 1.0
 	storm_instruction.text = "RETURN TO THE LIGHTHOUSE"
@@ -605,7 +664,7 @@ func _line(a: Vector2, b: Vector2, color: Color = INK, width: float = 1.5) -> vo
 func _draw() -> void:
 	if not is_instance_valid(game) or serif == null:
 		return
-	if game.state in [game.State.READY, game.State.ARRIVED, game.State.LOST]:
+	if game.paused or game.state in [game.State.READY, game.State.ARRIVED, game.State.LOST]:
 		return
 	if game.state == game.State.CASTING_OFF:
 		_text(Vector2(size.x * 0.5, size.y - 65), "Casting off…", 25, INK, true, true)

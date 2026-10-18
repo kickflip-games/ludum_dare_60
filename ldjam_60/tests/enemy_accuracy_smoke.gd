@@ -47,7 +47,7 @@ func encounter(kind: String, course: float, distance: float, dodge: bool, hz: in
 		var time := float(tick) / hz
 		var previous: int = ship.weapon_state
 		var shots: int = ship.shots_fired
-		var hits: int = game.hits_taken
+		var hits: int = ship.shots_hit
 		var old_position: Vector3 = ship.position
 		var flying: Array = ship.projectiles.duplicate()
 		var velocities: Array = flying.map(func(s): return s.velocity * Vector3(1, 0, 1))
@@ -75,7 +75,7 @@ func encounter(kind: String, course: float, distance: float, dodge: bool, hz: in
 			if tick == hz: label = "approach"
 			if warnings > 0 and ship.weapon_state == ship.Weapon.TELEGRAPH and not captured.has("warning"): label = "warning"
 			if ship.shots_fired > shots and not captured.has("fire"): label = "fire"
-			if game.hits_taken > hits and not captured.has("hit"): label = "hit"
+			if ship.shots_hit > hits and not captured.has("hit"): label = "hit"
 			if dodge and not ship.projectiles.is_empty() and ship.projectiles[0].position.distance_to(game.boat.position) < 12 and not captured.has("dodge"): label = "dodge"
 			if not label.is_empty():
 				await process_frame
@@ -84,7 +84,7 @@ func encounter(kind: String, course: float, distance: float, dodge: bool, hz: in
 				captured[label] = true
 		await physics_frame
 	var result := {"kind":kind, "heading":course, "distance":distance, "dodge":dodge, "hz":hz,
-		"warnings":warnings, "shots":ship.shots_fired, "salvos":ship.salvos_fired, "hits":game.hits_taken,
+		"warnings":warnings, "shots":ship.shots_fired, "salvos":ship.salvos_fired, "hits":ship.shots_hit, "all_damage":game.hits_taken,
 		"cancelled":ship.cancelled_shots, "range_seconds":range_time, "states":states, "fire_times":fire_times}
 	print("ACCURACY " + JSON.stringify(result))
 	check(committed and ballistic and full_warning, "fixed warning, full duration and non-homing physical flight")

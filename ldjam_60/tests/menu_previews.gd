@@ -33,7 +33,11 @@ func _run() -> void:
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)
+	game.set_process_unhandled_input(false)
 	await capture("title")
+	game.hud._show_credits(true)
+	await capture("credits")
+	game.hud._show_credits(false)
 	if game.hud.has_method("_show_settings"):
 		game.hud._show_settings(true)
 		await capture("settings")

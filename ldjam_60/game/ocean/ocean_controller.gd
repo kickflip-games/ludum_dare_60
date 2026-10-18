@@ -241,18 +241,19 @@ func normal_at(p: Vector2, time: float = -1.0) -> Vector3:
 
 
 func register_float_visual(visual: Node3D) -> void:
-	floating_visuals.append({"visual": visual, "base_y": visual.position.y})
+	# Preserve the authored waterline in world space, even under offset parents.
+	floating_visuals.append({"visual": visual, "base_y": visual.global_position.y - settings.sea_level})
 
 
-func _update_floating_visuals(delta: float) -> void:
-	var amount := 1.0 - exp(-7.0 * delta)
+func _update_floating_visuals(_delta: float) -> void:
+	floating_visuals = floating_visuals.filter(func(item: Dictionary) -> bool: return is_instance_valid(item.visual) and not item.visual.is_queued_for_deletion())
 	for item: Dictionary in floating_visuals:
 		var visual: Node3D = item.visual
 		if not visual.is_visible_in_tree():
 			continue
-		var world: Vector3 = visual.get_parent().global_position
-		var height: float = height_at(Vector2(world.x, world.z)) - settings.sea_level
-		visual.position.y = lerpf(visual.position.y, item.base_y + height * 0.85, amount)
+		var world: Vector3 = visual.global_position
+		# Use the rendered surface's full height without lagging beneath a crest.
+		visual.global_position.y = height_at(Vector2(world.x, world.z)) + item.base_y
 
 
 func _build_wake() -> void:

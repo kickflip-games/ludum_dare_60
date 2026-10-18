@@ -24,6 +24,7 @@ func action(name: String, pressed: bool) -> void:
 
 func fresh() -> void:
 	game.restart()
+	game.hud._process(0) # Observe casting-off reset, as normal rendered play does.
 	game.state=game.State.SAILING
 	game.wave_encounters.enabled=false
 	enemies.enabled=true
@@ -169,19 +170,19 @@ func _run() -> void:
 	check(not enemies.spawn_queue.is_empty() and enemies.phase==enemies.Phase.ACTIVE and enemies.wave_number==2,
 		"pending queued spawn prevents false early completion even with no living enemy")
 	game.hud._process(0)
-	check(game.hud.wave_label.text=="WAVE 2 / 5" and not game.hud.wave_countdown.visible,
-		"persistent top-centre wave label with no countdown outside last 15 seconds")
+	check(game.hud.wave_announcement.text=="WAVE II" and not game.hud.wave_countdown.visible,
+		"temporary wave announcement with no countdown outside last 15 seconds")
 	enemies.wave_remaining=12
 	enemies._update_arena(0)
 	game.hud._process(0)
 	check(game.hud.wave_countdown.text=="NEXT WAVE IN 00:12", "last 15 seconds use mm:ss approaching-wave countdown")
 	game.hud._process(0.3)
-	check(game.hud.wave_announcement.text=="WAVE 2" and game.hud.wave_announcement.modulate.a==1,
-		"three-second fleet banner has a visible plateau")
-	game.hud._fleet_banner_left=2.95
+	check(game.hud.wave_announcement.text=="WAVE II" and game.hud.wave_announcement.modulate.a==1,
+		"brief fleet ribbon has a visible plateau")
+	game.hud._fleet_banner_left=game.hud.FLEET_BANNER_SECONDS
 	game.hud._process(0)
-	check(game.hud.wave_announcement.modulate.a>0 and game.hud.wave_announcement.modulate.a<0.3,
-		"wave announcement fades in")
+	check(game.hud.wave_announcement.modulate.a==1,
+		"wave announcement appears immediately")
 	game.hud._fleet_banner_left=0.1
 	game.hud._process(0)
 	check(game.hud.wave_announcement.modulate.a>0 and game.hud.wave_announcement.modulate.a<0.3,

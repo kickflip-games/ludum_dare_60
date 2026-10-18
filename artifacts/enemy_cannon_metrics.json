@@ -1,0 +1,2699 @@
+{
+  "date": "2026-10-19",
+  "engine": "4.8.dev6.official.8898c2b3d",
+  "baseline": "Working checkout at task start, including pre-existing local armament/cadence changes; not a clean historical commit.",
+  "accuracy": {
+    "before": [
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": 0.0,
+        "hits": 1,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.49999999999999,
+          "2": 4.43333333333333,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 6.16666666666665,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          5.16666666666667
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 15.5333333333333,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 5.13333333333332,
+          "2": 3.8,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          5.3
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 5.79999999999999,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": -0.35,
+        "hits": 1,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.83333333333333,
+          "2": 4.1,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 5.83333333333332,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.8,
+          5.23333333333333
+        ],
+        "heading": 0.0,
+        "hits": 1,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 15.9,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.36666666666666,
+          "2": 4.56666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.8,
+          5.23333333333333
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 9.09999999999998,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          5.23333333333333
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 15.0,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 5.09999999999999,
+          "2": 3.83333333333333,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 2,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          5.4
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 11.5,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.8,
+          5.23333333333333
+        ],
+        "heading": -0.35,
+        "hits": 1,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.89999999999999,
+          "2": 4.03333333333333,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.8,
+          5.23333333333333
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 6.29999999999999,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          2.3,
+          7.33333333333333
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 4.56666666666666,
+          "2": 4.36666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          2.3
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 5.33333333333332,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          3.6
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 5.16666666666666,
+          "2": 3.76666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          3.6,
+          8.63333333333333
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 11.6333333333333,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 1.96666666666667,
+          "2": 7.53333333333332,
+          "3": 4.03333333333333,
+          "4": 2.46666666666667
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          2.3,
+          7.33333333333333
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 4.86666666666666,
+          "2": 4.06666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          2.3,
+          7.33333333333333,
+          15.9
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 10.3333333333333,
+        "salvos": 3,
+        "shots": 9,
+        "states": {
+          "1": 16.0
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": 0.0,
+        "hits": 1,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.56666666666666,
+          "2": 4.39999999999999,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 6.28333333333332,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          5.16666666666667
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 15.566666666667,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 5.18333333333332,
+          "2": 3.78333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          5.35
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 5.78333333333332,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": -0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.88333333333332,
+          "2": 4.08333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667,
+          5.16666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 5.96666666666665,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.81666666666667,
+          5.26666666666667
+        ],
+        "heading": 0.0,
+        "hits": 1,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 15.9333333333337,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.44999999999999,
+          "2": 4.51666666666666,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.81666666666667,
+          5.26666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 9.63333333333339,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          5.26666666666667
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 15.0333333333337,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 5.16666666666665,
+          "2": 3.79999999999999,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 2,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          5.51666666666667
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 11.9500000000002,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 1,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.81666666666667,
+          5.26666666666667
+        ],
+        "heading": -0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 4.94999999999999,
+          "2": 4.01666666666666,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.81666666666667,
+          5.26666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 7.43333333333331,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          2.31666666666667,
+          7.36666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 4.63333333333332,
+          "2": 4.33333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          2.31666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 5.34999999999999,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          3.63333333333333
+        ],
+        "heading": 0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 5.23333333333332,
+          "2": 3.73333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          3.63333333333333,
+          8.68333333333333
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 13.1833333333336,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 2.0,
+          "2": 7.51666666666665,
+          "3": 4.01666666666666,
+          "4": 2.46666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          2.31666666666667,
+          7.36666666666667
+        ],
+        "heading": -0.35,
+        "hits": 1,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 4.93333333333332,
+          "2": 4.03333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          2.31666666666667,
+          7.36666666666667,
+          15.9666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 10.5000000000001,
+        "salvos": 3,
+        "shots": 9,
+        "states": {
+          "1": 16.0000000000004
+        },
+        "warnings": 3
+      }
+    ],
+    "after": [
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.43333333333333,
+          4.5,
+          12.1666666666667
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 16.0,
+        "salvos": 3,
+        "shots": 6,
+        "states": {
+          "1": 2.83333333333333,
+          "2": 6.09999999999999,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.43333333333333,
+          4.5
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 6.83333333333332,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 2.83333333333333,
+          "2": 6.09999999999999,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          4.5,
+          11.9666666666667
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          4.5
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 6.06666666666665,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.43333333333333,
+          4.5
+        ],
+        "heading": -0.35,
+        "hits": 2,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 3.46666666666666,
+          "2": 5.46666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.43333333333333
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "cutter",
+        "range_seconds": 5.16666666666666,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.46666666666666,
+          "2": 5.46666666666666,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 1,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.33333333333333,
+          3.8,
+          6.26666666666667
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 16.0,
+        "salvos": 3,
+        "shots": 6,
+        "states": {
+          "1": 2.8,
+          "2": 6.13333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 4
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.33333333333333,
+          3.8
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 6.86666666666665,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 2.8,
+          "2": 6.13333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          3.8,
+          10.5333333333333
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 15.4333333333333,
+        "salvos": 2,
+        "shots": 3,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          3.8
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 6.19999999999999,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.8,
+          4.26666666666667,
+          11.5333333333333
+        ],
+        "heading": -0.35,
+        "hits": 3,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 16.0,
+        "salvos": 3,
+        "shots": 5,
+        "states": {
+          "1": 3.43333333333333,
+          "2": 5.49999999999999,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.8,
+          4.26666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "skiff",
+        "range_seconds": 5.83333333333332,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 3.43333333333333,
+          "2": 5.49999999999999,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          6.0,
+          12.5666666666667
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 3,
+        "shots": 9,
+        "states": {
+          "1": 2.86666666666667,
+          "2": 6.06666666666665,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 6.46666666666665,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 2.86666666666667,
+          "2": 6.06666666666665,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          2.66666666666667,
+          12.9666666666667
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          2.66666666666667
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 6.93333333333332,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 3.6,
+          "2": 5.33333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 1,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.66666666666667,
+          13.8333333333333
+        ],
+        "heading": -0.35,
+        "hits": 2,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 16.0,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 3.5,
+          "2": 5.43333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.66666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 30,
+        "kind": "heavy",
+        "range_seconds": 5.06666666666666,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 3.5,
+          "2": 5.43333333333332,
+          "3": 4.03333333333333,
+          "4": 3.03333333333333
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.4,
+          4.45,
+          12.1833333333333
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 16.0000000000004,
+        "salvos": 3,
+        "shots": 6,
+        "states": {
+          "1": 2.86666666666666,
+          "2": 6.09999999999998,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.4,
+          4.45
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 6.83333333333331,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 2.86666666666666,
+          "2": 6.09999999999998,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          4.45,
+          11.9666666666667
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 3.63333333333333,
+          "2": 5.33333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          4.45
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 6.03333333333332,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.63333333333333,
+          "2": 5.33333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.4,
+          4.45,
+          12.2166666666667,
+          15.5
+        ],
+        "heading": -0.35,
+        "hits": 3,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 16.0000000000004,
+        "salvos": 4,
+        "shots": 8,
+        "states": {
+          "1": 3.53333333333333,
+          "2": 5.43333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 4
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.4
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "cutter",
+        "range_seconds": 5.11666666666665,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.53333333333333,
+          "2": 5.43333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.3,
+          3.75,
+          6.2
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 15.966666666667,
+        "salvos": 3,
+        "shots": 6,
+        "states": {
+          "1": 2.84999999999999,
+          "2": 6.11666666666665,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.3,
+          3.75
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 6.86666666666665,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 2.84999999999999,
+          "2": 6.11666666666665,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 2,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          3.75,
+          10.35
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 15.3833333333337,
+        "salvos": 2,
+        "shots": 3,
+        "states": {
+          "1": 3.64999999999999,
+          "2": 5.31666666666665,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 4
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 1,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          3.75
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 6.18333333333332,
+        "salvos": 1,
+        "shots": 2,
+        "states": {
+          "1": 3.64999999999999,
+          "2": 5.31666666666665,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 4,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.71666666666667,
+          4.16666666666667,
+          10.6333333333333,
+          13.95
+        ],
+        "heading": -0.35,
+        "hits": 4,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 16.0000000000004,
+        "salvos": 4,
+        "shots": 7,
+        "states": {
+          "1": 3.48333333333333,
+          "2": 5.48333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 4
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.71666666666667,
+          4.16666666666667
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "skiff",
+        "range_seconds": 6.06666666666665,
+        "salvos": 2,
+        "shots": 4,
+        "states": {
+          "1": 3.48333333333333,
+          "2": 5.48333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 3,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": false,
+        "fire_times": [
+          1.63333333333333,
+          5.91666666666667,
+          12.5833333333333
+        ],
+        "heading": 0.0,
+        "hits": 3,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 3,
+        "shots": 9,
+        "states": {
+          "1": 2.91666666666666,
+          "2": 6.04999999999998,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 32.0,
+        "dodge": true,
+        "fire_times": [
+          1.63333333333333
+        ],
+        "heading": 0.0,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 6.44999999999998,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 2.91666666666666,
+          "2": 6.04999999999998,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": false,
+        "fire_times": [
+          2.65,
+          13.0666666666667
+        ],
+        "heading": 0.35,
+        "hits": 2,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 3.63333333333333,
+          "2": 5.33333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 2
+      },
+      {
+        "all_damage": 0,
+        "cancelled": 0,
+        "distance": 42.0,
+        "dodge": true,
+        "fire_times": [
+          2.65
+        ],
+        "heading": 0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 6.91666666666665,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 3.63333333333333,
+          "2": 5.33333333333332,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 1
+      },
+      {
+        "all_damage": 2,
+        "cancelled": 1,
+        "distance": 52.0,
+        "dodge": false,
+        "fire_times": [
+          1.63333333333333,
+          13.4333333333333
+        ],
+        "heading": -0.35,
+        "hits": 2,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 16.0000000000004,
+        "salvos": 2,
+        "shots": 6,
+        "states": {
+          "1": 3.56666666666666,
+          "2": 5.39999999999999,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 3
+      },
+      {
+        "all_damage": 1,
+        "cancelled": 0,
+        "distance": 52.0,
+        "dodge": true,
+        "fire_times": [
+          1.63333333333333
+        ],
+        "heading": -0.35,
+        "hits": 0,
+        "hz": 60,
+        "kind": "heavy",
+        "range_seconds": 5.01666666666665,
+        "salvos": 1,
+        "shots": 3,
+        "states": {
+          "1": 3.56666666666666,
+          "2": 5.39999999999999,
+          "3": 4.01666666666666,
+          "4": 3.01666666666666
+        },
+        "warnings": 1
+      }
+    ]
+  },
+  "fleet": {
+    "before": [
+      {
+        "assignments": [
+          1,
+          2,
+          3,
+          4,
+          1,
+          2
+        ],
+        "attack_peak": 0,
+        "cancelled": 1,
+        "cannon_hits": 0,
+        "collisions": 9,
+        "count": 4,
+        "hits": 3,
+        "holding_travel": [
+          207.273439094424,
+          224.758717611432,
+          292.969067141414,
+          264.19227977097,
+          0.0,
+          0.0
+        ],
+        "hz": 30,
+        "longest_stop": 0.0333333333333333,
+        "max_radius": 156.009536743164,
+        "max_speed": 14.560546875,
+        "max_turn": 0.650000000000002,
+        "minimum_clearance": 9.97456645965576,
+        "minimum_separation": 17.1781406402588,
+        "peak": 4,
+        "range_seconds": {
+          "0": 65.5999999999988,
+          "1": 41.3666666666669,
+          "2": 34.1000000000006,
+          "3": 18.7666666666668
+        },
+        "salvos": 5,
+        "seconds": 90,
+        "shot_times": {
+          "0": [
+            1.73333333333334,
+            47.6666666666665,
+            59.8999999999992,
+            82.2999999999979
+          ],
+          "3": [
+            27.2333333333338
+          ]
+        },
+        "shots": 10,
+        "slot_peak": 2,
+        "state_seconds": {
+          "0:1": 49.1666666666664,
+          "0:3": 4.03333333333333,
+          "0:4": 3.03333333333333,
+          "0:5": 33.7666666666673,
+          "1:1": 48.6333333333331,
+          "1:3": 4.03333333333333,
+          "1:4": 3.03333333333333,
+          "1:5": 33.7666666666673,
+          "2:1": 39.966666666667,
+          "2:3": 4.03333333333333,
+          "2:4": 3.03333333333333,
+          "2:5": 41.9000000000002,
+          "3:1": 39.966666666667,
+          "3:3": 4.03333333333333,
+          "3:4": 3.03333333333333,
+          "3:5": 41.3666666666669
+        },
+        "warnings": [
+          {
+            "enemy": 1,
+            "seconds": 0.0666666666666667
+          },
+          {
+            "enemy": 4,
+            "seconds": 25.5666666666671
+          },
+          {
+            "enemy": 1,
+            "seconds": 46.0
+          },
+          {
+            "enemy": 3,
+            "seconds": 49.8999999999997
+          },
+          {
+            "enemy": 1,
+            "seconds": 58.2333333333326
+          },
+          {
+            "enemy": 1,
+            "seconds": 80.6333333333313
+          }
+        ]
+      },
+      {
+        "assignments": [
+          1,
+          2,
+          3,
+          4,
+          1,
+          2
+        ],
+        "attack_peak": 0,
+        "cancelled": 0,
+        "cannon_hits": 0,
+        "collisions": 1,
+        "count": 4,
+        "hits": 1,
+        "holding_travel": [
+          200.994551148266,
+          227.140825860202,
+          295.496904507279,
+          264.454122200608,
+          0.0,
+          0.0
+        ],
+        "hz": 60,
+        "longest_stop": 1.03333333333333,
+        "max_radius": 156.182006835938,
+        "max_speed": 14.5612639188766,
+        "max_turn": 0.650000000000008,
+        "minimum_clearance": 10.9781179428101,
+        "minimum_separation": 18.6514892578125,
+        "peak": 4,
+        "range_seconds": {
+          "0": 76.7833333333303,
+          "1": 17.6333333333336,
+          "2": 11.5000000000002,
+          "3": 18.0333333333336
+        },
+        "salvos": 4,
+        "seconds": 90,
+        "shot_times": {
+          "0": [
+            1.7,
+            46.283333333332
+          ],
+          "2": [
+            50.1333333333318,
+            53.6333333333316
+          ]
+        },
+        "shots": 8,
+        "slot_peak": 2,
+        "state_seconds": {
+          "0:1": 49.1999999999985,
+          "0:3": 4.01666666666666,
+          "0:4": 3.01666666666666,
+          "0:5": 33.766666666666,
+          "1:1": 48.6833333333319,
+          "1:3": 4.01666666666666,
+          "1:4": 3.01666666666666,
+          "1:5": 33.766666666666,
+          "2:1": 39.999999999999,
+          "2:3": 4.01666666666666,
+          "2:4": 3.01666666666666,
+          "2:5": 41.9333333333322,
+          "3:1": 39.999999999999,
+          "3:3": 4.01666666666666,
+          "3:4": 3.01666666666666,
+          "3:5": 41.4166666666656
+        },
+        "warnings": [
+          {
+            "enemy": 1,
+            "seconds": 0.0333333333333333
+          },
+          {
+            "enemy": 1,
+            "seconds": 44.6166666666654
+          },
+          {
+            "enemy": 3,
+            "seconds": 48.4666666666652
+          },
+          {
+            "enemy": 3,
+            "seconds": 51.966666666665
+          }
+        ]
+      }
+    ],
+    "after": [
+      {
+        "assignments": [
+          1,
+          2,
+          3,
+          4,
+          2,
+          1
+        ],
+        "attack_peak": 2,
+        "cancelled": 1,
+        "cannon_hits": 6,
+        "collisions": 0,
+        "count": 4,
+        "hits": 6,
+        "holding_travel": [
+          64.0352710038424,
+          206.957410998642,
+          361.729963213205,
+          427.839609257877,
+          0.0,
+          0.0
+        ],
+        "hz": 30,
+        "longest_stop": 0.0,
+        "max_radius": 156.009536743164,
+        "max_speed": 14.5605236291885,
+        "max_turn": 0.650000000000002,
+        "minimum_clearance": 6.16730117797852,
+        "minimum_separation": 13.4693956375122,
+        "peak": 4,
+        "range_seconds": {
+          "0": 20.7666666666669,
+          "1": 37.0666666666671,
+          "2": 51.9333333333329,
+          "3": 69.6333333333319
+        },
+        "salvos": 8,
+        "seconds": 90,
+        "shot_times": {
+          "0": [
+            1.5
+          ],
+          "1": [
+            8.33333333333331,
+            75.166666666665
+          ],
+          "2": [
+            25.5333333333338,
+            32.3333333333341,
+            39.0333333333337,
+            42.1000000000002
+          ],
+          "3": [
+            54.6333333333328
+          ]
+        },
+        "shots": 16,
+        "slot_peak": 2,
+        "state_seconds": {
+          "0:1": 73.5666666666651,
+          "0:3": 4.03333333333333,
+          "0:4": 3.03333333333333,
+          "0:5": 9.36666666666664,
+          "1:1": 46.0333333333333,
+          "1:2": 4.23333333333333,
+          "1:3": 4.03333333333333,
+          "1:4": 3.03333333333333,
+          "1:5": 32.1333333333341,
+          "2:1": 22.4000000000003,
+          "2:2": 7.86666666666665,
+          "2:3": 4.03333333333333,
+          "2:4": 3.03333333333333,
+          "2:5": 51.5999999999996,
+          "3:1": 2.5,
+          "3:2": 9.03333333333331,
+          "3:3": 4.03333333333333,
+          "3:4": 3.03333333333333,
+          "3:5": 69.7999999999986
+        },
+        "warnings": [
+          {
+            "enemy": 1,
+            "seconds": 0.966666666666667
+          },
+          {
+            "enemy": 2,
+            "seconds": 7.79999999999998
+          },
+          {
+            "enemy": 3,
+            "seconds": 25.0000000000004
+          },
+          {
+            "enemy": 3,
+            "seconds": 31.8000000000007
+          },
+          {
+            "enemy": 3,
+            "seconds": 38.5000000000004
+          },
+          {
+            "enemy": 3,
+            "seconds": 41.5666666666669
+          },
+          {
+            "enemy": 4,
+            "seconds": 54.0999999999995
+          },
+          {
+            "enemy": 2,
+            "seconds": 74.6333333333317
+          },
+          {
+            "enemy": 2,
+            "seconds": 80.199999999998
+          }
+        ]
+      },
+      {
+        "assignments": [
+          1,
+          2,
+          3,
+          4,
+          1,
+          2,
+          3
+        ],
+        "attack_peak": 1,
+        "cancelled": 5,
+        "cannon_hits": 9,
+        "collisions": 0,
+        "count": 4,
+        "hits": 9,
+        "holding_travel": [
+          149.487858958542,
+          151.698006317019,
+          409.972038462758,
+          356.850029043853,
+          0.0,
+          0.0
+        ],
+        "hz": 60,
+        "longest_stop": 0.0,
+        "max_radius": 156.182006835938,
+        "max_speed": 14.5608124136925,
+        "max_turn": 0.650000000000008,
+        "minimum_clearance": 8.41243553161621,
+        "minimum_separation": 15.7449207305908,
+        "peak": 4,
+        "range_seconds": {
+          "0": 86.1499999999964,
+          "1": 28.483333333333,
+          "2": 47.3666666666653,
+          "3": 72.4999999999972
+        },
+        "salvos": 9,
+        "seconds": 90,
+        "shot_times": {
+          "0": [
+            1.43333333333333,
+            20.1833333333335,
+            56.6666666666647,
+            66.1999999999975,
+            70.516666666664
+          ],
+          "1": [
+            78.0999999999969
+          ],
+          "3": [
+            53.0333333333316,
+            60.1999999999979,
+            63.8666666666643
+          ]
+        },
+        "shots": 18,
+        "slot_peak": 2,
+        "state_seconds": {
+          "0:1": 45.6166666666654,
+          "0:2": 9.60000000000006,
+          "0:3": 8.03333333333331,
+          "0:4": 3.76666666666666,
+          "0:5": 22.9833333333333,
+          "1:1": 59.8499999999979,
+          "1:3": 4.01666666666666,
+          "1:4": 3.01666666666666,
+          "1:5": 22.6,
+          "2:1": 13.3666666666669,
+          "2:2": 8.55,
+          "2:3": 4.01666666666666,
+          "2:4": 3.01666666666666,
+          "2:5": 60.0166666666645,
+          "3:1": 21.2500000000001,
+          "3:2": 3.56666666666666,
+          "3:3": 4.01666666666666,
+          "3:4": 3.01666666666666,
+          "3:5": 56.5999999999981
+        },
+        "warnings": [
+          {
+            "enemy": 1,
+            "seconds": 0.916666666666668
+          },
+          {
+            "enemy": 1,
+            "seconds": 19.6666666666668
+          },
+          {
+            "enemy": 1,
+            "seconds": 30.2666666666662
+          },
+          {
+            "enemy": 3,
+            "seconds": 39.9666666666657
+          },
+          {
+            "enemy": 3,
+            "seconds": 46.5999999999986
+          },
+          {
+            "enemy": 4,
+            "seconds": 52.516666666665
+          },
+          {
+            "enemy": 1,
+            "seconds": 56.1499999999981
+          },
+          {
+            "enemy": 4,
+            "seconds": 59.6833333333312
+          },
+          {
+            "enemy": 1,
+            "seconds": 62.6333333333311
+          },
+          {
+            "enemy": 4,
+            "seconds": 63.3499999999977
+          },
+          {
+            "enemy": 1,
+            "seconds": 65.6833333333309
+          },
+          {
+            "enemy": 1,
+            "seconds": 69.9999999999973
+          },
+          {
+            "enemy": 2,
+            "seconds": 77.5833333333302
+          },
+          {
+            "enemy": 1,
+            "seconds": 83.0999999999966
+          }
+        ]
+      }
+    ]
+  },
+  "arena_attempts": {
+    "baseline": {
+      "all_impacts": 32,
+      "capture_counts": {
+        "Cutter": 0,
+        "Flagship": 0,
+        "Heavy": 0,
+        "Skiff": 0
+      },
+      "damage": [
+        {
+          "hull": 2,
+          "reason": "PROXIMITY MINE HIT",
+          "seconds": 123.616666666661
+        }
+      ],
+      "enemy_shots": 31,
+      "enemy_warnings": 31,
+      "helm_exits": 0,
+      "hits_taken": 1,
+      "hull": 3,
+      "kills": 15,
+      "max_roll_degrees": 12.0,
+      "max_wave_yaw": 0.56,
+      "peak_living": 5,
+      "seconds": 255.050000000095,
+      "ship_hits": 33,
+      "shots": 45,
+      "state": 3,
+      "wave": 5,
+      "waves": [
+        {
+          "hull": 3,
+          "kills": 0,
+          "seconds": 0.0166666666666667,
+          "shots": 0,
+          "wave": 1
+        },
+        {
+          "hull": 3,
+          "kills": 2,
+          "seconds": 26.8166666666664,
+          "shots": 4,
+          "wave": 2
+        },
+        {
+          "hull": 3,
+          "kills": 4,
+          "seconds": 76.8333333333303,
+          "shots": 9,
+          "wave": 3
+        },
+        {
+          "hull": 2,
+          "kills": 7,
+          "seconds": 141.850000000005,
+          "shots": 20,
+          "wave": 4
+        },
+        {
+          "hull": 3,
+          "kills": 14,
+          "seconds": 216.966666666731,
+          "shots": 34,
+          "wave": 5
+        }
+      ],
+      "won": true
+    },
+    "final_without_shell_evasion": {
+      "all_impacts": 9,
+      "capture_counts": {
+        "Cutter": 0,
+        "Flagship": 0,
+        "Heavy": 0,
+        "Skiff": 0
+      },
+      "damage": [
+        {
+          "hull": 2,
+          "reason": "ENEMY BROADSIDE HIT",
+          "seconds": 28.233333333333
+        },
+        {
+          "hull": 1,
+          "reason": "ENEMY BROADSIDE HIT",
+          "seconds": 34.4499999999993
+        },
+        {
+          "hull": 1,
+          "reason": "ENEMY BROADSIDE HIT",
+          "seconds": 80.3166666666634
+        },
+        {
+          "hull": 0,
+          "reason": "ENEMY BROADSIDE HIT",
+          "seconds": 83.3999999999966
+        }
+      ],
+      "enemy_shots": 24,
+      "enemy_warnings": 14,
+      "evasion": false,
+      "helm_exits": 0,
+      "hits_taken": 4,
+      "hull": 0,
+      "kills": 5,
+      "max_roll_degrees": 12.0,
+      "max_wave_yaw": 0.56,
+      "peak_living": 4,
+      "seconds": 83.3999999999966,
+      "ship_hits": 8,
+      "shots": 11,
+      "state": 2,
+      "wave": 3,
+      "waves": [
+        {
+          "hull": 3,
+          "kills": 0,
+          "seconds": 0.0166666666666667,
+          "shots": 0,
+          "wave": 1
+        },
+        {
+          "hull": 1,
+          "kills": 1,
+          "seconds": 40.0333333333323,
+          "shots": 2,
+          "wave": 2
+        },
+        {
+          "hull": 2,
+          "kills": 5,
+          "seconds": 76.6833333333303,
+          "shots": 11,
+          "wave": 3
+        }
+      ],
+      "won": false
+    },
+    "final_evasion_first_attempt": {
+      "all_impacts": 25,
+      "capture_counts": {
+        "Cutter": 0,
+        "Flagship": 0,
+        "Heavy": 0,
+        "Skiff": 0
+      },
+      "damage": [
+        {
+          "hull": 2,
+          "reason": "HULL STRUCK FLOATING BARRELS",
+          "seconds": 265.716666666754
+        },
+        {
+          "hull": 1,
+          "reason": "HULL STRUCK THE HOSTILE SKIFF",
+          "seconds": 271.783333333415
+        },
+        {
+          "hull": 0,
+          "reason": "HULL STRUCK A ROCK",
+          "seconds": 296.950000000059
+        }
+      ],
+      "enemy_shots": 41,
+      "enemy_warnings": 27,
+      "evasion": true,
+      "helm_exits": 0,
+      "hits_taken": 3,
+      "hull": 0,
+      "kills": 13,
+      "max_roll_degrees": 11.9999999999999,
+      "max_wave_yaw": 0.56,
+      "peak_living": 5,
+      "seconds": 296.950000000059,
+      "ship_hits": 25,
+      "shots": 36,
+      "state": 2,
+      "wave": 5,
+      "waves": [
+        {
+          "hull": 3,
+          "kills": 0,
+          "seconds": 0.0166666666666667,
+          "shots": 0,
+          "wave": 1
+        },
+        {
+          "hull": 3,
+          "kills": 1,
+          "seconds": 40.0333333333323,
+          "shots": 3,
+          "wave": 2
+        },
+        {
+          "hull": 3,
+          "kills": 3,
+          "seconds": 90.0499999999962,
+          "shots": 8,
+          "wave": 3
+        },
+        {
+          "hull": 3,
+          "kills": 8,
+          "seconds": 155.066666666682,
+          "shots": 18,
+          "wave": 4
+        },
+        {
+          "hull": 3,
+          "kills": 13,
+          "seconds": 235.083333333413,
+          "shots": 31,
+          "wave": 5
+        }
+      ],
+      "won": false
+    },
+    "final_evasion_navigation_priority": {
+      "all_impacts": 35,
+      "capture_counts": {
+        "Cutter": 0,
+        "Flagship": 0,
+        "Heavy": 0,
+        "Skiff": 0
+      },
+      "damage": [
+        {
+          "hull": 2,
+          "reason": "ENEMY BROADSIDE HIT",
+          "seconds": 167.333333333359
+        },
+        {
+          "hull": 1,
+          "reason": "PROXIMITY MINE HIT",
+          "seconds": 197.400000000049
+        }
+      ],
+      "enemy_shots": 49,
+      "enemy_warnings": 25,
+      "evasion": true,
+      "helm_exits": 0,
+      "hits_taken": 2,
+      "hull": 2,
+      "kills": 17,
+      "max_roll_degrees": 11.9999999999999,
+      "max_wave_yaw": 0.56,
+      "peak_living": 5,
+      "seconds": 264.450000000088,
+      "ship_hits": 36,
+      "shots": 43,
+      "state": 3,
+      "wave": 5,
+      "waves": [
+        {
+          "hull": 3,
+          "kills": 0,
+          "seconds": 0.0166666666666667,
+          "shots": 0,
+          "wave": 1
+        },
+        {
+          "hull": 3,
+          "kills": 1,
+          "seconds": 40.0333333333323,
+          "shots": 3,
+          "wave": 2
+        },
+        {
+          "hull": 3,
+          "kills": 3,
+          "seconds": 90.0499999999962,
+          "shots": 8,
+          "wave": 3
+        },
+        {
+          "hull": 3,
+          "kills": 8,
+          "seconds": 155.066666666682,
+          "shots": 19,
+          "wave": 4
+        },
+        {
+          "hull": 2,
+          "kills": 14,
+          "seconds": 213.433333333395,
+          "shots": 31,
+          "wave": 5
+        }
+      ],
+      "won": true
+    }
+  },
+  "validation": [
+    {
+      "name": "enemy_gunnery_smoke",
+      "checks": 23,
+      "failures": 0
+    },
+    {
+      "name": "controls_lifecycle_smoke",
+      "checks": 46,
+      "failures": 0
+    },
+    {
+      "name": "enemy_cadence_smoke",
+      "checks": 37,
+      "failures": 0
+    },
+    {
+      "name": "enemy_armament_smoke",
+      "checks": 224,
+      "failures": 0
+    },
+    {
+      "name": "combat_feel_smoke",
+      "checks": 66,
+      "failures": 0
+    },
+    {
+      "name": "attack_run_smoke",
+      "checks": 28,
+      "failures": 0
+    },
+    {
+      "name": "night_boost_wave_smoke",
+      "checks": 48,
+      "failures": 0
+    },
+    {
+      "name": "naval_ai_smoke",
+      "checks": 30,
+      "failures": 0
+    },
+    {
+      "name": "enemy_pressure_smoke",
+      "checks": 27,
+      "failures": 0
+    },
+    {
+      "name": "boss_smoke",
+      "checks": 139,
+      "failures": 0
+    },
+    {
+      "name": "arcade_controls_smoke",
+      "checks": 74,
+      "failures": 0
+    },
+    {
+      "name": "wave_encounter_smoke",
+      "checks": 33,
+      "failures": 0
+    },
+    {
+      "name": "starboard_cone_smoke",
+      "checks": 33,
+      "failures": 0
+    },
+    {
+      "name": "damage_smoke",
+      "checks": 38,
+      "failures": 0
+    },
+    {
+      "name": "fleet_interactions_smoke",
+      "checks": 34,
+      "failures": 0
+    },
+    {
+      "name": "survival_smoke",
+      "checks": 81,
+      "failures": 0
+    },
+    {
+      "name": "arena_smoke",
+      "checks": 139,
+      "failures": 0
+    },
+    {
+      "name": "enemy_accuracy_smoke",
+      "checks": 132,
+      "failures": 0
+    },
+    {
+      "name": "fleet_smoke",
+      "checks": 50,
+      "failures": 0
+    },
+    {
+      "name": "fleet_smoke --pressure",
+      "checks": 22,
+      "failures": 0
+    }
+  ],
+  "source_hashes": {
+    "game/enemy_ship.gd": {
+      "before_sha256": "2344eb80ec906f6ba1c196e6901fd9897c09c12c417542d8f87318d9ca973c7b",
+      "after_sha256": "b106d2be2f71e7e297ecbfc1c5b7743cb2eb2cbd499afbc12d6aa6d717be08da"
+    },
+    "game/enemy_archetype.gd": {
+      "before_sha256": "02074ae07bd4013155435a497bc6372bd0d26b55e9dd4cc53ff29c00be2c4702",
+      "after_sha256": "823b4b9fefd5126a4c86e3be83b4df063185bda6cb8c5f3e43384e95fc65b7a7"
+    },
+    "game/enemy_director.gd": {
+      "before_sha256": "ce3e1f9acb51c1ac3eafd059fae14f3cbc17295039082dd74ec25c68b8f67ba3",
+      "after_sha256": "9c91c2ed7fab95e07546ac3cf590f2b9f9494fc4c8bd1fd7ce1ca372747be607"
+    },
+    "game/survival_settings.gd": {
+      "before_sha256": "667c5ed941592e93dbcc73221a496bc3d3ec494ecdb3664c86d1f76f84828138",
+      "after_sha256": "f5bcaa845f5d345b0d9193d917cd692353faafe7b42f4f2db4ef228a745b6b79"
+    },
+    "game/enemies/cutter.tres": {
+      "before_sha256": "8df4b0a82ea4ec57026a38ad7e9ac4eceff0ec57c8236d2511bd6b0da7d493e1",
+      "after_sha256": "8e255fd403de2c8879572bd73cc079db2924873db0ac4409faa57bc801fff783"
+    },
+    "game/enemies/skiff.tres": {
+      "before_sha256": "11bf1886ae79dcce4961ae098815dee47dcfa4530a14bd51435dffb2ce05a8da",
+      "after_sha256": "23bb68235ce449d346d54de4958d2339d5ed83422680b4367ae1b42bd1b03014"
+    },
+    "game/enemies/heavy.tres": {
+      "before_sha256": "c877d8d745db62d82c236589ea678bffd0a5da7e7b8fb03cf2474c76da49b0ea",
+      "after_sha256": "7b668f1cadc1b7da6ba4a0047c4444a96dada89e3fdfd3d20ed8375401b77d43"
+    }
+  },
+  "notes": [
+    "Accuracy fixtures have 30 test-only hull points and retain normal damage immunity. Fleet observation uses 100 test-only hull points. Arena attempts use production hull, immunity, repair, controls, rosters and victory.",
+    "hits means accepted physical cannon damage events from the firing ship counter; simultaneous shells blocked by immunity do not count again. all_damage also includes hull/terrain contacts.",
+    "Fleet warnings count accepted attack attempts; denied acquisition checks per frame are not counted.",
+    "Final browser build exported and rendered locally; pointer-lock/Chromium errors prevent a clean browser pass."
+  ],
+  "crowded_30_fps_confirmation": {
+    "assignments": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      2,
+      1,
+      3,
+      5,
+      4,
+      2
+    ],
+    "attack_peak": 1,
+    "cancelled": 1,
+    "cannon_hits": 8,
+    "collisions": 6,
+    "count": 6,
+    "hits": 8,
+    "holding_travel": [
+      592.666890665889,
+      840.04909196496,
+      569.291094556451,
+      580.033616200089,
+      640.67711608205,
+      849.482819564641
+    ],
+    "hz": 30,
+    "longest_stop": 0.733333333333333,
+    "max_radius": 156.009536743164,
+    "max_speed": 14.5605683326721,
+    "max_turn": 0.650000000000002,
+    "minimum_clearance": -0.0415654182434082,
+    "minimum_separation": 7.52053499221802,
+    "peak": 6,
+    "range_seconds": {
+      "0": 124.299999999996,
+      "1": 42.0000000000002,
+      "2": 14.9,
+      "3": 20.4666666666668,
+      "4": 66.1333333333321
+    },
+    "salvos": 9,
+    "seconds": 180,
+    "shot_times": {
+      "0": [
+        1.5,
+        19.3333333333335,
+        22.4000000000003
+      ],
+      "1": [
+        8.33333333333331,
+        81.8999999999979
+      ],
+      "3": [
+        34.1000000000006
+      ],
+      "4": [
+        64.2666666666656,
+        144.799999999994,
+        154.899999999994
+      ]
+    },
+    "shots": 18,
+    "slot_peak": 2,
+    "state_seconds": {
+      "0:1": 58.1999999999993,
+      "0:2": 9.03333333333331,
+      "0:3": 8.06666666666665,
+      "0:4": 6.06666666666665,
+      "0:5": 98.6333333333303,
+      "1:1": 28.7333333333339,
+      "1:2": 5.76666666666666,
+      "1:3": 8.06666666666665,
+      "1:4": 3.06666666666667,
+      "1:5": 133.833333333328,
+      "2:1": 79.9333333333314,
+      "2:3": 8.06666666666665,
+      "2:4": 6.06666666666665,
+      "2:5": 84.8666666666644,
+      "3:1": 69.3999999999986,
+      "3:3": 4.03333333333333,
+      "3:4": 3.03333333333333,
+      "3:5": 101.93333333333,
+      "4:1": 45.5333333333333,
+      "4:2": 4.83333333333333,
+      "4:3": 8.06666666666665,
+      "4:4": 6.06666666666665,
+      "4:5": 113.366666666663,
+      "5:1": 39.966666666667,
+      "5:3": 4.03333333333333,
+      "5:4": 3.03333333333333,
+      "5:5": 130.299999999995
+    },
+    "warnings": [
+      {
+        "enemy": 1,
+        "seconds": 0.966666666666667
+      },
+      {
+        "enemy": 2,
+        "seconds": 7.79999999999998
+      },
+      {
+        "enemy": 1,
+        "seconds": 18.8000000000001
+      },
+      {
+        "enemy": 1,
+        "seconds": 21.8666666666669
+      },
+      {
+        "enemy": 4,
+        "seconds": 33.5666666666673
+      },
+      {
+        "enemy": 5,
+        "seconds": 63.7333333333323
+      },
+      {
+        "enemy": 2,
+        "seconds": 78.2333333333315
+      },
+      {
+        "enemy": 2,
+        "seconds": 81.3666666666646
+      },
+      {
+        "enemy": 5,
+        "seconds": 144.266666666661
+      },
+      {
+        "enemy": 5,
+        "seconds": 154.36666666666
+      }
+    ]
+  }
+}

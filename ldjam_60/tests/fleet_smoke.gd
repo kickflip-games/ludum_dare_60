@@ -40,6 +40,7 @@ func sail_orbit(game, pilot) -> void:
 	pilot.helm(wrapf(desired - game.heading, -PI, PI) * 3.0)
 
 func sustain(count: int, hz: int, seconds: int = 180) -> void:
+	Engine.physics_ticks_per_second = hz
 	var game = await make_game(count)
 	game.hull_capacity = 100
 	game.hull = 100

@@ -14,6 +14,8 @@ earlier survivors alive. Entering the old harbour never wins.
   input; Continue/Enter moves on, and Skip begins the voyage immediately.
   Finish or Skip starts a fresh game, clearing practice time, shots and rewards.
   The Walkthrough button is always available on the start menu for replay.
+- **Credits:** available from the title, pause and result menus; Back or Esc returns
+  to the previous menu without starting or resuming play.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
@@ -32,7 +34,8 @@ earlier survivors alive. Entering the old harbour never wins.
   (height multiplier 0.88). Existing directional crest force is **50% stronger**,
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
-  **M:** mute; **Esc:** quit. Settings shows the control reference and Back.
+  **M:** mute, including background music; **Esc:** pause / resume. The pause menu offers Resume, Settings, Credits and Main Menu;
+  Esc in Settings returns to the previous menu. Settings shows the control reference and Back.
 - **Debug `+` (Shift+= or numpad +):** with **Development → Development Tools**
   enabled on the crossing, spawn all remaining ships for the current wave.
   This skips arrival delays and the ordinary ship cap; survivors, wave timers
@@ -168,9 +171,11 @@ history and the [arena review](artifacts/lighthouse_arena_review.md) for
 the preserved geometry work. Human combat balance remains untested.
 
 ```sh
+godot --headless --path ldjam_60 --script res://tests/music_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/starboard_cone_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/cannon_arc_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/pause_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/debug_wave_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
@@ -350,7 +355,7 @@ and a turn-back notice appears; steering remains available to sail back in.
 - **Hold E:** aim the existing starboard cannon; release to return to steering immediately. The cannon sweeps automatically; sailing and danger continue while manual steering is suspended.
 - **F:** fire once while holding E. Holding F never repeats fire; reload presses are discarded. Reload remains 1.5 seconds.
 - **Space** takes priority over E and F; A/D can steer while sighting. If E stays held, gun view resumes after Space is released without a queued shot.
-- **Hold R for 0.6 seconds:** restart during sailing; release early to cancel. After sinking or winning, press **R / Retry** immediately. **M:** mute. **Esc:** quit.
+- **Hold R for 0.6 seconds:** restart during sailing; release early to cancel. After sinking or winning, press **R / Retry** immediately. **M:** mute. **Esc:** pause / resume.
 
 There is no sailing compass, numeric heading or course line. After 0.40 seconds of
 holding Space, one magical star brightens over 0.40 seconds. Its horizontal direction

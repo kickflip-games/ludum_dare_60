@@ -8,6 +8,25 @@ var ship: CharacterBody3D
 var enabled := false
 var clock := 0.0
 var mines: Array[Node3D] = []
+var pool: Array[Node3D] = []
+
+func prepare() -> void:
+	if not pool.is_empty(): return
+	for i in MAXIMUM:
+		var mine: Node3D = MINE.instantiate()
+		mine.game = ship.game
+		mine.pooled = true
+		mine.trigger_radius = RADIUS
+		mine.arming_delay = 1.2
+		mine.lifetime = 16.0
+		ship.game.enemy_encounters.add_child(mine)
+		pool.append(mine)
+
+func dispose() -> void:
+	for mine in pool:
+		if is_instance_valid(mine): mine.queue_free()
+	pool.clear()
+	mines.clear()
 
 func reset() -> void:
 	for mine in mines:
@@ -48,13 +67,12 @@ func deploy() -> bool:
 	mines = mines.filter(func(mine): return is_instance_valid(mine) and not mine.spent)
 	if mines.size() >= MAXIMUM:
 		return false
-	var mine: Node3D = MINE.instantiate()
-	mine.game = game
-	mine.trigger_radius = RADIUS
-	mine.arming_delay = 1.2
-	mine.lifetime = 16.0
-	game.enemy_encounters.add_child(mine)
-	mine.position = at
-	mine.update_visuals()
+	var mine: Node3D = null
+	for candidate in pool:
+		if candidate.spent:
+			mine = candidate
+			break
+	assert(mine != null, "Prepared heavy mine pool must cover trail maximum")
+	mine.activate(at)
 	mines.append(mine)
 	return true

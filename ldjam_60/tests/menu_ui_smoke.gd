@@ -46,6 +46,7 @@ func _run() -> void:
 	var hud = game.hud
 	check(ProjectSettings.get_setting("application/config/name") == "Blackwater" and hud.menu_title.text == "BLACKWATER", "project and start screen use Blackwater")
 	check(hud.menu_column.get_node_or_null("LighthouseMark") == null, "start menu has no lighthouse icon")
+	check(hud.menu_actions.get_node_or_null("Quit") == null, "Web menu has no Quit button")
 	check(inside(hud.menu) and inside(hud.menu_title) and inside(hud.action_button), "initial menu fits before any resize or settings visit")
 	check(hud.action_button.has_focus() and hud.action_button.text == "SET SAIL", "title starts with focused Set Sail")
 	check(hud.menu_column.get_node_or_null("Kicker") == null and hud.menu_column.get_node_or_null("WaveRule") == null
@@ -61,7 +62,7 @@ func _run() -> void:
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
-		for control: Control in [hud.menu_title, hud.action_button, hud.walkthrough_button, hud.quit_button]:
+		for control: Control in [hud.menu_title, hud.action_button, hud.walkthrough_button, hud.settings_button, hud.credits_button]:
 			check(inside(control), "title %s fits %s" % [control.name, dimensions])
 		click(hud.settings_button)
 		await settle()
@@ -79,6 +80,25 @@ func _run() -> void:
 		key(KEY_ESCAPE, false)
 		await settle()
 		check(not hud.settings_open and hud.settings_button.has_focus(), "Escape returns from settings without quitting")
+		click(hud.credits_button)
+		await settle()
+		check(hud.credits_open and not hud.settings_open and hud.menu_title.text == "CREDITS" and hud.credits_back.has_focus(), "Credits opens with focused Back at %s" % dimensions)
+		for pair in [["ModelsNames", "Kenney · Quaternius"], ["CodingNames", "Mehdi Zahroui\nAvi Vajpeyi"], ["DiscussionNames", "Kieran Davidson\nRachel Coxhead"], ["MusicNames", "YD GDeshko"], ["SfxNames", "jdsherbert"]]:
+			check(hud.credits_panel.get_node(pair[0]).text == pair[1], "requested %s credit is exact" % pair[0])
+		for control: Control in [hud.menu_title, hud.credits_panel, hud.credits_back]:
+			check(inside(control), "credits %s fits %s" % [control.name, dimensions])
+		game._unhandled_input(begin)
+		hud._on_action_pressed()
+		check(game.state == game.State.READY and not hud.action_button.is_visible_in_tree(), "Credits blocks start shortcuts and hidden Set Sail")
+		key(KEY_ESCAPE, true)
+		key(KEY_ESCAPE, false)
+		await settle()
+		check(not hud.credits_open and hud.credits_button.has_focus() and hud.menu_title.text == "BLACKWATER", "Esc returns from Credits to title")
+	hud._show_credits(true)
+	key(KEY_ENTER, true)
+	key(KEY_ENTER, false)
+	await settle()
+	check(not hud.credits_open and game.state == game.State.READY and hud.credits_button.has_focus(), "Enter on Credits Back returns without starting")
 	hud._show_settings(true)
 	key(KEY_ENTER, true)
 	key(KEY_ENTER, false)
@@ -102,6 +122,15 @@ func _run() -> void:
 	check(hud.menu_body.visible and hud.menu_body.text == game.failure_reason, "defeat retains its actual cause instead of decorative copy")
 	for control: Control in [hud.menu_title, hud.main_menu_button]:
 		check(inside(control), "small result %s fits" % control.name)
+	click(hud.credits_button)
+	await settle()
+	key(KEY_R, true)
+	key(KEY_R, false)
+	await settle()
+	check(hud.credits_open and game.state == game.State.LOST, "Credits is available after defeat and blocks underlying Retry shortcut")
+	click(hud.credits_back)
+	await settle()
+	check(hud.menu_title.text == "LOST\nAT SEA" and not hud.credits_open, "Credits Back restores the defeat result")
 	click(hud.main_menu_button)
 	await settle()
 	check(game.state == game.State.READY and hud.action_button.has_focus() and hud.menu_title.text == "BLACKWATER", "Main Menu restores Blackwater and focuses Set Sail without casting off")

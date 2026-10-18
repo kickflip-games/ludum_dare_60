@@ -3,3 +3,5 @@ Source: https://kenney.nl/assets/ui-pack-adventure
 License: CC0; original `License.txt` included.
 Only `PNG/Double/banner_classic_curtain.png` is imported, unmodified (512 × 128).
 Displayed at 256 × 64 with preserved aspect ratio and linear filtering.
+Runtime tint `#d4c4ac` softens the red cloth to rust and warms the cream border;
+the original texture pixels are retained.

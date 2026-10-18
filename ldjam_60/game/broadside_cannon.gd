@@ -1,6 +1,10 @@
 extends Node3D
 ## One starboard cannon: bounded arena targeting, retained legacy voyage sweep.
 
+const VisualPool = preload("res://game/projectile_visual_pool.gd")
+var projectile_visuals: Node3D
+var combat_warmup: Node
+
 const PIRATE_CANNON = preload("res://assets/pirate_kit/cannon.glb")
 const SPLASH_SHADER = preload("res://game/ocean/splash.gdshader")
 var _splash_ring_mesh: TorusMesh
@@ -68,6 +72,10 @@ var targets_hit: int = 0
 
 
 func _ready() -> void:
+	projectile_visuals = VisualPool.new()
+	projectile_visuals.name = "ProjectileVisuals"
+	game.add_child(projectile_visuals)
+	projectile_visuals.setup(game)
 	position = Vector3(0.8, 1.17, -2.6)
 	_fire_held = false if game.arena_mode else Input.is_action_pressed("fire_starboard")
 	yaw_pivot = Node3D.new()
@@ -105,6 +113,10 @@ func _ready() -> void:
 		_impact_audio = _audio(135.0, 0.9, -17.0)
 		_water_audio = _audio(380.0, 0.8, -22.0)
 		_ship_audio = _audio(78.0, 0.35, -14.0)
+
+	combat_warmup = preload("res://game/combat_warmup.gd").new()
+	game.add_child(combat_warmup)
+	combat_warmup.prepare(game)
 
 
 func starboard_direction() -> Vector3:
@@ -222,12 +234,8 @@ func fire() -> bool:
 	flash_light.visible = true
 	flash_light.light_energy = 5.0
 	flash.scale = Vector3.ONE
-	var shape := SphereMesh.new()
-	shape.radius = 0.32
-	shape.height = 0.64
-	shape.radial_segments = 8
-	shape.rings = 4
-	var ball = game._mesh(game, shape, muzzle.global_position, game._material(Color("e8c286"), 1.0))
+	var ball: MeshInstance3D = projectile_visuals.acquire(muzzle.global_position)
+	assert(ball != null, "Configured projectile budget must cover every live shot")
 	projectiles.append({"node": ball, "velocity": launch_velocity(), "ttl": SHOT_LIFETIME,
 		"physics_position": shot_origin(), "trail_clock": 0.0,
 		"range_origin": cone_origin(), "range": cone_range if game.arena_mode else 0.0})
@@ -279,7 +287,7 @@ func advance(delta: float) -> void:
 		shot.velocity.y -= shot_gravity() * delta
 		if not hit.is_empty():
 			# A flagship hit can end combat and clear this collection immediately.
-			ball.queue_free()
+			projectile_visuals.release(ball)
 			projectiles.remove_at(i)
 			_impact(hit.collider, hit.position)
 			if game.state != game.State.SAILING:
@@ -289,7 +297,7 @@ func advance(delta: float) -> void:
 				water_splash(water.position)
 			feedback = "SPLASH  ·  SHOT WIDE" if not water.is_empty() else "SHOT WIDE"
 			feedback_time = 0.9
-			ball.queue_free()
+			projectile_visuals.release(ball)
 			projectiles.remove_at(i)
 		else:
 			shot.physics_position = to
@@ -477,7 +485,7 @@ func reset() -> void:
 	_recoil_left = 0.0
 	barrel.position = Vector3.ZERO
 	for shot: Dictionary in projectiles:
-		shot.node.queue_free()
+		projectile_visuals.release(shot.node)
 	for group in splash_pool:
 		for effect: Dictionary in group:
 			effect.node.visible = false

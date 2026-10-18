@@ -1,5 +1,25 @@
 # Credits
 
+## Game credits
+
+- **3D models:** Kenney, Quaternius
+- **Coding:** Mehdi Zahroui, Avi Vajpeyi
+- **Discussion:** Kieran Davidson, Rachel Coxhead
+- **Music:** YD GDeshko
+- **Sound effects:** jdsherbert
+
+Additional asset credits and licences are recorded below.
+
+## Background music
+
+**Enemy Ship Approaching** by **YD GDeshko (yd)**, from
+[OpenGameArt](https://opengameart.org/content/enemy-ship-approaching).
+Licence: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+The supplied `esa.ogg` is bundled unmodified in `ldjam_60/assets/music/`;
+Godot loops it and lowers playback volume. The source page also identifies
+the included ocean-wave recording as CC0. File checksum and provenance:
+`ldjam_60/assets/music/SOURCE.md`.
+
 ## Menu typography and graphics
 
 **IM Fell English SC**, by Igino Marini, and **Barlow Semi Condensed**, by
@@ -66,6 +86,9 @@ geometry, lighthouse, and remaining primitive props were created for this protot
 - License: [Creative Commons Attribution 3.0 Unported](https://creativecommons.org/licenses/by/3.0/)
 - Unmodified GLB, full licence and source checksum: `ldjam_60/assets/boss_mine/`
 - Godot applies scale, water-following placement and a separate procedural danger ring.
+- Modified copy: `ldjam_60/assets/optimized/spike_mine.glb`; rigid mesh parts
+  joined in Blender for fewer draw calls, with geometry and colours retained.
+  Original attribution and CC BY 3.0 licence continue to apply.
 
 ## Wave announcement ribbon
 

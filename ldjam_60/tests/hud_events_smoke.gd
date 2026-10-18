@@ -27,12 +27,16 @@ func _run() -> void:
 	waves.announcement_left = 1
 	waves.next_wave_in = 20
 	hud._process(0)
-	check(hud.wave_label.text == "WAVE 4 / 5" and not hud.wave_countdown.visible, "quiet progress has explicit wave number and no permanent countdown")
-	check(hud.wave_announcement.text == "WAVE 4", "launch announcement reads the fourth fleet")
+	check(hud.gameplay_hud.find_child("SurvivalWave", true, false) == null and not hud.wave_countdown.visible, "quiet progress has no permanent wave number or countdown")
+	check(hud.wave_announcement.text == "WAVE IV", "launch announcement reads the fourth fleet")
 	waves.next_wave_in = 12
 	hud._process(0)
 	check(hud.wave_countdown.visible and hud.wave_countdown.text.contains("00:12"), "countdown retains actual final 15 seconds")
+	game.boat.position = game.arena_center() + Vector3(180, 0, 0)
+	hud._process(0)
+	check(hud.storm_warning.visible and hud.storm_warning.offset_top > maxf(hud.wave_countdown.offset_bottom, hud.wave_announcement.offset_bottom), "storm warning clears simultaneous ribbon and countdown")
 	hud._process(3.1)
+	hud.reset_storm_notice()
 	var zone: Dictionary = game.flow_zones.zones[0]
 	game.boat.position = Vector3(zone.center.x, 0, zone.center.y)
 	game.advance_sailing(0.001, 0)

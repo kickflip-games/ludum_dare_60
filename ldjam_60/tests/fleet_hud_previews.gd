@@ -1,9 +1,9 @@
 extends "res://tests/fleet_hud_smoke.gd"
-## Native frozen review of launch, kills and maximum outstanding fleet count.
+## Native frozen captures; real encounter accounting with scripted visual states.
 var output := "res://../build/fleet-hud"
 
 func capture(label: String) -> void:
-	hud._process(0.3)
+	hud._process(0)
 	await settle()
 	RenderingServer.force_draw(true, 1.0 / 60)
 	await RenderingServer.frame_post_draw
@@ -23,26 +23,44 @@ func _run() -> void:
 			root.size = Vector2i(int(parts[0]),int(parts[1]))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
 	create_game()
+	# Frozen fixtures must ignore unrelated keyboard events from other test windows.
+	game.set_process_unhandled_input(false)
 	await physics_frame
 	begin()
-	hud._process(0.3)
-	await capture("first-fleet")
+	await capture("01-wave-I")
+	hud._process(2.41)
+	await capture("02-circles-only")
 	var first = enemies.living_ships()[0]
-	while first.hull > 0: first.take_hit()
-	hud._process(3.1)
-	await capture("one-remaining")
+	for hit in first.hull: first.take_hit()
+	await capture("03-one-destroyed")
 	enemies.wave_remaining = 0
 	enemies._update_arena(0)
-	hud._process(0.3)
-	await capture("second-fleet")
-	for fleet in 3:
+	await capture("04-overlapping-wave-II")
+	# Clean maximum 17-circle backlog, without a previous defeat.
+	begin()
+	for fleet in 4:
 		enemies.wave_remaining = 0
 		enemies._update_arena(0)
-		hud._process(0.3)
-	await capture("final-backlog")
+		hud._process(0)
+	await capture("05-final-wave-backlog")
 	game.boat.position = game.arena_center() + Vector3(180,0,0)
-	hud._process(0)
-	await capture("storm-and-launch")
+	game._update_view(1)
+	await capture("06-final-wave-storm")
+	hud._process(2.41)
+	await capture("07-final-circles-health-storm")
+	for hit in enemies.boss.hull: enemies.boss.take_hit()
+	hud._process(0.3) # Finish the result-menu fade before its rendered capture.
+	await capture("08-victory")
+	begin()
+	await capture("09-restart-wave-I")
+	game.restart(true)
+	await capture("10-menu-cleared")
+	begin()
+	game.motion_setting = 1
+	hud._process(2.2)
+	await capture("11-reduced-motion")
+	hud._process(0.21)
+	await capture("12-reduced-motion-cleared")
 	game.queue_free()
 	await process_frame
 	quit()

@@ -5,6 +5,10 @@ var dodge_helm := 0.0
 func update(game, delta: float) -> void:
 	super.update(game, delta)
 	dodge_left = maxf(0.0, dodge_left - delta)
+	# Terrain and hull avoidance selected by the navigation pilot has priority.
+	if avoid_left > 0.0:
+		dodge_left = 0.0
+		return
 	var danger := clearance(game, 0.0)
 	if danger < 1.5 and dodge_left <= 0:
 		var left := clearance(game, -1.0)

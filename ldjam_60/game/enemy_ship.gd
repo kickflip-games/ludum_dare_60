@@ -165,6 +165,7 @@ func _ready() -> void:
 	if is_instance_valid(ship_model):
 		mine_layer = MineLayer.new()
 		mine_layer.ship = self
+		mine_layer.prepare()
 		_build_armament(1, false, false)
 	else:
 		# The flagship supplies its own multi-muzzle weapon and presentation.
@@ -252,7 +253,7 @@ func reset() -> void:
 	_holding_point = Vector3.INF
 	_holding_time = 0.0
 	for shot: Dictionary in projectiles:
-		shot.node.queue_free()
+		game.cannon.projectile_visuals.release(shot.node)
 	projectiles.clear()
 	navigation_state = Navigation.DORMANT
 	weapon_state = Weapon.READY
@@ -336,6 +337,7 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	if mine_layer != null:
 		mine_layer.reset()
 		mine_layer.enabled = profile.lays_mines
+		mine_layer.prepare()
 	presentation.scale = Vector3.ONE
 	collision_shape.shape.radius = 3.6
 	collision_shape.position = Vector3(0, 1.0, -1.8)
@@ -892,12 +894,8 @@ func _launch_ball(from: Vector3) -> void:
 	var flight: float = maxf(0.2, flat.length() / projectile_speed)
 	var launch := flat.normalized() * projectile_speed
 	launch.y = (locked_point.y - from.y) / flight + 2.5 * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second)
-	var shape := SphereMesh.new()
-	shape.radius = 0.4
-	shape.height = 0.8
-	shape.radial_segments = 8
-	shape.rings = 4
-	var ball = game._mesh(game, shape, from, game._material(Color("ffad66"), 1.5))
+	var ball: MeshInstance3D = game.cannon.projectile_visuals.acquire(from, true)
+	assert(ball != null, "Configured projectile budget must cover every live shot")
 	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0, "trail_clock": 0.0})
 	game.combat_particles.muzzle(from, launch.normalized(), true)
 	shots_fired += 1
@@ -917,6 +915,9 @@ func _advance_shots(delta: float) -> void:
 		shot.velocity.y -= 5.0 * delta
 		shot.ttl -= delta
 		if not hit.is_empty() or not water.is_empty() or shot.ttl <= 0.0:
+			# Retire before damage callbacks can clear every weapon on defeat.
+			game.cannon.projectile_visuals.release(shot.node)
+			projectiles.remove_at(i)
 			if not hit.is_empty() and hit.collider == game.boat:
 				if game.take_damage(1, "Enemy broadside hit"):
 					shots_hit += 1
@@ -926,8 +927,7 @@ func _advance_shots(delta: float) -> void:
 				game.combat_particles.impact(hit.position, false)
 			elif hit.is_empty() and not water.is_empty():
 				game.cannon.water_splash(water.position)
-			shot.node.queue_free()
-			projectiles.remove_at(i)
+			if game.state != game.State.SAILING: return
 		else:
 			shot.position = to
 			shot.node.global_position = to
@@ -998,3 +998,10 @@ func warning() -> String:
 	if navigation_state in [Navigation.APPROACH, Navigation.ATTACK_RUN] and age < 7.0:
 		return "HOSTILE %s  ·  SHOOT OR SAIL CLEAR" % display_name().to_upper()
 	return ""
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(game) and is_instance_valid(game.cannon) and is_instance_valid(game.cannon.projectile_visuals):
+		for shot in projectiles: game.cannon.projectile_visuals.release(shot.node)
+	projectiles.clear()
+	if mine_layer != null: mine_layer.dispose()

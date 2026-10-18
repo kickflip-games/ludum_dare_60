@@ -1,0 +1,28 @@
+{
+  "asset_instances": {
+    "res://assets/kenney_ships/ship-pirate-large.glb": 1,
+    "res://assets/kenney_ships/ship-pirate-small.glb": 2,
+    "res://assets/optimized/spike_mine.glb": 6,
+    "res://assets/pirate_kit/cannon.glb": 12,
+    "res://assets/pirate_kit/rock.glb": 14,
+    "res://assets/sail_boat/sail_boat.glb": 1
+  },
+  "buffer_bytes": 30246274.0,
+  "cpu_ms_p50": 2.8,
+  "cpu_ms_p95": 3.0,
+  "draw_calls": 175.0,
+  "frame_ms_p50": 8.3,
+  "frame_ms_p95": 9.0,
+  "frame_ms_p99": 9.2,
+  "frames": 300,
+  "objects": 175.0,
+  "primitives": 587986.0,
+  "renderer": "gl_compatibility",
+  "resources": 146.0,
+  "static_bytes": 0.0,
+  "texture_bytes": 64838135.0,
+  "variant": "after",
+  "video_bytes": 95084409.0,
+  "viewport": "(1280.0, 720.0)",
+  "instance_count_note": "Excluded two queued-for-deletion old guns; original traversal ran before deletion queue flush."
+}

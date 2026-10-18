@@ -1,0 +1,334 @@
+[
+  {
+    "adapter": "WebKit WebGL",
+    "engine": "4.8-dev6 (official)",
+    "label": "after",
+    "phases": [
+      {
+        "case": "idle_sailing",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          0
+        ],
+        "frames": 360,
+        "max_ms": 14.1,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.9,
+        "p99_ms": 12.3,
+        "peak_draw_calls": 294,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_player_shot",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          800
+        ],
+        "frames": 355,
+        "max_ms": 35.2,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.7,
+        "p99_ms": 14,
+        "peak_draw_calls": 301,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_enemy_shot",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          200
+        ],
+        "frames": 360,
+        "max_ms": 12,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.7,
+        "p99_ms": 10.9,
+        "peak_draw_calls": 307,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "simultaneous_shots",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          200
+        ],
+        "frames": 360,
+        "max_ms": 15.8,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.9,
+        "p99_ms": 11.1,
+        "peak_draw_calls": 333,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_flagship_volley",
+        "draw_calls": 298,
+        "event_cpu_us": [
+          400
+        ],
+        "frames": 360,
+        "max_ms": 14.1,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.9,
+        "p99_ms": 12.6,
+        "peak_draw_calls": 321,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_mine",
+        "draw_calls": 299,
+        "event_cpu_us": [
+          500
+        ],
+        "frames": 360,
+        "max_ms": 15.5,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.7,
+        "p99_ms": 12.4,
+        "peak_draw_calls": 303,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "recycled_mines",
+        "draw_calls": 301,
+        "event_cpu_us": [
+          300,
+          200,
+          300,
+          200
+        ],
+        "frames": 360,
+        "max_ms": 13.5,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 10,
+        "p99_ms": 11.8,
+        "peak_draw_calls": 307,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "full_combat",
+        "draw_calls": 383,
+        "event_cpu_us": [
+          800,
+          900,
+          800,
+          500
+        ],
+        "frames": 357,
+        "max_ms": 20.9,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.5,
+        "p99_ms": 13.8,
+        "peak_draw_calls": 426,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      }
+    ],
+    "viewport": "(1280, 720)"
+  },
+  {
+    "adapter": "WebKit WebGL",
+    "engine": "4.8-dev6 (official)",
+    "label": "after",
+    "phases": [
+      {
+        "case": "idle_sailing",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          0
+        ],
+        "frames": 360,
+        "max_ms": 9.5,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.3,
+        "p99_ms": 9.4,
+        "peak_draw_calls": 294,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_player_shot",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          700
+        ],
+        "frames": 359,
+        "max_ms": 22.6,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.2,
+        "p99_ms": 9.5,
+        "peak_draw_calls": 301,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_enemy_shot",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          200
+        ],
+        "frames": 360,
+        "max_ms": 9.3,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 8.5,
+        "p99_ms": 9.1,
+        "peak_draw_calls": 307,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "simultaneous_shots",
+        "draw_calls": 294,
+        "event_cpu_us": [
+          200
+        ],
+        "frames": 360,
+        "max_ms": 12,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.1,
+        "p99_ms": 9.4,
+        "peak_draw_calls": 333,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_flagship_volley",
+        "draw_calls": 298,
+        "event_cpu_us": [
+          600
+        ],
+        "frames": 360,
+        "max_ms": 11.1,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.3,
+        "p99_ms": 9.4,
+        "peak_draw_calls": 321,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "first_mine",
+        "draw_calls": 299,
+        "event_cpu_us": [
+          400
+        ],
+        "frames": 360,
+        "max_ms": 11.9,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9.3,
+        "p99_ms": 9.4,
+        "peak_draw_calls": 303,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "recycled_mines",
+        "draw_calls": 301,
+        "event_cpu_us": [
+          300,
+          200,
+          300,
+          200
+        ],
+        "frames": 360,
+        "max_ms": 9.5,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9,
+        "p99_ms": 9.4,
+        "peak_draw_calls": 307,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      },
+      {
+        "case": "full_combat",
+        "draw_calls": 379,
+        "event_cpu_us": [
+          800,
+          700,
+          800,
+          800
+        ],
+        "frames": 358,
+        "max_ms": 17.2,
+        "median_ms": 8.3,
+        "nodes": 930,
+        "p95_ms": 9,
+        "p99_ms": 9.3,
+        "peak_draw_calls": 426,
+        "peak_nodes": 930,
+        "peak_resources": 150,
+        "resources": 150,
+        "static_bytes": 0,
+        "video_bytes": 55554345
+      }
+    ],
+    "viewport": "(1280, 720)"
+  }
+]

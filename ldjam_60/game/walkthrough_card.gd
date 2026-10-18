@@ -87,7 +87,7 @@ func _ready() -> void:
 	_layout.call_deferred()
 
 func _input(event: InputEvent) -> void:
-	if game.walkthrough.active and visible and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ENTER:
+	if not game.paused and game.walkthrough.active and visible and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ENTER:
 		game.walkthrough.advance(game)
 		get_viewport().set_input_as_handled()
 
@@ -133,7 +133,7 @@ func _rebuild_keys(step: int) -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(game): return
 	var guide = game.walkthrough
-	visible = guide.active and game.state == game.State.SAILING
+	visible = guide.active and game.state == game.State.SAILING and not game.paused
 	if not visible: return
 	if guide.step != _step:
 		_step = guide.step

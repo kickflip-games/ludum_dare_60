@@ -1,0 +1,357 @@
+{
+  "blender": "5.2.2 LTS",
+  "before": [
+    {
+      "path": "ldjam_60/assets/boss_mine/spike_mine.glb",
+      "bytes": 32000,
+      "triangles": 300,
+      "vertices": 696,
+      "mesh_objects": 7,
+      "objects": 7,
+      "materials": 2,
+      "textures": [],
+      "bounds": [
+        [
+          -0.08193150162696838,
+          -0.08192688226699829,
+          -0.059999819844961166
+        ],
+        [
+          0.081931471824646,
+          0.08201252669095993,
+          0.06000005826354027
+        ]
+      ],
+      "sha256": "770e359607df6d1c87923be740ed2ec75d05b98fd4b85988cd78404ed3ede5ec",
+      "surfaces": 7,
+      "extensions_used": []
+    },
+    {
+      "path": "ldjam_60/assets/boss_ship/ship.glb",
+      "bytes": 927996,
+      "triangles": 20632,
+      "vertices": 24784,
+      "mesh_objects": 1,
+      "objects": 2,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "Atlas_Pirate.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -9.517061233520508,
+          -2.6502912044525146,
+          -1.610909342765808
+        ],
+        [
+          5.915895462036133,
+          2.6502912044525146,
+          9.868123054504395
+        ]
+      ],
+      "sha256": "b3cfa69180926216867e1060f442c6de8db405d60edd777ad658e1a162f5ae67",
+      "surfaces": 1,
+      "extensions_used": []
+    },
+    {
+      "path": "ldjam_60/assets/kenney_ships/ship-pirate-large.glb",
+      "bytes": 177216,
+      "triangles": 1938,
+      "vertices": 3292,
+      "mesh_objects": 6,
+      "objects": 6,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "colormap",
+          "size": [
+            512,
+            512
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -2.4000000953674316,
+          -6.550000190734863,
+          0.0
+        ],
+        [
+          2.4000000953674316,
+          6.550000190734863,
+          9.963520050048828
+        ]
+      ],
+      "sha256": "7c3959e0f039a13e5294904282ddc678dfc442fb8b055555cc45eae7a0d2adf8",
+      "surfaces": 6,
+      "extensions_used": [
+        "KHR_texture_transform"
+      ]
+    },
+    {
+      "path": "ldjam_60/assets/kenney_ships/ship-pirate-small.glb",
+      "bytes": 131464,
+      "triangles": 1461,
+      "vertices": 2447,
+      "mesh_objects": 4,
+      "objects": 4,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "colormap",
+          "size": [
+            512,
+            512
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -2.4000000953674316,
+          -4.599999904632568,
+          0.0
+        ],
+        [
+          2.4000000953674316,
+          4.199999809265137,
+          9.963520050048828
+        ]
+      ],
+      "sha256": "4b075cd7f90cc152acd477c2636b38dad08890391c5947b060a7ac0c6da8fcdb",
+      "surfaces": 4,
+      "extensions_used": [
+        "KHR_texture_transform"
+      ]
+    },
+    {
+      "path": "ldjam_60/assets/kenney_ships/ship-small.glb",
+      "bytes": 116440,
+      "triangles": 1370,
+      "vertices": 2158,
+      "mesh_objects": 4,
+      "objects": 4,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "colormap",
+          "size": [
+            512,
+            512
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -2.4000000953674316,
+          -4.599999904632568,
+          0.0
+        ],
+        [
+          2.4000000953674316,
+          4.199999809265137,
+          9.963520050048828
+        ]
+      ],
+      "sha256": "6fdabdfd358f345ad3dd0510af4165843ab3fffe46357395c94ca00db4f317b3",
+      "surfaces": 4,
+      "extensions_used": [
+        "KHR_texture_transform"
+      ]
+    },
+    {
+      "path": "ldjam_60/assets/pirate_kit/cannon.glb",
+      "bytes": 98148,
+      "triangles": 2362,
+      "vertices": 2277,
+      "mesh_objects": 1,
+      "objects": 2,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "Atlas_Pirate.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -0.5195159912109375,
+          -0.8665376901626587,
+          -0.008013023063540459
+        ],
+        [
+          0.5195159912109375,
+          0.6161398887634277,
+          1.121699571609497
+        ]
+      ],
+      "sha256": "13ecd509b2e36cfcf934e84c30f6a946b6a892166a75e553613123217703cef0",
+      "surfaces": 1,
+      "extensions_used": []
+    },
+    {
+      "path": "ldjam_60/assets/pirate_kit/rock.glb",
+      "bytes": 28468,
+      "triangles": 763,
+      "vertices": 399,
+      "mesh_objects": 1,
+      "objects": 2,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "Atlas_Pirate.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -0.34916073083877563,
+          -0.3344173729419708,
+          -0.2412305772304535
+        ],
+        [
+          0.3388981223106384,
+          0.32300111651420593,
+          0.3459199070930481
+        ]
+      ],
+      "sha256": "36671374f0c72e04197fcfe9143c14422511289966c59b67c431f84f36668cb0",
+      "surfaces": 1,
+      "extensions_used": []
+    },
+    {
+      "path": "ldjam_60/assets/pirate_kit/small_ship.glb",
+      "bytes": 243460,
+      "triangles": 5578,
+      "vertices": 6215,
+      "mesh_objects": 1,
+      "objects": 2,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "Atlas_Pirate.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -2.8746514320373535,
+          -1.800599217414856,
+          -0.011840400286018848
+        ],
+        [
+          2.2744522094726562,
+          1.8005993366241455,
+          1.9802535772323608
+        ]
+      ],
+      "sha256": "0a0ba5eb7c7bb2fb2a1ab3eed13c81d3f2970a1a591b28b35529add7fca01711",
+      "surfaces": 1,
+      "extensions_used": []
+    },
+    {
+      "path": "ldjam_60/assets/sail_boat/sail_boat.glb",
+      "bytes": 58132,
+      "triangles": 1020,
+      "vertices": 1922,
+      "mesh_objects": 2,
+      "objects": 3,
+      "materials": 4,
+      "textures": [],
+      "bounds": [
+        [
+          -0.2119443714618683,
+          -0.5606909394264221,
+          -0.004690872970968485
+        ],
+        [
+          0.1912730187177658,
+          0.4283462166786194,
+          0.8500246405601501
+        ]
+      ],
+      "sha256": "dd0d959f66c058e2afcfc01227f80b83347b5105d324690596a0c0eb6e65fb95",
+      "surfaces": 5,
+      "extensions_used": []
+    }
+  ],
+  "after": [
+    {
+      "path": "ldjam_60/assets/optimized/spike_mine.glb",
+      "bytes": 26148,
+      "triangles": 300,
+      "vertices": 696,
+      "mesh_objects": 1,
+      "objects": 1,
+      "materials": 2,
+      "textures": [],
+      "bounds": [
+        [
+          -0.08193150162696838,
+          -0.08192688226699829,
+          -0.059999819844961166
+        ],
+        [
+          0.081931471824646,
+          0.08201252669095993,
+          0.06000005826354027
+        ]
+      ],
+      "sha256": "2164ca84841243fbd248a53d2d43f16854ec568015fd19c195ea8b4ed8dd24e0",
+      "surfaces": 2,
+      "extensions_used": []
+    },
+    {
+      "path": "build/asset_optimization/candidates/cannon.glb",
+      "bytes": 97500,
+      "triangles": 2362,
+      "vertices": 2277,
+      "mesh_objects": 1,
+      "objects": 2,
+      "materials": 1,
+      "textures": [
+        {
+          "name": "Atlas_Pirate",
+          "size": [
+            1024,
+            1024
+          ],
+          "channels": 4
+        }
+      ],
+      "bounds": [
+        [
+          -0.5195159912109375,
+          -0.8665376305580139,
+          -0.0080129848793149
+        ],
+        [
+          0.5195159912109375,
+          0.6161398887634277,
+          1.121699571609497
+        ]
+      ]
+    }
+  ]
+}

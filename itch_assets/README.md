@@ -6,5 +6,8 @@ All scene imagery here comes from the game itself. The live capture was taken fr
 - `blackwater-page-banner-1920x640.png`: wide crop from the live gameplay frame.
 - `blackwater-page-banner-1920x1080.png`: full-width banner from the same live gameplay frame.
 - `blackwater-icon-512.png`: square crop from that gameplay frame.
+- `favicon.ico`, `blackwater-favicon-256.png`, and `blackwater-favicon-32.png`:
+  ship-centered crops from the live gameplay frame, with ICO sizes 16, 32, 48,
+  64, 128 and 256 pixels.
 - `blackwater-gameplay-live.png`: original live game capture.
 - `blackwater-gameplay-lighthouse.jpg`, `blackwater-gameplay-flagship.jpg`, and `blackwater-gameplay-incoming-fire.jpg`: additional genuine gameplay screenshots for the itch.io gallery.

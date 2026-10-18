@@ -181,6 +181,8 @@ var _fire_armed := false
 
 enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
+var paused := false
+var _web_had_mouse_capture := false
 var phase: int = 0
 var phase_banner_left: float = 4.0
 var storm_blend: float = 0.0
@@ -266,6 +268,7 @@ var sky_material: ShaderMaterial
 var obstacles: Array[Dictionary] = []
 var target: Vector3 = Vector3.ZERO
 var _sound: AudioStreamPlayer
+var _music: AudioStreamPlayer
 var _audio_playback: AudioStreamGeneratorPlayback
 var _audio_phase: float = 0.0
 var _audio_noise: float = 0.0
@@ -378,6 +381,11 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if paused:
+		return
+	# A fresh canvas click can restore capture if a browser denied an Esc resume.
+	if OS.has_feature("web") and arena_mode and state == State.SAILING and _window_focused and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if arena_mode and event is InputEventMouseMotion:
 		if state == State.SAILING and _window_focused:
 			walkthrough.note_mouse(event.relative)
@@ -405,9 +413,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not event.is_pressed():
 			restart_elapsed = 0.0
 			_restart_consumed = false
-		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and not hud.settings_open:
+		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and not hud.settings_open and not hud.credits_open:
 			restart()
-	elif event.is_action_pressed("begin_crossing") and state == State.READY and not hud.settings_open:
+	elif event.is_action_pressed("begin_crossing") and state == State.READY and not hud.settings_open and not hud.credits_open:
 		# Preserve the focused launch action when Enter reaches the global shortcut.
 		start_crossing(hud.walkthrough_button.has_focus() and hud.walkthrough_button.is_visible_in_tree())
 	elif (event.is_action("fire_starboard") or (arena_mode and event.is_action("fire_mouse"))) and not event.is_echo():
@@ -436,12 +444,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		update_guiding_star()
 	elif event.is_action_pressed("mute_sea"):
 		_sound_enabled = not _sound_enabled
+		_music.volume_db = -18.0 if _sound_enabled else -80.0
 		if is_instance_valid(_sound):
 			_sound.volume_db = -26.0 if _sound_enabled else -80.0
 		for player in _whiz_players:
 			player.volume_db = -7.0 if _sound_enabled else -80.0
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		get_tree().quit()
 
 
 func _notification(what: int) -> void:
@@ -454,16 +461,35 @@ func _notification(what: int) -> void:
 		_restart_consumed = false
 
 
-func _clear_player_controls() -> void:
+func set_paused(value: bool, restore_capture: bool = true) -> void:
+	if value == paused or (value and state not in [State.SAILING, State.CASTING_OFF]):
+		return
+	_clear_player_controls(false)
+	Input.action_release("restart_crossing")
+	_restart_consumed = false
+	_web_had_mouse_capture = false
+	paused = value
+	get_tree().paused = value
+	# Resume is invoked from the UI/input callback so Web can capture the pointer.
+	if not value and restore_capture and arena_mode and state == State.SAILING and _window_focused and not walkthrough.active:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	hud._sync_button()
+	hud.queue_redraw()
+
+
+func _clear_player_controls(reset_view: bool = true, release_mouse: bool = true) -> void:
 	_fire_armed = false
-	look_yaw = 0.0
-	look_target = 0.0
-	look_idle = 0.0
+	if reset_view:
+		look_yaw = 0.0
+		look_target = 0.0
+		look_idle = 0.0
 	if arena_mode:
-		arena_cannon_view = false
-		aim_camera_blend = 0.0
-		camera_mode = CameraMode.SAILING
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if reset_view:
+			arena_cannon_view = false
+			aim_camera_blend = 0.0
+			camera_mode = CameraMode.SAILING
+		if release_mouse:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	for action: String in ["watch_starboard", "fire_starboard", "fire_mouse", "astrolabe", "steer_port", "steer_starboard", "boost_sailing"]:
 		Input.action_release(action)
 	cannon.set_aim_held(false)
@@ -504,6 +530,8 @@ func start_crossing(with_walkthrough: bool = false) -> void:
 	transition_elapsed = 0.0
 	_transition_from = camera.transform
 	state = State.CASTING_OFF
+	if OS.has_feature("web") and arena_mode and _window_focused:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if with_walkthrough else Input.MOUSE_MODE_CAPTURED
 
 
 func arena_center() -> Vector3:
@@ -562,10 +590,13 @@ func journey_progress() -> float:
 
 
 func restart(to_menu: bool = false) -> void:
+	set_paused(false, false)
+	_web_had_mouse_capture = false
 	walkthrough.cancel()
 	hud.reset_storm_notice()
 	combat_particles.reset()
-	_clear_player_controls()
+	# A held-R restart keeps an existing Web capture; opening menus releases it.
+	_clear_player_controls(true, to_menu or not OS.has_feature("web"))
 	flow_zones.reset()
 	cannon.reset()
 	wave_sailing.reset()
@@ -640,6 +671,15 @@ func restart(to_menu: bool = false) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if paused:
+		return
+	# Browsers can consume Esc to release pointer lock before Godot sees a key.
+	if OS.has_feature("web") and arena_mode and state in [State.SAILING, State.CASTING_OFF] and not walkthrough.active:
+		var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+		if _web_had_mouse_capture and not captured:
+			set_paused(true)
+			return
+		_web_had_mouse_capture = captured
 	_update_restart_hold(delta)
 	if walkthrough.active and state == State.SAILING:
 		_physics_walkthrough(delta)
@@ -655,7 +695,10 @@ func _physics_process(delta: float) -> void:
 		if not held:
 			_fire_armed = false
 		cannon.set_fire_held(held and _fire_armed and _window_focused and state == State.SAILING)
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if state == State.SAILING and _window_focused else Input.MOUSE_MODE_VISIBLE
+		if not OS.has_feature("web"):
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if state == State.SAILING and _window_focused else Input.MOUSE_MODE_VISIBLE
+		elif state not in [State.SAILING, State.CASTING_OFF] or not _window_focused:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
 		cannon.set_aim_held(Input.is_action_pressed("watch_starboard"))
 		cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
@@ -1152,8 +1195,13 @@ func _process(_delta: float) -> void:
 
 
 func _exit_tree() -> void:
+	if paused:
+		get_tree().paused = false
+		paused = false
 	if is_instance_valid(_sound):
 		_sound.stop()
+	if is_instance_valid(_music):
+		_music.stop()
 	for player in _whiz_players:
 		player.stop()
 	_audio_playback = null
@@ -1492,7 +1540,17 @@ func _build_destination() -> void:
 
 
 func _build_audio() -> void:
-	# Quiet synthesized surf: no asset downloads or audio dependencies.
+	# One continuous loop across menus, retries and endings; tree pause suspends it.
+	_music = AudioStreamPlayer.new()
+	_music.name = "BackgroundMusic"
+	var music_stream := preload("res://assets/music/esa.ogg").duplicate() as AudioStreamOggVorbis
+	music_stream.loop = true
+	_music.stream = music_stream
+	_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	_music.volume_db = -18.0
+	add_child(_music)
+	_music.play()
+	# Quiet synthesized surf and positional cannon whizzes.
 	if DisplayServer.get_name() == "headless":
 		return
 	var whistle := AudioStreamWAV.new()

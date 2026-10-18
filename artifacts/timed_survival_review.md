@@ -1,7 +1,10 @@
 # Five timed survival waves — 18 October 2026
 
-Continues [PR #5](https://github.com/kickflip-games/ludum_dare_60/pull/5) on
-`hacking/lighthouse-arena`, from arena base `dd1d45b`. This replaces the pending
+Current draft [PR #8](https://github.com/kickflip-games/ludum_dare_60/pull/8) on
+`hacking/lighthouse-arena` builds on arena base `dd1d45b`. The original
+[PR #5](https://github.com/kickflip-games/ludum_dare_60/pull/5) was merged externally
+while this follow-up was being published; #8 contains only the new timed-wave
+changes. This replaces the pending
 lighthouse-health proposal and the earlier one-cutter scheduler. The lighthouse
 is atmospheric: enemies target only the player. The separate voyage PR #6 by
 EL-MZ and the local splash settings were left untouched.

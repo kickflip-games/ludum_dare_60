@@ -14,12 +14,22 @@ void vertex() {
 }
 
 void fragment() {
-	float fray = 0.5+0.3*sin(dot(world_xz,vec2(0.73,1.31))-wave_time*0.2)
-		+0.2*sin(UV.y*2.7+world_xz.x*1.8-world_xz.y*0.31);
-	float edge = 0.1+0.18*(1.0-fray);
-	float across = smoothstep(edge,0.45,UV.x)*(1.0-smoothstep(0.55,1.0-edge,UV.x));
-	float body = smoothstep(0.25,0.76,fray);
-	ALBEDO = foam_color.rgb * (wake_kind==0 ? 0.94 : 0.87);
-	float boost = clamp(strength - 1.0, 0.0, 1.0);
-	ALPHA = across*COLOR.a*body*(wake_kind==0 ? 0.42 : 0.50)*(1.0 + boost*0.35);
+	// Two scales of water-fixed foam cells, with a slow churn instead of stripes.
+	vec2 p = world_xz;
+	float cells = sin(p.x*3.1+sin(p.y*2.3)+wave_time*0.42)
+		* sin(p.y*3.7+sin(p.x*1.9)-wave_time*0.31);
+	float patches = 0.5+0.25*sin(dot(p,vec2(1.17,0.71))+wave_time*0.18)
+		+0.25*sin(dot(p,vec2(-0.63,1.93))-wave_time*0.22);
+	float ragged = abs(UV.x-0.5)*2.0 + cells*0.18;
+	float edge = 1.0-smoothstep(0.40,0.98,ragged);
+	float core = 1.0-smoothstep(0.12,0.65,ragged);
+	float age = COLOR.b;
+	float gaps = smoothstep(0.20+age*0.23,0.62,patches);
+	float froth = smoothstep(-0.42,0.62,cells);
+	float foam = mix(gaps*(0.38+froth*0.62),0.48+froth*0.52,core*(1.0-age)*0.65);
+	if (wake_kind==1) {
+		foam = mix(gaps,0.32+froth*0.68,0.68);
+	}
+	ALBEDO = mix(foam_color.rgb*0.69,foam_color.rgb, froth*0.65+core*0.25);
+	ALPHA = edge*COLOR.a*foam*(wake_kind==0 ? 0.73 : 0.80);
 }

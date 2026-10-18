@@ -153,7 +153,7 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 	wake_strength = lerpf(wake_strength, actual_factor, 1.0 - exp(-4.0 * delta))
 	wake_yaw = lerp_angle(wake_yaw, -heading, 1.0 - exp(-5.0 * delta))
 	for mat: ShaderMaterial in wake_root.materials:
-		mat.set_shader_parameter("strength", wake_strength * maxf(1.0, speed_factor))
+		mat.set_shader_parameter("strength", wake_strength)
 
 
 func sample_surface(p: Vector2, time: float = -1.0) -> Vector3:

@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Work in progress: fuller broken V foam, broad stern churn, movement/surface-driven
+  bow spray and stronger directional splashes; blue-silver moonlit crest shading.
+  Existing wave physics, controls and ballistics remain unchanged. Wake retains
+  two meshes / 576 vertices; spray uses one fixed 64-instance pool (four bow slots
+  on Low). Validation and matched arena captures: [ocean review](artifacts/ocean_juice_review.md).
+
 - Merged nautical UI into main while preserving the flagship encounter. Final
   fleet icons include the flagship and queued escorts; its health bar sits
   between the fleet counter and launch announcement. Victory uses the shared

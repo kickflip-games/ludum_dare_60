@@ -78,12 +78,12 @@ func advance_path(at: Vector3, time: float, delta: float, speed_factor: float, h
 		initialized = true
 		motion = Vector2.ZERO
 	last_time = time
-	var factor := minf(clampf(speed_factor,0,1),motion.length()/maxf(delta*6.3,0.001))
+	var factor := minf(clampf(speed_factor,0,3.5),motion.length()/maxf(delta*6.3,0.001))
 	previous = at
 	sample_clock += delta
 	draw_clock += delta
 	if sample_clock>=1.0/15.0 and motion.length()>0.001 and factor>0.025:
-		sample_clock = 0
+		sample_clock = fmod(sample_clock,1.0/15.0)
 		cursor = (cursor+1)%CAPACITY
 		count = mini(CAPACITY,count+1)
 		points[cursor] = at-Vector3(sin(heading),0,-cos(heading))*0.65
@@ -91,7 +91,7 @@ func advance_path(at: Vector3, time: float, delta: float, speed_factor: float, h
 		times[cursor] = time
 		speeds[cursor] = factor
 	if draw_clock>=1.0/30.0:
-		draw_clock = 0
+		draw_clock = fmod(draw_clock,1.0/30.0)
 		_rebuild(time)
 	return factor
 
@@ -106,24 +106,27 @@ func _rebuild(time: float) -> void:
 				var slot := posmod(cursor-mini(i,maxi(0,count-1)),CAPACITY)
 				var age := maxf(0,time-times[slot])
 				var life := LIFETIME if kind==0 else 1.35
-				var fade := pow(maxf(0,1.0-age/life),1.45)*speeds[slot]
+				var speed := speeds[slot]
+				var energy := minf(1.0,speed)*(1.0+maxf(0,speed-1.0)*0.23)
+				var fade := pow(maxf(0,1.0-age/life),1.45)*energy
 				if count<2 or i>=count:
 					fade = 0
 				var tangent := directions[slot]
 				var side := Vector3(-tangent.y,0,tangent.x)
 				var center := points[slot]
-				var width := 0.20+age*0.045 if kind==0 else 0.26+age*0.18
+				var width := (0.46+age*0.19 if kind==0 else 0.78+age*0.42)
+				width *= lerpf(0.32,1.0,minf(speed,1.0))*(1.0+maxf(0,speed-1.0)*0.25)
 				# Deposit-time variation breaks ruler-straight arms without new geometry
 				# or moving the fixed world-space history as the ship turns.
 				width *= 0.78+0.22*sin(times[slot]*3.3+wing*2.1)
 				center += side*0.10*sin(times[slot]*5.1+wing*2.4)
 				if kind==0:
-					center += side*(-1 if wing==0 else 1)*(0.8+age*1.12*speeds[slot])
+					center += side*(-1 if wing==0 else 1)*(0.83+age*1.28*sqrt(speed))
 				for edge in range(2):
 					var index := (wing*CAPACITY+i)*2+edge
 					vertices[index] = center+side*width*(-1 if edge==0 else 1)
 					uv[index] = Vector2(edge,times[slot])
-					colors[index] = Color(1,1,1,fade)
+					colors[index] = Color(1,1,clampf(age/life,0,1),fade)
 		arrays[Mesh.ARRAY_VERTEX] = vertices
 		arrays[Mesh.ARRAY_TEX_UV] = uv
 		arrays[Mesh.ARRAY_COLOR] = colors

@@ -30,15 +30,17 @@ func _run() -> void:
 	check(effects.active_count==0 and effects.envelope<0.01,"spray and streaks expire without a later crest")
 	# Repeated overlapping impacts replace pool slots; never allocate nodes.
 	for i in range(100):
-		game.deck_response.events.assign([event,event,event,event])
+		game.deck_response.events.clear()
+		for j in range(4):
+			game.deck_response.events.append({"id":100+i*4+j,"strength":1.0,"direction":Vector3.RIGHT})
 		effects.update_effects(game,DT)
-	check(get_node_count()==initial_nodes and effects.bursts.size()==2 and effects.mesh.instance_count==52,"repeated four-wave impacts retain two burst slots, 52 instances and stable node count")
+	check(get_node_count()==initial_nodes and effects.bursts.size()==2 and effects.mesh.instance_count==64,"repeated four-wave impacts retain two burst slots, 64 instances and stable node count")
 	game.deck_response.events.clear()
 	game.ocean_quality = 0
 	effects.reset()
-	game.deck_response.events.assign([event,event])
+	game.deck_response.events.assign([event,{"id":8,"strength":1.0,"direction":Vector3.LEFT}])
 	effects.update_effects(game,DT)
-	check(effects.active_count<=20,"Low quality caps hull droplets and disables decorative crest spray")
+	check(effects.active_count<=20 and effects.emitted==2,"Low quality caps hull droplets and disables decorative crest spray")
 	game.development_spray = false
 	game.development_overlays = false
 	effects.update_effects(game,DT)

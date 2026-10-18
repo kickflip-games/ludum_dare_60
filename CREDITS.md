@@ -1,5 +1,9 @@
 # Credits
 
+## Boot splash
+
+**Kickflip Games logo**, used unmodified from the [provided PNG](https://raw.githubusercontent.com/kickflip-games/kickflip-games/main/logo.png).
+
 ## Player sailboat
 
 **Sail Boat** by **Quaternius**, from [Poly Pizza](https://poly.pizza/m/BgSZXwmm7k).

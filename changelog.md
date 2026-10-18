@@ -6,6 +6,9 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Set the supplied Kickflip Games logo as the Godot boot splash,
+  scaled to fit the window. Added the source to [credits](CREDITS.md); a runtime
+  splash preview has not been run.
 - Polished cutter encounters: predictable starboard passes, smooth return turns,
   visible retreat after a 55-second fighting budget, fair fixed-shot warnings,
   and complete reset/next-patrol handling. See the

@@ -6,6 +6,11 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Integrated latest main's joystick support, cannon arc fixes and opaque ship
+  presentation with the nautical UI. Retained the newer outboard camera and
+  pennants in overlapping presentation code. All 384 checks across seven
+  walkthrough/menu/border/fleet/survival/readability/cannon suites pass on the
+  merged defaults; inspected the native fleet gameplay render.
 - The storm message appears only after crossing the border,
   once per voyage for at most 10 seconds, ending early on return inside. Later
   crossings do not repeat it; retry resets the notice. All 121 border/HUD/fleet/
@@ -55,6 +60,20 @@ recorded evidence and limitations.
   without casting off; Retry and held-R retain their start behaviour. Menu,
   retained HUD and survival checks pass; native desktop/small frames inspected.
   Web and the walkthrough remain for later passes.
+- Work in progress: elevated outboard close-camera framing clears the original
+  sail/cannon obstruction without fading meshes. Warm ivory/gold player, class
+  sail colors, single-triangle mast pennants and restrained moon/ambient fill
+  improve night readability. Mechanics and chase framing retained. 440 checks
+  pass across nine suites; two broader wave-fixture failures reproduce on HEAD.
+  Native comparisons and five-ship Chrome rendering/performance reviewed;
+  human comfort and low-end devices remain untested. See the
+  [ship presentation review](artifacts/ship_readability_review.md).
+
+- Work in progress: player arena shots follow a shallow upward arc; targeted
+  shots compensate for gravity while retaining movement lead, range and physical
+  collisions. Removed enemy cannon aiming beams; flashing muzzle and evasive
+  warning remain. 245 checks pass across five suites; four native frames
+  inspected. Human playtesting and Web remain untested.
 
 - Replaced player arena containment and automatic return steering
   with a red storm line that fades in on approach, STORMY AHEAD, and a persistent

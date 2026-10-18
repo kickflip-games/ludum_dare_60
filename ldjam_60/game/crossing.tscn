@@ -1,11 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://udqru6bymudh"]
 
-[ext_resource type="Script" path="res://game/crossing.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://vwfdjw7fgwfs" path="res://game/crossing.gd" id="1_game"]
 
-[ext_resource type="Resource" path="res://game/ocean/presets/calm.tres" id="2_ocean"]
-
-[node name="LatitudeLines" type="Node3D"]
+[node name="LatitudeLines" type="Node3D" unique_id=1167982851]
 script = ExtResource("1_game")
 arena_mode = true
 sailing_follow_smoothing = 10.0
-ocean_settings = ExtResource("2_ocean")

@@ -78,7 +78,7 @@ func _run() -> void:
 	var shot: Dictionary = c.projectiles[0]
 	var launched: Vector3 = shot.velocity
 	check(c.selected_target == null and Vector2(launched.x, launched.z).normalized().dot(Vector2(c.starboard_direction().x, c.starboard_direction().z)) > 0.9999, "empty cone fires straight starboard even on a rocking hull")
-	check((launched + Vector3.UP * c.SHOT_GRAVITY / 60 - Vector3.UP * c.SHOT_LIFT).normalized().dot(c.aimed_direction()) > 0.9999, "real projectile leaves along the rotated visible barrel")
+	check((launched + Vector3.UP * c.shot_gravity() / 60).normalized().dot(c.aimed_direction()) > 0.9999, "real projectile leaves along the elevated visible barrel")
 	key(KEY_SPACE, false)
 	var radius: float = 0
 	for tick in 120:

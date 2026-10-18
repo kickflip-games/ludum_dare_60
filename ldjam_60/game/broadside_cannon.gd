@@ -9,6 +9,8 @@ const RELOAD_SECONDS: float = 1.5
 const SHOT_SPEED: float = 55.0
 const SHOT_GRAVITY: float = 0.9
 const SHOT_LIFT: float = 0.35
+const ARENA_SHOT_GRAVITY: float = 8.0
+const EMPTY_SHOT_ELEVATION: float = PI / 36.0 # Five degrees above the horizon.
 const SHOT_LIFETIME: float = 1.8
 signal aiming_started
 signal aiming_ended
@@ -18,7 +20,7 @@ signal fired(direction: Vector3)
 @export_range(1.0, 45.0, 1.0) var cone_half_angle: float = 10.0
 @export_range(10.0, 100.0, 1.0) var cone_range: float = 65.0
 var selected_target: Node3D
-var cone_elevation: float = 0.0
+var cone_elevation: float = EMPTY_SHOT_ELEVATION
 var cone_visual: MeshInstance3D
 
 @export_group("Legacy voyage sweep")
@@ -264,7 +266,7 @@ func advance(delta: float) -> void:
 		if not water.is_empty() and not hit.is_empty() and from.distance_squared_to(water.position) < from.distance_squared_to(hit.position):
 			hit = {}
 		shot.ttl -= delta
-		shot.velocity.y -= SHOT_GRAVITY * delta
+		shot.velocity.y -= shot_gravity() * delta
 		if not hit.is_empty():
 			_impact(hit.collider, hit.position)
 			ball.queue_free()
@@ -408,7 +410,7 @@ func _splinters(at: Vector3, timber: bool) -> void:
 
 func reset() -> void:
 	selected_target = null
-	cone_elevation = 0.0
+	cone_elevation = EMPTY_SHOT_ELEVATION
 	if is_instance_valid(cone_visual):
 		cone_visual.visible = false
 	_fire_pending = false
@@ -461,7 +463,11 @@ func _audio(frequency: float, noise_level: float, volume: float) -> AudioStreamP
 
 
 func launch_velocity() -> Vector3:
-	return aimed_direction() * SHOT_SPEED + Vector3.UP * SHOT_LIFT
+	return aimed_direction() * SHOT_SPEED + Vector3.UP * (0.0 if game.arena_mode else SHOT_LIFT)
+
+
+func shot_gravity() -> float:
+	return ARENA_SHOT_GRAVITY if game.arena_mode else SHOT_GRAVITY
 
 
 func predict_trajectory() -> Dictionary:
@@ -491,7 +497,7 @@ func predict_trajectory() -> Dictionary:
 		if range_ended:
 			break
 		at = next
-		velocity.y -= SHOT_GRAVITY * step
+		velocity.y -= shot_gravity() * step
 		time += step
 	return {"points": points, "enemy": is_instance_valid(target) and target.get_meta("target_kind", "") == "ship"}
 
@@ -552,7 +558,7 @@ func _prepare_cone_shot() -> void:
 	var target := choose_cone_target()
 	selected_target = target.get("body")
 	aim_degrees = 0.0
-	cone_elevation = 0.0
+	cone_elevation = EMPTY_SHOT_ELEVATION
 	_orient_cone_barrel()
 	if target.is_empty():
 		return
@@ -565,9 +571,10 @@ func _prepare_cone_shot() -> void:
 	for iteration in 3:
 		var offset := point + velocity * flight - shot_origin()
 		var flat := Vector3(offset.x, 0, offset.z)
-		flight = flat.length() / SHOT_SPEED
+		flight = flat.length() / (SHOT_SPEED * cos(cone_elevation))
 		aim_degrees = clampf(rad_to_deg(atan2(starboard_direction().cross(flat).y, starboard_direction().dot(flat))), -cone_half_angle, cone_half_angle)
-		var vertical_speed := offset.y / maxf(flight, 0.01) + SHOT_GRAVITY * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second) * 0.5 - SHOT_LIFT
+		# Aim the real barrel along the launch arc; match the discrete gravity steps.
+		var vertical_speed := offset.y / maxf(flight, 0.01) + shot_gravity() * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second) * 0.5
 		cone_elevation = asin(clampf(vertical_speed / SHOT_SPEED, -0.25, 0.25))
 		_orient_cone_barrel()
 

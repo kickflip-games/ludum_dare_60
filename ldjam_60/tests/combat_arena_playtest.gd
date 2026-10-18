@@ -1,6 +1,6 @@
 extends SceneTree
 
-const Pilot = preload("res://tests/combat_arena_pilot.gd")
+const Pilot = preload("res://tests/boss_pilot.gd")
 var output := "/tmp/latitude-combat/playthrough"
 var capture_enabled := false
 
@@ -41,17 +41,18 @@ func _run() -> void:
 	var enemy_shots := 0
 	var enemy_warnings := 0
 	var trace: Array[Dictionary] = []
-	var capture_counts := {"Cutter": 0, "Skiff": 0, "Heavy": 0}
+	var capture_counts := {"Cutter": 0, "Skiff": 0, "Heavy": 0, "Flagship": 0}
 	var max_yaw := 0.0
 	var max_roll := 0.0
 	var damage_trace: Array[Dictionary] = []
 	for frame in 600 * 60:
 		if game.state != game.State.SAILING:
 			break
+		game._window_focused = true # Deterministic input fixture, including background captures.
 		pilot.update(game, 1.0 / 60.0)
 		var before: Array[Dictionary] = []
 		var previous_hits: int = game.hits_taken
-		for ship in game.enemy_encounters.ships:
+		for ship in game.enemy_encounters.combat_ships():
 			before.append({"hull": ship.hull, "wave": ship.get_meta("wave_id", -1), "shots": ship.shots_fired})
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
@@ -59,8 +60,8 @@ func _run() -> void:
 			damage_trace.append({"seconds": game.elapsed, "reason": game.hit_message, "hull": game.hull})
 		shots = maxi(shots, game.cannon.shots_fired)
 		all_impacts = maxi(all_impacts, game.cannon.targets_hit)
-		for index in game.enemy_encounters.ships.size():
-			var ship = game.enemy_encounters.ships[index]
+		for index in game.enemy_encounters.combat_ships().size():
+			var ship = game.enemy_encounters.combat_ships()[index]
 			if before[index].wave == ship.get_meta("wave_id", -1):
 				ship_hits += maxi(0, before[index].hull - ship.hull)
 				enemy_shots += maxi(0, ship.shots_fired - before[index].shots)
@@ -78,7 +79,7 @@ func _run() -> void:
 			if capture_enabled:
 				await capture("wave-%d" % seen_wave)
 		if capture_enabled and pilot.target != null and frame % 6 == 0:
-			var kind: String = pilot.target.archetype.resource_name
+			var kind: String = pilot.target.archetype.resource_name if pilot.target.archetype != null else "Flagship"
 			if capture_counts[kind] < 80 and game.cannon.aiming:
 				await capture("%s-%03d" % [kind.to_lower(), capture_counts[kind]])
 				capture_counts[kind] += 1

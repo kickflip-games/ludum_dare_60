@@ -114,3 +114,10 @@ func damage(at: Vector3, lethal := false) -> void:
 func trail(at: Vector3, hostile := false) -> void:
 	_emit(at, Vector3.ZERO, Vector3.ONE * (0.18 if hostile else 0.12),
 		Color("ffb46e") if hostile else Color("f3dcb0"), 0.22)
+
+
+func smoke(at: Vector3) -> void:
+	# Reuse the bounded rising-smoke cubes for a damaged flagship's small plume.
+	for i in 3:
+		_emit(at + Vector3.UP * i * 0.25, Vector3(0.25, 1.2 + i * 0.2, 0.15),
+			Vector3.ONE * (0.5 + i * 0.15), Color("707b85"), 0.9 + i * 0.1, true)

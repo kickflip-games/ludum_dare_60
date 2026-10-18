@@ -268,9 +268,12 @@ func advance(delta: float) -> void:
 		shot.ttl -= delta
 		shot.velocity.y -= shot_gravity() * delta
 		if not hit.is_empty():
-			_impact(hit.collider, hit.position)
+			# A flagship hit can end combat and clear this collection immediately.
 			ball.queue_free()
 			projectiles.remove_at(i)
+			_impact(hit.collider, hit.position)
+			if game.state != game.State.SAILING:
+				return
 		elif shot.ttl <= 0.0 or range_ended or not water.is_empty():
 			water_splash(water.position if not water.is_empty() else to)
 			feedback = "SPLASH  ·  SHOT WIDE"

@@ -26,3 +26,20 @@ in Godot. Credit is provided as a courtesy. No endorsement is implied.
 
 The gameplay, procedural sea/cloud shaders, synthesized audio, reef-serpent
 geometry, lighthouse, and remaining primitive props were created for this prototype.
+
+
+## Final-wave flagship
+
+**Ship** by **Quaternius**, from [Poly Pizza](https://poly.pizza/m/mEQj2wZ3GC).
+
+- License: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/)
+- Unmodified GLB, licence and source checksum: `ldjam_60/assets/boss_ship/`
+- Godot applies scale, heading, placement and night material fill.
+
+## Floating proximity mine
+
+**Spike Mine** by **Aaron Clifford**, from [Poly Pizza](https://poly.pizza/m/4VRVeCH1sHm).
+
+- License: [Creative Commons Attribution 3.0 Unported](https://creativecommons.org/licenses/by/3.0/)
+- Unmodified GLB, full licence and source checksum: `ldjam_60/assets/boss_mine/`
+- Godot applies scale, water-following placement and a separate procedural danger ring.

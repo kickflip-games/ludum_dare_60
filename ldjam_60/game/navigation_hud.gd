@@ -23,6 +23,8 @@ var cannon_gauge: Control
 var gameplay_hud: Control
 var wave_countdown: Label
 var wave_announcement: Label
+var boss_label: Label
+var boss_health: ProgressBar
 var wave_label: Label
 var threat_label: Label
 var storm_warning: VBoxContainer
@@ -66,6 +68,27 @@ func _ready() -> void:
 		label.offset_top=20
 		label.offset_bottom=44
 		label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	boss_label = _label(gameplay_hud, "FlagshipTitle", "THE FLAGSHIP", 12, BRASS)
+	boss_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	boss_label.offset_left = -130
+	boss_label.offset_right = 130
+	boss_label.offset_top = 47
+	boss_label.offset_bottom = 64
+	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_health = ProgressBar.new()
+	boss_health.name = "FlagshipHealth"
+	boss_health.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_health.show_percentage = false
+	gameplay_hud.add_child(boss_health)
+	boss_health.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	boss_health.offset_left = -120
+	boss_health.offset_right = 120
+	boss_health.offset_top = 69
+	boss_health.offset_bottom = 75
+	for style_name in ["background", "fill"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("263a42") if style_name == "background" else Color("c78d70")
+		boss_health.add_theme_stylebox_override(style_name, style)
 	wave_countdown = _label(gameplay_hud,"WaveCountdown","",13,MUTED)
 	wave_announcement = _label(gameplay_hud,"WaveAnnouncement","",26,INK,true)
 	for entry in [[wave_countdown,48,72],[wave_announcement,88,126]]:
@@ -253,7 +276,7 @@ func _sync_button() -> void:
 	if not intro and game.arena_mode:
 		menu_title.text = "THE SEA IS YOURS" if won else "SHIP SUNK"
 		menu_title.add_theme_font_size_override("font_size",36)
-		menu_body.text = "All five waves defeated. You survived the night." if won else game.failure_reason
+		menu_body.text = "The flagship is sunk. You survived the night." if won else game.failure_reason
 	menu_controls.visible = intro
 	menu_details.visible = won
 	menu_details.text = ("Survived   %02d:%02d" if game.arena_mode else "Voyage time   %02d:%02d") % [int(game.elapsed) / 60, int(game.elapsed) % 60]
@@ -558,6 +581,11 @@ func star_horizon_line() -> Dictionary:
 func _update_wave_ui() -> void:
 	var waves = game.enemy_encounters
 	var active: bool = game.arena_mode and game.state == game.State.SAILING
+	boss_label.visible = active and waves.boss_active()
+	boss_health.visible = boss_label.visible
+	if boss_health.visible:
+		boss_health.max_value = waves.boss.hull_capacity
+		boss_health.value = waves.boss.hull
 	wave_label.visible=active
 	wave_countdown.visible=false
 	wave_announcement.visible=false

@@ -1,14 +1,29 @@
 extends RefCounted
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## Finite world-space ridges. Keep the analytic profile in sync with waves.gdshaderinc.
 const MAX_WAVES := 4
 const MAX_HEIGHT := 2.0
 const FORCE_MULTIPLIER := 1.5
 var waves: Array[Dictionary] = []
 var next_id := 0
+var revision := 0
+var _packed_revision := -1
+var _origins := PackedVector4Array()
+var _shapes := PackedVector4Array()
+var _timings := PackedVector4Array()
+var _uploaded: Dictionary = {}
+
+# The field is edited through add_wave/advance/clear. Diagnostic tools that edit
+# a wave dictionary in place must invalidate after the edit.
+func invalidate() -> void:
+	revision += 1
+	_uploaded.clear()
+
 
 func clear() -> void:
 	waves.clear()
 	next_id = 0
+	invalidate()
 
 func add_wave(origin: Vector2, direction: Vector2, height: float, width: float,
 		span: float, speed: float, start: float, lifetime: float = 9.0) -> int:
@@ -18,10 +33,14 @@ func add_wave(origin: Vector2, direction: Vector2, height: float, width: float,
 	waves.append({"id": next_id, "origin": origin, "direction": direction.normalized(),
 		"height": clampf(height, 0.0, MAX_HEIGHT), "width": maxf(width, 3.0), "span": maxf(span, 12.0),
 		"speed": maxf(speed, 0.1), "start": start, "lifetime": maxf(lifetime, 4.0)})
+	invalidate()
 	return next_id
 
 func advance(time: float) -> void:
-	waves = waves.filter(func(w: Dictionary) -> bool: return time < w.start + w.lifetime)
+	for i in range(waves.size()-1,-1,-1):
+		if time >= waves[i].start + waves[i].lifetime:
+			waves.remove_at(i)
+			invalidate()
 
 static func envelope(w: Dictionary, time: float) -> float:
 	var age: float = time - w.start
@@ -69,18 +88,25 @@ func push_at(p: Vector2, heading: float, time: float) -> Vector2:
 	return result.limit_length(8.0) * FORCE_MULTIPLIER
 
 func apply_to(material: ShaderMaterial) -> void:
-	var origins := PackedVector4Array()
-	var shapes := PackedVector4Array()
-	var timings := PackedVector4Array()
-	origins.resize(MAX_WAVES)
-	shapes.resize(MAX_WAVES)
-	timings.resize(MAX_WAVES)
-	for i in range(waves.size()):
-		var w := waves[i]
-		origins[i] = Vector4(w.origin.x, w.origin.y, w.direction.x, w.direction.y)
-		shapes[i] = Vector4(w.height, w.width, w.span, w.speed)
-		timings[i] = Vector4(w.start, w.lifetime, 0, 0)
-	material.set_shader_parameter("event_count", waves.size())
-	material.set_shader_parameter("event_origins", origins)
-	material.set_shader_parameter("event_shapes", shapes)
-	material.set_shader_parameter("event_timings", timings)
+	var _profile_started := CombatMetrics.start()
+	if _packed_revision != revision:
+		_origins.resize(MAX_WAVES)
+		_shapes.resize(MAX_WAVES)
+		_timings.resize(MAX_WAVES)
+		_origins.fill(Vector4.ZERO)
+		_shapes.fill(Vector4.ZERO)
+		_timings.fill(Vector4.ZERO)
+		for i in waves.size():
+			var w := waves[i]
+			_origins[i] = Vector4(w.origin.x, w.origin.y, w.direction.x, w.direction.y)
+			_shapes[i] = Vector4(w.height, w.width, w.span, w.speed)
+			_timings[i] = Vector4(w.start, w.lifetime, 0, 0)
+		_packed_revision = revision
+	var id := material.get_instance_id()
+	if not _uploaded.has(id):
+		material.set_shader_parameter("event_count", waves.size())
+		material.set_shader_parameter("event_origins", _origins)
+		material.set_shader_parameter("event_shapes", _shapes)
+		material.set_shader_parameter("event_timings", _timings)
+		_uploaded[id] = true
+	CombatMetrics.finish("ocean/wave_field.gd:apply_to", _profile_started)

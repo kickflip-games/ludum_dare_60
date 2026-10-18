@@ -115,8 +115,9 @@ sinks, until triggered or shot by the player; retry and endings clear them.
 Mines can be acquired and destroyed by the normal cannon inside its firing cone.
 Full trails wait for a mine to be destroyed or triggered before dropping another.
 
-All enemies, including the flagship, arrive through a **0.9 s fade-in** with a
-small water-spray cue. Moving hulls leave curved foam wakes and pale stern spray;
+All enemies, including the flagship, arrive with a small **water-spray cue** and
+opaque hulls; their original **0.9 s weapon-readiness delay** remains.
+Moving hulls leave curved foam wakes and pale stern spray;
 blocked or stopped hulls stop emitting. Trails follow the same ocean waves and
 fade in place. Low quality reduces spray, and retry/endings clear the pools.
 Spawn positions, wave timing, physical targeting and weapon warnings are retained.
@@ -138,12 +139,13 @@ reload. A lightweight director allocates 1/1/2/2/2 navigation attack slots, queu
 and separates ordinary warning starts by 0.7 seconds. Only slot owners may
 start warnings; waiting ships cannot fire. Ordinary batteries accept ±38°
 and recheck the lane at launch. Their glow is visible throughout the warning,
-and acquisition waits until the arrival fade completes. Waiting ships sail vulnerable routes
+and acquisition waits until arrival readiness completes. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
 out; blocked routes recover visibly, and retry clears the fleet and its shots.
 Wave 2 introduces the heavy minelayer; wave counts and deadlines remain unchanged. The flagship
 uses no director slot, but reserves warning spacing for its whole volley.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
+See [combat event measurements and reproduction](artifacts/combat_events_review.md).
 See [enemy cannon accuracy, pressure and acceptance evidence](artifacts/enemy_cannon_review.md).
 
 The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.

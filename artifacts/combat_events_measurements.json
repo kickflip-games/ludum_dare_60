@@ -1,0 +1,5661 @@
+{
+  "native": {
+    "before": {
+      "adapter": "Apple M4 Pro",
+      "engine": "4.8-dev6 (official)",
+      "render_size": "(1280.0, 720.0)",
+      "warmup_ms": 466.395,
+      "phases": [
+        {
+          "case": "ordinary_spawn",
+          "events": [
+            {
+              "cpu_us": 1009,
+              "event": "ordinary_spawn",
+              "frame_index": 90,
+              "node_delta": 16,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 4,
+                  "total_us": 10
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 1,
+                  "total_us": 22
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 600
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 17
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 354
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 631
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 2,
+                  "total_us": 2
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 447,
+          "max_ms": 210.685,
+          "median_ms": 7.845,
+          "p95_ms": 14.419,
+          "p99_ms": 18.684,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 9,
+              "total_us": 1195
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 594,
+              "max_us": 14,
+              "total_us": 2408
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 394,
+              "max_us": 31,
+              "total_us": 5264
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 600,
+              "total_us": 600
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 200,
+              "max_us": 25,
+              "total_us": 3249
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 354,
+              "total_us": 354
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 631,
+              "total_us": 631
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1691,
+              "max_us": 7,
+              "total_us": 1963
+            }
+          },
+          "peak_draws": 215.0,
+          "peak_nodes": 918,
+          "peak_resources": 158.0,
+          "rendered_advances": 447,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            210.685
+          ]
+        },
+        {
+          "case": "archetype_reuse",
+          "events": [
+            {
+              "cpu_us": 1321,
+              "event": "archetype_reuse",
+              "frame_index": 91,
+              "node_delta": 24,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 4,
+                  "total_us": 12
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 1,
+                  "total_us": 15
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 867
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 20
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 384
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 911
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 2,
+                  "total_us": 4
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 466,
+          "max_ms": 209.104,
+          "median_ms": 7.887,
+          "p95_ms": 13.869,
+          "p99_ms": 16.935,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 12,
+              "total_us": 963
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 910,
+              "max_us": 21,
+              "total_us": 4620
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 603,
+              "max_us": 54,
+              "total_us": 8260
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 867,
+              "total_us": 867
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 307,
+              "max_us": 35,
+              "total_us": 5661
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 384,
+              "total_us": 384
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 911,
+              "total_us": 911
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2109,
+              "max_us": 9,
+              "total_us": 2413
+            }
+          },
+          "peak_draws": 219.0,
+          "peak_nodes": 926,
+          "peak_resources": 158.0,
+          "rendered_advances": 466,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            209.104
+          ]
+        },
+        {
+          "case": "wave_arrivals",
+          "events": [
+            {
+              "cpu_us": 2073,
+              "event": "wave_arrivals",
+              "frame_index": 90,
+              "node_delta": 36,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 8,
+                  "total_us": 20
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 2,
+                  "total_us": 33
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 2,
+                  "total_us": 1120
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 6,
+                  "total_us": 34
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 2,
+                  "total_us": 662
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 2,
+                  "total_us": 1169
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 4,
+                  "total_us": 5
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 535,
+          "max_ms": 210.404,
+          "median_ms": 6.927,
+          "p95_ms": 13.0,
+          "p99_ms": 16.823,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 17,
+              "total_us": 1248
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 1186,
+              "max_us": 25,
+              "total_us": 5136
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 788,
+              "max_us": 91,
+              "total_us": 9168
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 2,
+              "max_us": 584,
+              "total_us": 1120
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 398,
+              "max_us": 65,
+              "total_us": 6275
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 2,
+              "max_us": 357,
+              "total_us": 662
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 2,
+              "max_us": 603,
+              "total_us": 1169
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2479,
+              "max_us": 39,
+              "total_us": 2815
+            }
+          },
+          "peak_draws": 245.0,
+          "peak_nodes": 934,
+          "peak_resources": 158.0,
+          "rendered_advances": 535,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            210.404
+          ]
+        },
+        {
+          "case": "first_volley",
+          "events": [
+            {
+              "cpu_us": 84,
+              "event": "first_volley",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 76
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 578,
+          "max_ms": 40.849,
+          "median_ms": 6.927,
+          "p95_ms": 12.713,
+          "p99_ms": 14.424,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 8,
+              "total_us": 1029
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 56,
+              "total_us": 4044
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 89,
+              "total_us": 8581
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 1,
+              "max_us": 76,
+              "total_us": 76
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 105,
+              "total_us": 6158
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 46,
+              "total_us": 2671
+            }
+          },
+          "peak_draws": 224.0,
+          "peak_nodes": 934,
+          "peak_resources": 158.0,
+          "rendered_advances": 578,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            40.849
+          ]
+        },
+        {
+          "case": "repeated_volley",
+          "events": [
+            {
+              "cpu_us": 59,
+              "event": "repeated_volley",
+              "frame_index": 108,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 51
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 51,
+              "event": "repeat",
+              "frame_index": 328,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 45
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 2.26666666666667
+            }
+          ],
+          "frames": 583,
+          "max_ms": 16.125,
+          "median_ms": 5.672,
+          "p95_ms": 13.785,
+          "p99_ms": 14.704,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 14,
+              "total_us": 1033
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 34,
+              "total_us": 4131
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 62,
+              "total_us": 8251
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 51,
+              "total_us": 96
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 85,
+              "total_us": 5990
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 14,
+              "total_us": 2516
+            }
+          },
+          "peak_draws": 228.0,
+          "peak_nodes": 934,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            16.125,
+            14.515
+          ]
+        },
+        {
+          "case": "hull_hit",
+          "events": [
+            {
+              "cpu_us": 65,
+              "event": "hull_hit",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 59
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 20
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 1,
+                  "total_us": 3
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 6
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 6
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 584,
+          "max_ms": 14.653,
+          "median_ms": 7.117,
+          "p95_ms": 12.549,
+          "p99_ms": 13.875,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 13,
+              "total_us": 1032
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 59,
+              "total_us": 59
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 20,
+              "total_us": 20
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 906,
+              "max_us": 37,
+              "total_us": 5422
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 103,
+              "total_us": 8865
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 304,
+              "max_us": 81,
+              "total_us": 7663
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 6,
+              "total_us": 6
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 28,
+              "total_us": 2719
+            }
+          },
+          "peak_draws": 220.0,
+          "peak_nodes": 942,
+          "peak_resources": 158.0,
+          "rendered_advances": 584,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.332
+          ]
+        },
+        {
+          "case": "lethal_hit",
+          "events": [
+            {
+              "cpu_us": 124,
+              "event": "lethal_hit",
+              "frame_index": 108,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 116
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 43
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 2,
+                  "total_us": 4
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 5
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 32
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 15.066,
+          "median_ms": 7.11,
+          "p95_ms": 12.556,
+          "p99_ms": 14.261,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 22,
+              "total_us": 1061
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 116,
+              "total_us": 116
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 30,
+              "total_us": 43
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 512,
+              "max_us": 31,
+              "total_us": 3345
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 64,
+              "total_us": 8537
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 302,
+              "max_us": 57,
+              "total_us": 6917
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 32,
+              "total_us": 32
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 14,
+              "total_us": 2578
+            }
+          },
+          "peak_draws": 222.0,
+          "peak_nodes": 934,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            14.595
+          ]
+        },
+        {
+          "case": "simultaneous_hits",
+          "events": [
+            {
+              "cpu_us": 135,
+              "event": "simultaneous_hits",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 3,
+                  "total_us": 126
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 3,
+                  "total_us": 68
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 3,
+                  "total_us": 6
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 13
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 3,
+                  "total_us": 16
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 581,
+          "max_ms": 28.739,
+          "median_ms": 6.308,
+          "p95_ms": 13.18,
+          "p99_ms": 15.997,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 7,
+              "total_us": 910
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 3,
+              "max_us": 62,
+              "total_us": 126
+            },
+            "combat_particles.gd:impact": {
+              "calls": 3,
+              "max_us": 39,
+              "total_us": 68
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 2713,
+              "max_us": 46,
+              "total_us": 9840
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 1806,
+              "max_us": 80,
+              "total_us": 18212
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 907,
+              "max_us": 104,
+              "total_us": 11539
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 3,
+              "max_us": 6,
+              "total_us": 16
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 4515,
+              "max_us": 11,
+              "total_us": 4287
+            }
+          },
+          "peak_draws": 254.0,
+          "peak_nodes": 942,
+          "peak_resources": 158.0,
+          "rendered_advances": 581,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.804
+          ]
+        },
+        {
+          "case": "player_cannon_hit",
+          "events": [
+            {
+              "cpu_us": 132,
+              "event": "player_cannon_hit",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 3
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 1,
+                  "total_us": 23
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 15
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 584,
+          "max_ms": 16.569,
+          "median_ms": 6.922,
+          "p95_ms": 12.836,
+          "p99_ms": 14.211,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 8,
+              "total_us": 933
+            },
+            "combat_particles.gd:damage": {
+              "calls": 1,
+              "max_us": 23,
+              "total_us": 23
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 15,
+              "total_us": 15
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 52,
+              "total_us": 4307
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 32,
+              "total_us": 7884
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 112,
+              "total_us": 6617
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 15,
+              "total_us": 2376
+            }
+          },
+          "peak_draws": 219.0,
+          "peak_nodes": 942,
+          "peak_resources": 158.0,
+          "rendered_advances": 584,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.21
+          ]
+        },
+        {
+          "case": "player_mine_hit",
+          "events": [
+            {
+              "cpu_us": 147,
+              "event": "player_mine_hit",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 4
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 2,
+                  "total_us": 48
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 34
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 1,
+                  "total_us": 3
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 17.646,
+          "median_ms": 6.533,
+          "p95_ms": 13.582,
+          "p99_ms": 15.986,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 12,
+              "total_us": 919
+            },
+            "combat_particles.gd:damage": {
+              "calls": 2,
+              "max_us": 27,
+              "total_us": 48
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 19,
+              "total_us": 34
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 19,
+              "total_us": 4324
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 43,
+              "total_us": 7876
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 55,
+              "total_us": 6308
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2108,
+              "max_us": 8,
+              "total_us": 2353
+            }
+          },
+          "peak_draws": 225.0,
+          "peak_nodes": 942,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            15.847
+          ]
+        },
+        {
+          "case": "full_combat",
+          "events": [
+            {
+              "cpu_us": 96,
+              "event": "player_fire",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 102,
+              "event": "player_fire",
+              "frame_index": 303,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 2.26666666666667
+            },
+            {
+              "cpu_us": 99,
+              "event": "player_fire",
+              "frame_index": 521,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 3.76666666666666
+            },
+            {
+              "cpu_us": 90,
+              "event": "player_fire",
+              "frame_index": 738,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 5.26666666666666
+            },
+            {
+              "cpu_us": 124,
+              "event": "player_fire",
+              "frame_index": 956,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 6.76666666666665
+            },
+            {
+              "cpu_us": 92,
+              "event": "player_fire",
+              "frame_index": 1173,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 8.26666666666666
+            },
+            {
+              "cpu_us": 6,
+              "event": "player_fire",
+              "frame_index": 1389,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 9.75000000000007
+            },
+            {
+              "cpu_us": 110,
+              "event": "player_fire",
+              "frame_index": 1605,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 11.2500000000001
+            },
+            {
+              "cpu_us": 4000,
+              "event": "wave_skip",
+              "frame_index": 1714,
+              "node_delta": 60,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 12,
+                  "total_us": 30
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 3,
+                  "total_us": 61
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 3,
+                  "total_us": 1721
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 9,
+                  "total_us": 49
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 3,
+                  "total_us": 1019
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 3,
+                  "total_us": 1775
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 6,
+                  "total_us": 15
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 12.0000000000002
+            },
+            {
+              "cpu_us": 107,
+              "event": "player_fire",
+              "frame_index": 1821,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 12.7500000000002
+            },
+            {
+              "cpu_us": 100,
+              "event": "player_fire",
+              "frame_index": 2038,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 14.2500000000003
+            },
+            {
+              "cpu_us": 126,
+              "event": "player_fire",
+              "frame_index": 2256,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 15.7500000000004
+            },
+            {
+              "cpu_us": 112,
+              "event": "player_fire",
+              "frame_index": 2473,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 17.2500000000003
+            },
+            {
+              "cpu_us": 111,
+              "event": "player_fire",
+              "frame_index": 2691,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 18.7500000000002
+            },
+            {
+              "cpu_us": 90,
+              "event": "player_fire",
+              "frame_index": 2908,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 20.2500000000001
+            },
+            {
+              "cpu_us": 96,
+              "event": "player_fire",
+              "frame_index": 3125,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 21.75
+            },
+            {
+              "cpu_us": 103,
+              "event": "player_fire",
+              "frame_index": 3341,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 23.2666666666666
+            },
+            {
+              "cpu_us": 74,
+              "event": "player_fire",
+              "frame_index": 3554,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 24.7666666666665
+            },
+            {
+              "cpu_us": 77,
+              "event": "player_fire",
+              "frame_index": 3770,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 26.2666666666665
+            },
+            {
+              "cpu_us": 94,
+              "event": "player_fire",
+              "frame_index": 3986,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 27.7666666666664
+            },
+            {
+              "cpu_us": 106,
+              "event": "player_fire",
+              "frame_index": 4204,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 29.2666666666663
+            },
+            {
+              "cpu_us": 106,
+              "event": "player_fire",
+              "frame_index": 4422,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 30.7666666666662
+            },
+            {
+              "cpu_us": 100,
+              "event": "player_fire",
+              "frame_index": 4639,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 32.2666666666661
+            },
+            {
+              "cpu_us": 90,
+              "event": "player_fire",
+              "frame_index": 4857,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 33.766666666666
+            },
+            {
+              "cpu_us": 82,
+              "event": "player_fire",
+              "frame_index": 5074,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 35.2666666666659
+            },
+            {
+              "cpu_us": 129,
+              "event": "player_fire",
+              "frame_index": 5291,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 36.7666666666659
+            },
+            {
+              "cpu_us": 109,
+              "event": "player_fire",
+              "frame_index": 5508,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 38.2666666666658
+            },
+            {
+              "cpu_us": 125,
+              "event": "player_fire",
+              "frame_index": 5725,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 39.7666666666657
+            },
+            {
+              "cpu_us": 81,
+              "event": "player_fire",
+              "frame_index": 5941,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 41.2666666666656
+            },
+            {
+              "cpu_us": 106,
+              "event": "player_fire",
+              "frame_index": 6159,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 42.7666666666655
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 6376,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 44.2666666666654
+            },
+            {
+              "cpu_us": 89,
+              "event": "player_fire",
+              "frame_index": 6593,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 45.7666666666654
+            },
+            {
+              "cpu_us": 88,
+              "event": "player_fire",
+              "frame_index": 6810,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 47.2666666666653
+            },
+            {
+              "cpu_us": 91,
+              "event": "player_fire",
+              "frame_index": 7028,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 48.7666666666652
+            },
+            {
+              "cpu_us": 72,
+              "event": "player_fire",
+              "frame_index": 7245,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 50.2666666666651
+            },
+            {
+              "cpu_us": 101,
+              "event": "player_fire",
+              "frame_index": 7463,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 51.766666666665
+            },
+            {
+              "cpu_us": 100,
+              "event": "player_fire",
+              "frame_index": 7680,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 53.2666666666649
+            },
+            {
+              "cpu_us": 88,
+              "event": "player_fire",
+              "frame_index": 7896,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 54.7666666666648
+            },
+            {
+              "cpu_us": 82,
+              "event": "player_fire",
+              "frame_index": 8112,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 56.2666666666648
+            },
+            {
+              "cpu_us": 103,
+              "event": "player_fire",
+              "frame_index": 8330,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 57.7666666666647
+            },
+            {
+              "cpu_us": 84,
+              "event": "player_fire",
+              "frame_index": 8546,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 59.2666666666646
+            }
+          ],
+          "frames": 8654,
+          "max_ms": 202.647,
+          "median_ms": 5.035,
+          "p95_ms": 14.368,
+          "p99_ms": 15.92,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 3665,
+              "max_us": 66,
+              "total_us": 11875
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 2,
+              "max_us": 31,
+              "total_us": 53
+            },
+            "combat_particles.gd:damage": {
+              "calls": 3,
+              "max_us": 31,
+              "total_us": 81
+            },
+            "combat_particles.gd:impact": {
+              "calls": 5,
+              "max_us": 25,
+              "total_us": 84
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 47144,
+              "max_us": 71,
+              "total_us": 183323
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 31408,
+              "max_us": 123,
+              "total_us": 322763
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 6,
+              "max_us": 725,
+              "total_us": 3451
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 51,
+              "total_us": 100
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 15734,
+              "max_us": 97,
+              "total_us": 175243
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 6,
+              "max_us": 362,
+              "total_us": 1928
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 6,
+              "max_us": 749,
+              "total_us": 3567
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 77081,
+              "max_us": 102,
+              "total_us": 117528
+            }
+          },
+          "peak_draws": 324.0,
+          "peak_nodes": 982,
+          "peak_resources": 158.0,
+          "rendered_advances": 8654,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.031,
+            14.046,
+            13.786,
+            16.952,
+            13.646,
+            14.169,
+            14.435,
+            14.618,
+            21.751,
+            16.259,
+            13.79,
+            12.906,
+            14.087,
+            12.924,
+            14.36,
+            14.111,
+            17.462,
+            15.333,
+            16.141,
+            14.081,
+            13.419,
+            13.607,
+            13.684,
+            12.815,
+            13.628,
+            15.657,
+            15.369,
+            15.067,
+            16.826,
+            14.561,
+            16.366,
+            17.077,
+            13.294,
+            12.889,
+            14.567,
+            16.47,
+            14.858,
+            13.27,
+            14.957,
+            14.85,
+            15.854
+          ]
+        }
+      ]
+    },
+    "after": {
+      "adapter": "Apple M4 Pro",
+      "engine": "4.8-dev6 (official)",
+      "render_size": "(1280.0, 720.0)",
+      "warmup_ms": 719.423,
+      "phases": [
+        {
+          "case": "ordinary_spawn",
+          "events": [
+            {
+              "cpu_us": 376,
+              "event": "ordinary_spawn",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 24
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 1
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 304
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 46
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 14.866,
+          "median_ms": 7.636,
+          "p95_ms": 12.335,
+          "p99_ms": 13.27,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 3,
+              "total_us": 343
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 197,
+              "max_us": 29,
+              "total_us": 1406
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 24,
+              "total_us": 24
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 200,
+              "max_us": 8,
+              "total_us": 399
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 304,
+              "total_us": 304
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 46,
+              "total_us": 46
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1297,
+              "max_us": 2,
+              "total_us": 585
+            }
+          },
+          "peak_draws": 215.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.766
+          ]
+        },
+        {
+          "case": "archetype_reuse",
+          "events": [
+            {
+              "cpu_us": 489,
+              "event": "archetype_reuse",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 18
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 9
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 426
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 42
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 13.656,
+          "median_ms": 7.902,
+          "p95_ms": 12.2,
+          "p99_ms": 12.849,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 9,
+              "total_us": 317
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 16,
+              "total_us": 1936
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 18,
+              "total_us": 18
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 305,
+              "max_us": 11,
+              "total_us": 647
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 426,
+              "total_us": 426
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 42,
+              "total_us": 42
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 2,
+              "total_us": 594
+            }
+          },
+          "peak_draws": 219.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.39
+          ]
+        },
+        {
+          "case": "wave_arrivals",
+          "events": [
+            {
+              "cpu_us": 912,
+              "event": "wave_arrivals",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 2,
+                  "total_us": 27
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 6,
+                  "total_us": 14
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 2,
+                  "total_us": 605
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 2,
+                  "total_us": 65
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 582,
+          "max_ms": 21.925,
+          "median_ms": 7.363,
+          "p95_ms": 12.456,
+          "p99_ms": 13.442,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 3,
+              "total_us": 324
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 394,
+              "max_us": 27,
+              "total_us": 2040
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 2,
+              "max_us": 15,
+              "total_us": 27
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 398,
+              "max_us": 7,
+              "total_us": 583
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 2,
+              "max_us": 326,
+              "total_us": 605
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 2,
+              "max_us": 40,
+              "total_us": 65
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1691,
+              "max_us": 3,
+              "total_us": 617
+            }
+          },
+          "peak_draws": 245.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 582,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            21.925
+          ]
+        },
+        {
+          "case": "first_volley",
+          "events": [
+            {
+              "cpu_us": 59,
+              "event": "first_volley",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 51
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 16.37,
+          "median_ms": 7.456,
+          "p95_ms": 12.467,
+          "p99_ms": 15.557,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 2,
+              "total_us": 309
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 17,
+              "total_us": 2007
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 1,
+              "max_us": 51,
+              "total_us": 51
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 8,
+              "total_us": 587
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 2,
+              "total_us": 622
+            }
+          },
+          "peak_draws": 224.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            11.86
+          ]
+        },
+        {
+          "case": "repeated_volley",
+          "events": [
+            {
+              "cpu_us": 60,
+              "event": "repeated_volley",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 52
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 54,
+              "event": "repeat",
+              "frame_index": 329,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 45
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 2.26666666666667
+            }
+          ],
+          "frames": 584,
+          "max_ms": 20.171,
+          "median_ms": 7.257,
+          "p95_ms": 12.405,
+          "p99_ms": 13.253,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 2,
+              "total_us": 298
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 15,
+              "total_us": 1928
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 52,
+              "total_us": 97
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 8,
+              "total_us": 514
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 8,
+              "total_us": 604
+            }
+          },
+          "peak_draws": 228.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 584,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.603,
+            13.086
+          ]
+        },
+        {
+          "case": "hull_hit",
+          "events": [
+            {
+              "cpu_us": 50,
+              "event": "hull_hit",
+              "frame_index": 108,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 44
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 19
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 6
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 8
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 18.156,
+          "median_ms": 7.344,
+          "p95_ms": 12.365,
+          "p99_ms": 13.957,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 5,
+              "total_us": 318
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 44,
+              "total_us": 44
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 19,
+              "total_us": 19
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 13,
+              "total_us": 2039
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 304,
+              "max_us": 10,
+              "total_us": 675
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 8,
+              "total_us": 8
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 6,
+              "total_us": 643
+            }
+          },
+          "peak_draws": 220.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.125
+          ]
+        },
+        {
+          "case": "lethal_hit",
+          "events": [
+            {
+              "cpu_us": 118,
+              "event": "lethal_hit",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 110
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 41
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 5
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 26
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 584,
+          "max_ms": 16.079,
+          "median_ms": 7.123,
+          "p95_ms": 12.514,
+          "p99_ms": 14.758,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 2,
+              "total_us": 318
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 110,
+              "total_us": 110
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 29,
+              "total_us": 41
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 19,
+              "total_us": 2015
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 302,
+              "max_us": 16,
+              "total_us": 795
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 26,
+              "total_us": 26
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 4,
+              "total_us": 583
+            }
+          },
+          "peak_draws": 222.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 584,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.509
+          ]
+        },
+        {
+          "case": "simultaneous_hits",
+          "events": [
+            {
+              "cpu_us": 98,
+              "event": "simultaneous_hits",
+              "frame_index": 108,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 3,
+                  "total_us": 89
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 3,
+                  "total_us": 44
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 14
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 3,
+                  "total_us": 17
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 15.844,
+          "median_ms": 6.656,
+          "p95_ms": 12.843,
+          "p99_ms": 14.085,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 2,
+              "total_us": 286
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 3,
+              "max_us": 49,
+              "total_us": 89
+            },
+            "combat_particles.gd:impact": {
+              "calls": 3,
+              "max_us": 22,
+              "total_us": 44
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 903,
+              "max_us": 74,
+              "total_us": 4190
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 907,
+              "max_us": 16,
+              "total_us": 1144
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 3,
+              "max_us": 9,
+              "total_us": 17
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2709,
+              "max_us": 38,
+              "total_us": 822
+            }
+          },
+          "peak_draws": 254.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.843
+          ]
+        },
+        {
+          "case": "player_cannon_hit",
+          "events": [
+            {
+              "cpu_us": 156,
+              "event": "player_cannon_hit",
+              "frame_index": 109,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 6
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 1,
+                  "total_us": 23
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 15
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 584,
+          "max_ms": 15.462,
+          "median_ms": 7.473,
+          "p95_ms": 12.249,
+          "p99_ms": 12.852,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 7,
+              "total_us": 936
+            },
+            "combat_particles.gd:damage": {
+              "calls": 1,
+              "max_us": 23,
+              "total_us": 23
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 15,
+              "total_us": 15
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 14,
+              "total_us": 1963
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 9,
+              "total_us": 762
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 2,
+              "total_us": 619
+            }
+          },
+          "peak_draws": 219.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 584,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.329
+          ]
+        },
+        {
+          "case": "player_mine_hit",
+          "events": [
+            {
+              "cpu_us": 120,
+              "event": "player_mine_hit",
+              "frame_index": 108,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 5
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 2,
+                  "total_us": 34
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 24
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 1,
+                  "total_us": 4
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 583,
+          "max_ms": 14.727,
+          "median_ms": 7.213,
+          "p95_ms": 12.47,
+          "p99_ms": 13.444,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 11,
+              "total_us": 967
+            },
+            "combat_particles.gd:damage": {
+              "calls": 2,
+              "max_us": 21,
+              "total_us": 34
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 15,
+              "total_us": 24
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 17,
+              "total_us": 1956
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 5,
+              "total_us": 693
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1506,
+              "max_us": 7,
+              "total_us": 572
+            }
+          },
+          "peak_draws": 225.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 583,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            12.121
+          ]
+        },
+        {
+          "case": "full_combat",
+          "events": [
+            {
+              "cpu_us": 71,
+              "event": "player_fire",
+              "frame_index": 107,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 108,
+              "event": "player_fire",
+              "frame_index": 327,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 2.26666666666667
+            },
+            {
+              "cpu_us": 89,
+              "event": "player_fire",
+              "frame_index": 544,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 3.76666666666666
+            },
+            {
+              "cpu_us": 107,
+              "event": "player_fire",
+              "frame_index": 762,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 5.26666666666666
+            },
+            {
+              "cpu_us": 111,
+              "event": "player_fire",
+              "frame_index": 979,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 6.76666666666665
+            },
+            {
+              "cpu_us": 132,
+              "event": "player_fire",
+              "frame_index": 1196,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 8.26666666666666
+            },
+            {
+              "cpu_us": 2,
+              "event": "player_fire",
+              "frame_index": 1411,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 9.75000000000007
+            },
+            {
+              "cpu_us": 72,
+              "event": "player_fire",
+              "frame_index": 1628,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 11.2500000000001
+            },
+            {
+              "cpu_us": 1996,
+              "event": "wave_skip",
+              "frame_index": 1736,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 3,
+                  "total_us": 36
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 9,
+                  "total_us": 13
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 3,
+                  "total_us": 818
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 3,
+                  "total_us": 76
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0.0,
+              "time": 12.0000000000002
+            },
+            {
+              "cpu_us": 106,
+              "event": "player_fire",
+              "frame_index": 1843,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 12.7500000000002
+            },
+            {
+              "cpu_us": 82,
+              "event": "player_fire",
+              "frame_index": 2060,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 14.2500000000003
+            },
+            {
+              "cpu_us": 107,
+              "event": "player_fire",
+              "frame_index": 2278,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 15.7500000000004
+            },
+            {
+              "cpu_us": 102,
+              "event": "player_fire",
+              "frame_index": 2496,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 17.2500000000003
+            },
+            {
+              "cpu_us": 109,
+              "event": "player_fire",
+              "frame_index": 2713,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 18.7500000000002
+            },
+            {
+              "cpu_us": 87,
+              "event": "player_fire",
+              "frame_index": 2931,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 20.2500000000001
+            },
+            {
+              "cpu_us": 77,
+              "event": "player_fire",
+              "frame_index": 3148,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 21.75
+            },
+            {
+              "cpu_us": 99,
+              "event": "player_fire",
+              "frame_index": 3364,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0.0,
+              "time": 23.2666666666666
+            },
+            {
+              "cpu_us": 123,
+              "event": "player_fire",
+              "frame_index": 3578,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 24.7666666666665
+            },
+            {
+              "cpu_us": 84,
+              "event": "player_fire",
+              "frame_index": 3794,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 26.2666666666665
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 4011,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 27.7666666666664
+            },
+            {
+              "cpu_us": 85,
+              "event": "player_fire",
+              "frame_index": 4228,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 29.2666666666663
+            },
+            {
+              "cpu_us": 97,
+              "event": "player_fire",
+              "frame_index": 4446,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 30.7666666666662
+            },
+            {
+              "cpu_us": 106,
+              "event": "player_fire",
+              "frame_index": 4663,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 32.2666666666661
+            },
+            {
+              "cpu_us": 85,
+              "event": "player_fire",
+              "frame_index": 4881,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 33.766666666666
+            },
+            {
+              "cpu_us": 119,
+              "event": "player_fire",
+              "frame_index": 5098,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 35.2666666666659
+            },
+            {
+              "cpu_us": 107,
+              "event": "player_fire",
+              "frame_index": 5316,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 36.7666666666659
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 5532,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 38.2666666666658
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 5750,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 39.7666666666657
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 5967,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 41.2666666666656
+            },
+            {
+              "cpu_us": 104,
+              "event": "player_fire",
+              "frame_index": 6185,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 42.7666666666655
+            },
+            {
+              "cpu_us": 105,
+              "event": "player_fire",
+              "frame_index": 6402,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 44.2666666666654
+            },
+            {
+              "cpu_us": 97,
+              "event": "player_fire",
+              "frame_index": 6620,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 45.7666666666654
+            },
+            {
+              "cpu_us": 93,
+              "event": "player_fire",
+              "frame_index": 6837,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 47.2666666666653
+            },
+            {
+              "cpu_us": 102,
+              "event": "player_fire",
+              "frame_index": 7054,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 48.7666666666652
+            },
+            {
+              "cpu_us": 77,
+              "event": "player_fire",
+              "frame_index": 7271,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 50.2666666666651
+            },
+            {
+              "cpu_us": 109,
+              "event": "player_fire",
+              "frame_index": 7489,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 51.766666666665
+            },
+            {
+              "cpu_us": 77,
+              "event": "player_fire",
+              "frame_index": 7704,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 53.2666666666649
+            },
+            {
+              "cpu_us": 90,
+              "event": "player_fire",
+              "frame_index": 7922,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 54.7666666666648
+            },
+            {
+              "cpu_us": 74,
+              "event": "player_fire",
+              "frame_index": 8139,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 56.2666666666648
+            },
+            {
+              "cpu_us": 83,
+              "event": "player_fire",
+              "frame_index": 8356,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 57.7666666666647
+            },
+            {
+              "cpu_us": 92,
+              "event": "player_fire",
+              "frame_index": 8573,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0.0,
+              "time": 59.2666666666646
+            }
+          ],
+          "frames": 8681,
+          "max_ms": 28.193,
+          "median_ms": 5.886,
+          "p95_ms": 13.934,
+          "p99_ms": 15.945,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 3665,
+              "max_us": 30,
+              "total_us": 12018
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 2,
+              "max_us": 26,
+              "total_us": 49
+            },
+            "combat_particles.gd:damage": {
+              "calls": 3,
+              "max_us": 33,
+              "total_us": 77
+            },
+            "combat_particles.gd:impact": {
+              "calls": 5,
+              "max_us": 26,
+              "total_us": 76
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 15700,
+              "max_us": 58,
+              "total_us": 63230
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 6,
+              "max_us": 14,
+              "total_us": 75
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 48,
+              "total_us": 95
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 15734,
+              "max_us": 11,
+              "total_us": 9650
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 6,
+              "max_us": 293,
+              "total_us": 1618
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 6,
+              "max_us": 35,
+              "total_us": 165
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 45667,
+              "max_us": 8,
+              "total_us": 14053
+            }
+          },
+          "peak_draws": 324.0,
+          "peak_nodes": 1050,
+          "peak_resources": 158.0,
+          "rendered_advances": 8681,
+          "rendered_fraction": 1.0,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            10.959,
+            13.311,
+            14.369,
+            13.03,
+            16.08,
+            13.219,
+            13.623,
+            16.205,
+            19.618,
+            15.598,
+            13.377,
+            12.612,
+            13.175,
+            12.156,
+            14.013,
+            15.16,
+            15.643,
+            15.81,
+            15.199,
+            13.774,
+            12.516,
+            13.77,
+            12.51,
+            12.363,
+            14.198,
+            16.443,
+            15.523,
+            14.463,
+            15.437,
+            16.66,
+            14.079,
+            14.656,
+            13.256,
+            12.362,
+            14.275,
+            18.235,
+            15.194,
+            15.113,
+            13.642,
+            14.934,
+            13.303
+          ]
+        }
+      ]
+    }
+  },
+  "web": {
+    "before": {
+      "adapter": "WebKit WebGL",
+      "engine": "4.8-dev6 (official)",
+      "render_size": "(1280.0, 720.0)",
+      "warmup_ms": 192.9,
+      "phases": [
+        {
+          "case": "ordinary_spawn",
+          "events": [
+            {
+              "cpu_us": 1900,
+              "event": "ordinary_spawn",
+              "frame_index": 90,
+              "node_delta": 16,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 4,
+                  "total_us": 0
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 1,
+                  "total_us": 100
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 900
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 1000
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 900
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 2,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 459,
+          "max_ms": 159.9,
+          "median_ms": 8.3,
+          "p95_ms": 13.3,
+          "p99_ms": 13.8,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2400
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 594,
+              "max_us": 100,
+              "total_us": 3800
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 394,
+              "max_us": 200,
+              "total_us": 8700
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 900,
+              "total_us": 900
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 200,
+              "max_us": 200,
+              "total_us": 7000
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 1000,
+              "total_us": 1000
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 900,
+              "total_us": 900
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1691,
+              "max_us": 100,
+              "total_us": 3200
+            }
+          },
+          "peak_draws": 215,
+          "peak_nodes": 918,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            159.9
+          ]
+        },
+        {
+          "case": "archetype_reuse",
+          "events": [
+            {
+              "cpu_us": 1900,
+              "event": "archetype_reuse",
+              "frame_index": 90,
+              "node_delta": 24,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 4,
+                  "total_us": 100
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 1100
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 700
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 1200
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 2,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 472,
+          "max_ms": 117.7,
+          "median_ms": 10,
+          "p95_ms": 13.3,
+          "p99_ms": 13.9,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2500
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 908,
+              "max_us": 100,
+              "total_us": 7400
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 603,
+              "max_us": 100,
+              "total_us": 11600
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 1100,
+              "total_us": 1100
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 305,
+              "max_us": 200,
+              "total_us": 8900
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 700,
+              "total_us": 700
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 1200,
+              "total_us": 1200
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2109,
+              "max_us": 100,
+              "total_us": 3900
+            }
+          },
+          "peak_draws": 219,
+          "peak_nodes": 926,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            117.7
+          ]
+        },
+        {
+          "case": "wave_arrivals",
+          "events": [
+            {
+              "cpu_us": 4800,
+              "event": "wave_arrivals",
+              "frame_index": 90,
+              "node_delta": 36,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 8,
+                  "total_us": 100
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 2,
+                  "total_us": 1800
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 6,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 2,
+                  "total_us": 1300
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 2,
+                  "total_us": 1900
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 4,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 466,
+          "max_ms": 147.9,
+          "median_ms": 11.4,
+          "p95_ms": 13.8,
+          "p99_ms": 14.3,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2800
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 1186,
+              "max_us": 100,
+              "total_us": 7500
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 788,
+              "max_us": 100,
+              "total_us": 14200
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 2,
+              "max_us": 900,
+              "total_us": 1800
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 398,
+              "max_us": 100,
+              "total_us": 8900
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 2,
+              "max_us": 700,
+              "total_us": 1300
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 2,
+              "max_us": 1000,
+              "total_us": 1900
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2479,
+              "max_us": 100,
+              "total_us": 5500
+            }
+          },
+          "peak_draws": 245,
+          "peak_nodes": 934,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            147.9
+          ]
+        },
+        {
+          "case": "first_volley",
+          "events": [
+            {
+              "cpu_us": 600,
+              "event": "first_volley",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 500
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 19.4,
+          "median_ms": 10,
+          "p95_ms": 13.4,
+          "p99_ms": 14,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1300
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 100,
+              "total_us": 7900
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 100,
+              "total_us": 12300
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 1,
+              "max_us": 500,
+              "total_us": 500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 200,
+              "total_us": 9100
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 100,
+              "total_us": 3800
+            }
+          },
+          "peak_draws": 224,
+          "peak_nodes": 934,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            19.4
+          ]
+        },
+        {
+          "case": "repeated_volley",
+          "events": [
+            {
+              "cpu_us": 200,
+              "event": "repeated_volley",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 200
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "repeat",
+              "frame_index": 272,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 300
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 2.26666666666667
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.2,
+          "median_ms": 11.6,
+          "p95_ms": 13.3,
+          "p99_ms": 13.8,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1400
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 100,
+              "total_us": 6900
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 200,
+              "total_us": 14500
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 300,
+              "total_us": 500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 200,
+              "total_us": 8500
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 100,
+              "total_us": 3800
+            }
+          },
+          "peak_draws": 228,
+          "peak_nodes": 934,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            13.4,
+            13.4
+          ]
+        },
+        {
+          "case": "hull_hit",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "hull_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 500
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.3,
+          "median_ms": 11.4,
+          "p95_ms": 13.3,
+          "p99_ms": 14.1,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 900
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 500,
+              "total_us": 500
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 906,
+              "max_us": 100,
+              "total_us": 8500
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 200,
+              "total_us": 17500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 304,
+              "max_us": 200,
+              "total_us": 11300
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 100,
+              "total_us": 4200
+            }
+          },
+          "peak_draws": 220,
+          "peak_nodes": 942,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            13.3
+          ]
+        },
+        {
+          "case": "lethal_hit",
+          "events": [
+            {
+              "cpu_us": 400,
+              "event": "lethal_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 400
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 200
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 2,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 200
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.2,
+          "median_ms": 11.5,
+          "p95_ms": 13.2,
+          "p99_ms": 13.9,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1100
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 400,
+              "total_us": 400
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 200
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 512,
+              "max_us": 100,
+              "total_us": 4800
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 100,
+              "total_us": 13500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 302,
+              "max_us": 200,
+              "total_us": 10000
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 200,
+              "total_us": 200
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 100,
+              "total_us": 4800
+            }
+          },
+          "peak_draws": 222,
+          "peak_nodes": 934,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            13.1
+          ]
+        },
+        {
+          "case": "simultaneous_hits",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "simultaneous_hits",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 3,
+                  "total_us": 500
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 3,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 482,
+          "max_ms": 20.4,
+          "median_ms": 11.8,
+          "p95_ms": 13.9,
+          "p99_ms": 14.7,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1600
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 3,
+              "max_us": 200,
+              "total_us": 500
+            },
+            "combat_particles.gd:impact": {
+              "calls": 3,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 2713,
+              "max_us": 100,
+              "total_us": 14400
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 1806,
+              "max_us": 200,
+              "total_us": 26700
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 907,
+              "max_us": 200,
+              "total_us": 15800
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 3,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 4515,
+              "max_us": 100,
+              "total_us": 8200
+            }
+          },
+          "peak_draws": 254,
+          "peak_nodes": 942,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            14.8
+          ]
+        },
+        {
+          "case": "player_cannon_hit",
+          "events": [
+            {
+              "cpu_us": 600,
+              "event": "player_cannon_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 1,
+                  "total_us": 100
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.1,
+          "median_ms": 11.5,
+          "p95_ms": 13.5,
+          "p99_ms": 14,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 100,
+              "total_us": 2300
+            },
+            "combat_particles.gd:damage": {
+              "calls": 1,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 100,
+              "total_us": 6100
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 200,
+              "total_us": 13400
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 8700
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2107,
+              "max_us": 100,
+              "total_us": 5200
+            }
+          },
+          "peak_draws": 219,
+          "peak_nodes": 942,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            13.8
+          ]
+        },
+        {
+          "case": "player_mine_hit",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "player_mine_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 13.9,
+          "median_ms": 11.5,
+          "p95_ms": 13.2,
+          "p99_ms": 13.7,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 100,
+              "total_us": 1300
+            },
+            "combat_particles.gd:damage": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 903,
+              "max_us": 100,
+              "total_us": 6800
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 602,
+              "max_us": 200,
+              "total_us": 10700
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 9100
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2108,
+              "max_us": 100,
+              "total_us": 3900
+            }
+          },
+          "peak_draws": 225,
+          "peak_nodes": 942,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            13.7
+          ]
+        },
+        {
+          "case": "full_combat",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "player_fire",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 256,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 2.26666666666667
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 436,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 3.76666666666666
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 616,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 5.26666666666666
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 796,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 6.76666666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 976,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 8.26666666666666
+            },
+            {
+              "cpu_us": 100,
+              "event": "player_fire",
+              "frame_index": 1154,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 9.75000000000007
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 1334,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 11.2500000000001
+            },
+            {
+              "cpu_us": 5400,
+              "event": "wave_skip",
+              "frame_index": 1424,
+              "node_delta": 60,
+              "paths": {
+                "enemy_sea_effects.gd:apply_arrival": {
+                  "calls": 12,
+                  "total_us": 100
+                },
+                "enemy_sea_effects.gd:sync_surface": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 3,
+                  "total_us": 2100
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 9,
+                  "total_us": 200
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 3,
+                  "total_us": 1400
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 3,
+                  "total_us": 2100
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 6,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 12.0000000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 1513,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 12.7500000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 1693,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 14.2500000000003
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 1873,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 15.7500000000004
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 2053,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 17.2500000000003
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 2233,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 18.7500000000002
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 2413,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 20.2500000000001
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 2593,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 21.75
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 2774,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 23.2666666666666
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 2953,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 24.7666666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3132,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 26.2666666666665
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 3312,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 27.7666666666664
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3492,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 29.2666666666663
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 3672,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 30.7666666666662
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3852,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 32.2666666666661
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4032,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 33.766666666666
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 4212,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 35.2666666666659
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4392,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 36.7666666666659
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 4572,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 38.2666666666658
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4752,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 39.7666666666657
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 4932,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 41.2666666666656
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 5112,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 42.7666666666655
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5292,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 44.2666666666654
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 5472,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 45.7666666666654
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5652,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 47.2666666666653
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5832,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 48.7666666666652
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6012,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 50.2666666666651
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6192,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 51.766666666665
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 6372,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 53.2666666666649
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 6552,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 54.7666666666648
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6732,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 56.2666666666648
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6912,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 57.7666666666647
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 7092,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 59.2666666666646
+            }
+          ],
+          "frames": 7179,
+          "max_ms": 121.6,
+          "median_ms": 10.6,
+          "p95_ms": 14.9,
+          "p99_ms": 15.5,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 3665,
+              "max_us": 100,
+              "total_us": 19500
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 2,
+              "max_us": 300,
+              "total_us": 500
+            },
+            "combat_particles.gd:damage": {
+              "calls": 3,
+              "max_us": 100,
+              "total_us": 200
+            },
+            "combat_particles.gd:impact": {
+              "calls": 5,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:apply_arrival": {
+              "calls": 47144,
+              "max_us": 200,
+              "total_us": 269000
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 31408,
+              "max_us": 200,
+              "total_us": 458300
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 6,
+              "max_us": 1000,
+              "total_us": 4300
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 300,
+              "total_us": 400
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 15734,
+              "max_us": 200,
+              "total_us": 249700
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 6,
+              "max_us": 500,
+              "total_us": 2800
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 6,
+              "max_us": 1100,
+              "total_us": 4500
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 76686,
+              "max_us": 100,
+              "total_us": 171500
+            }
+          },
+          "peak_draws": 324,
+          "peak_nodes": 982,
+          "peak_resources": 158,
+          "event_window_max_ms": [
+            14.3,
+            14.2,
+            13.6,
+            13.5,
+            15,
+            15,
+            14.7,
+            15.9,
+            23,
+            15.1,
+            15,
+            14.4,
+            14.4,
+            14.4,
+            15.2,
+            16.6,
+            14.4,
+            14.6,
+            15,
+            14.9,
+            14.5,
+            14.2,
+            14.2,
+            14.2,
+            14.7,
+            14.8,
+            15,
+            15.5,
+            15.7,
+            15.2,
+            14.5,
+            14.4,
+            14.6,
+            14.4,
+            14.8,
+            16.7,
+            15.2,
+            14.9,
+            15.2,
+            14.8,
+            14.4
+          ]
+        }
+      ]
+    },
+    "after": {
+      "adapter": "WebKit WebGL",
+      "engine": "4.8-dev6 (official)",
+      "render_size": "(1280.0, 720.0)",
+      "warmup_ms": 495.9,
+      "phases": [
+        {
+          "case": "ordinary_spawn",
+          "events": [
+            {
+              "cpu_us": 1000,
+              "event": "ordinary_spawn",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 900
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 100
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 17.7,
+          "median_ms": 9.3,
+          "p95_ms": 13.2,
+          "p99_ms": 13.6,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1100
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 197,
+              "max_us": 100,
+              "total_us": 2300
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 200,
+              "max_us": 100,
+              "total_us": 1000
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 900,
+              "total_us": 900
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1297,
+              "max_us": 100,
+              "total_us": 1600
+            }
+          },
+          "peak_draws": 215,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            17.7
+          ]
+        },
+        {
+          "case": "archetype_reuse",
+          "events": [
+            {
+              "cpu_us": 700,
+              "event": "archetype_reuse",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 100
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 1,
+                  "total_us": 600
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 1,
+                  "total_us": 100
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14,
+          "median_ms": 11.4,
+          "p95_ms": 13.2,
+          "p99_ms": 13.8,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 600
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2300
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 305,
+              "max_us": 100,
+              "total_us": 1600
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 1,
+              "max_us": 600,
+              "total_us": 600
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 1,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1700
+            }
+          },
+          "peak_draws": 219,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.5
+          ]
+        },
+        {
+          "case": "wave_arrivals",
+          "events": [
+            {
+              "cpu_us": 2600,
+              "event": "wave_arrivals",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 6,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 2,
+                  "total_us": 1100
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 2,
+                  "total_us": 100
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 481,
+          "max_ms": 28.5,
+          "median_ms": 8.7,
+          "p95_ms": 13.3,
+          "p99_ms": 13.9,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1500
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 394,
+              "max_us": 100,
+              "total_us": 3600
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 398,
+              "max_us": 100,
+              "total_us": 900
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 2,
+              "max_us": 600,
+              "total_us": 1100
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1691,
+              "max_us": 100,
+              "total_us": 1300
+            }
+          },
+          "peak_draws": 245,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 481,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            28.5
+          ]
+        },
+        {
+          "case": "first_volley",
+          "events": [
+            {
+              "cpu_us": 600,
+              "event": "first_volley",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 600
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.2,
+          "median_ms": 11.5,
+          "p95_ms": 13.3,
+          "p99_ms": 14,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 500
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 3000
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 1,
+              "max_us": 600,
+              "total_us": 600
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 700
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1200
+            }
+          },
+          "peak_draws": 224,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.2
+          ]
+        },
+        {
+          "case": "repeated_volley",
+          "events": [
+            {
+              "cpu_us": 300,
+              "event": "repeated_volley",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 300
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 400,
+              "event": "repeat",
+              "frame_index": 272,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_fire": {
+                  "calls": 1,
+                  "total_us": 400
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 2.26666666666667
+            }
+          ],
+          "frames": 483,
+          "max_ms": 13.8,
+          "median_ms": 11.1,
+          "p95_ms": 13.3,
+          "p99_ms": 13.4,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 500
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2900
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 400,
+              "total_us": 700
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 800
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1400
+            }
+          },
+          "peak_draws": 228,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.4,
+            13.3
+          ]
+        },
+        {
+          "case": "hull_hit",
+          "events": [
+            {
+              "cpu_us": 300,
+              "event": "hull_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 300
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.3,
+          "median_ms": 11.3,
+          "p95_ms": 13.2,
+          "p99_ms": 13.7,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 400
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 300,
+              "total_us": 300
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 3500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 304,
+              "max_us": 100,
+              "total_us": 1600
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1300
+            }
+          },
+          "peak_draws": 220,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.1
+          ]
+        },
+        {
+          "case": "lethal_hit",
+          "events": [
+            {
+              "cpu_us": 600,
+              "event": "lethal_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 1,
+                  "total_us": 600
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 1,
+                  "total_us": 300
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.2,
+          "median_ms": 11.6,
+          "p95_ms": 13.2,
+          "p99_ms": 13.5,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1100
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 1,
+              "max_us": 600,
+              "total_us": 600
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 3900
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 302,
+              "max_us": 100,
+              "total_us": 1900
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 1,
+              "max_us": 300,
+              "total_us": 300
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1200
+            }
+          },
+          "peak_draws": 222,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.1
+          ]
+        },
+        {
+          "case": "simultaneous_hits",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "simultaneous_hits",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "broadside_cannon.gd:_impact": {
+                  "calls": 3,
+                  "total_us": 400
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:take_hit": {
+                  "calls": 3,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 15.1,
+          "median_ms": 11.7,
+          "p95_ms": 13.9,
+          "p99_ms": 14.2,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 900
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 3,
+              "max_us": 200,
+              "total_us": 400
+            },
+            "combat_particles.gd:impact": {
+              "calls": 3,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 903,
+              "max_us": 200,
+              "total_us": 5800
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 907,
+              "max_us": 100,
+              "total_us": 1900
+            },
+            "enemy_ship.gd:take_hit": {
+              "calls": 3,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 2709,
+              "max_us": 100,
+              "total_us": 1000
+            }
+          },
+          "peak_draws": 254,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.9
+          ]
+        },
+        {
+          "case": "player_cannon_hit",
+          "events": [
+            {
+              "cpu_us": 600,
+              "event": "player_cannon_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14.2,
+          "median_ms": 11.5,
+          "p95_ms": 13.2,
+          "p99_ms": 13.5,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 100,
+              "total_us": 1800
+            },
+            "combat_particles.gd:damage": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "combat_particles.gd:impact": {
+              "calls": 1,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2900
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 900
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1505,
+              "max_us": 100,
+              "total_us": 1300
+            }
+          },
+          "peak_draws": 219,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.1
+          ]
+        },
+        {
+          "case": "player_mine_hit",
+          "events": [
+            {
+              "cpu_us": 500,
+              "event": "player_mine_hit",
+              "frame_index": 90,
+              "node_delta": 0,
+              "paths": {
+                "boat_damage.gd:update": {
+                  "calls": 1,
+                  "total_us": 0
+                },
+                "combat_particles.gd:damage": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "combat_particles.gd:impact": {
+                  "calls": 2,
+                  "total_us": 100
+                },
+                "ocean/wave_field.gd:apply_to": {
+                  "calls": 1,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            }
+          ],
+          "frames": 483,
+          "max_ms": 14,
+          "median_ms": 11.4,
+          "p95_ms": 13.2,
+          "p99_ms": 13.4,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 302,
+              "max_us": 100,
+              "total_us": 1500
+            },
+            "combat_particles.gd:damage": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "combat_particles.gd:impact": {
+              "calls": 2,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 2800
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 301,
+              "max_us": 100,
+              "total_us": 1000
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 1506,
+              "max_us": 100,
+              "total_us": 900
+            }
+          },
+          "peak_draws": 225,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 483,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.1
+          ]
+        },
+        {
+          "case": "full_combat",
+          "events": [
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 89,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 0.750000000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 271,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 2.26666666666667
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 451,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 3.76666666666666
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 631,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 5.26666666666666
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 811,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 6.76666666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 991,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 8.26666666666666
+            },
+            {
+              "cpu_us": 0,
+              "event": "player_fire",
+              "frame_index": 1169,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 9.75000000000007
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 1349,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 11.2500000000001
+            },
+            {
+              "cpu_us": 3100,
+              "event": "wave_skip",
+              "frame_index": 1439,
+              "node_delta": 0,
+              "paths": {
+                "enemy_ship.gd:_build_armament": {
+                  "calls": 3,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:_update_cloth": {
+                  "calls": 9,
+                  "total_us": 0
+                },
+                "enemy_ship.gd:begin": {
+                  "calls": 3,
+                  "total_us": 1300
+                },
+                "enemy_ship.gd:configure_archetype": {
+                  "calls": 3,
+                  "total_us": 0
+                }
+              },
+              "player_hull": 3,
+              "resource_delta": 0,
+              "time": 12.0000000000002
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 1529,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 12.7500000000002
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 1709,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 14.2500000000003
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 1889,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 15.7500000000004
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 2069,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 17.2500000000003
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 2249,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 18.7500000000002
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 2429,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 20.2500000000001
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 2609,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 21.75
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 2790,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 2,
+              "resource_delta": 0,
+              "time": 23.2666666666666
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 2969,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 24.7666666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3149,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 26.2666666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3329,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 27.7666666666664
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3509,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 29.2666666666663
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3689,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 30.7666666666662
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 3869,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 32.2666666666661
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4049,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 33.766666666666
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4229,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 35.2666666666659
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 4409,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 36.7666666666659
+            },
+            {
+              "cpu_us": 200,
+              "event": "player_fire",
+              "frame_index": 4589,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 38.2666666666658
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 4769,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 39.7666666666657
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 4949,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 41.2666666666656
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5129,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 42.7666666666655
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 5309,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 44.2666666666654
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 5489,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 45.7666666666654
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5669,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 47.2666666666653
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 5849,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 48.7666666666652
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6029,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 50.2666666666651
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6209,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 51.766666666665
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6389,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 53.2666666666649
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6569,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 54.7666666666648
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 6749,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 56.2666666666648
+            },
+            {
+              "cpu_us": 300,
+              "event": "player_fire",
+              "frame_index": 6929,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 57.7666666666647
+            },
+            {
+              "cpu_us": 400,
+              "event": "player_fire",
+              "frame_index": 7109,
+              "node_delta": 0,
+              "paths": {},
+              "player_hull": 1,
+              "resource_delta": 0,
+              "time": 59.2666666666646
+            }
+          ],
+          "frames": 7200,
+          "max_ms": 24.4,
+          "median_ms": 10.7,
+          "p95_ms": 14.8,
+          "p99_ms": 15.4,
+          "paths": {
+            "boat_damage.gd:update": {
+              "calls": 3665,
+              "max_us": 100,
+              "total_us": 22300
+            },
+            "broadside_cannon.gd:_impact": {
+              "calls": 2,
+              "max_us": 300,
+              "total_us": 400
+            },
+            "combat_particles.gd:damage": {
+              "calls": 3,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "combat_particles.gd:impact": {
+              "calls": 5,
+              "max_us": 100,
+              "total_us": 100
+            },
+            "enemy_sea_effects.gd:sync_surface": {
+              "calls": 15700,
+              "max_us": 200,
+              "total_us": 95800
+            },
+            "enemy_ship.gd:_build_armament": {
+              "calls": 6,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "enemy_ship.gd:_fire": {
+              "calls": 2,
+              "max_us": 300,
+              "total_us": 500
+            },
+            "enemy_ship.gd:_update_cloth": {
+              "calls": 15734,
+              "max_us": 100,
+              "total_us": 19600
+            },
+            "enemy_ship.gd:begin": {
+              "calls": 6,
+              "max_us": 500,
+              "total_us": 2800
+            },
+            "enemy_ship.gd:configure_archetype": {
+              "calls": 6,
+              "max_us": 0,
+              "total_us": 0
+            },
+            "ocean/wave_field.gd:apply_to": {
+              "calls": 45270,
+              "max_us": 100,
+              "total_us": 30400
+            }
+          },
+          "peak_draws": 324,
+          "peak_nodes": 1050,
+          "peak_resources": 158,
+          "rendered_advances": 7200,
+          "rendered_fraction": 1,
+          "timing_valid": true,
+          "event_window_max_ms": [
+            13.5,
+            13.4,
+            13.4,
+            13.7,
+            14.5,
+            14.7,
+            15.2,
+            15.2,
+            18.2,
+            14.9,
+            14.9,
+            14,
+            14.1,
+            14.5,
+            15.5,
+            16.2,
+            15,
+            14.7,
+            14.8,
+            14.7,
+            14.1,
+            14.1,
+            14.1,
+            14.1,
+            15.3,
+            14.9,
+            15,
+            15,
+            15.1,
+            15.3,
+            14,
+            14.9,
+            14.1,
+            14.3,
+            15.2,
+            14.8,
+            15.3,
+            15.1,
+            14.7,
+            15.6,
+            14
+          ]
+        }
+      ]
+    }
+  },
+  "native_diagnostics": {
+    "normal": [
+      {
+        "case": "first_volley",
+        "frames": 478,
+        "rendered_advances": 478,
+        "p95_ms": 13.962,
+        "p99_ms": 14.852,
+        "max_ms": 33.517
+      },
+      {
+        "case": "simultaneous_hits",
+        "frames": 480,
+        "rendered_advances": 480,
+        "p95_ms": 14.548,
+        "p99_ms": 15.032,
+        "max_ms": 27.178
+      }
+    ],
+    "no_audio": [
+      {
+        "case": "first_volley",
+        "frames": 473,
+        "rendered_advances": 473,
+        "p95_ms": 14.412,
+        "p99_ms": 15.474,
+        "max_ms": 31.825
+      },
+      {
+        "case": "simultaneous_hits",
+        "frames": 479,
+        "rendered_advances": 479,
+        "p95_ms": 14.632,
+        "p99_ms": 15.081,
+        "max_ms": 25.644
+      }
+    ],
+    "no_vfx": [
+      {
+        "case": "first_volley",
+        "frames": 477,
+        "rendered_advances": 477,
+        "p95_ms": 14.361,
+        "p99_ms": 15.519,
+        "max_ms": 32.823
+      },
+      {
+        "case": "simultaneous_hits",
+        "frames": 481,
+        "rendered_advances": 481,
+        "p95_ms": 14.669,
+        "p99_ms": 15.173,
+        "max_ms": 24.723
+      }
+    ],
+    "no_arrival": [
+      {
+        "case": "ordinary_spawn",
+        "frames": 465,
+        "rendered_advances": 465,
+        "p95_ms": 14.28,
+        "p99_ms": 15.485,
+        "max_ms": 92.747
+      },
+      {
+        "case": "archetype_reuse",
+        "frames": 477,
+        "rendered_advances": 477,
+        "p95_ms": 13.994,
+        "p99_ms": 14.689,
+        "max_ms": 15.801
+      },
+      {
+        "case": "wave_arrivals",
+        "frames": 479,
+        "rendered_advances": 479,
+        "p95_ms": 14.255,
+        "p99_ms": 14.67,
+        "max_ms": 22.649
+      }
+    ]
+  },
+  "warmup_variant_control": {
+    "light-control": {
+      "warmup_ms": 609.153,
+      "p95_ms": 12.505,
+      "p99_ms": 14.251,
+      "max_ms": 35.722,
+      "event_window_max_ms": 35.722,
+      "frames": 579,
+      "rendered_advances": 579
+    },
+    "zero-light-probe": {
+      "warmup_ms": 736.694,
+      "p95_ms": 14.232,
+      "p99_ms": 17.158,
+      "max_ms": 23.654,
+      "event_window_max_ms": 13.322,
+      "frames": 473,
+      "rendered_advances": 473
+    }
+  }
+}

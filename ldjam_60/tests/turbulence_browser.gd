@@ -54,6 +54,7 @@ func _process(delta: float) -> void:
 		# Expire the fixture's old waves without reusing event IDs. The production
 		# director also keeps IDs monotonic between retries, so contacts can repeat.
 		game.ocean.wave_field.waves.clear()
+		game.ocean.wave_field.invalidate()
 		if run_index%2==1:
 			var center: Vector3 = game.boat.to_global(game.BoatWaveMotion.HULL_CENTER)
 			for i in range(4):

@@ -1,4 +1,5 @@
 extends Node3D
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## Per-hull surface history and a bounded spray pool; no gameplay authority.
 const Wake = preload("res://game/ocean/wake_trail.gd")
 const ARRIVAL_SECONDS := 0.9
@@ -8,7 +9,6 @@ var wake: Node3D
 var spray: MultiMeshInstance3D
 var pool: MultiMesh
 var drops: Array[Dictionary] = []
-var fade_materials: Array[StandardMaterial3D] = []
 var arrival_age := ARRIVAL_SECONDS
 var opacity := 1.0
 var cursor := 0
@@ -18,6 +18,12 @@ var emitted := 0
 var active_drops := 0
 var previous := Vector3.ZERO
 var initialized := false
+var _surface_settings: Resource
+var _surface_dirty := true
+var _surface_time := -INF
+var _surface_focus := Vector2.INF
+var _surface_fade := Vector2.INF
+var _surface_revision := -1
 
 func setup(owner_ship: CharacterBody3D) -> void:
 	ship = owner_ship
@@ -47,37 +53,11 @@ func setup(owner_ship: CharacterBody3D) -> void:
 	add_child(spray)
 	for i in CAPACITY:
 		drops.append({"age": 1.0, "life": 0.6, "origin": Vector3.ZERO, "velocity": Vector3.ZERO, "radius": 0.0})
-	refresh_materials()
 	reset()
-
-func refresh_materials() -> void:
-	_restore_materials()
-	fade_materials.clear()
-	_collect_materials(ship.presentation)
-
-func _collect_materials(node: Node) -> void:
-	if node.is_queued_for_deletion(): return
-	if node is MeshInstance3D and node.mesh != null:
-		for surface in node.mesh.get_surface_count():
-			var material = node.get_active_material(surface)
-			if not material is StandardMaterial3D: continue
-			# Hull feedback already owns private overrides. Guns/flashes still use
-			# shared imported resources, so give only those private fade materials.
-			if material not in ship.model_materials:
-				material = material.duplicate()
-				node.set_surface_override_material(surface, material)
-			if material not in fade_materials: fade_materials.append(material)
-	for child in node.get_children(): _collect_materials(child)
-
-func _restore_materials() -> void:
-	for material in fade_materials:
-		material.albedo_color.a = 1.0
-		material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 
 func reset() -> void:
 	arrival_age = ARRIVAL_SECONDS
 	opacity = 1.0
-	_restore_materials()
 	wake.clear_path()
 	wake.visible = false
 	spray.visible = false
@@ -96,7 +76,7 @@ func begin() -> void:
 	arrival_age = 0.0
 	opacity = 0.0
 	apply_arrival()
-	# A small water cue precedes the full silhouette. Origins stay in the sea.
+	# A small water cue marks the appearance. Origins stay in the sea.
 	var amount := 6 if ship.game.ocean_quality == 0 else 12
 	for i in amount:
 		var angle := i * TAU / amount
@@ -112,9 +92,9 @@ func advance_arrival(delta: float) -> void:
 	opacity = smoothstep(0.0, ARRIVAL_SECONDS, arrival_age)
 
 func apply_arrival() -> void:
-	for material in fade_materials:
-		material.albedo_color.a = opacity
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS if opacity < 1.0 else BaseMaterial3D.TRANSPARENCY_DISABLED
+	# Arrival progress still gates weapon readiness for the original 0.9 seconds.
+	# The preallocated water burst provides the cue; hulls/guns remain opaque.
+	pass
 
 func update_trail(delta: float, underway: bool) -> void:
 	clock += delta
@@ -133,7 +113,6 @@ func update_trail(delta: float, underway: bool) -> void:
 	var stern: Vector3 = ship.position - ship.forward() * stern_offset
 	wake.advance_path(stern, clock, delta, speed / 7.5, ship.heading)
 	wake.visible = wake.count > 1
-	sync_surface()
 	if speed > 1.0 and ship.game.development_spray:
 		spray_credit += delta * (5.0 if ship.game.ocean_quality == 0 else 12.0)
 		if spray_credit >= 1.0:
@@ -156,16 +135,35 @@ func update_trail(delta: float, underway: bool) -> void:
 		if alpha > 0.01: active_drops += 1
 	spray.visible = active_drops > 0 and ship.game.development_spray
 
+func _invalidate_surface() -> void:
+	_surface_dirty = true
+
 func sync_surface() -> void:
+	var _profile_started := CombatMetrics.start()
 	var ocean = ship.game.ocean
-	for material in wake.materials:
-		ocean.settings.apply_waves(material)
-		ocean.settings.apply_palette(material)
-		ocean.wave_field.apply_to(material)
-		material.set_shader_parameter("wave_time", ocean.wave_time)
-		material.set_shader_parameter("focus_xz", ocean.focus_xz)
-		material.set_shader_parameter("fade_start", ocean.fade_start)
-		material.set_shader_parameter("fade_end", ocean.fade_end)
+	if _surface_settings != ocean.settings:
+		if _surface_settings != null: _surface_settings.changed.disconnect(_invalidate_surface)
+		_surface_settings = ocean.settings
+		_surface_settings.changed.connect(_invalidate_surface)
+		_surface_dirty = true
+	var fade := Vector2(ocean.fade_start, ocean.fade_end)
+	if _surface_dirty or _surface_time != ocean.wave_time or _surface_focus != ocean.focus_xz or _surface_fade != fade or _surface_revision != ocean.wave_field.revision:
+		for material in wake.materials:
+			if _surface_dirty:
+				ocean.settings.apply_waves(material)
+				ocean.settings.apply_palette(material)
+			ocean.wave_field.apply_to(material)
+			material.set_shader_parameter("wave_time", ocean.wave_time)
+			material.set_shader_parameter("focus_xz", ocean.focus_xz)
+			if _surface_dirty or _surface_fade != fade:
+				material.set_shader_parameter("fade_start", ocean.fade_start)
+				material.set_shader_parameter("fade_end", ocean.fade_end)
+		_surface_dirty = false
+		_surface_time = ocean.wave_time
+		_surface_focus = ocean.focus_xz
+		_surface_fade = fade
+		_surface_revision = ocean.wave_field.revision
+	CombatMetrics.finish("enemy_sea_effects.gd:sync_surface", _profile_started)
 
 func _emit(at: Vector3, velocity: Vector3, radius: float) -> void:
 	at.y = ship.game.ocean.height_at(Vector2(at.x, at.z)) + 0.12

@@ -39,16 +39,16 @@ func _run() -> void:
 			fresh(ship)
 			var fx = ship.sea_effects
 			var start: Vector3 = ship.position
-			check(fx.opacity == 0 and fx.active_drops > 0 and ship.visible, label + " arrives through water spray with an initially absent silhouette")
+			check(fx.opacity == 0 and fx.active_drops > 0 and ship.visible, label + " arrives through water spray with an opaque silhouette and the original readiness delay")
 			check(ship.collision_layer == 4 and not ship.get_meta("destroyed") and ship.hull == ship.hull_capacity, "arrival preserves physical targeting and combat health")
-			check(fx.fade_materials.all(func(mat): return mat.albedo_color.a == 0), "hull, sail and every gun share the arrival opacity")
+			check(ship.model_materials.all(func(mat): return mat.albedo_color.a == 1 and mat.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED), "hull and sail stay opaque throughout arrival")
 			travel(ship, 0.3, hz, 0)
 			var partial: float = fx.opacity
-			check(partial > 0 and partial < 0.5 and ship.position == start, "%d Hz arrival fades smoothly without moving the physical root" % hz)
+			check(partial > 0 and partial < 0.5 and ship.position == start, "%d Hz arrival readiness advances smoothly without moving the physical root" % hz)
 			ship.set_aim_highlight(true)
-			check(fx.fade_materials.all(func(mat): return is_equal_approx(mat.albedo_color.a, partial)), "highlight and damage materials cannot interrupt the fade")
+			check(ship.model_materials.all(func(mat): return mat.albedo_color.a == 1), "highlight and damage retain opaque arrival materials")
 			travel(ship, 0.7, hz, 0)
-			check(fx.opacity == 1 and fx.fade_materials.all(func(mat): return mat.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and mat.albedo_color.a == 1), "arrival restores opaque night materials without persistent transparency")
+			check(fx.opacity == 1 and ship.model_materials.all(func(mat): return mat.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED and mat.albedo_color.a == 1), "arrival restores opaque night materials without persistent transparency")
 			check(fx.wake.count == 0 and fx.active_drops == 0, "idle hull leaves no wake and arrival spray expires")
 			var ids := [fx.wake.meshes[0].get_instance_id(), fx.wake.meshes[1].get_instance_id(), fx.pool.get_instance_id()]
 			var nodes := get_node_count()
@@ -85,7 +85,7 @@ func _run() -> void:
 	first.sea_effects.apply_arrival()
 	var other = game.enemy_encounters.ships[1]
 	other.begin(game.arena_center() + Vector3(-55, 0, 70))
-	check(first.sail_material != other.sail_material and first.sail_material.albedo_color.a > 0 and other.sail_material.albedo_color.a == 0, "overlapping spawns keep private material fades")
+	check(first.sail_material != other.sail_material and first.sail_material.albedo_color.a == 1 and other.sail_material.albedo_color.a == 1, "overlapping spawns retain independent opaque feedback materials")
 	game.restart()
 	check(game.enemy_encounters.combat_ships().all(func(ship): return ship.sea_effects.wake.count == 0 and ship.sea_effects.active_drops == 0 and ship.sea_effects.opacity == 1), "retry clears the whole fleet's arrivals and wakes")
 	for ending in [game.State.LOST, game.State.ARRIVED]:

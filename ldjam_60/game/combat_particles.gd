@@ -1,4 +1,5 @@
 extends Node3D
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## One preallocated opaque cube batch for all ships. Only emission touches instances;
 ## the vertex shader animates them. A busy frame replaces oldest cosmetic particles.
 const CAPACITY := 192
@@ -90,6 +91,7 @@ func muzzle(at: Vector3, direction: Vector3, hostile := false) -> void:
 
 
 func impact(at: Vector3, timber := true, heavy := false) -> void:
+	var _profile_started := CombatMetrics.start()
 	# A compact contact glint precedes chips; destruction gets a larger warm core.
 	_emit(at, Vector3.UP * 0.4, Vector3.ONE * (1.25 if heavy else 0.65), Color("ffdfac") if timber else Color("b2c4ca"), 0.09)
 	for i in (26 if heavy else 13 if timber else 7):
@@ -103,15 +105,18 @@ func impact(at: Vector3, timber := true, heavy := false) -> void:
 	for i in (5 if heavy else 3 if timber else 1):
 		_emit(at + Vector3.UP * i * 0.3, Vector3(_rng.randf_range(-1, 1), 1.6 + i * 0.3, 0),
 			Vector3.ONE * ((0.85 if heavy else 0.45) + i * 0.15), Color("444d59") if heavy else Color("858b90"), 0.75 + i * 0.1, true)
+	CombatMetrics.finish("combat_particles.gd:impact", _profile_started)
 
 
 func damage(at: Vector3, lethal := false) -> void:
+	var _profile_started := CombatMetrics.start()
 	impact(at, true, lethal)
 	# Short pale foam flecks distinguish our hull hit from an enemy muzzle burst.
 	for i in 8:
 		var angle := i * TAU / 8.0
 		_emit(at + Vector3(sin(angle), -0.4, cos(angle)), Vector3(sin(angle) * 4, 3.5, cos(angle) * 4),
 			Vector3(0.18, 0.38, 0.18), Color("bce5e7"), 0.55)
+	CombatMetrics.finish("combat_particles.gd:damage", _profile_started)
 
 
 func trail(at: Vector3, hostile := false) -> void:

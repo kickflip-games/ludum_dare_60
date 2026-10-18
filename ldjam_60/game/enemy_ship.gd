@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## Planar navigation and committed cannon fire use independent state machines.
 
 const Motion = preload("res://game/ocean/boat_wave_motion.gd")
@@ -93,6 +94,8 @@ var flash: MeshInstance3D
 var motion := Motion.new()
 var projectiles: Array[Dictionary] = []
 var gun_mounts: Array[Dictionary] = []
+var _armament_pool: Array[Dictionary] = []
+var _cloth_state := Vector4.INF
 var active_battery := Battery.PORT
 var sea_effects: Node3D
 var mine_layer: RefCounted
@@ -166,6 +169,7 @@ func _ready() -> void:
 		mine_layer = MineLayer.new()
 		mine_layer.ship = self
 		mine_layer.prepare()
+		_prepare_armament()
 		_build_armament(1, false, false)
 	else:
 		# The flagship supplies its own multi-muzzle weapon and presentation.
@@ -178,21 +182,41 @@ func _ready() -> void:
 	reset()
 
 
+func _prepare_armament() -> void:
+	# Maximum production layout: three per broadside and the skiff bow gun.
+	# Imported meshes/materials stay alive for the pooled hull's entire lifetime.
+	for side in [Battery.PORT, Battery.STARBOARD]:
+		for i in 3: _add_gun(side, Vector3.ZERO, Vector3.ZERO, 0)
+	_add_gun(Battery.BOW, Vector3.ZERO, Vector3.ZERO, 0)
+
+
 func _build_armament(count: int, both_sides: bool, bow: bool) -> void:
-	for mount in gun_mounts:
-		mount.gun.queue_free()
-		mount.flash.queue_free()
+	var _profile_started := CombatMetrics.start()
+	assert(count >= 1 and count <= 3, "Armament exceeds prepared ordinary ship capacity")
+	for mount in _armament_pool:
+		mount.gun.hide()
+		mount.flash.hide()
 	gun_mounts.clear()
 	for side in ([Battery.PORT, Battery.STARBOARD] if both_sides else [Battery.PORT]):
 		for i in count:
 			var along := -1.8 if count == 1 else lerpf(-2.8, 0.2, float(i) / (count - 1))
 			var sign_x := -1.0 if side == Battery.PORT else 1.0
 			var deck := 1.3 if both_sides else 0.55
-			_add_gun(side, Vector3(sign_x * 1.1, deck, along), Vector3(sign_x * 2.4, deck + 0.75, along), sign_x * PI / 2)
+			var mount := _armament_pool[(0 if side == Battery.PORT else 3) + i]
+			_configure_mount(mount, Vector3(sign_x * 1.1, deck, along), Vector3(sign_x * 2.4, deck + 0.75, along), sign_x * PI / 2)
 	if bow:
-		_add_gun(Battery.BOW, Vector3(0, 2.28, -4.2), Vector3(0, 3.03, -5.5), 0)
+		_configure_mount(_armament_pool[6], Vector3(0, 2.28, -4.2), Vector3(0, 3.03, -5.5), 0)
 	flash = gun_mounts[0].flash
-	if is_instance_valid(sea_effects): sea_effects.refresh_materials()
+	CombatMetrics.finish("enemy_ship.gd:_build_armament", _profile_started)
+
+
+func _configure_mount(mount: Dictionary, at: Vector3, muzzle: Vector3, yaw: float) -> void:
+	mount.gun.position = at
+	mount.gun.rotation.y = yaw
+	mount.muzzle = muzzle
+	mount.flash.position = muzzle
+	mount.gun.show()
+	gun_mounts.append(mount)
 
 
 func _add_gun(battery: int, at: Vector3, muzzle: Vector3, yaw: float) -> void:
@@ -207,7 +231,7 @@ func _add_gun(battery: int, at: Vector3, muzzle: Vector3, yaw: float) -> void:
 	tell.basis = Basis(direction, Vector3.UP, direction.cross(Vector3.UP))
 	tell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	tell.visible = false
-	gun_mounts.append({"battery": battery, "gun": gun, "muzzle": muzzle, "flash": tell})
+	_armament_pool.append({"battery": battery, "gun": gun, "muzzle": muzzle, "flash": tell})
 
 
 func _battery_direction(battery: int) -> Vector3:
@@ -323,6 +347,7 @@ func _reset_ship(clear_mines: bool) -> void:
 
 
 func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
+	var _profile_started := CombatMetrics.start()
 	archetype = profile
 	sailing_speed = profile.speed
 	turning_speed = profile.turn_speed
@@ -349,6 +374,7 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	set_meta("target_radius", 4.2)
 	set_meta("hazard_name", "the hostile " + profile.display_name.to_lower())
 	_update_cloth()
+	CombatMetrics.finish("enemy_ship.gd:configure_archetype", _profile_started)
 
 
 func display_name() -> String:
@@ -364,16 +390,23 @@ func set_aim_highlight(enabled: bool) -> void:
 
 
 func _update_cloth() -> void:
+	var _profile_started := CombatMetrics.start()
 	var damage := 0.16 * (1.0 - float(maxi(0, hull)) / maxi(1, hull_capacity))
 	var impact := clampf((hit_reaction - 0.45) / 0.20, 0.0, 1.0)
-	for material in model_materials:
-		material.albedo_color = Color.WHITE.darkened(damage).lerp(Color("fff0c4"), impact * 0.8)
-		material.emission = Color.WHITE.lerp(Color("fff0c4"), maxf(damage, impact))
-		material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
-	if is_instance_valid(sea_effects): sea_effects.apply_arrival()
+	var state := Vector4(damage, impact, float(aim_highlight), sail_fill)
+	if state != _cloth_state:
+		_cloth_state = state
+		for material in model_materials:
+			var tint := Color.WHITE.darkened(damage).lerp(Color("fff0c4"), impact * 0.8)
+			tint.a = material.albedo_color.a
+			material.albedo_color = tint
+			material.emission = Color.WHITE.lerp(Color("fff0c4"), maxf(damage, impact))
+			material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
+	CombatMetrics.finish("enemy_ship.gd:_update_cloth", _profile_started)
 
 
 func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
+	var _profile_started := CombatMetrics.start()
 	# Ordinary pooled hulls retain trails; the flagship keeps its specialised reset.
 	if mine_layer != null: _reset_ship(false)
 	else: reset()
@@ -393,6 +426,7 @@ func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
 	_update_cloth()
 	sea_effects.begin()
 	game.cue_sound("enemy")
+	CombatMetrics.finish("enemy_ship.gd:begin", _profile_started)
 
 
 func forward() -> Vector3:
@@ -889,12 +923,14 @@ func _update_tell() -> void:
 
 
 func _fire() -> void:
+	var _profile_started := CombatMetrics.start()
 	for mount in gun_mounts:
 		if mount.battery == active_battery:
 			_launch_ball(_mount_position(mount))
 	salvos_fired += 1
 	cooldown = reload_seconds
 	game.cue_sound("enemy_shot")
+	CombatMetrics.finish("enemy_ship.gd:_fire", _profile_started)
 
 
 func _launch_ball(from: Vector3) -> void:
@@ -947,6 +983,7 @@ func _advance_shots(delta: float) -> void:
 
 
 func take_hit() -> void:
+	var _profile_started := CombatMetrics.start()
 	if navigation_state in [Navigation.SINKING, Navigation.ESCAPED, Navigation.DORMANT]:
 		return
 	hull -= 1
@@ -965,6 +1002,7 @@ func take_hit() -> void:
 		game.enemy_encounters.on_ship_sunk(self)
 		game.cue_sound("victory")
 	_update_cloth()
+	CombatMetrics.finish("enemy_ship.gd:take_hit", _profile_started)
 
 
 func update_visuals(delta: float) -> void:

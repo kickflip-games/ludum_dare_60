@@ -73,6 +73,28 @@ func _warm(game: Node3D) -> void:
 		warning.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		samples.append(warning)
 	_collect(game.boat_visual, Transform3D.IDENTITY, samples)
+	# Ordinary hull/atlas emission and gun materials were absent from the original
+	# warm-up. Include their actual opaque overrides without spawning a ship.
+	var ordinary = game.enemy_encounters.ships[0]
+	_collect(ordinary.ship_model, Transform3D.IDENTITY, samples)
+	_collect(ordinary._armament_pool[0].gun, Transform3D.IDENTITY, samples)
+	# The first arrival also draws the enemy spray's own MultiMesh variant.
+	var arrival := MultiMeshInstance3D.new()
+	var arrival_batch := MultiMesh.new()
+	arrival_batch.transform_format = MultiMesh.TRANSFORM_3D
+	arrival_batch.use_custom_data = true
+	arrival_batch.mesh = ordinary.sea_effects.pool.mesh
+	arrival_batch.instance_count = 1
+	arrival_batch.set_instance_transform(0, Transform3D.IDENTITY)
+	arrival_batch.set_instance_custom_data(0, Color(1,1,1,0.7))
+	arrival.multimesh = arrival_batch
+	arrival.material_override = ordinary.sea_effects.spray.material_override
+	arrival.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	stage.add_child(arrival)
+	arrival.layers = WARM_LAYER
+	arrival.global_position = clipped
+	arrival_batch.custom_aabb = AABB(arrival.to_local(anchor)-Vector3.ONE,Vector3.ONE*2)
+
 	for i in samples.size():
 		var sample := samples[i]
 		stage.add_child(sample)
@@ -101,8 +123,12 @@ func _warm(game: Node3D) -> void:
 	particles.layers = WARM_LAYER
 	particles.global_position = clipped
 	batch.custom_aabb = AABB(particles.to_local(anchor)-Vector3.ONE,Vector3.ONE*2)
-	# Prime the unlit and muzzle-lit variants before gameplay can reveal them.
+	# Distant enemies/shots see zero local lights; the deck sees its lantern
+	# and then the muzzle light. Prime all three Compatibility variants.
 	flash_light.hide()
+	lantern.hide()
+	await RenderingServer.frame_post_draw
+	lantern.show()
 	await RenderingServer.frame_post_draw
 	flash_light.show()
 	await RenderingServer.frame_post_draw

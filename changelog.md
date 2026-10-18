@@ -6,6 +6,15 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Combat stutters: retain seven prepared cannon mounts per ordinary ship;
+  replace transparent hull arrivals with the existing small water burst and
+  retain the 0.9 s readiness delay. Cache unchanged damage/wake/wave uploads;
+  warm ordinary hull, cannon and arrival-spray rendering with zero, one and two
+  local lights at the menu.
+  Added real combat-event CPU/frame windows with normal audio/HUD/AI and
+  benchmark-only diagnostics. Measurements and validation:
+  [combat event review](artifacts/combat_events_review.md).
+
 - Work in progress: added plain `=` to the hidden wave-arrival shortcut alongside
   `+`. Starting wave one retains its banner; releasing an active wave keeps its
   current timer and does not replay the banner.

@@ -1,4 +1,5 @@
 extends Node3D
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## One starboard cannon: bounded arena targeting, retained legacy voyage sweep.
 
 const VisualPool = preload("res://game/projectile_visual_pool.gd")
@@ -333,6 +334,7 @@ func advance_effects(delta: float) -> void:
 
 
 func _impact(body: Object, at: Vector3) -> void:
+	var _profile_started := CombatMetrics.start()
 	if body.get_meta("target_kind", "") == "mine":
 		if body.get_meta("destroyed", true): return
 		body.take_hit()
@@ -366,6 +368,7 @@ func _impact(body: Object, at: Vector3) -> void:
 	var audio: AudioStreamPlayer = _ship_audio if ship else _impact_audio
 	if is_instance_valid(audio) and game._sound_enabled:
 		audio.play()
+	CombatMetrics.finish("broadside_cannon.gd:_impact", _profile_started)
 
 
 func _sinking_burst(at: Vector3) -> void:

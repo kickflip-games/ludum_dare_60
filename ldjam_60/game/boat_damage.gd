@@ -1,4 +1,5 @@
 extends RefCounted
+const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## Cosmetic hull/sail warning; health and hit timing belong to crossing.
 var light_marks: MeshInstance3D
 var heavy_marks: MeshInstance3D
@@ -8,6 +9,8 @@ var _canvas: ShaderMaterial
 var _canvas_color: Color
 var pulse_time := 0.0
 var red_strength := 0.0
+var _last_strength := -1.0
+var _last_severity := -1
 var severity := 0
 var flash_strength := 0.0
 
@@ -43,11 +46,13 @@ func configure(pivot: Node3D, ship: Node3D) -> void:
 
 
 func update(hull: int, capacity: int, hit_flash: float, delta: float = 0.0) -> void:
+	var _profile_started := CombatMetrics.start()
 	var fraction := clampf(float(hull) / maxf(1.0, capacity), 0.0, 1.0)
 	# Exact thirds put the default three-point hull into three distinct conditions.
 	severity = 0 if fraction > 2.0 / 3.0 else 1 if fraction > 1.0 / 3.0 else 2
-	light_marks.visible = severity >= 1
-	heavy_marks.visible = severity == 2
+	if severity != _last_severity:
+		light_marks.visible = severity >= 1
+		heavy_marks.visible = severity == 2
 	# Health owns the warning, so it persists after immunity expires and clears on repair.
 	# Start bright on a hit; use simulation delta so pause freezes the pulse.
 	if severity == 0:
@@ -61,12 +66,18 @@ func update(hull: int, capacity: int, hit_flash: float, delta: float = 0.0) -> v
 		red_strength = maxf(lerpf(0.18, 0.55, pulse), flash_strength)
 	elif severity == 2:
 		red_strength = maxf(lerpf(0.78, 0.98, pulse), flash_strength)
+	if red_strength == _last_strength and severity == _last_severity:
+		CombatMetrics.finish("boat_damage.gd:update", _profile_started)
+		return
+	_last_strength = red_strength
+	_last_severity = severity
 	var glow := red_strength * (0.85 if severity == 2 else 0.45)
 	for i in wood.size():
 		wood[i].albedo_color = _wood_colors[i].lerp(Color("ff1810"), red_strength)
 		wood[i].emission_energy_multiplier = glow
 	_canvas.set_shader_parameter("canvas_color", _canvas_color.lerp(Color("ff1810"), red_strength))
 	_canvas.set_shader_parameter("damage_glow", glow)
+	CombatMetrics.finish("boat_damage.gd:update", _profile_started)
 
 
 func _marks(parent: Node3D, node_name: String, cuts: Array, normal: Vector3) -> MeshInstance3D:

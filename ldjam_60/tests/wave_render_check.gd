@@ -44,6 +44,7 @@ func _run() -> void:
 	await capture("02-frontal-crest")
 	for height: float in [0.65, 1.1, 1.85]:
 		game.ocean.wave_field.waves[0].height = height
+		game.ocean.wave_field.invalidate()
 		game._update_view(1.0)
 		await capture("height-%.2f" % height)
 	game.ocean.wave_field.clear()

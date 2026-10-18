@@ -89,6 +89,7 @@ func _process(delta: float) -> void:
 		if cycle!=next:
 			cycle = next
 			game.ocean.wave_field.waves.clear()
+			game.ocean.wave_field.invalidate()
 			var center: Vector3 = game.boat.to_global(game.BoatWaveMotion.HULL_CENTER)
 			for i in range(4):
 				var d := Vector2.RIGHT.rotated(i*PI/2+0.15)

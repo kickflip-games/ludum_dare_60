@@ -1,5 +1,7 @@
 """Freeze the current working tree for native / Web comparison; never publish."""
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import shutil
 import re
@@ -8,6 +10,7 @@ p=argparse.ArgumentParser()
 p.add_argument('--label', choices=['before','after'],required=True)
 p.add_argument('--godot',required=True)
 p.add_argument('--web',action='store_true')
+p.add_argument('--fixture',choices=['runtime_performance','combat_events'],default='runtime_performance')
 p.add_argument('--output-root',default='build/runtime_performance')
 a=p.parse_args()
 root=Path(__file__).resolve().parents[1]
@@ -20,7 +23,7 @@ project=source/'project.godot'
 s=project.read_text()
 s=re.sub(r'^_mcp_game_helper=.*\n','',s,flags=re.M)
 s=re.sub(r'^enabled=PackedStringArray\(.*\)$','enabled=PackedStringArray()',s,flags=re.M)
-s=s.replace('run/main_scene="res://game/crossing.tscn"','run/main_scene="res://tests/runtime_performance.tscn"')
+s=s.replace('run/main_scene="res://game/crossing.tscn"',f'run/main_scene="res://tests/{a.fixture}.tscn"')
 project.write_text(s)
 (source/'export_presets.cfg').write_text('''[preset.0]
 name="Web"
@@ -49,3 +52,17 @@ for name,args in steps:
  errors=[line for line in text.splitlines() if 'SCRIPT ERROR' in line or 'Parse Error' in line]
  if errors:raise SystemExit('\n'.join(errors))
 print(source)
+
+if a.web and a.fixture == 'combat_events':
+ html=build/'web/index.html'
+ text=html.read_text().replace('<canvas id="canvas"','<canvas width="1280" height="720" id="canvas"')
+ text=text.replace('</body>', "<script>document.getElementById('canvas').addEventListener('click',()=>{window.combatStarted=true},{once:true});</script></body>")
+ html.write_text(text)
+
+(build/'metadata.json').write_text(json.dumps({
+ 'fixture':a.fixture,'label':a.label,
+ 'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
+ 'engine':subprocess.check_output([a.godot,'--version'],text=True).strip(),
+ 'source_sha256':{str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest()
+                  for p in sorted(source.rglob('*.gd')) if '.godot' not in p.parts}
+},indent=2))

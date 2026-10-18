@@ -1,5 +1,10 @@
 # Five timed survival waves — 18 October 2026
 
+Historical scheduler baseline at 11a9819/a3531a4. The later
+[combat-feel review](combat_feel_review.md) replaces the counts with eleven
+cutter/skiff/heavy attackers, preserving deadlines, queue, cap and repair rules.
+The measurements and screenshots below describe the earlier all-cutter build.
+
 Current draft [PR #8](https://github.com/kickflip-games/ludum_dare_60/pull/8) on
 `hacking/lighthouse-arena` builds on arena base `dd1d45b`. The original
 [PR #5](https://github.com/kickflip-games/ludum_dare_60/pull/5) was merged externally

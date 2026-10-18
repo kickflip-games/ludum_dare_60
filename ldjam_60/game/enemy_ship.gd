@@ -23,8 +23,8 @@ enum Mode { DORMANT, APPROACH, POSITION, TELEGRAPH, FIRE, REPOSITION, SINKING, E
 ## Every other pass aims slightly long; the locked warning still shows the true shot.
 @export var forgiving_aim_offset: float = 4.5
 @export_group("Night presentation")
-@export var sail_color := Color("c06c52")
-@export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.16
+@export var sail_color := Color("e69b79")
+@export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.22
 
 var territory := Vector3.ZERO
 var game: Node3D
@@ -60,6 +60,17 @@ var _blocked_elapsed: float = 0.0
 var _departure_heading: float = 0.0
 var _pass_fired: bool = false
 var _course_age: float = 0.0
+var archetype: Resource
+var presentation: Node3D
+var collision_shape: CollisionShape3D
+var sail_bands: Array[MeshInstance3D] = []
+var aim_highlight := false
+var acceleration := 1.2
+var approach_lead := 28.0
+var approach_angle := -0.45
+var reposition_angle := 0.72
+var _route_point := Vector3.INF
+var _route_check_left := 0.0
 
 
 func _ready() -> void:
@@ -74,32 +85,46 @@ func _ready() -> void:
 	collision.shape = sphere
 	collision.position = Vector3(0, 1.0, -1.8)
 	add_child(collision)
+	collision_shape = collision
 	visual = Node3D.new()
 	add_child(visual)
+	presentation = Node3D.new()
+	visual.add_child(presentation)
 	var model: Node3D = SHIP.instantiate()
 	model.rotation.y = -PI / 2.0
 	model.scale = Vector3(1.30, 0.9, 0.95)
 	model.position = Vector3(0, -0.1, -1.8)
-	visual.add_child(model)
+	presentation.add_child(model)
 	var timber = game._material(Color("3b2423"))
-	game._box(visual, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
+	game._box(presentation, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
 	sail_material = game._material(sail_color)
 	# A restrained cloth fill keeps the red identity on the moon's shadow side.
 	sail_material.emission_enabled = true
 	sail_material.emission = sail_color
 	sail_material.emission_energy_multiplier = sail_fill
-	game._box(visual, Vector3(4.8, 3.4, 0.09), Vector3(0, 4.3, -1.8), sail_material)
-	game._box(visual, Vector3(5.2, 0.14, 0.14), Vector3(0, 6.1, -1.8), timber)
-	game._box(visual, Vector3(1.6, 0.8, 0.06), Vector3(0.7, 7.0, -1.8), game._material(Color("151e23")))
+	var canvas := Node3D.new()
+	presentation.add_child(canvas)
+	canvas.position = Vector3(0, 4.3, -1.8)
+	canvas.rotation.y = PI / 4.0
+	for panel_index in 2:
+		var side := -1.0 if panel_index == 0 else 1.0
+		var panel = game._box(canvas, Vector3(2.5, 3.4, 0.09), Vector3(side * 1.02, 0, 0.72), sail_material)
+		panel.rotation.y = side * deg_to_rad(35.0)
+		for band_index in 2:
+			var band = game._box(panel, Vector3(2.5, 0.28, 0.11), Vector3(0, -0.6 + band_index * 1.1, 0), timber)
+			band.visible = false
+			sail_bands.append(band)
+		game._box(panel, Vector3(2.6, 0.14, 0.14), Vector3(0, 1.8, 0), timber)
+	game._box(presentation, Vector3(1.6, 0.8, 0.06), Vector3(0.7, 7.0, -1.8), game._material(Color("151e23")))
 	var gun: Node3D = CANNON.instantiate()
 	gun.position = Vector3(-1.1, 0.55, -1.8)
 	gun.rotation.y = -PI / 2.0
 	gun.scale = Vector3.ONE * 1.1
-	visual.add_child(gun)
+	presentation.add_child(gun)
 	var spark := SphereMesh.new()
 	spark.radius = 0.4
 	spark.height = 0.8
-	flash = game._mesh(visual, spark, Vector3(-2.4, 1.3, -1.8), game._material(Color("ffbe67"), 2.0))
+	flash = game._mesh(presentation, spark, Vector3(-2.4, 1.3, -1.8), game._material(Color("ffbe67"), 2.0))
 	tell_mesh = BoxMesh.new()
 	tell_line = game._mesh(game, tell_mesh, Vector3.ZERO, game._material(Color("ed9e5c"), 1.0))
 	tell_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -148,6 +173,58 @@ func reset() -> void:
 	_departure_heading = 0.0
 	_pass_fired = false
 	_course_age = 0.0
+	_route_point = Vector3.INF
+	_route_check_left = 0.0
+	set_aim_highlight(false)
+	_update_cloth()
+
+
+func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
+	archetype = profile
+	sailing_speed = profile.speed
+	turning_speed = profile.turn_speed
+	turn_acceleration = profile.turn_acceleration
+	acceleration = profile.acceleration
+	hull_capacity = profile.hull
+	sail_color = profile.sail_color
+	sail_fill = profile.sail_fill
+	broadside_separation = profile.broadside_separation + lane_offset
+	approach_lead = profile.approach_lead
+	approach_angle = profile.approach_angle
+	reposition_angle = profile.reposition_angle
+	attack_run_seconds = profile.attack_run_seconds
+	return_seconds = profile.return_seconds
+	telegraph_seconds = profile.telegraph_seconds
+	reload_seconds = profile.reload_seconds
+	presentation.scale = Vector3.ONE * profile.size
+	collision_shape.shape.radius = 3.6 * profile.size
+	collision_shape.position = Vector3(0, 1.0, -1.8) * profile.size
+	set_meta("target_radius", 4.2 * profile.size)
+	set_meta("hazard_name", "the hostile " + profile.display_name.to_lower())
+	for band_index in sail_bands.size():
+		sail_bands[band_index].visible = band_index % 2 < profile.sail_bands
+	_update_cloth()
+
+
+func display_name() -> String:
+	return archetype.display_name if archetype != null else "Cutter"
+
+
+func set_aim_highlight(enabled: bool) -> void:
+	var highlighted: bool = enabled and visible and not get_meta("destroyed", true)
+	if highlighted == aim_highlight:
+		return
+	aim_highlight = highlighted
+	_update_cloth()
+
+
+func _update_cloth() -> void:
+	var damage := 0.16 * (1.0 - float(maxi(0, hull)) / maxi(1, hull_capacity))
+	var color := sail_color.darkened(damage)
+	var impact := clampf((hit_reaction - 0.45) / 0.20, 0.0, 1.0)
+	sail_material.albedo_color = color.lerp(Color("fff0c4"), impact * 0.8)
+	sail_material.emission = color.lerp(Color("fff0c4"), impact)
+	sail_material.emission_energy_multiplier = sail_fill + (0.20 if aim_highlight else 0.0) + impact * 0.65
 
 
 func begin(at: Vector3 = Vector3.INF) -> void:
@@ -155,7 +232,7 @@ func begin(at: Vector3 = Vector3.INF) -> void:
 	_capture_course()
 	position = at if at.is_finite() else game.boat.position + _run_forward() * 16.0 + _run_right() * 60.0
 	territory = position
-	heading = run_heading - 0.45
+	heading = run_heading + approach_angle
 	rotation.y = -heading
 	_speed = sailing_speed
 	velocity = forward() * _speed
@@ -165,6 +242,7 @@ func begin(at: Vector3 = Vector3.INF) -> void:
 	set_meta("destroyed", false)
 	sail_material.albedo_color = sail_color
 	sail_material.emission = sail_color
+	_update_cloth()
 	game.cue_sound("enemy")
 
 
@@ -198,6 +276,7 @@ func update_ship(delta: float) -> void:
 		return
 	timer += delta
 	hit_reaction = maxf(0, hit_reaction - delta)
+	_update_cloth()
 	if mode == Mode.SINKING:
 		visual.position.y -= delta * 2.5
 		visual.rotation.z += delta * 0.18
@@ -226,10 +305,11 @@ func update_ship(delta: float) -> void:
 			var lateral := relative.dot(_run_right())
 			if lateral > 26.0 and lateral < 50.0 and not _path_clear(_run_forward(), 45.0):
 				lane_separation = minf(lane_separation, 26.0)
-			var goal: Vector3 = game.boat.position + _run_forward() * (along + 28.0) + _run_right() * lane_separation
-			desired = (goal - global_position).normalized()
+			var goal_ahead := clampf(along + approach_lead, -12.0, approach_lead) if game.arena_mode else along + approach_lead
+			var goal: Vector3 = game.boat.position + _run_forward() * goal_ahead + _run_right() * lane_separation
+			desired = _arena_approach(goal, delta) if game.arena_mode else (goal - global_position).normalized()
 			target_speed = clampf(run_speed + (8.0 - along) * 0.12, sailing_speed * 0.74, sailing_speed * 1.12)
-			if timer > 2.0 and absf(lateral - lane_separation) < 10.0 and absf(along) < 18.0 and forward().dot(_run_forward()) > 0.94 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 45.0):
+			if timer > 2.0 and absf(lateral - lane_separation) < 10.0 and absf(along) < 18.0 and forward().dot(_run_forward()) > 0.94 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0 if game.arena_mode else 45.0):
 				run_elapsed = 0.0
 				_pass_fired = false
 				passes += 1
@@ -255,7 +335,8 @@ func update_ship(delta: float) -> void:
 		Mode.REPOSITION:
 			# Continue ahead, arc out, then return into the lane. Fixed leg headings
 			# make a wide dogleg without reversing or orbiting the moving player.
-			var offset := 0.0 if timer < 1.2 else 0.72 if timer < 4.2 else -0.55
+			var return_angle := -0.55 if archetype == null else -reposition_angle * 0.76
+			var offset := 0.0 if timer < 1.2 else reposition_angle if timer < 4.2 else return_angle
 			desired = _direction(run_heading + offset)
 			target_speed = sailing_speed
 			if timer >= return_seconds:
@@ -272,7 +353,9 @@ func update_ship(delta: float) -> void:
 	# Resolve safety first, then apply exactly one bounded, acceleration-limited turn.
 	desired = _safe_direction(desired, to_player, delta)
 	_turn_toward(desired, delta)
-	_speed = move_toward(_speed, target_speed, delta * 1.2)
+	if archetype != null:
+		target_speed = minf(target_speed, sailing_speed * 1.12)
+	_speed = move_toward(_speed, target_speed, delta * acceleration)
 	var before := position
 	velocity = forward() * _speed
 	var travel := velocity * delta
@@ -297,6 +380,48 @@ func _direction(value: float) -> Vector3:
 	return Vector3(sin(value), 0.0, -cos(value))
 
 
+func _water_lane_clear(from: Vector3, to: Vector3) -> bool:
+	var offset := to - from
+	var side: Vector3 = Vector3(-offset.z, 0, offset.x).normalized() * (collision_shape.shape.radius + 1.0)
+	var samples := maxi(1, ceili(offset.length() / 10.0))
+	var terrain = game.archipelago.get_node("Terrain")
+	for sample_index in range(1, samples + 1):
+		var point := from.lerp(to, float(sample_index) / samples)
+		for margin in [Vector3.ZERO, side, -side]:
+			if terrain.terrain_height_at(point + margin) > -3.0:
+				return false
+	for margin in [Vector3.ZERO, side, -side]:
+		var ray := PhysicsRayQueryParameters3D.create(from + margin + Vector3.UP * 0.5, to + margin + Vector3.UP * 0.5, 1)
+		if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
+			return false
+	return true
+
+
+func _arena_approach(goal: Vector3, delta: float) -> Vector3:
+	_route_check_left = maxf(0.0, _route_check_left - delta)
+	var reached := _route_point.is_finite() and global_position.distance_to(_route_point) < 14.0
+	if _route_check_left <= 0.0 or reached:
+		_route_check_left = 1.0
+		if _water_lane_clear(global_position, goal):
+			_route_point = Vector3.INF
+		elif not _route_point.is_finite() or reached:
+			var center: Vector3 = game.arena_center()
+			var radial := global_position - center
+			var target := goal - center
+			var angle := atan2(radial.x, -radial.z)
+			var difference := wrapf(atan2(target.x, -target.z) - angle, -PI, PI)
+			var preferred := 1.0 if difference >= 0.0 else -1.0
+			for side in [preferred, -preferred]:
+				var candidate: Vector3 = center + _direction(angle + side * PI / 4.0) * (game.arena_radius - 25.0)
+				if _water_lane_clear(global_position, candidate):
+					_route_point = candidate
+					var direction: Vector3 = candidate - global_position
+					_avoid_side = signf(wrapf(atan2(direction.x, -direction.z) - heading, -PI, PI))
+					break
+	var point := _route_point if _route_point.is_finite() else goal
+	return (point - global_position).normalized()
+
+
 func _run_forward() -> Vector3:
 	return _direction(run_heading)
 
@@ -308,6 +433,8 @@ func _run_right() -> Vector3:
 func _capture_course() -> void:
 	run_heading = game.heading
 	run_speed = clampf(game.boat.velocity.length(), game.SPEED * 0.85, game.SPEED * 1.05)
+	if archetype != null:
+		run_speed = minf(run_speed, sailing_speed * 0.96)
 	_course_age = 0.0
 	lane_separation = broadside_separation
 
@@ -352,6 +479,11 @@ func _hold_avoidance(direction: Vector3, seconds: float) -> void:
 		_change(Mode.REPOSITION)
 
 
+func _separation_course(away: Vector3) -> Vector3:
+	var side := 1.0 if away.dot(_run_right()) >= 0.0 else -1.0
+	return (away.normalized() * 0.45 + _run_right() * side + _run_forward() * 0.25).normalized()
+
+
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
 	_avoid_left = maxf(0.0, _avoid_left - delta)
 	if game.arena_mode:
@@ -360,9 +492,10 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 				continue
 			var relative: Vector3 = global_position-other.global_position
 			var motion_delta: Vector3 = forward()*_speed-other.velocity
-			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,3)
-			if relative.length()<16 or (relative.length()<34 and (relative+motion_delta*closest).length()<12):
-				var away := (relative.normalized()+_run_forward()*0.4).normalized()
+			var horizon := clampf(1.2 / turning_speed, 3.0, 5.0)
+			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,horizon)
+			if relative.length()<17 or (relative.length()<50 and (relative+motion_delta*closest).length()<15):
+				var away := _separation_course(relative)
 				_hold_avoidance(away if _path_clear(away) else _clear_course(),1.5)
 				break
 	if _avoid_left > 0.0:
@@ -372,9 +505,10 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 	else:
 		var relative := -to_player
 		var motion_delta: Vector3 = forward() * _speed - game.boat.velocity
-		var closest_time := clampf(-relative.dot(motion_delta) / maxf(0.01, motion_delta.length_squared()), 0.0, 3.0)
-		if to_player.length() < 20.0 or (to_player.length() < 42.0 and (relative + motion_delta * closest_time).length() < 15.0):
-			var away := (-to_player.normalized() + _run_forward() * 0.7).normalized()
+		var horizon := clampf(1.2 / turning_speed, 3.0, 5.0) if game.arena_mode else 3.0
+		var closest_time := clampf(-relative.dot(motion_delta) / maxf(0.01, motion_delta.length_squared()), 0.0, horizon)
+		if to_player.length() < (24.0 if game.arena_mode else 20.0) or (to_player.length() < (60.0 if game.arena_mode else 42.0) and (relative + motion_delta * closest_time).length() < 15.0):
+			var away := _separation_course(relative) if game.arena_mode else (-to_player.normalized() + _run_forward() * 0.7).normalized()
 			_hold_avoidance(away if _path_clear(away) else _clear_course(), 2.0)
 	return _direction(_avoid_heading) if _avoid_left > 0.0 else desired
 
@@ -468,16 +602,16 @@ func take_hit() -> void:
 		return
 	hull -= 1
 	hit_reaction = 0.65
-	sail_material.albedo_color = Color("612e2b")
-	sail_material.emission = Color("612e2b")
 	if hull <= 0:
 		set_meta("destroyed", true)
 		collision_layer = 0
 		tell_line.visible = false
 		flash.visible = false
 		_change(Mode.SINKING)
+		set_aim_highlight(false)
 		game.enemy_encounters.on_ship_sunk(self)
 		game.cue_sound("victory")
+	_update_cloth()
 
 
 func update_visuals(delta: float) -> void:
@@ -512,5 +646,5 @@ func warning() -> String:
 	if mode == Mode.TELEGRAPH:
 		return "ENEMY BROADSIDE  ·  TURN OFF THE AMBER LINE  ·  %.1fs" % maxf(0, telegraph_seconds - timer)
 	if mode in [Mode.APPROACH, Mode.POSITION] and age < 7.0:
-		return "HOSTILE CUTTER  ·  SHOOT OR SAIL CLEAR"
+		return "HOSTILE %s  ·  SHOOT OR SAIL CLEAR" % display_name().to_upper()
 	return ""

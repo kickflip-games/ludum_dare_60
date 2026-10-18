@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/enemy_archetype.gd" id="1"]
+
+[resource]
+resource_name = "Heavy"
+script = ExtResource("1")
+display_name = "Heavy attacker"
+hull = 3
+speed = 7.8
+turn_speed = 0.30
+turn_acceleration = 0.40
+acceleration = 0.85
+size = 1.18
+sail_color = Color(0.88, 0.79, 0.57, 1)
+sail_fill = 0.24
+sail_bands = 2
+broadside_separation = 38.0
+approach_lead = 20.0
+approach_angle = -0.25
+reposition_angle = 0.5
+attack_run_seconds = 7.5
+return_seconds = 10.0
+telegraph_seconds = 2.3
+reload_seconds = 4.5

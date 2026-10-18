@@ -247,6 +247,9 @@ func _spawn_queued() -> void:
 	if not at.is_finite():
 		return
 	var id: int = spawn_queue.pop_front()
+	var ordinal: int = records[id-1].spawned
+	var kind: String = survival_settings.wave_rosters[id-1][ordinal]
+	available.configure_archetype(survival_settings.ARCHETYPES[kind], ships.find(available) * 10.0)
 	available.begin(at)
 	available.set_meta("wave_id", id)
 	available.territory = game.arena_center()

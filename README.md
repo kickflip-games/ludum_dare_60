@@ -3,7 +3,7 @@
 Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
 compact arena around the existing lighthouse at **(275, 250)**. The boat starts
 75 m north of the tower, facing east-southeast into safe water. Survive **five
-waves** of the existing hostile cutter. Enemies attack the player; the lighthouse
+waves** of cutters, fast skiffs and heavy attackers. Enemies attack the player; the lighthouse
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
@@ -20,39 +20,62 @@ enemy to win; entering the old harbour never wins.
   **132.6 m**, outward sailing blends in a curved rudder return, including while
   aiming. Its obstacle probes favour clear water. Inward steering remains
   effective. The hard limit bounds swept movement while retaining tangent motion.
-- Waves contain **1 / 2 / 4 / 6 / 8** cutters. The next wave begins after
+- Waves contain **1 / 2 / 2 / 3 / 3** ships (compositions below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
-  three seconds after a safe early all-clear. Only three living cutters can be
+  three seconds after a safe early all-clear. Only three living ships can be
   active; further arrivals queue and normally stagger eight seconds apart.
 - An early clear restores one hull point, capped at capacity; surviving a timer
   never grants repair. Original automatic repair remains during safe periods.
-  The final wave has no victory timer: all **21** enemies, sinking animations and
+  The final wave has no victory timer: all **11** enemies, sinking animations and
   incoming shots must resolve while the player remains alive.
 - A small top-centre wave label, final-15-second countdown and brief announcements
   carry progress. Cannon sights, incoming-fire warning and visible damage remain;
   no hull bar, lighthouse health or navigation overlay is added.
 - Voyage progression, sextant and old territory triggers are inactive. Ambient
   sea motion, occasional open-water crests, damage and self-repair remain.
+- Coral cutters take two hits; smaller blue-green, single-banded skiffs take one;
+  larger ochre, double-banded heavy attackers take three and warn for 2.3 seconds.
+  Hold E to softly illuminate visible ships near the broadside sector. Land blocks
+  illumination; it never changes where a shot goes. Confirmed hits flash the sail,
+  throw splinters and culminate in a visible tilted descent.
+
+| Wave | Ships |
+| --- | --- |
+| 1 | Cutter |
+| 2 | Two cutters |
+| 3 | Cutter + skiff |
+| 4 | Cutter + skiff + heavy |
+| 5 | Heavy + two cutters |
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
 Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
 exposed on the main crossing. Edit
-`game/survival_settings.tres` for the five counts/deadlines, spawn interval,
+`game/survival_settings.tres` for the five rosters/deadlines, spawn interval,
 maximum living enemies (1–3), early-clear pause and spawn separation. Retry
-preserves tuning and resets session progress.
-See the [timed-survival review](artifacts/timed_survival_review.md) for current
-checks/captures and the [arena review](artifacts/lighthouse_arena_review.md) for
+preserves tuning and resets session progress. Archetype resources live in
+`game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
+response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
+wave forces, surface and rocking muzzle. Existing crests keep moving in gun view.
+See the [combat review](artifacts/combat_feel_review.md) for current checks/captures,
+the [timed-survival baseline](artifacts/timed_survival_review.md) for scheduler
+history and the [arena review](artifacts/lighthouse_arena_review.md) for
 the preserved geometry work. Human combat balance remains untested.
 
 ```sh
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/naval_ai_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/survival_previews.gd -- --output=/tmp/latitude-timed-waves/rendered
 ```
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.
+
+`combat_arena_playtest.gd` is an exploratory input-only pilot, not a balance
+acceptance test. It records a full attempt and exits 1 on defeat; the current
+pilot has not established a complete win. See the combat review for actual results.
 
 ## Retained voyage reference (inactive in normal play)
 

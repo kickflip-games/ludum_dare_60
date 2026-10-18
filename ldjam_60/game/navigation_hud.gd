@@ -231,7 +231,7 @@ func _sync_button() -> void:
 	menu_body.text = "Find your way home by starlight." if intro else "The light has brought you home." if won else game.failure_reason
 	if intro and game.arena_mode:
 		menu_kicker.text = "FIVE WAVES AT SEA"
-		menu_body.text = "Survive five waves of hostile cutters.\nSail, turn and fire. The light marks the centre."
+		menu_body.text = "Survive cutters, skiffs and heavy attackers.\nSail, turn and fire. The light marks the centre."
 	if not intro and game.arena_mode:
 		menu_title.text = "THE SEA IS YOURS" if won else "SHIP SUNK"
 		menu_title.add_theme_font_size_override("font_size",36)
@@ -325,7 +325,7 @@ func _update_notice() -> void:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
 	elif not game.arena_mode and game.enemy_encounters.focus_ship().age < 4.0 and game.enemy_encounters.battle_active():
-		value = "Cutter nearby · Hold E to aim"
+		value = "Hostile nearby · Hold E to aim"
 		alpha = clampf(4.0 - game.enemy_encounters.focus_ship().age, 0.0, 1.0)
 	notice.text = value
 	notice.modulate.a = alpha

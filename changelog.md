@@ -6,6 +6,11 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Improve combat readability with folded, brighter sails, aim-only
+  visibility/occlusion-checked cloth illumination and confirmed hit/sinking
+  feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;
+  preserved physical cannon fire and wave forces. Initial combat/naval checks
+  pass; timed-roster integration and final rendered evidence remain pending.
 - Raised player cruise from 6.3 to 9 m/s (43% faster), including
   while aiming. Movement and arena return share the configurable speed; tighter
   chase follow keeps the boat readable. Retained voyage fixtures explicitly

@@ -3,6 +3,6 @@ render_mode unshaded, cull_disabled, shadows_disabled, depth_draw_never;
 varying vec4 tint;
 void vertex() { tint = INSTANCE_CUSTOM; }
 void fragment() {
-	ALBEDO = vec3(0.72,0.91,0.93);
+	ALBEDO = mix(vec3(0.43,0.66,0.80),vec3(0.83,0.94,0.98),smoothstep(-0.2,0.8,NORMAL.y));
 	ALPHA = tint.a;
 }

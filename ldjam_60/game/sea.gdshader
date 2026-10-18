@@ -57,6 +57,7 @@ void vertex() {
 	float breakup = 0.5 + 0.25 * sin(dot(p, vec2(0.37, 0.53)) + wave_time * 0.35)
 		+ 0.25 * sin(dot(p, vec2(-0.83, 0.27)) - wave_time * 0.21);
 	float cap = smoothstep(foam_threshold, foam_threshold + foam_softness, ripple_fraction);
+	cap = max(cap,smoothstep(0.12,0.24,length(ambient.yz))*smoothstep(0.25,0.75,ripple_fraction)*0.65);
 	cap_foam = max(cap * smoothstep(0.52, 0.82, breakup) * foam_intensity, event_style.z * encounter_foam);
 	flow_style = vec3(0.0);
 	for (int i = 0; i < 3; i++) {
@@ -101,6 +102,13 @@ void fragment() {
 	water = mix(water,main_color.rgb,turbulence*0.12);
 	water = mix(water,slope_color.rgb,leading*turbulence*0.45);
 	water = mix(water,crest_color.rgb,elevated*turbulence*0.20);
+	// A broad blue-silver moon lobe on raised, moving faces. No extra pass.
+	vec3 moon = normalize(sun_direction);
+	vec3 halfway = normalize(moon+view);
+	float glint = pow(max(0.0,dot(n,halfway)),20.0);
+	float raised = max(smoothstep(0.18,0.86,ripple_fraction),elevated*0.8);
+	float silver = glint*raised*(0.14+moon_slope*0.30);
+	water = mix(water,vec3(0.43,0.64,0.81),silver);
 	float rim = 1.0-clamp(dot(n,view),0.0,1.0);
 	water = mix(water,slope_color.rgb,rim*rim*rim*0.055);
 	float streak = sin(dot(p,wave_1.xy)*pattern_density*0.8-wave_time*0.26

@@ -13,6 +13,8 @@ const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 const ArenaReturn = preload("res://game/arena_return.gd")
+const FlowZones = preload("res://game/flow_zones.gd")
+var flow_zones := FlowZones.new()
 var arena_return := ArenaReturn.new()
 var wave_sailing := WaveSailing.new()
 var wave_encounters := WaveEncounters.new()
@@ -40,7 +42,7 @@ const GUIDING_STAR_ELEVATION: float = PI / 3.0
 const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
-@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 9.0
+@export_range(3.0, 14.0, 0.1) var sailing_speed: float = 7.5
 @export var encounter_seed: int = 60
 @export_group("Lighthouse arena")
 @export var arena_mode: bool = false
@@ -248,6 +250,8 @@ func _ready() -> void:
 	archipelago.arena_mode = arena_mode
 	add_child(archipelago)
 	archipelago.configure(self)
+	if arena_mode:
+		flow_zones.configure(archipelago.arena_layout.get_node("FlowZones"))
 	_place_player()
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
@@ -454,6 +458,7 @@ func journey_progress() -> float:
 
 func restart() -> void:
 	_clear_player_controls()
+	flow_zones.reset()
 	cannon.reset()
 	wave_sailing.reset()
 	arena_return.reset()
@@ -566,6 +571,22 @@ func advance_sailing(delta: float, steering: float) -> void:
 	wave_encounters.update(self, delta)
 	ocean.wave_time = sea_time
 	enemy_encounters.update_encounters(delta)
+	if state != State.SAILING:
+		_clear_player_controls()
+		cannon.reset()
+		enemy_encounters.stop()
+		wave_encounters.stop(ocean.wave_field)
+		wave_sailing.reset()
+		flow_zones.reset()
+		boat.velocity = Vector3.ZERO
+		actual_speed = 0.0
+		return
+	if arena_mode:
+		var earned := flow_zones.collect_at(Vector2(boat.global_position.x, boat.global_position.z))
+		if earned > 0:
+			show_discovery("Flow +25%% · %.1f m/s" % propulsion_speed(), 2.2)
+			cue_sound("victory")
+	var forward_speed := propulsion_speed()
 	# Holding E suspends manual rudder input; existing waves and momentum continue.
 	if cannon.aiming:
 		steering = 0.0
@@ -574,7 +595,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		var was_returning: bool = arena_return.active
 		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
 			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
-			arena_soft_fraction, arena_inward_bias, SPEED)
+			arena_soft_fraction, arena_inward_bias, forward_speed)
 		if arena_return.active:
 			steering = archipelago.safe_return_rudder(steering)
 		if arena_return.active and not was_returning and not _at_sailing_boundary:
@@ -583,7 +604,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		elif not arena_return.active and arena_return.blend == 0.0:
 			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
-	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, SPEED)
+	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, forward_speed)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position
@@ -624,7 +645,12 @@ func advance_sailing(delta: float, steering: float) -> void:
 		enemy_encounters.stop()
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
+		flow_zones.reset()
 	_update_hull_recovery(delta)
+
+
+func propulsion_speed() -> float:
+	return sailing_speed * flow_zones.multiplier() if arena_mode else sailing_speed
 
 
 func is_repairing_hull() -> bool:
@@ -691,6 +717,9 @@ func take_damage(amount: int, reason: String) -> bool:
 	shake(0.16)
 	cue_sound("damage")
 	if hull == 0:
+		flow_zones.reset()
+		boat.velocity = Vector3.ZERO
+		actual_speed = 0.0
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
@@ -705,6 +734,7 @@ func shake(amount: float) -> void:
 
 
 func _update_view(delta: float) -> void:
+	flow_zones.present(water_material, arena_mode and state == State.SAILING)
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
 	boat_damage.update(hull, hull_capacity, hit_flash)
@@ -1226,9 +1256,13 @@ func _fill_audio() -> void:
 	if not is_instance_valid(_audio_playback):
 		return
 	var frames := _audio_playback.get_frames_available()
+	var speed_gain := 1.0
+	if state == State.SAILING:
+		speed_gain += clampf(actual_speed / sailing_speed - 1.0, 0.0, 1.0) * 0.28
 	for i in range(frames):
 		_audio_phase += 1.0 / 22050.0
 		_audio_noise = lerpf(_audio_noise, _audio_rng.randf_range(-1.0, 1.0), 0.07)
 		var swell := (0.45 + 0.2 * sin(_audio_phase * 0.75)) * (1.0 + storm_blend * 0.75)
+		swell *= speed_gain
 		var sample := _audio_noise * swell + sin(_audio_phase * TAU * 57.0) * 0.015
 		_audio_playback.push_frame(Vector2(sample, sample))

@@ -1,6 +1,15 @@
 # Turquoise water and flow zones — design proposal
 
-18 October 2026. Planning only; gameplay implementation has not started.
+18 October 2026. Approved and implemented; see the
+[implementation report](turquoise_water_flow_report.md) for current evidence.
+
+Final user updates: base speed **7.5 m/s**; each distinct zone compounds it by
+25% once per run; directional wave force **50% stronger**; rolling-water
+modulation **4x the first implementation's amplitude** (0.22 -> 0.88).
+The final palette is a slightly darker **night blue**, replacing the earlier
+turquoise pass while retaining brighter flow ribbons and cool pale foam.
+Implementation incorporates latest upstream arena/chase-camera changes at
+`84ac328`. The source baseline below records the earlier planning inspection.
 
 ## Scope
 
@@ -32,7 +41,7 @@ travel also increases turning radius and approach speed near reefs; it must not
 turn arena return into an unavoidable crash. Benefits to fun, difficulty and
 comfort need a human playtest, rather than being inferred from a screenshot.
 
-## Baseline verified in latest main
+## Baseline inspected during planning at 61ba63f
 
 | System | Current behavior and source |
 | --- | --- |
@@ -56,8 +65,8 @@ the preset, arena branch and production code above take precedence.
    swatches, not exact recovered shader values. Tune in the real renderer against
    the references. Preserve a smooth dark horizon and readable rock silhouettes,
    cannon warning lines and shots under calm and storm lighting.
-2. **Bring back visible rolling modulation.** Trial a height multiplier of
-   0.18-0.24, corresponding to a conservative ambient bound of about 0.22-0.29 m,
+2. **Bring back visible rolling modulation.** The final requested multiplier is
+   0.88 (4x the first implementation's 0.22), with an ambient bound of 1.077 m,
    with broad dominant wavelengths around 20-30 m and secondary 10-16 m rolls.
    Keep the analytic shape and derivative shared; use the existing five-point
    hull response. Add sparse broken caps, with broad moving cyan bands between
@@ -67,7 +76,8 @@ the preset, arena branch and production code above take precedence.
    palette for their troughs, backs, advancing faces, foam, wake and water-impact
    effects. Replace conflicting fixed turbulence tints with palette-derived
    variants; keep a readable brighter advancing face and narrow pale cap.
-   Preserve wave timing, force profile, countersteering and the four-event cap.
+   Preserve timing, profile, countersteering and the four-event cap; multiply
+   directional crest force by 1.5, retaining the existing wave-turn cap.
 4. **Keep the navigation challenge explicit.** Background rolls supply the
    continuous ride and readable surface; existing finite crests supply real
    drift/yaw. Route choice through flow zones adds a lasting reward. Do not add
@@ -92,7 +102,7 @@ the preset, arena branch and production code above take precedence.
   Overlapping fresh zones each grant once, independent of iteration order or
   frame rate; repeated frames cannot duplicate either grant.
 - With the initial three zones, forward propulsion progresses through
-  **6.3 -> 7.875 -> 9.84375 -> 12.3046875 m/s**. Every collected reward lasts
+  **7.5 -> 9.375 -> 11.71875 -> 14.6484375 m/s**. Every collected reward lasts
   through the rest of the run. Wave drift stays separate;
   actual ground speed still reflects turning, collisions and boundary handling.
   E aim/release and accepted nonfatal damage must not cancel the reward.
@@ -136,17 +146,18 @@ first boost, and tune zone placement or return prediction if needed.
 
 ## Requirement-to-evidence contract
 
-All implementation checks below are **planned, not run** for this proposal.
+This table records the acceptance contract; actual passing checks and the
+inherited legacy-foam limitation are in the implementation report.
 
 | ID | Requirement / invariant | Trigger / control case | Observable expected result and acceptance evidence |
 | --- | --- | --- | --- |
 | R1 | Reference color and rolling modulation | Sail in calm/storm at matched camera/time; compare unchanged baseline | Broad turquoise moving bands, sparse pale caps and a visible gentle hull ride; readable horizon, reefs and shots. Native frames plus a short moving clip inspected. |
 | R2 | Existing waves merge with the surface | Stage port, starboard and four overlapping crests, then recovery | Same palette, visible advancing faces, smooth spatial/temporal blend; original countersteering remains effective. Native captures plus `wave_encounter_smoke.gd`. |
-| R3 | Each distinct zone grants 25% of current propulsion | Same straight clear-water run with/without actual crossings of three different zones | Forward targets are 6.3, 7.875, 9.84375 and 12.3046875 m/s after zero/one/two/three zones; no-zone control never boosts. Check displacement, not a visual flag alone. |
-| R4 | Every boost survives exit | Leave each collected patch; continue in clear water, aim/release, accept nonfatal damage | Forward target remains `6.3 * pow(1.25, collected_zone_count)`; wake/feedback agree. No requirement to remain in or return to a patch. |
+| R3 | Each distinct zone grants 25% of current propulsion | Same straight clear-water run with/without actual crossings of three different zones | Forward targets are 7.5, 9.375, 11.71875 and 14.6484375 m/s after zero/one/two/three zones; no-zone control never boosts. Check displacement, not a visual flag alone. |
+| R4 | Every boost survives exit | Leave each collected patch; continue in clear water, aim/release, accept nonfatal damage | Forward target remains `7.5 * pow(1.25, collected_zone_count)`; wake/feedback agree. No requirement to remain in or return to a patch. |
 | R5 | Each zone rewards once per run | Stay inside, overlap two fresh patches, cross borders repeatedly, revisit spent zones; collect in different orders | One grant per distinct ID; two fresh overlapping zones grant exactly two boosts. No per-frame/re-entry multiplication. Zone order does not change the final speed. |
 | R6 | Collision and arena safety at every reward level | Sail at zero/one/two/three boosts toward reef/props and outward rim; mixed A/D with E; repeat 30/60/120 Hz and a long frame | Solids still stop/slide movement; bounded return and inward steering remain available; speed reward never bypasses collision or boundary. `arena_smoke.gd` plus focused boosted scenarios. |
-| R7 | State lifecycle | Fresh start, damage, sinking, victory, held restart/retry | Nonfatal damage preserves boost; endings stop movement and clear reward; retry restores 6.3, zone eligibility, audio/camera/effect state. `controls_lifecycle_smoke.gd`, `damage_smoke.gd` and new flow tests. |
+| R7 | State lifecycle | Fresh start, damage, sinking, victory, held restart/retry | Nonfatal damage preserves boost; endings stop movement and clear reward; retry restores 7.5, zone eligibility, audio/camera/effect state. `controls_lifecycle_smoke.gd`, `damage_smoke.gd` and new flow tests. |
 | R8 | Shared sea and combat/navigation preservation | Sample both surfaces, fire into moving water, steer/counter crest, play representative survival circuit | CPU/GPU heights/normals agree; splashes meet water; muzzle/controls and five-wave timing/queues still work. `wave_render_check.gd`, `ocean_smoke.gd`, `cannon_aim_smoke.gd`, `survival_smoke.gd`. |
 | R9 | Readable and bounded presentation | Approach uncollected/spent patches with incoming fire; Low/Standard, Full/Reduced | Visible footprint agrees with collision-root membership, no clipping/flicker or ambiguous reward, clear warnings. Native review and paired frame-time/draw-call measurements; no unbounded allocations. |
 
@@ -191,5 +202,7 @@ Native unchanged baseline, captured on this branch with the existing arena fixtu
 - GitHub-rendered proposal inspected, including the persistent-flow section;
   its [review screenshot](turquoise_water_flow/proposal-review.png) is retained
   for the draft PR. Reference and baseline image links resolve in the repository.
-- Gameplay changes, boosted behavior tests, new-style renders, human playtesting
-  and performance acceptance remain pending design agreement/implementation.
+- Implementation is now authorized and delivered; see the linked implementation
+  report for current code, exact test outcomes, native captures and remaining
+  human playtesting / Web performance gaps. The bullets above record planning
+  evidence rather than claiming they validate the final gameplay.

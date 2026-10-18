@@ -7,7 +7,14 @@ waves** of the existing hostile cutter. Enemies attack the player; the lighthous
 is a lit landmark with no health or damage system. Defeat every queued and living
 enemy to win; entering the old harbour never wins.
 
-- **Play / Enter:** cast off; forward sailing is automatic at **9 m/s**.
+- **Play / Enter:** cast off; forward sailing is automatic at **7.5 m/s**.
+- Three bright cyan flow ribbons each grant **25% more current forward speed
+  once per run**: **9.375 / 11.719 / 14.648 m/s** after one/two/three. Rewards
+  persist outside the ribbons and while aiming or taking damage. Revisiting a
+  spent ribbon grants nothing; restart restores base speed and all rewards.
+- Night-blue rolling water uses **4x the first implementation's modulation**
+  (height multiplier 0.88). Existing directional crest force is **50% stronger**,
+  with countersteering and the wave-turn cap retained. A swell can block a low shot.
 - **A / D or arrows:** steer; **hold E** to aim and **press F** to fire once.
   Release E to return to steering. Cannonballs follow the visible barrel.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
@@ -36,7 +43,7 @@ enemy to win; entering the old harbour never wins.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
-Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
+Cruise speed (`sailing_speed`, default 7.5 m/s), radius and return settings are
 exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five counts/deadlines, spawn interval,
 maximum living enemies (1–3), early-clear pause and spawn separation. Retry

@@ -2,6 +2,7 @@ extends RefCounted
 ## Finite world-space ridges. Keep the analytic profile in sync with waves.gdshaderinc.
 const MAX_WAVES := 4
 const MAX_HEIGHT := 2.0
+const FORCE_MULTIPLIER := 1.5
 var waves: Array[Dictionary] = []
 var next_id := 0
 
@@ -64,7 +65,8 @@ func push_at(p: Vector2, heading: float, time: float) -> Vector2:
 		# Bow-on exposure is lower; steeper, taller ridges exert a larger shove.
 		var exposure := lerpf(0.32, 1.0, absf(right.dot(w.direction)))
 		result += w.direction * h * exposure * (4.0 / w.width) * 6.5
-	return result.limit_length(8.0)
+	# Scale after the original clamp: even capped crests gain exactly 50% force.
+	return result.limit_length(8.0) * FORCE_MULTIPLIER
 
 func apply_to(material: ShaderMaterial) -> void:
 	var origins := PackedVector4Array()

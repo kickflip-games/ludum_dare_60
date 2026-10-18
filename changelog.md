@@ -6,16 +6,23 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
-- Planning only: proposed reference-matched turquoise rolling water, consistent
-  encounter-wave styling and optional 25% flow rewards that persist after leaving
-  a zone, for the latest lighthouse arena. Each distinct zone compounds current
-  speed by 25% once per run; revisiting cannot repeat its reward, and retry
-  resets all collected zones. Added acceptance checks through all three boosts.
-  Inspected native baseline helm/layout captures and the GitHub-rendered
-  proposal; refreshed its flow screenshot for the confirmed stacking rule.
-  Screenshots included for web review. Documentation whitespace
-  check passes. Gameplay unchanged; implementation checks remain pending.
-  See the [water and flow proposal](artifacts/turquoise_water_flow_plan.md).
+- Implemented night-blue rolling water and matching crest/wake/splash colors on
+  the latest arena/chase-camera baseline. User-requested modulation is 4x the
+  first implementation (0.22 -> 0.88). The final palette is slightly darker and
+  bluer than the initial turquoise pass. Directional wave force is 50% stronger
+  while countersteering, wave yaw limits and shared surface authority remain.
+- Base player cruise is 7.5 m/s. Three visible flow ribbons each compound current
+  forward speed by 25% once per run, retaining rewards after exit and nonfatal
+  damage. Collected IDs prevent repeat rewards; endings and held-R retry reset
+  them. Return/probe lookahead accounts for full stacked speed, and bounded
+  visual hull-edge support keeps the gunwale clear. Preserved current survival,
+  cannon controls and upstream chase camera. Fixed Windows test-report paths.
+- Validation: 640 checks across twelve suites pass; 51,840 GPU comparisons pass
+  with maximum error 0.000198. Inspected native matched water/crest/flow, storm,
+  cannon, Low and Reduced views, plus a real boosted exit. An inherited legacy
+  coastal-mask hash check still fails; native timings are variable, and human
+  balance/comfort plus Web profiling remain open. See the
+  [implementation report](artifacts/turquoise_water_flow_report.md).
 
 - Raised player cruise from 6.3 to 9 m/s (43% faster), including
   while aiming. Movement and arena return share the configurable speed; tighter

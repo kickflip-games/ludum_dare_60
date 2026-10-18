@@ -301,6 +301,12 @@ func _run() -> void:
 	check(ship.hull == ship.hull_capacity, "outside-arc target cannot bend a shot or receive a hidden hit")
 	ship.reset()
 	# Real moving hull collisions at centre and both sides, using timed presses.
+	# Isolate sweep/ballistic timing from the deliberately enlarged production
+	# swell, which can legitimately intercept a low shot. Arena/flow checks retain
+	# the production sea and exercise a clear-water shot plus sampled water hits.
+	game.ocean_settings.height_multiplier = 0.0
+	game.boat_motion.reset()
+	game._update_view(1.0)
 	for phase: float in [0.0, 0.25, 1.75]:
 		c.reset()
 		action("watch_starboard", true)

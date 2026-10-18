@@ -1,5 +1,41 @@
 # Calm ocean and directional waves
 
+## Current night-blue water and flow rewards — 18 October 2026
+
+Production `calm.tres` now uses night-blue bands, cool pale-blue caps and height
+multiplier **0.88**, four times the first implementation's 0.22. Its conservative
+ambient displacement bound is **1.077 m**, with wavelengths about 25/13/9 m.
+This supersedes the nearly flat calm settings in the historical sections below.
+Shared displacement/derivative equations and the four-event cap are unchanged.
+The final user-requested darker blue palette is `#125D85` / `#177CA5` /
+`#309BB8` / `#72BED3`, with `#D5EBF1` foam. It replaces the first turquoise pass.
+
+`wave_field.gd:push_at()` multiplies the former capped force by **1.5**, so
+small and saturated crests both gain 50%. Heights/timing stay unchanged. Torque
+responds to that force; the 0.56 rad/s wave-turn cap remains below the 0.72 rad/s
+rudder. Visual hull-edge support is bounded to 0.50 m; collisions stay planar.
+The restored upstream chase camera remains the default.
+
+`flow_zones.gd` reads three stable-ID curved ribbons from `arena_layout.tscn`.
+First entry into each grants a persistent 1.25 multiplier; a collected-ID set
+prevents repeated frames, overlap or re-entry duplicating a reward. Base speed
+is 7.5 m/s, reaching 9.375/11.71875/14.6484375 m/s. Nonfatal damage, aiming and
+exit retain rewards; win/loss/retry clear them. `SPEED` stays the unboosted
+accessor for existing cutter tuning; `propulsion_speed()` drives the player
+integrator and speed-aware boundary return. No flow multiplier is applied to
+enemies, projectiles, reloads or survival timers.
+
+The sea shader draws ribbons on the shared displaced surface with the same
+rounded footprint as membership. Spent ribbons fade; a short notice/chime and
+brighter moving wake acknowledge collection. Work is bounded to three vertex
+footprints, with cached material updates. No separate water plane or wave model
+is introduced. Wake and cannon splashes share the water's foam color.
+
+See the [implementation report](../../../artifacts/turquoise_water_flow_report.md)
+for actual checks and captures. The old palette/preset/force descriptions below
+are historical. New checks: `flow_zones_smoke.gd`, `flow_water_previews.gd`, plus
+the existing wave, arena, survival, cannon and lifecycle regressions.
+
 Normal play now uses the lighthouse arena. Its inner 95 m is sheltered from
 scheduled crests; outside it the existing 25–45 second ambient scheduler can
 launch a small, terrain-checked event while clear of combat and cannon view.
@@ -8,11 +44,12 @@ and arena return feeds a blended rudder into the unchanged `wave_sailing.step()`
 The field, shader, hull sampler and cannon-water authority remain shared.
 Only the static coastal foam texture changes to match the isolated island.
 The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.
-The arena player cruises at 9 m/s; the retained voyage fixture explicitly uses
-6.3 m/s. Both pass their configured speed into the same movement integrator;
-the arena return also uses that speed when measuring outward motion.
+The retained voyage fixture explicitly uses 6.3 m/s and has no flow rewards.
+Both modes pass their configured speed into the same movement integrator.
 
-`game/crossing.tscn` uses `presets/calm.tres`: gentle rolling swells, no ambient foam and negligible uncommanded horizontal motion. Weather changes lighting/clouds, not wave height. Choppy/stormy presets retain stronger surfaces for stress checks.
+`game/crossing.tscn` uses the rolling night-blue `presets/calm.tres`. Weather
+changes lighting/clouds, not wave height. Ambient rolls have no hidden lateral
+forces; finite visible crests drive drift/yaw. Choppy/Stormy remain stress presets.
 
 ## Chase camera restoration — 18 October 2026
 

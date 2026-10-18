@@ -8,6 +8,8 @@ recorded evidence and limitations.
 
 - Required a dedicated branch and immediate draft web PR for every task, an
   initial check for overlapping open PRs, and screenshots visible in each PR.
+  Added a [rendered workflow capture](artifacts/pr_workflow/agent-workflow.jpg)
+  for web review; the GitHub-rendered instructions were visually inspected.
   Documentation diff and workflow requirements checked; gameplay tests were
   not run for this instructions-only update.
 - Polished cutter encounters: predictable starboard passes, smooth return turns,

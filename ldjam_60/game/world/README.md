@@ -19,7 +19,8 @@ layout generation is used:
 - **LowIslets:** three low rock outcrops north/northeast with alternative gaps.
 - **EnemySectors:** four 143 m cardinal markers, each with a configurable 16°
   spread. Spawn selection checks 12 m solid clearance and 65 m player separation;
-  an obstructed sector is skipped rather than spawning inside geometry.
+  an obstructed sector is skipped rather than spawning inside geometry. Among safe
+  candidates, shorter clear approaches take priority.
 
 Each obstacle's collider is built from its visible mesh faces. Solid reefs,
 islets and wreck sections stop both sides' cannonballs; both sides shatter
@@ -32,17 +33,18 @@ Normal inner sailing stays manual. Movement is bounded **before** collision
 sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
 including while E is held. No boundary collider or teleport is used.
 
-Three reusable hulls target the player and stay until sunk. Data-driven
+Five reusable hulls target the player and stay until sunk. Data-driven
 cutter/skiff/heavy profiles supply two/one/three-hit hulls, different sail bands,
 size, speed, turn acceleration, approach and warned broadside timing. The
-scheduler queues 1/2/2/3/3 arrivals, caps living combatants at three and normally
-staggers spawns eight seconds apart. Deadlines 40/50/65/80 start overlapping waves
+scheduler queues 2/3/4/5/6 arrivals, caps living combatants at five and normally
+staggers spawns 2.5 seconds apart. Deadlines 40/50/65/80 start overlapping waves
 without resetting survivors. A safe early all-clear gives one capped hull repair
-and a three-second pause; final victory waits for all 11 kills, sinking and
+and a three-second pause; final victory waits for all 20 kills, sinking and
 incoming shots. Old harbour victory remains disabled. Settings are authored in
 `game/survival_settings.tres`; archetypes are in `game/enemies/`. Long blocked
 approaches use cached, terrain-clear outer detours; local hull-width probes and
-predictive lateral yielding still govern the actual bounded rudder. See the
+predictive lateral yielding still govern the actual bounded rudder. Ships also
+slow for crossing traffic and hold collision recovery headings to avoid oscillation. See the
 [combat review](../../../artifacts/combat_feel_review.md). Original territories/discoveries stay inactive;
 the old journey remains accessible through `tests/legacy_voyage.tscn`.
 

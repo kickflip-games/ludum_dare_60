@@ -6,6 +6,16 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Increased arena waves to 2/3/4/5/6 ships (20 total), with five active slots
+  and 2.5-second arrivals. Safe spawns favour shorter clear approaches; faster
+  cutter/skiff/heavy pursuit, crossing broadsides and shorter return legs keep
+  pressure on the player. Crowded hulls yield speed and hold recovery headings.
+  Preserved full warnings, non-homing shots, hull values, player controls and
+  the retained voyage AI. At 30/60/120 Hz, first fire fell from 48.1–48.2 s to
+  9.5–9.6 s; 90-second shots rose from 1–3 to 7–11 in the protected no-input
+  fixture. Human balance and Web/mobile performance remain untested.
+
+
 - Added five nearby rocky islands and 69 pines in the
   earlier archipelago style, with matching terrain, collision and shoreline
   foam. New shores leave the combat ring and a 10 m outer margin clear.

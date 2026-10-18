@@ -130,6 +130,10 @@ func broadside(kind: String, dodge: bool) -> Dictionary:
 	return result
 
 func _run() -> void:
+	if "--multi-only" in OS.get_cmdline_user_args():
+		await multi_approach()
+		quit(0 if failures == 0 else 1)
+		return
 	await route("cutter", 60)
 	await route("skiff", 30)
 	await route("heavy", 120)
@@ -145,7 +149,7 @@ func _run() -> void:
 
 func multi_approach() -> void:
 	var game = await make_game()
-	var ships: Array = game.enemy_encounters.ships
+	var ships: Array = game.enemy_encounters.ships.slice(0, 3)
 	var kinds := ["cutter", "skiff", "heavy"]
 	var offsets := [Vector3(143, 0, 0), Vector3(0, 0, -143), Vector3(-143, 0, 0)]
 	for index in 3:
@@ -177,11 +181,11 @@ func multi_approach() -> void:
 				minimum_separation = minf(minimum_separation, ships[first_index].position.distance_to(ships[second_index].position))
 		await physics_frame
 	print("MULTI APPROACH " + JSON.stringify({"minimum_separation": minimum_separation,
-		"longest_stop": longest_stop / 60.0, "maximum_step": maximum_step, "closest": closest}))
+		"longest_stop": longest_stop / 60.0, "maximum_step": maximum_step, "closest": closest, "ships": ships.map(func(s): return {"kind": s.display_name(), "position": str(s.position), "speed": s.velocity.length(), "mode": s.mode, "heading": s.heading, "avoid": s._avoid_heading, "route": str(s._route_point)})}))
 	check(minimum_separation > 10.0, "three different approach directions yield instead of stacking or colliding")
 	check(longest_stop / 60.0 < 2.5 and not grounded, "multi-ship blocked paths recover while all hulls stay in water")
 	check(closest.all(func(distance): return distance < 80.0), "all three archetypes physically close from separate sectors")
-	check(maximum_step < 0.18 and ships.all(func(ship): return ship.visible and ship.hull == ship.hull_capacity),
+	check(maximum_step <= 16.0 * 1.12 / 60.0 + 0.01 and ships.all(func(ship): return ship.visible and ship.hull == ship.hull_capacity),
 		"simultaneous AI never teleports, silently despawns or takes time-based damage")
 	game.restart()
 	check(ships.all(ship_is_reset), "multi-ship retry clears detours, glow, shots and every pooled hull")

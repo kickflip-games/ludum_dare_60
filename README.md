@@ -23,13 +23,13 @@ enemy to win; entering the old harbour never wins.
   **132.6 m**, outward sailing blends in a curved rudder return, including while
   aiming. Its obstacle probes favour clear water. Inward steering remains
   effective. The hard limit bounds swept movement while retaining tangent motion.
-- Waves contain **1 / 2 / 2 / 3 / 3** ships (compositions below). The next wave begins after
+- Waves contain **2 / 3 / 4 / 5 / 6** ships (compositions below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
-  three seconds after a safe early all-clear. Only three living ships can be
-  active; further arrivals queue and normally stagger eight seconds apart.
+  three seconds after a safe early all-clear. Up to five living ships can be
+  active; further arrivals queue and normally stagger 2.5 seconds apart.
 - An early clear restores one hull point, capped at capacity; surviving a timer
   never grants repair. Original automatic repair remains during safe periods.
-  The final wave has no victory timer: all **11** enemies, sinking animations and
+  The final wave has no victory timer: all **20** enemies, sinking animations and
   incoming shots must resolve while the player remains alive.
 - A small top-centre wave label, final-15-second countdown and brief announcements
   carry progress. Cannon sights, incoming-fire warning and visible damage remain;
@@ -44,18 +44,25 @@ enemy to win; entering the old harbour never wins.
 
 | Wave | Ships |
 | --- | --- |
-| 1 | Cutter |
-| 2 | Two cutters |
-| 3 | Cutter + skiff |
-| 4 | Cutter + skiff + heavy |
-| 5 | Heavy + two cutters |
+| 1 | Cutter + skiff |
+| 2 | Two cutters + skiff |
+| 3 | Cutter + two skiffs + heavy |
+| 4 | Two cutters + two skiffs + heavy |
+| 5 | Two heavies + two skiffs + two cutters |
+
+Cutters pursue at 13 m/s, skiffs at 16 m/s and heavies at 10.5 m/s, with a
+bounded catch-up allowance. Spawns favour the nearest safe, clear approach;
+ships refresh pursuit courses sooner, take crossing broadside opportunities,
+and return after 3.5 / 2.5 / 5 seconds respectively. A clear pass can fire again
+after reloading. Warnings retain their full 1.65 / 1.8 / 2.3 seconds and fixed
+aim point; launched shots never home. Crowded ships yield speed as well as turning.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
 spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
 Cruise speed (`sailing_speed`, default 9 m/s), radius and return settings are
 exposed on the main crossing. Edit
 `game/survival_settings.tres` for the five rosters/deadlines, spawn interval,
-maximum living enemies (1–3), early-clear pause and spawn separation. Retry
+maximum living enemies (1–5), early-clear pause and spawn separation. Retry
 preserves tuning and resets session progress. Archetype resources live in
 `game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
 response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
@@ -70,8 +77,14 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_sm
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/naval_ai_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_pressure_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/survival_previews.gd -- --output=/tmp/latitude-timed-waves/rendered
 ```
+
+`enemy_pressure_smoke.gd` measures production arrivals and attacks at 30/60/120 Hz,
+checks crossing-shot reload/side/warning rules and retries, and uses damage immunity
+only to keep the 90-second observation alive. Add `-- --render` with the native
+renderer for actual gameplay captures in `/tmp/latitude-enemy-pressure`.
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.

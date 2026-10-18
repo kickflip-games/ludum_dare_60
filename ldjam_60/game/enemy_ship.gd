@@ -296,7 +296,7 @@ func update_ship(delta: float) -> void:
 		Mode.APPROACH:
 			_course_age += delta
 			# Re-evaluate a changed helm course at deliberate intervals, never each frame.
-			if _course_age >= 5.0 and absf(wrapf(game.heading - run_heading, -PI, PI)) > 0.35:
+			if _course_age >= (1.25 if game.arena_mode else 5.0) and absf(wrapf(game.heading - run_heading, -PI, PI)) > 0.35:
 				_capture_course()
 			# Follow a lane ahead of the hull, never the player or a changing landmark bearing.
 			# The captured course stays fixed for this manoeuvre; only along-course progress moves.
@@ -309,18 +309,33 @@ func update_ship(delta: float) -> void:
 			var goal: Vector3 = game.boat.position + _run_forward() * goal_ahead + _run_right() * lane_separation
 			desired = _arena_approach(goal, delta) if game.arena_mode else (goal - global_position).normalized()
 			target_speed = clampf(run_speed + (8.0 - along) * 0.12, sailing_speed * 0.74, sailing_speed * 1.12)
-			if timer > 2.0 and absf(lateral - lane_separation) < 10.0 and absf(along) < 18.0 and forward().dot(_run_forward()) > 0.94 and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0 if game.arena_mode else 45.0):
+			if game.arena_mode:
+				# Close decisively, then settle to the player's pace for a readable pass.
+				target_speed = clampf(run_speed + maxf(0.0, to_player.length() - lane_separation) * 0.22,
+					run_speed, sailing_speed * 1.12)
+			# Arena ships take crossing opportunities instead of waiting to match
+			# a moving player's exact lane. Commit to this heading for the warning.
+			if game.arena_mode and cooldown <= 0.0 and to_player.length() > 26.0 and to_player.length() < firing_range and port_direction().dot(to_player.normalized()) > 0.78 and _avoid_left <= 0.0 and _path_clear(forward(), 24.0):
+				run_heading = heading
+				run_elapsed = 0.0
+				_pass_fired = false
+				passes += 1
+				_lock_shot()
+				_change(Mode.TELEGRAPH)
+				game.cue_sound("warning")
+			var aligned := absf(lateral - lane_separation) < 14.0 and absf(along) < 28.0 and forward().dot(_run_forward()) > 0.82 if game.arena_mode else absf(lateral - lane_separation) < 10.0 and absf(along) < 18.0 and forward().dot(_run_forward()) > 0.94
+			if mode == Mode.APPROACH and timer > (1.0 if game.arena_mode else 2.0) and aligned and _avoid_left <= 0.0 and _path_clear(_run_forward(), 32.0 if game.arena_mode else 45.0):
 				run_elapsed = 0.0
 				_pass_fired = false
 				passes += 1
 				_change(Mode.POSITION)
 		Mode.POSITION, Mode.TELEGRAPH, Mode.FIRE:
-			# Fire states are substates of one predictable, parallel six-second pass.
+			# Fire states share one committed straight pass and locked warning.
 			run_elapsed += delta
 			target_speed = run_speed + 0.15
 			if mode == Mode.POSITION:
 				var distance := to_player.length()
-				if not _pass_fired and cooldown <= 0.0 and distance > 24.0 and distance < firing_range and port_direction().dot(to_player.normalized()) > 0.90:
+				if (game.arena_mode or not _pass_fired) and cooldown <= 0.0 and distance > 24.0 and distance < firing_range and port_direction().dot(to_player.normalized()) > 0.90:
 					_lock_shot()
 					_change(Mode.TELEGRAPH)
 					game.cue_sound("warning")
@@ -330,16 +345,21 @@ func update_ship(delta: float) -> void:
 				_change(Mode.FIRE)
 			elif mode == Mode.FIRE and timer >= 0.18:
 				_change(Mode.POSITION)
+			# A missed pass must not sail away for a full attack/return cycle.
+			if game.arena_mode and mode == Mode.POSITION and (to_player.length() > 80.0 or absf(wrapf(game.heading - run_heading, -PI, PI)) > 0.8):
+				_capture_course()
+				_change(Mode.APPROACH)
 			if run_elapsed >= attack_run_seconds and mode == Mode.POSITION:
 				_change(Mode.REPOSITION)
 		Mode.REPOSITION:
 			# Continue ahead, arc out, then return into the lane. Fixed leg headings
 			# make a wide dogleg without reversing or orbiting the moving player.
 			var return_angle := -0.55 if archetype == null else -reposition_angle * 0.76
-			var offset := 0.0 if timer < 1.2 else reposition_angle if timer < 4.2 else return_angle
+			var leg_time := timer / return_seconds * 8.5 if game.arena_mode else timer
+			var offset := 0.0 if leg_time < 1.2 else reposition_angle if leg_time < 4.2 else return_angle
 			desired = _direction(run_heading + offset)
 			target_speed = sailing_speed
-			if timer >= return_seconds:
+			if timer >= return_seconds or (game.arena_mode and to_player.length() > 80.0):
 				_capture_course()
 				_change(Mode.APPROACH)
 		Mode.DISENGAGING:
@@ -355,7 +375,17 @@ func update_ship(delta: float) -> void:
 	_turn_toward(desired, delta)
 	if archetype != null:
 		target_speed = minf(target_speed, sailing_speed * 1.12)
-	_speed = move_toward(_speed, target_speed, delta * acceleration)
+	if game.arena_mode:
+		# Yield speed as well as rudder when a hull crosses the bow. At the new
+		# pursuit speeds, turning alone cannot keep a crowded lane separated.
+		for other in game.enemy_encounters.living_ships():
+			if other == self:
+				continue
+			var offset: Vector3 = other.global_position - global_position
+			if offset.length() < 38.0 and forward().dot(offset.normalized()) > 0.35:
+				target_speed = minf(target_speed, maxf(0.0, offset.length() - 14.0) * 0.5)
+	var speed_response := acceleration * 3.0 if game.arena_mode and target_speed < _speed else acceleration
+	_speed = move_toward(_speed, target_speed, delta * speed_response)
 	var before := position
 	velocity = forward() * _speed
 	var travel := velocity * delta
@@ -365,11 +395,12 @@ func update_ship(delta: float) -> void:
 	if collision:
 		var normal := Vector3(collision.get_normal().x, 0, collision.get_normal().z).normalized()
 		move_and_collide(collision.get_remainder().slide(normal))
-		_hold_avoidance((normal + forward() * 0.35).normalized(), 2.5)
+		if not game.arena_mode or _avoid_left <= 0.0:
+			_hold_avoidance((normal + forward() * 0.35).normalized(), 2.5)
 	position.y = 0.0
 	velocity = (position - before) / maxf(delta, 0.0001)
 	_blocked_elapsed = _blocked_elapsed + delta if velocity.length() < _speed * 0.3 else 0.0
-	if _blocked_elapsed > 1.0:
+	if _blocked_elapsed > 1.0 and (not game.arena_mode or _avoid_left <= 0.0):
 		# Physical contact can defeat a forward feeler: commit to a clear escape course.
 		_hold_avoidance(_clear_course(), 3.0)
 		_blocked_elapsed = 0.0
@@ -494,7 +525,7 @@ func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vect
 			var motion_delta: Vector3 = forward()*_speed-other.velocity
 			var horizon := clampf(1.2 / turning_speed, 3.0, 5.0)
 			var closest := clampf(-relative.dot(motion_delta)/maxf(0.01,motion_delta.length_squared()),0,horizon)
-			if relative.length()<17 or (relative.length()<50 and (relative+motion_delta*closest).length()<15):
+			if relative.length()<17 or (relative.length()<maxf(50.0, motion_delta.length() * horizon) and (relative+motion_delta*closest).length()<15):
 				var away := _separation_course(relative)
 				_hold_avoidance(away if _path_clear(away) else _clear_course(),1.5)
 				break

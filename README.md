@@ -145,6 +145,15 @@ checks crossing-shot reload/side/warning rules and retries, and uses damage immu
 only to keep the 90-second observation alive. Add `-- --render` with the native
 renderer for actual gameplay captures in `/tmp/latitude-enemy-pressure`.
 
+Ship readability fixtures check actual visual triangle coverage (including an
+obstructed-camera negative control), banking, local opaque materials and pennant
+pool reuse. Matched 720p captures and a five-ship effects benchmark:
+
+```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/ship_readability_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/ship_readability_previews.gd -- --output=/tmp/latitude-readability
+```
+
 The arcade suite covers physical A/D/arrows/Space/click events, overlapping held
 fire, reload, camera limits/recentring/full heading rotations, projectile parity,
 obstructions, focus/reset and a scripted moving-cutter duel with simultaneous

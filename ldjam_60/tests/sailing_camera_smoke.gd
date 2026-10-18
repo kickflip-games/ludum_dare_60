@@ -18,6 +18,14 @@ func arena_step(seconds: float) -> void:
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 
+func key(code: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.keycode = code
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
 func check_arena() -> void:
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
@@ -52,23 +60,22 @@ func check_arena() -> void:
 		for point: Vector3 in ship_bounds(game.boat_visual):
 			visible = visible and not game.camera.is_position_behind(point) and root.get_visible_rect().grow(-16).has_point(game.camera.unproject_position(point))
 		check(visible, "whole restored sailboat fits the arena view at %s" % size)
-	action("watch_starboard", true)
+	key(KEY_E, true)
+	key(KEY_E, false)
 	arena_step(0.5)
-	check(game.cannon.aiming and game.camera_mode == game.CameraMode.CANNON and game.aim_camera_blend == 1,
-		"held E retains the precision gun view from the chase rig")
-	action("fire_starboard", true)
-	action("fire_starboard", false)
+	check(game.arena_cannon_view and not game.cannon.aiming and game.camera_mode == game.CameraMode.CANNON and game.aim_camera_blend == 1,
+		"E toggles close view without changing weapon mode")
+	key(KEY_SPACE, true)
 	arena_step(1.0 / 60.0)
-	check(game.cannon.shots_fired == 1, "fresh F still fires the actual cannon")
-	action("astrolabe", true)
-	arena_step(0.1)
-	check(not game.reading and game.cannon.aiming, "arena Space remains inactive and does not override gun view")
-	action("astrolabe", false)
+	key(KEY_SPACE, false)
+	check(game.cannon.shots_fired == 1, "Space fires the actual cannon in close view")
+	check(not game.reading and game.arena_cannon_view, "Space preserves close view and never raises the sextant")
 	action("steer_port", true)
-	action("watch_starboard", false)
+	key(KEY_E, true)
+	key(KEY_E, false)
 	arena_step(0.5)
-	check(not game.cannon.aiming and game.turn_input == -1 and game.aim_camera_blend == 0,
-		"release E immediately restores held A and returns to chase view")
+	check(not game.arena_cannon_view and not game.cannon.aiming and game.turn_input == -1 and game.aim_camera_blend == 0,
+		"E restores chase while held A keeps steering")
 	action("steer_port", false)
 	game.damage_immunity = 0
 	game.take_damage(3, "Camera retry check")

@@ -39,7 +39,7 @@ enum Weapon { READY, TELEGRAPH, FIRE, RELOAD }
 ## Every other pass aims slightly long; aim stays fixed during the muzzle warning.
 @export var forgiving_aim_offset: float = 4.5
 @export_group("Night presentation")
-@export var sail_color := Color("e69b79")
+@export var sail_color := Color("c57565")
 @export_range(0.0, 0.3, 0.01) var sail_fill: float = 0.22
 
 var territory := Vector3.ZERO
@@ -84,6 +84,8 @@ var hit_reaction: float = 0.0
 var shots_fired: int = 0
 var shots_hit: int = 0
 var visual: Node3D
+var pennant: MeshInstance3D
+var trim_material: StandardMaterial3D
 var sail_material: StandardMaterial3D
 var flash: MeshInstance3D
 var motion := Motion.new()
@@ -159,7 +161,8 @@ func _ready() -> void:
 	model.scale = Vector3(1.30, 0.9, 0.95)
 	model.position = Vector3(0, -0.1, -1.8)
 	presentation.add_child(model)
-	var timber = game._material(Color("3b2423"))
+	trim_material = game._material(Color("38282d"))
+	var timber = trim_material
 	game._box(presentation, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
 	sail_material = game._material(sail_color)
 	# A restrained cloth fill keeps the red identity on the moon's shadow side.
@@ -179,7 +182,10 @@ func _ready() -> void:
 			band.visible = false
 			sail_bands.append(band)
 		game._box(panel, Vector3(2.6, 0.14, 0.14), Vector3(0, 1.8, 0), timber)
-	game._box(presentation, Vector3(1.6, 0.8, 0.06), Vector3(0.7, 7.0, -1.8), game._material(Color("151e23")))
+	pennant = preload("res://game/ship_pennant.gd").new()
+	presentation.add_child(pennant)
+	pennant.position = Vector3(0, 7.45, -1.8)
+	pennant.configure(Color("d94b51"), Vector2(1.7, 0.85))
 	var gun: Node3D = CANNON.instantiate()
 	gun.position = Vector3(-1.1, 0.55, -1.8)
 	gun.rotation.y = -PI / 2.0
@@ -224,6 +230,7 @@ func reset() -> void:
 	heading = 0.0
 	rotation = Vector3.ZERO
 	visual.transform = Transform3D.IDENTITY
+	pennant.flutter(0.0)
 	sail_material.albedo_color = sail_color
 	sail_material.emission = sail_color
 	motion.reset()
@@ -272,6 +279,8 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	hull_capacity = profile.hull
 	sail_color = profile.sail_color
 	sail_fill = profile.sail_fill
+	trim_material.albedo_color = profile.trim_color
+	pennant.configure(profile.pennant_color, profile.pennant_size)
 	broadside_separation = profile.broadside_separation + lane_offset
 	approach_lead = profile.approach_lead
 	approach_angle = profile.approach_angle
@@ -363,6 +372,7 @@ func update_ship(delta: float) -> void:
 	navigation_time += delta
 	hit_reaction = maxf(0, hit_reaction - delta)
 	_update_cloth()
+	pennant.flutter(game.sea_time)
 	if navigation_state == Navigation.SINKING:
 		visual.position.y -= delta * 2.5
 		visual.rotation.z += delta * 0.18
@@ -843,6 +853,7 @@ func take_hit() -> void:
 func update_visuals(delta: float) -> void:
 	if not visible or navigation_state == Navigation.SINKING:
 		return
+	pennant.flutter(game.sea_time)
 	motion.update_motion(game.ocean, self, visual, delta)
 	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.16
 	_update_tell()

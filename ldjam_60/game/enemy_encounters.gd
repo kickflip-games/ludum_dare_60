@@ -266,7 +266,7 @@ func _update_arena(delta: float) -> void:
 		_spawn_queued()
 
 func _spawn_queued() -> void:
-	if living_ships().size() >= mini(ships.size(), survival_settings.maximum_living):
+	if living_ships().size() >= clampi(survival_settings.maximum_living, 1, ships.size()):
 		return
 	var available: CharacterBody3D = null
 	for cutter in ships:

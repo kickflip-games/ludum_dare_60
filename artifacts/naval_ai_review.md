@@ -76,6 +76,42 @@ presented as input-driven kills. Real projectile tests and the full pilot provid
 that evidence separately. Legacy static cannon fixtures disable swell to test
 their geometric assertions; the full arena battle retains production waves.
 
+### Final regression results
+
+All **486 checks pass** across these eleven suites:
+
+| Suite | Passing checks |
+| --- | ---: |
+| ship_smoke | 34 |
+| attack_run_smoke | 28 |
+| fleet_smoke | 50 |
+| fleet_interactions_smoke | 34 |
+| survival_smoke | 86 |
+| arcade_controls_smoke | 74 |
+| starboard_cone_smoke | 33 |
+| damage_camera_smoke | 51 |
+| combat_smoke | 21 |
+| enemy_pressure_smoke | 27 |
+| night_boost_wave_smoke | 48 |
+
+Import and script parsing succeeded; no script errors occur in these final logs.
+`git diff --check` passes. The final controls include main's E camera toggle and
+±10-degree cannon cone; they are not reverted to the earlier wider cone.
+
+In the six-ship 180-second trials, every ship gets a slot and remains alive
+without player fire. At 60/30 Hz: peak owners 2/2, longest stop 0.35/0.40 s,
+contact episodes 1/30, minimum solver clearance −0.020/−0.075 m and maximum
+radius 155.73/155.51 m. Rudder rate stays at or below 0.65 rad/s.
+[Summary measurements](naval_ai/fleet-metrics.json) and
+[complete sampled positions/headings/states](naval_ai/fleet-trace.json.gz)
+retain the observed values, including sparse attack opportunities in the
+continuous-turning control rather than hiding them.
+
+The final [normal-input battle](naval_ai/full-battle.json) wins at **283.12 s**:
+20 defeats, 36 physical hull hits from 49 shots, all five waves, 3/3 hull.
+The production wave-yaw cap reaches 0.56 rad/s during this run; waves are active.
+No direct damage, enemy repositioning or player immunity is used.
+
 ## Reproduce
 
 Installed engine: Godot 4.8-dev6 (`8898c2b3d`). From the repository root:
@@ -116,7 +152,11 @@ The pair fixture stages two attack lanes to isolate warning coordination.
   pressure assertion is intentionally superseded by slot-limited committed runs;
   actual pressure measurements remain logged. Tune approach timing and holding
   radii after human playtesting rather than restoring perfect pursuit.
-- A separate native full-pilot attempt lost in wave five after 11 kills, from
+  In the unsteered perimeter-return observation, all shots can be spoiled for
+  90 seconds; this remains a pressure/balance limitation, not a guaranteed attack
+  frequency. The straight-course hit/dodge fixtures independently verify threat.
+- A separate native full-pilot attempt before the final cone narrowing
+  [lost in wave five](naval_ai/native-loss.json) after 11 kills, from
   barrel/ship/rock contacts. The loss screen was captured and inspected. It is not
   reported as a rendered victory or substituted for the successful headless run.
 - Rendered enemies are recognizable and runs remain readable, but wide overview

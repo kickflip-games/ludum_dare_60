@@ -1,0 +1,59 @@
+{
+	"all_impacts": 36,
+	"capture_counts": {
+		"Cutter": 0,
+		"Heavy": 0,
+		"Skiff": 0
+	},
+	"damage": [],
+	"helm_exits": 0,
+	"hits_taken": 0,
+	"hull": 3,
+	"kills": 20,
+	"max_roll_degrees": 12.0,
+	"max_wave_yaw": 0.56,
+	"peak_living": 5,
+	"seconds": 283.116666666738,
+	"ship_hits": 36,
+	"shots": 49,
+	"state": 3,
+	"wave": 5,
+	"waves": [
+		{
+			"hull": 3,
+			"kills": 0,
+			"seconds": 0.0166666666666667,
+			"shots": 0,
+			"wave": 1
+		},
+		{
+			"hull": 3,
+			"kills": 2,
+			"seconds": 31.3499999999995,
+			"shots": 4,
+			"wave": 2
+		},
+		{
+			"hull": 3,
+			"kills": 5,
+			"seconds": 79.4166666666634,
+			"shots": 12,
+			"wave": 3
+		},
+		{
+			"hull": 3,
+			"kills": 9,
+			"seconds": 145.633333333341,
+			"shots": 22,
+			"wave": 4
+		},
+		{
+			"hull": 3,
+			"kills": 13,
+			"seconds": 225.650000000072,
+			"shots": 33,
+			"wave": 5
+		}
+	],
+	"won": true
+}

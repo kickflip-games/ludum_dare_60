@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Planar sailing and committed cannon fire share a clock, not a state machine.
+## Planar navigation and committed cannon fire use independent state machines.
 
 const Motion = preload("res://game/ocean/boat_wave_motion.gd")
 const SHIP = preload("res://assets/pirate_kit/small_ship.glb")

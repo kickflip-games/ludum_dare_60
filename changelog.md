@@ -6,6 +6,11 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Planning only: proposed reference-matched turquoise rolling water, consistent
+  encounter-wave styling and optional non-stacking 25% flow zones for the latest
+  lighthouse arena. Gameplay unchanged; implementation checks remain pending.
+  See the [water and flow proposal](artifacts/turquoise_water_flow_plan.md).
+
 - Replaced the pending lighthouse-defence design and single-cutter scheduler
   with player-only timed survival: configurable 1/2/4/6/8 waves, 40/50/65/80 s
   deadlines, carried survivors/queues, three living enemies and staggered entry.

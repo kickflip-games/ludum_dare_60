@@ -115,7 +115,21 @@ enum SailingCameraRig { CHASE, DECK }
 @export_enum("Full", "Reduced") var motion_setting: int = 0
 @export_range(0.0, 6.0, 0.25) var sailing_speed_fov: float = 3.0
 
-@export_group("Cannon camera")
+@export_group("Arcade chase look")
+@export_range(0.0, 60.0, 1.0) var camera_yaw_limit: float = 45.0
+@export_range(0.01, 0.5, 0.01) var camera_mouse_sensitivity: float = 0.12
+@export_range(1.0, 20.0, 0.5) var camera_look_response: float = 12.0
+@export_range(0.0, 4.0, 0.1) var camera_recenter_delay: float = 1.5
+@export_range(0.2, 8.0, 0.1) var camera_recenter_speed: float = 2.2
+@export var camera_port_offset: float = 8.0
+@export var camera_starboard_focus: float = 8.0
+var look_yaw: float = 0.0
+var look_target: float = 0.0
+var look_idle: float = 0.0
+var _window_focused := true
+var _fire_armed := false
+
+@export_group("Legacy voyage camera")
 @export_range(0.1, 0.8, 0.05) var aim_camera_seconds: float = 0.4
 @export_range(0.2, 1.0, 0.05) var camera_return_seconds: float = 0.4
 ## Offset from the existing cannon mount, in hull coordinates (X is starboard).
@@ -298,21 +312,33 @@ func _ready() -> void:
 func _configure_inputs() -> void:
 	var bindings := {
 		"steer_port": [KEY_A, KEY_LEFT], "steer_starboard": [KEY_D, KEY_RIGHT],
-		"astrolabe": [KEY_SPACE], "restart_crossing": [KEY_R],
+		"astrolabe": [] if arena_mode else [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
-		"fire_starboard": [KEY_F], "watch_starboard": [KEY_E],
+		"fire_starboard": [KEY_SPACE] if arena_mode else [KEY_F], "watch_starboard": [] if arena_mode else [KEY_E], "fire_mouse": [],
 	}
 	for action: String in bindings:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
+		InputMap.action_erase_events(action)
 		for key: int in bindings[action]:
 			var event := InputEventKey.new()
 			event.physical_keycode = key
 			if not InputMap.action_has_event(action, event):
 				InputMap.action_add_event(action, event)
 
+	if arena_mode:
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		InputMap.action_add_event("fire_mouse", click)
+
 
 func _unhandled_input(event: InputEvent) -> void:
+	if arena_mode and event is InputEventMouseMotion:
+		if state == State.SAILING and _window_focused:
+			look_target = clampf(look_target - event.relative.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
+			if not event.relative.is_zero_approx():
+				look_idle = 0.0
+		return
 	if development_tools and event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode == KEY_F2:
 			archipelago.toggle_debug()
@@ -330,9 +356,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
 		start_crossing()
-	elif event.is_action("fire_starboard") and not event.is_echo():
-		cannon.set_fire_held(event.is_pressed())
-	elif event.is_action("watch_starboard") and not event.is_echo():
+	elif (event.is_action("fire_starboard") or (arena_mode and event.is_action("fire_mouse"))) and not event.is_echo():
+		if not arena_mode:
+			cannon.set_fire_held(event.is_pressed())
+		elif state == State.SAILING and _window_focused:
+			# Only a fresh press arms fire after a menu, restart or focus loss.
+			# OS key-repeat events must not revive a cleared held button.
+			if event.is_pressed():
+				_fire_armed = true
+			cannon.set_fire_held(_fire_armed and (Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")))
+	elif not arena_mode and event.is_action("watch_starboard") and not event.is_echo():
 		cannon.set_aim_held(event.is_pressed())
 	elif event.is_action("astrolabe") and not event.is_echo() and not arena_mode:
 		# Even a release/repress between physics ticks starts a new sighting.
@@ -352,14 +385,23 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		_window_focused = true
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(cannon):
+		_window_focused = false
 		_clear_player_controls()
 		Input.action_release("restart_crossing")
 		_restart_consumed = false
 
 
 func _clear_player_controls() -> void:
-	for action: String in ["watch_starboard", "fire_starboard", "astrolabe", "steer_port", "steer_starboard"]:
+	_fire_armed = false
+	look_yaw = 0.0
+	look_target = 0.0
+	look_idle = 0.0
+	if arena_mode:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	for action: String in ["watch_starboard", "fire_starboard", "fire_mouse", "astrolabe", "steer_port", "steer_starboard"]:
 		Input.action_release(action)
 	cannon.set_aim_held(false)
 	cannon.set_fire_held(false)
@@ -531,11 +573,18 @@ func _physics_process(delta: float) -> void:
 	reading = not arena_mode and state == State.SAILING and Input.is_action_pressed("astrolabe")
 	if reading or state != State.SAILING:
 		cannon.cancel_aim()
-	cannon.set_aim_held(Input.is_action_pressed("watch_starboard"))
-	cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
+	if arena_mode:
+		var held := Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")
+		if not held:
+			_fire_armed = false
+		cannon.set_fire_held(held and _fire_armed and _window_focused and state == State.SAILING)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if state == State.SAILING and _window_focused else Input.MOUSE_MODE_VISIBLE
+	else:
+		cannon.set_aim_held(Input.is_action_pressed("watch_starboard"))
+		cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
 	cannon.update_aim(delta)
 	if state == State.SAILING:
-		turn_input = 0.0 if cannon.aiming else Input.get_axis("steer_port", "steer_starboard")
+		turn_input = 0.0 if (not arena_mode and cannon.aiming) or (arena_mode and not _window_focused) else Input.get_axis("steer_port", "steer_starboard")
 		advance_sailing(delta, turn_input)
 	elif state == State.CASTING_OFF:
 		reading = false
@@ -547,6 +596,8 @@ func _physics_process(delta: float) -> void:
 		reading = false
 		turn_input = 0.0
 	_update_view(delta)
+	if arena_mode and state == State.SAILING:
+		cannon.trajectory = cannon.predict_trajectory()
 	hud.queue_redraw()
 
 
@@ -567,8 +618,8 @@ func advance_sailing(delta: float, steering: float) -> void:
 	wave_encounters.update(self, delta)
 	ocean.wave_time = sea_time
 	enemy_encounters.update_encounters(delta)
-	# Holding E suspends manual rudder input; existing waves and momentum continue.
-	if cannon.aiming:
+	# Only the retained voyage fixture has a gun-view steering gate.
+	if not arena_mode and cannon.aiming:
 		steering = 0.0
 	if arena_mode:
 		var offset := boat.global_position - arena_center()
@@ -726,8 +777,8 @@ func _update_view(delta: float) -> void:
 	ocean.update_surface(boat.global_position, sea_time, delta, speed_factor, heading)
 	ocean.update_turbulence(wave_encounters,delta)
 	var sailing_turn := wave_sailing.rudder_rate + wave_sailing.yaw_rate if state == State.SAILING else 0.0
-	# Let sail-driven heel settle in gun view; sampled wave rocking still applies.
-	var trim_speed := 0.0 if cannon.aiming else speed_factor
+	# Legacy gun view settles sail heel; the arena always keeps sailing trim.
+	var trim_speed := 0.0 if not arena_mode and cannon.aiming else speed_factor
 	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
@@ -822,10 +873,15 @@ func _normal_sailing_pose(delta: float) -> Transform3D:
 		if development_tools and not development_camera_response:
 			return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading,0)),boat.to_global(helm_eye))
 		return result
-	var orientation := Basis(Vector3.UP, -_sailing_heading)
+	if arena_mode:
+		look_idle += delta
+		if look_idle > camera_recenter_delay:
+			look_target *= exp(-camera_recenter_speed * delta)
+		look_yaw = lerpf(look_yaw, look_target, 1.0 - exp(-camera_look_response * delta))
+	var orientation := Basis(Vector3.UP, -_sailing_heading + deg_to_rad(look_yaw if arena_mode else 0.0))
 	var distance := sailing_follow_distance * (1.0 + _sailing_speed * 0.07)
-	var at := _sailing_anchor + orientation * Vector3(0, sailing_camera_height, distance)
-	var focus := _sailing_anchor + orientation * Vector3(0, 0.85, -sailing_look_ahead)
+	var at := _sailing_anchor + orientation * Vector3(-camera_port_offset if arena_mode else 0.0, sailing_camera_height, distance)
+	var focus := _sailing_anchor + orientation * Vector3(camera_starboard_focus if arena_mode else 0.0, 0.85, -sailing_look_ahead)
 	return Transform3D(Basis.looking_at(focus - at, Vector3.UP), at)
 
 
@@ -866,6 +922,11 @@ func _camera_shore_anchor() -> Vector3:
 
 
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
+	if arena_mode:
+		camera_mode = CameraMode.SAILING
+		aim_camera_blend = 0.0
+		combat_camera_blend = 0.0
+		return _safe_chase_pose(helm_pose, delta)
 	# Compose poses for the single transform writer in _update_view; never change gun yaw.
 	var ship = enemy_encounters.focus_ship()
 	var combat: bool = ocean.wave_field.waves.is_empty() and not wave_encounters.busy() and is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0
@@ -906,6 +967,16 @@ func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 			_camera_clear_fraction = minf(fraction, lerpf(_camera_clear_fraction, 1.0, 1.0 - exp(-5.0 * delta)))
 		result.origin = anchor.lerp(result.origin, _camera_clear_fraction)
 	return result
+
+
+func _safe_chase_pose(pose: Transform3D, delta: float) -> Transform3D:
+	var anchor := _camera_shore_anchor()
+	var distance := anchor.distance_to(pose.origin)
+	var safe := anchor.distance_to(_camera_obstruction_limit(pose.origin))
+	var fraction := clampf(safe / maxf(distance, 0.01), 0.0, 1.0)
+	_camera_clear_fraction = minf(fraction, lerpf(_camera_clear_fraction, 1.0, 1.0 - exp(-5.0 * delta)))
+	pose.origin = anchor.lerp(pose.origin, _camera_clear_fraction)
+	return pose
 
 
 func _title_camera_pose() -> Transform3D:

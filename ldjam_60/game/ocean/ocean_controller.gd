@@ -207,13 +207,14 @@ func update_turbulence(encounters: RefCounted, delta: float) -> void:
 	material.set_shader_parameter("turbulence_area",Vector4(turbulence_center.x,turbulence_center.y,turbulence_radius,turbulence_intensity))
 
 
-func water_hit(from: Vector3, to: Vector3, delta: float) -> Dictionary:
+func water_hit(from: Vector3, to: Vector3, delta: float, end_time: float = -1.0) -> Dictionary:
+	var sample_time := wave_time if end_time < 0.0 else end_time
 	# Subdivide fast shots, then refine the first surface crossing in space AND time.
 	var steps := clampi(ceili(from.distance_to(to) / 0.4), 1, 128)
 	for i in range(steps + 1):
 		var t := float(i) / steps
 		var p := from.lerp(to, t)
-		var at_time := maxf(0.0, wave_time - delta * (1.0 - t))
+		var at_time := maxf(0.0, sample_time - delta * (1.0 - t))
 		if p.y > height_at(Vector2(p.x, p.z), at_time):
 			continue
 		var low := maxf(0.0, float(i - 1) / steps)
@@ -221,7 +222,7 @@ func water_hit(from: Vector3, to: Vector3, delta: float) -> Dictionary:
 		for refine in range(8):
 			var middle := (low + high) * 0.5
 			var q := from.lerp(to, middle)
-			if q.y > height_at(Vector2(q.x, q.z), maxf(0.0, wave_time - delta * (1.0 - middle))):
+			if q.y > height_at(Vector2(q.x, q.z), maxf(0.0, sample_time - delta * (1.0 - middle))):
 				low = middle
 			else:
 				high = middle

@@ -103,20 +103,20 @@ func _run() -> void:
 	game._physics_process(game.CAST_OFF_SECONDS)
 	sail(75.0 / game.SPEED, 60)
 	check(game.hits_taken == 0 and game.state == game.State.SAILING, "initial combat course sails 75 m at the faster pace without unavoidable collision")
-	# Measure real swept movement, not only the tuning property. Aiming must keep
+	# Measure real swept movement, not only the tuning property. Firing must keep
 	# the same automatic speed, and frame rate must not change distance travelled.
 	for hz in [30,60,120]:
-		for aiming in [false,true]:
+		for firing in [false,true]:
 			stage(Vector2(75,0),0)
 			await physics_frame
 			var start: Vector3 = game.boat.position
-			action("watch_starboard",aiming)
+			action("fire_starboard",firing)
 			for frame in hz*3:
 				game._physics_process(1.0/hz)
 			check(absf(start.distance_to(game.boat.position)-27.0)<0.025 and absf(game.actual_speed-9.0)<0.01
 				and is_zero_approx(game.heading) and game.hits_taken==0,
-				"%d Hz aiming=%s: three seconds travels 27 m at 9 m/s without hidden yaw" % [hz,aiming])
-			action("watch_starboard",false)
+				"%d Hz firing=%s: three seconds travels 27 m at 9 m/s without hidden yaw" % [hz,firing])
+			action("fire_starboard",false)
 	game.restart()
 	await physics_frame
 	var resting: Vector3 = game.boat.position
@@ -203,22 +203,21 @@ func _run() -> void:
 	check(not game.arena_return.active and radius()<140, "inward-facing helm remains responsive in warning zone")
 	stage(Vector2(136,0),PI/2)
 	await physics_frame
-	action("watch_starboard",true)
+	game.cannon.update_aim(0.0)
 	action("steer_port",true)
 	var contained := true
 	for frame in 720:
 		game._physics_process(1.0/60)
 		contained = contained and radius()<=170.001
-	check(game.cannon.aiming and game.turn_input==0 and contained and radius()<150 and game.hits_taken==0,
-		"holding E and A cannot bypass return; gun camera follows the physical hull")
+	check(not game.cannon.aiming and game.turn_input==-1 and contained and radius()<150 and game.hits_taken==0,
+		"continuous sweep and held A preserve steering and arena containment")
 	action("fire_starboard",true)
 	game._physics_process(1.0/60)
-	check(game.cannon.shots_fired==1 and game.cannon.projectiles.size()==1, "fresh F still fires during the return turn")
+	check(game.cannon.shots_fired==1 and game.cannon.projectiles.size()==1, "Space still fires during the return turn")
 	check(game.cannon.projectiles[0].velocity.normalized().dot(game.cannon.aimed_direction())>0.99, "cannon shot follows the actual barrel")
-	action("watch_starboard",false)
 	action("fire_starboard",false)
 	game._physics_process(1.0/60)
-	check(game.turn_input==-1 and not game.cannon.aiming, "release E immediately restores held steering")
+	check(game.turn_input==-1 and not game.cannon.aiming, "fire release preserves held steering")
 	action("steer_port",false)
 	stage(Vector2(-15,-67),0)
 	await physics_frame
@@ -343,12 +342,12 @@ func _enemy_checks() -> void:
 		check(max_stopped<90 and max_radius<=165.001 and shore_frames==0,
 			"cutter approach %s navigates solids without grounding, edge escape or prolonged stop" % offset)
 		print("ENEMY NAV: start=%s max_radius=%.2f max_stop=%.2f shore=%d shots=%d" % [offset,max_radius,max_stopped/60.0,shore_frames,ship.shots_fired])
-	# Real E/F input and ballistic flight must damage a cutter; no F must not.
+	# Real fire input and ballistic flight must damage a cutter; idle sweep must not.
 	stage(Vector2(0,100),0)
 	await physics_frame
 	ship.begin(game.boat.position+Vector3(30,0,-2))
 	await physics_frame
-	action("watch_starboard",true)
+	game.cannon.update_aim(0.0)
 	game._physics_process(1.0/60)
 	ship.position=game.cannon.shot_origin()+game.cannon.aimed_direction()*28
 	ship.position.y=0
@@ -356,12 +355,12 @@ func _enemy_checks() -> void:
 	await physics_frame
 	for tick in 30:
 		game.cannon.advance(1.0/60)
-	check(ship.hull==ship.hull_capacity, "aiming without F never damages the cutter")
+	check(ship.hull==ship.hull_capacity, "idle sweep never damages the cutter")
 	action("fire_starboard",true)
 	game._physics_process(1.0/60)
 	action("fire_starboard",false)
 	for tick in 100:
 		game.cannon.advance(1.0/60)
-	check(ship.hull==ship.hull_capacity-1 and game.cannon.targets_hit==1, "real held E/fresh F launches a physical cannonball that damages the arena cutter")
-	action("watch_starboard",false)
+	check(ship.hull==ship.hull_capacity-1 and game.cannon.targets_hit==1, "real Space input launches a physical cannonball that damages the arena cutter")
+	action("fire_starboard",false)
 	# Full timed-wave/21-kill lifecycle now lives in survival_smoke.gd.

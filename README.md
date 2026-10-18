@@ -8,8 +8,11 @@ is a lit landmark with no health or damage system. Defeat every queued and livin
 enemy to win; entering the old harbour never wins.
 
 - **Play / Enter:** cast off; forward sailing is automatic at **9 m/s**.
-- **A / D or arrows:** steer; **hold E** to aim and **press F** to fire once.
-  Release E to return to steering. Cannonballs follow the visible barrel.
+- **A / D or arrows:** steer; forward sailing stays automatic.
+- **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
+  without movement, the view eases back behind the port quarter.
+- **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
+  together share one reload. Steering, camera look and cannon sweep are independent.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
   **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
@@ -18,7 +21,7 @@ enemy to win; entering the old harbour never wins.
   solids and shatter floating props. Retry restores all obstacles.
 - The outer limit is a **170 m circle centred on the lighthouse**. Beyond
   **132.6 m**, outward sailing blends in a curved rudder return, including while
-  aiming. Its obstacle probes favour clear water. Inward steering remains
+  firing. Its obstacle probes favour clear water. Inward steering remains
   effective. The hard limit bounds swept movement while retaining tangent motion.
 - Waves contain **1 / 2 / 2 / 3 / 3** ships (compositions below). The next wave begins after
   **40 / 50 / 65 / 80 seconds**, retaining survivors and queued arrivals, or
@@ -29,15 +32,15 @@ enemy to win; entering the old harbour never wins.
   The final wave has no victory timer: all **11** enemies, sinking animations and
   incoming shots must resolve while the player remains alive.
 - A small top-centre wave label, final-15-second countdown and brief announcements
-  carry progress. Cannon sights, incoming-fire warning and visible damage remain;
+  carry progress. A thin ballistic guide, incoming-fire warning and visible damage remain;
   no hull bar, lighthouse health or navigation overlay is added.
 - Voyage progression, sextant and old territory triggers are inactive. Ambient
   sea motion, occasional open-water crests, damage and self-repair remain.
 - Coral cutters take two hits; smaller blue-green, single-banded skiffs take one;
   larger ochre, double-banded heavy attackers take three and warn for 2.3 seconds.
-  Hold E to softly illuminate visible ships near the broadside sector. Land blocks
-  illumination; it never changes where a shot goes. Confirmed hits flash the sail,
-  throw splinters and culminate in a visible tilted descent.
+  The trajectory turns pale green when it intersects an enemy’s current hull.
+  Solids and predicted moving water stop the guide; it never redirects fire.
+  Confirmed hits flash the sail, throw splinters and culminate in a visible tilted descent.
 
 | Wave | Ships |
 | --- | --- |
@@ -56,19 +59,39 @@ maximum living enemies (1–3), early-clear pause and spawn separation. Retry
 preserves tuning and resets session progress. Archetype resources live in
 `game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
 response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
-wave forces, surface and rocking muzzle. Existing crests keep moving in gun view.
-See the [combat review](artifacts/combat_feel_review.md) for current checks/captures,
+wave forces, surface and rocking muzzle. Existing crests keep moving while firing.
+The one starboard cannon sweeps ±30° every three seconds, including during
+steering, firing and reload. The subtle line starts at the real rocking muzzle
+and uses the projectile’s velocity, gravity, lifetime and physics step. Its small
+endpoint marks the first solid/water contact or lifetime limit; moving targets
+may leave the indicated path before a shot arrives. There is no auto-aim.
+
+Tune **Arcade chase look** on the crossing: yaw limit, degrees per mouse pixel,
+look response, idle delay, recentring rate and port/starboard framing offsets.
+The existing chase tracking, level horizon, shore retraction and water guard remain.
+F/E and sextant activation are unbound in the arena. The old voyage’s camera and
+navigation controls are retained only in its explicit legacy fixture.
+
+See the [earlier combat review](artifacts/combat_feel_review.md),
 the [timed-survival baseline](artifacts/timed_survival_review.md) for scheduler
 history and the [arena review](artifacts/lighthouse_arena_review.md) for
 the preserved geometry work. Human combat balance remains untested.
 
 ```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/combat_feel_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/naval_ai_smoke.gd
-godot --path ldjam_60 --fixed-fps 60 --script res://tests/survival_previews.gd -- --output=/tmp/latitude-timed-waves/rendered
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_previews.gd -- --output=/tmp/latitude-arcade-rendered
 ```
+
+The arcade suite covers physical A/D/arrows/Space/click events, overlapping held
+fire, reload, camera limits/recentring/full heading rotations, projectile parity,
+obstructions, focus/reset and a scripted moving-cutter duel with simultaneous
+steering, mouse look and firing. Native previews capture both look limits,
+default sailing, the impact guide and firing. Scripted checks are not human
+playtesting or a combat balance assessment.
 
 Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
 retaining their original 6.3 m/s pace, scenarios and acceptance gates.

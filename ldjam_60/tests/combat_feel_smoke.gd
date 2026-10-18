@@ -64,7 +64,7 @@ func profile_hits() -> void:
 		await physics_frame
 		for frame in 120:
 			game.cannon.advance(1.0 / 60.0)
-		check(ship.hull == profile.hull and game.cannon.targets_hit == 0, kind + ": holding E without F cannot cause a hit")
+		check(ship.hull == profile.hull and game.cannon.targets_hit == 0, kind + ": idle cannon sweep cannot cause a hit")
 		var accurate := true
 		for hit_index in profile.hull:
 			game.cannon.update_aim(0.0)
@@ -77,7 +77,7 @@ func profile_hits() -> void:
 			for frame in 100:
 				game.cannon.advance(1.0 / 60.0)
 			check(ship.hull == profile.hull - hit_index - 1 and game.cannon.targets_hit == hit_index + 1,
-				kind + ": real F-fired ballistic hit %d has the expected hull effect" % (hit_index + 1))
+				kind + ": real Space-fired ballistic hit %d has the expected hull effect" % (hit_index + 1))
 			check(ship.hit_reaction > 0.45 and ship.sail_material.emission_energy_multiplier > profile.sail_fill + 0.4,
 				kind + ": accepted hit immediately flashes the cloth")
 		check(accurate, kind + ": illumination never redirects the rocking muzzle's launch vector")
@@ -113,37 +113,36 @@ func illumination() -> void:
 	game._physics_process(1.0 / 60.0)
 	game._update_view(1.0)
 	game.cannon.update_aim(0.0)
-	check(ship.aim_highlight, "visible valid broadside target is illuminated while holding E")
+	ship.position = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
+	ship.position.y = 0.0
+	await physics_frame
+	check(game.cannon.predict_trajectory().enemy, "barrel trajectory intersects the enemy hull")
 	var blocker := StaticBody3D.new()
 	blocker.collision_layer = 1
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(8, 20, 12)
+	shape.size = Vector3(5, 20, 12)
 	collision.shape = shape
 	blocker.add_child(collision)
 	game.add_child(blocker)
-	blocker.position = game.camera.position.lerp(ship.position, 0.5)
+	blocker.position = game.cannon.shot_origin().lerp(ship.position, 0.5)
 	await physics_frame
-	game.cannon.update_aim(0.0)
-	check(not ship.aim_highlight, "land/solid occlusion blocks both hull and sail illumination")
+	check(not game.cannon.predict_trajectory().enemy, "solid obstruction stops the indicator before the enemy")
 	blocker.queue_free()
 	await physics_frame
 	ship.position = game.boat.position + Vector3(-36, 0, -5)
-	game.cannon.update_aim(0.0)
-	check(not ship.aim_highlight, "port-side or out-of-sector ships do not glow")
-	ship.position = game.boat.position + Vector3(110, 0, -5)
-	game.cannon.update_aim(0.0)
-	check(not ship.aim_highlight, "beyond-range ships do not glow")
-	ship.position = game.boat.position + Vector3(36, 0, -5)
-	ship.visible = false
-	game.cannon.update_aim(0.0)
-	check(not ship.aim_highlight, "hidden ships do not glow")
-	ship.visible = true
 	await physics_frame
-	game.cannon.update_aim(0.0)
-	action("watch_starboard", false)
-	game.cannon.set_aim_held(false)
-	check(not ship.aim_highlight, "E release clears illumination immediately without waiting for camera return")
+	check(not game.cannon.predict_trajectory().enemy, "port-side enemy cannot colour the starboard trajectory")
+	ship.position = game.boat.position + Vector3(110, 0, -5)
+	await physics_frame
+	check(not game.cannon.predict_trajectory().enemy, "beyond-lifetime target cannot colour the trajectory")
+	ship.position = game.cannon.shot_origin() + game.cannon.aimed_direction() * 30.0
+	ship.position.y = 0.0
+	ship.take_hit()
+	ship.take_hit()
+	await physics_frame
+	check(not game.cannon.predict_trajectory().enemy, "sinking hull no longer intercepts the trajectory")
+	check(not ship.aim_highlight, "no broad-sector glow or targeting boxes in continuous chase view")
 	release()
 	game.queue_free()
 	await process_frame
@@ -238,12 +237,11 @@ func rudder_response() -> void:
 	field.add_wave(Vector2(-24, 0), Vector2.RIGHT, 0.9, 4.5, 24.0, 8.0, 0.0, 8.0)
 	sailing.reset()
 	baseline.reset()
-	sailing.wave_response = 0.75
 	sailing._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
 	baseline._integrate_forces(field, Vector2.ZERO, 0.0, 0.0, 3.0, 1.0 / 60.0)
-	check(absf(sailing.drift.length() / baseline.drift.length() - 0.75) < 0.001
-		and absf(sailing.yaw_rate / baseline.yaw_rate - 0.75) < 0.001,
-		"arena hull response reduces drift and yaw together without altering the authoritative sampled crest")
+	check(absf(sailing.drift.length() / baseline.drift.length() - 1.0) < 0.001
+		and absf(sailing.yaw_rate / baseline.yaw_rate - 1.0) < 0.001,
+		"arcade rudder response preserves the existing wave drift and yaw forces")
 
 func combat_crests() -> void:
 	var game = await make_game()
@@ -256,12 +254,13 @@ func combat_crests() -> void:
 	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
 	game.wave_encounters.update(game, 1.0 / 60.0)
-	check(game.ocean.wave_field.waves.is_empty(), "held cannon view never launches a new combat crest")
+	check(game.ocean.wave_field.waves.is_empty(), "existing combat gate still defers new crests during a battle")
 	game.cannon.set_aim_held(false)
+	ship.reset()
 	game.wave_encounters.next_event = 0.0
 	game.wave_encounters.update(game, 1.0 / 60.0)
 	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.waves.front().height <= 0.6,
-		"active combat outside shelter can launch one small, visible, seeded crest instead of suppressing the sea")
+		"quiet water outside shelter can launch one existing small seeded crest")
 	var wave: Dictionary = game.ocean.wave_field.waves.front()
 	game.cannon.set_aim_held(true)
 	game.cannon.update_aim(0.0)
@@ -269,7 +268,7 @@ func combat_crests() -> void:
 	game.wave_encounters.update(game, 1.0 / 60.0)
 	var crest: Vector2 = wave.origin + wave.direction * wave.speed * 2.0
 	check(game.ocean.wave_field.waves.size() == 1 and game.ocean.wave_field.sample(crest, 2.0).x > 0.2,
-		"entering gun view never erases or freezes an already visible wave")
+		"continuous cannon sweep never erases or freezes an already visible wave")
 	game.ocean.wave_field.clear()
 	game.cannon.set_aim_held(false)
 	game.boat.position = game.arena_center() + Vector3(0, 0, 75)

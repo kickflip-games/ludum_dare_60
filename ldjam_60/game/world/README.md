@@ -31,7 +31,7 @@ Return rudder begins at 132.6 m with a latched turn side and gradual blend.
 32 m swept hull-width probes select a clear return course when rocks are ahead.
 Normal inner sailing stays manual. Movement is bounded **before** collision
 sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
-including while E is held. No boundary collider or teleport is used.
+including while firing. No boundary collider or teleport is used.
 
 Five reusable hulls target the player and stay until sunk. Data-driven
 cutter/skiff/heavy profiles supply two/one/three-hit hulls, different sail bands,

@@ -13,8 +13,23 @@ recorded evidence and limitations.
   Preserved full warnings, non-homing shots, hull values, player controls and
   the retained voyage AI. At 30/60/120 Hz, first fire fell from 48.1–48.2 s to
   9.5–9.6 s; 90-second shots rose from 1–3 to 7–11 in the protected no-input
-  fixture. Human balance and Web/mobile performance remain untested.
+  fixture. After integrating the latest arcade controls, all 544 checks across
+  nine suites pass; four native gameplay views were inspected. Human balance
+  and Web/mobile performance remain untested.
 
+- Simplified active arena controls to A/D or arrows, bounded mouse look and
+  Space/click held fire. The single starboard cannon sweeps continuously through
+  steering, firing and reload; F/E and sextant activation are disabled in arena
+  play. Added a port-quarter chase view with ±45° yaw, 1.5-second idle delay,
+  smooth recentring and retained shore/water guards, plus a muzzle-derived
+  ballistic guide that changes colour on enemy intersection. Kept physics, AI,
+  waves, hull damage and the explicit legacy voyage fixture intact.
+  Native captures show the full ship, both yaw limits, trajectory and firing;
+  the scripted simultaneous-input duel sinks a moving cutter. Ten smoke suites
+  pass 632 checks; the native run passes 13 capture/gameplay checks. The naval
+  AI suite still has two pre-existing multi-ship failures, reproduced with
+  identical measurements on the untouched commit. Human balance and Web remain
+  untested.
 
 - Added five nearby rocky islands and 69 pines in the
   earlier archipelago style, with matching terrain, collision and shoreline

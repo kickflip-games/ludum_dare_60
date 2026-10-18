@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Pivot normal play to a lighthouse-centred arena with a safe
+  spawn, circular rudder return and hard radial containment. Retain voyage
+  systems for reuse, disable their normal progression, and preserve cannon,
+  damage, repair and restart. Planned evidence: focused boundary/spawn tests,
+  adjacent gameplay regressions, native layout captures and a return sequence.
+  Implementation and validation are pending.
+
 - Added the hull-mounted deck view, directional wave inertia and contact-driven
   spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the
   obstructing canvas, retained the real cannon and added a fitted planked floor.

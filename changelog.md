@@ -6,6 +6,15 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Work in progress: elevated outboard close-camera framing clears the original
+  sail/cannon obstruction without fading meshes. Warm ivory/gold player, class
+  sail colors, single-triangle mast pennants and restrained moon/ambient fill
+  improve night readability. Mechanics and chase framing retained. 440 checks
+  pass across nine suites; two broader wave-fixture failures reproduce on HEAD.
+  Native comparisons and five-ship Chrome rendering/performance reviewed;
+  human comfort and low-end devices remain untested. See the
+  [ship presentation review](artifacts/ship_readability_review.md).
+
 - Work in progress: player arena shots follow a shallow upward arc; targeted
   shots compensate for gravity while retaining movement lead, range and physical
   collisions. Removed enemy cannon aiming beams; flashing muzzle and evasive

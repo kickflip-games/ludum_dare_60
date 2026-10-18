@@ -26,6 +26,9 @@ var boosting := false
 const NightClouds = preload("res://game/night_clouds.gd")
 const SKY_SHADER = preload("res://game/night_sky.gdshader")
 const CANNON_SCENE = preload("res://game/broadside_cannon.tscn")
+const ShipPennant = preload("res://game/ship_pennant.gd")
+var player_pennant: MeshInstance3D
+
 const PLAYER_SAIL_BOAT = preload("res://assets/sail_boat/sail_boat.glb")
 const PIRATE_SHIP = preload("res://assets/pirate_kit/small_ship.glb")
 const PIRATE_ROCK = preload("res://assets/pirate_kit/rock.glb")
@@ -71,14 +74,14 @@ var gust_strength := 0.0
 @export var weather_enabled: bool = true
 
 @export_group("Night illumination")
-@export var night_ambient_color := Color("627f95")
-@export var moonlight_color := Color("b2c9dc")
+@export var night_ambient_color := Color("71879e")
+@export var moonlight_color := Color("bacfe8")
 @export var night_fog_color := Color("263b53")
-@export_range(0.0, 2.0, 0.05) var calm_ambient_energy: float = 0.68
-@export_range(0.0, 2.0, 0.05) var storm_ambient_energy: float = 0.52
-@export_range(0.0, 2.0, 0.05) var calm_moon_energy: float = 0.72
-@export_range(0.0, 2.0, 0.05) var storm_moon_energy: float = 0.48
-@export var lantern_color := Color("ffcf94")
+@export_range(0.0, 2.0, 0.05) var calm_ambient_energy: float = 0.73
+@export_range(0.0, 2.0, 0.05) var storm_ambient_energy: float = 0.57
+@export_range(0.0, 2.0, 0.05) var calm_moon_energy: float = 0.78
+@export_range(0.0, 2.0, 0.05) var storm_moon_energy: float = 0.53
+@export var lantern_color := Color("ffc878")
 @export_range(0.0, 3.0, 0.05) var lantern_energy: float = 1.15
 
 @export_group("Stargazing sky")
@@ -131,8 +134,8 @@ enum SailingCameraRig { CHASE, DECK }
 @export_range(0.2, 8.0, 0.1) var camera_recenter_speed: float = 2.2
 @export var camera_port_offset: float = 8.0
 @export var camera_starboard_focus: float = 8.0
-# Keep the close view outboard enough to see past the sail.
-@export var cannon_view_offset := Vector3(0.2, 0.8, -0.8)
+# Above and outside the starboard gunwale, beyond the rocking barrel and canvas.
+@export var cannon_view_offset := Vector3(3.0, 2.6, 0.4)
 var look_yaw: float = 0.0
 var look_target: float = 0.0
 var look_idle: float = 0.0
@@ -833,6 +836,7 @@ func _update_view(delta: float) -> void:
 	# Legacy gun view settles sail heel; the arena always keeps sailing trim.
 	var trim_speed := 0.0 if not arena_mode and cannon.aiming else speed_factor
 	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
+	player_pennant.flutter(sea_time)
 	boost_wind.update_wind(boosting and state==State.SAILING,sea_time,delta,camera,motion_setting==1,cannon.aiming)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
@@ -996,8 +1000,8 @@ func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 		# The mount already has smoothed wave heave; follow it vertically so the
 		# barrel cannot rise through the close camera on the larger rolling sea.
 		mount.y = cannon.global_position.y
-		# Retain the old close mount framing, using the same bounded mouse yaw
-		# and filtered boat tracking as the chase view, without barrel tracking.
+		# The outboard eye looks across open sea at either mouse limit.
+		# Keep the same bounded yaw and filtered tracking, independent of aim.
 		var at := mount + orientation * cannon_view_offset
 		var focus := mount + orientation * (Vector3.RIGHT * 22.0 + Vector3.UP * 0.5)
 		focus = at + (focus - at).rotated(Vector3.UP, deg_to_rad(look_yaw))
@@ -1191,12 +1195,32 @@ func _build_boat() -> void:
 	# Restore the visible canvas and boom angle from 534b021 for the chase view.
 	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
 	sail.visible = sailing_camera_rig == SailingCameraRig.CHASE
+	# Surface 1 is canvas; surface 0 includes the mast and boom. Never edit imports.
+	var canvas := (sail as MeshInstance3D).get_active_material(1).duplicate() as StandardMaterial3D
+	canvas.albedo_color = Color("d7bd8b") # Warm ivory under the nearby amber lantern.
+	canvas.metallic = 0.0
+	canvas.roughness = 0.95
+	(sail as MeshInstance3D).set_surface_override_material(1, canvas)
+	player_pennant = ShipPennant.new()
+	boat_visual.add_child(player_pennant)
+	# Seat the flag at the actual imported mast tip, then retain boat-local scale.
+	var tip := Vector3.ZERO
+	for vertex: Vector3 in (sail as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+		var local_tip := boat_visual.to_local(sail.to_global(vertex))
+		if local_tip.y > tip.y:
+			tip = local_tip
+	player_pennant.position = tip + Vector3.UP * 0.1
+	player_pennant.configure(Color("d9ac58"), Vector2(1.05, 0.48))
+	player_pennant.visible = sail.visible
 	if sailing_camera_rig == SailingCameraRig.DECK:
 		_build_deck_floor()
 	boat_damage.configure(boat_visual, ship)
+	for wood: StandardMaterial3D in boat_damage.wood:
+		wood.metallic = 0.0
+		wood.roughness = 0.9
 	var dark := _material(Color("211e1d"))
 	_box(boat_visual, Vector3(0.07, 0.48, 0.07), Vector3(-1.05, 0.96, -2.9), dark)
-	var brass := _material(Color("e4b96f"), 1.0)
+	var brass := _material(Color("d9ac58"), 1.0)
 	_box(boat_visual, Vector3(0.22, 0.32, 0.22), Vector3(-1.05, 1.3, -2.9), brass)
 	_box(boat_visual, Vector3(0.34, 0.08, 0.34), Vector3(-1.05, 1.51, -2.9), dark)
 	var lamp := OmniLight3D.new()

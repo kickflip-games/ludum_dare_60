@@ -7,9 +7,14 @@ extends Resource
 @export var turn_acceleration := 0.95
 @export var acceleration := 2.0
 @export var size := 1.0
-@export var sail_color := Color("e69b79")
+@export var sail_color := Color("c57565")
 @export var sail_fill := 0.22
 @export var sail_bands := 0
+# Presentation only. Reserved boss palette: cloth #292e38, trim/banner #a83d45;
+# increase pennant_size for its banner when the boss model is introduced.
+@export var trim_color := Color("38282d")
+@export var pennant_color := Color("d94b51")
+@export var pennant_size := Vector2(1.7, 0.85)
 @export var broadside_separation := 34.0
 @export var approach_lead := 28.0
 @export var approach_angle := -0.45

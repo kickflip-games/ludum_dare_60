@@ -11,6 +11,7 @@ enemy to win; entering the old harbour never wins.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
+- **E:** toggle close cannon / chase view; bounded mouse look remains active in both.
 - **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
   together share one reload. Steering, camera look and firing are independent.
 - **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
@@ -70,7 +71,7 @@ preserves tuning and resets session progress. Archetype resources live in
 `game/enemies/`; all use `enemy_ship.tscn` and one bounded-turn AI. Arena helm
 response is 9/s (voyage 7/s), with unchanged 0.72 rad/s rudder authority, shared
 wave forces, surface and rocking muzzle. Existing crests keep moving while firing.
-The single starboard cannon uses a **±25° firing cone with a 65 m range**.
+The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.
 The translucent water sector and two thin boundaries rotate with the boat.
 Each shot selects an eligible hull centre by alignment with starboard first,
 then distance for equal alignment. The barrel rotates before launch and applies
@@ -84,8 +85,11 @@ acquisition and projectile range use those same settings.
 Tune **Arcade chase look** on the crossing: yaw limit, degrees per mouse pixel,
 look response, idle delay, recentring rate and port/starboard framing offsets.
 The existing chase tracking, level horizon, shore retraction and water guard remain.
-F/E and sextant activation are unbound in the arena. The old voyage’s camera and
-navigation controls are retained only in its explicit legacy fixture.
+E blends between chase and close cannon framing without changing cannon aim or
+locking steering/fire. It preserves the current mouse offset, ±45° limits and
+1.5-second idle recentring in either view. Retry, victory, defeat and focus loss
+return to chase. F and sextant activation remain inactive in the arena. The old
+voyage’s navigation and held-E controls remain in its explicit legacy fixture.
 
 See the [earlier combat review](artifacts/combat_feel_review.md),
 the [timed-survival baseline](artifacts/timed_survival_review.md) for scheduler

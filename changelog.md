@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Narrowed the arena firing cone to ±10° (20° total), retaining
+  the 65 m range. E toggles the close cannon and chase views without changing
+  aiming, steering or fire. Both views retain bounded mouse look, idle
+  recentring, level horizon, boat tracking and shore/water clearance; focus loss
+  and session resets restore chase. Updated menu instructions and regressions.
+  Initial validation passes 303 checks across five suites and 41 native checks,
+  including moving-enemy duels in both views. Rendered framing inspected.
+
 - Replaced the active arena cannon sweep and ballistic guide
   with a boat-relative ±25° / 65 m starboard cone. Fire prioritises alignment,
   then distance, rotates the real barrel and applies bounded movement lead;

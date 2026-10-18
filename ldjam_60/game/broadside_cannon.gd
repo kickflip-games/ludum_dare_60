@@ -15,7 +15,7 @@ signal aiming_ended
 signal fired(direction: Vector3)
 
 @export_group("Starboard firing cone")
-@export_range(1.0, 45.0, 1.0) var cone_half_angle: float = 25.0
+@export_range(1.0, 45.0, 1.0) var cone_half_angle: float = 10.0
 @export_range(10.0, 100.0, 1.0) var cone_range: float = 65.0
 var selected_target: Node3D
 var cone_elevation: float = 0.0

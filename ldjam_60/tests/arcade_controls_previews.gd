@@ -23,8 +23,10 @@ func _run() -> void:
 	for frame in 60:
 		game._update_view(1.0 / 60)
 	await capture("02b-opposite-limit")
+	await camera_toggle_cases()
 	await trajectory_cases()
 	await moving_combat()
+	await moving_combat(true)
 	print("NATIVE ARCADE: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

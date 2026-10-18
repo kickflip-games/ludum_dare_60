@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Required a dedicated branch and immediate draft web PR for every task, an
+  initial check for overlapping open PRs, and screenshots visible in each PR.
+  Added a [rendered workflow capture](artifacts/pr_workflow/agent-workflow.jpg)
+  for web review; the GitHub-rendered instructions were visually inspected.
+  Documentation diff and workflow requirements checked; gameplay tests were
+  not run for this instructions-only update.
 - In progress: Set the supplied Kickflip Games logo as the Godot boot splash,
   scaled to fit the window. Added the source to [credits](CREDITS.md); a runtime
   splash preview has not been run.

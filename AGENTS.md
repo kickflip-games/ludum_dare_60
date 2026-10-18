@@ -2,6 +2,14 @@
 
 These instructions apply to the whole repository. This is an existing playable Godot game, **not** a greenfield prototype. Make focused improvements without silently redesigning working systems.
 
+## Branch and pull request workflow
+
+- **Check for overlap first:** At the start of every task, inspect all open PRs, including drafts. Read relevant descriptions and changed files, and inform the user if someone is already working on the same or overlapping task. Include the PR link, author and overlapping scope before starting implementation; do not silently duplicate or take over their work.
+- **Create the branch and draft PR immediately:** Do all work on a dedicated task branch, never directly on the default branch. Push the branch and open a draft PR on GitHub at task start, before substantive implementation, so teammates can see what is being worked on. If GitHub requires a difference to open the PR, make the smallest task-relevant initial commit first. Share the PR link immediately and state the intended scope and planned checks in its description.
+- **Every task must have a web PR:** This includes documentation, tooling and maintenance. Keep the same PR updated with the changes, actual validation results and remaining gaps as work progresses.
+- **Include screenshots in every PR:** Embed screenshots in the PR description or a linked PR comment where teammates can view them on the web; local file paths alone are insufficient. Capture the relevant result, including rendered instructions for documentation tasks, and include comparable before/after views for visual changes where useful. Upload captures as PR attachments where possible; do not commit temporary captures unless needed for durable review evidence.
+- Keep the PR in draft while work is in progress. Before requesting review, ensure its scope, screenshots and validation describe the current changes. If PR access, creation or screenshot publication is blocked, report the exact limitation promptly and do not claim the workflow is complete.
+
 ## Project orientation
 
 - **Current game name:** Latitude Lines (the root README still uses the earlier title, The Last Bearing).
@@ -81,6 +89,9 @@ If Godot, a display, an asset, or a required test runner is unavailable, continu
 
 ## Completion checklist
 
+- [ ] Open PRs, including drafts, were checked at task start and any overlapping work was reported with links.
+- [ ] Work is on a task branch with a web PR opened as a draft at task start, and its link was shared.
+- [ ] The PR includes web-visible screenshots, current scope, actual validation results and remaining gaps.
 - [ ] All requested behaviors were mapped to a code change or consciously left unchanged with explanation.
 - [ ] The configured project still imports/launches, if runtime access was available.
 - [ ] Relevant input-driven positive and negative scenarios were checked.

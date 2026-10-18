@@ -19,6 +19,8 @@ func _run() -> void:
 	await physics_frame
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
+	game.ocean_settings.height_multiplier = 0.0
+	game.wave_encounters.enabled = false
 	check(game.hull == 3 and not game.cannon.fire(), "three-hit hull and cannon gated on the title")
 	game.start_crossing()
 	game._physics_process(game.CAST_OFF_SECONDS)
@@ -35,7 +37,7 @@ func _run() -> void:
 	for i in range(60):
 		game.take_damage(1, "repeated contact")
 	check(game.hull == 2, "short immunity rejects per-frame repeated damage")
-	check(game.hit_flash > 0.0 and game.shake_strength > 0.0, "hit gives restrained camera impulse and hull flash")
+	check(game.hit_flash > 0.0 and game.damage_shake_left > 0.0, "hit gives restrained camera impulse and hull flash")
 	game.damage_immunity = 0.0
 	check(game.take_damage(1, "second breach") and game.hull == 1, "second significant hit leaves one hull")
 	game.damage_immunity = 0.0

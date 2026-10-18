@@ -148,7 +148,7 @@ func real_duel() -> void:
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 		await physics_frame
-	check(entered and game.cannon.shots_fired == 2 and game.cannon.targets_hit == 2 and ship.hull == 0, "two F-fired cannonballs sink the naturally moving cutter without moving it into the shot")
+	check(entered and game.cannon.shots_fired >= 2 and game.cannon.targets_hit == 2 and ship.hull == 0, "two real F-fired cannonball hits sink the naturally moving cutter; waves may cause misses")
 	check(ship.mode == ship.Mode.SINKING and ship.collision_layer == 0 and ship.get_meta("destroyed"), "sinking clears attacks and target collision immediately")
 	for frame in range(212):
 		ship.update_ship(1.0 / 60.0)

@@ -1,11 +1,7 @@
 extends RefCounted
 
 var target: CharacterBody3D
-var shots := 0
 var helm_exits := 0
-var evade_left := 0.0
-var evade_side := -1.0
-var dodged_threats: Dictionary = {}
 var avoid_left := 0.0
 var avoid_heading := 0.0
 var orbit := false
@@ -62,6 +58,17 @@ func update(game, delta: float) -> void:
 	var preferred := atan2(to_waypoint.x, -to_waypoint.z)
 	if orbit:
 		preferred = atan2(radial.x, -radial.z) + PI / 2.0 + clampf((radial.length() - 140.0) * 0.035, -0.6, 0.6)
+	if game.arena_mode:
+		var nearest := INF
+		for candidate in living:
+			var relative: Vector3 = candidate.position - game.boat.position
+			if relative.length() < nearest:
+				target = candidate
+				nearest = relative.length()
+				preferred = atan2(relative.x, -relative.z) - PI / 2.0 + clampf((nearest - 38.0) * 0.035, -0.55, 1.15)
+		if not game.cannon.choose_cone_target().is_empty() and game.cannon.cooldown <= 0.000001:
+			action("fire_starboard", true)
+			action("fire_starboard", false)
 	avoid_left = maxf(0.0, avoid_left - delta)
 	if avoid_left <= 0.0 and not lane_clear(game, game.heading, 24.0):
 		avoid_heading = safe_heading(game, preferred, true)
@@ -81,6 +88,12 @@ func update(game, delta: float) -> void:
 			target = candidate
 			closest = relative.length()
 	var error := wrapf(preferred - game.heading, -PI, PI)
+	if game.arena_mode:
+		helm(error * 3.0)
+		if not game.cannon.choose_cone_target().is_empty() and game.cannon.cooldown <= 0.000001:
+			action("fire_starboard", true)
+			action("fire_starboard", false)
+		return
 	if target != null and absf(error) < deg_to_rad(8.0 if game.cannon.aiming else 3.0):
 		action("steer_port", false)
 		action("steer_starboard", false)
@@ -94,7 +107,6 @@ func update(game, delta: float) -> void:
 			if (travel - offset).length() < target.collision_shape.shape.radius - 0.45 and game.get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 				action("fire_starboard", true)
 				action("fire_starboard", false)
-				shots += 1
 	else:
 		if game.cannon.aiming:
 			helm_exits += 1

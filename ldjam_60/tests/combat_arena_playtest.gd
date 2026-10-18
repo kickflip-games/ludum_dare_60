@@ -38,6 +38,8 @@ func _run() -> void:
 	var ship_hits := 0
 	var shots := 0
 	var all_impacts := 0
+	var enemy_shots := 0
+	var enemy_warnings := 0
 	var trace: Array[Dictionary] = []
 	var capture_counts := {"Cutter": 0, "Skiff": 0, "Heavy": 0}
 	var max_yaw := 0.0
@@ -50,7 +52,7 @@ func _run() -> void:
 		var before: Array[Dictionary] = []
 		var previous_hits: int = game.hits_taken
 		for ship in game.enemy_encounters.ships:
-			before.append({"hull": ship.hull, "wave": ship.get_meta("wave_id", -1)})
+			before.append({"hull": ship.hull, "wave": ship.get_meta("wave_id", -1), "shots": ship.shots_fired})
 		game._physics_process(1.0 / 60.0)
 		game.cannon.advance(1.0 / 60.0)
 		if game.hits_taken > previous_hits:
@@ -61,6 +63,8 @@ func _run() -> void:
 			var ship = game.enemy_encounters.ships[index]
 			if before[index].wave == ship.get_meta("wave_id", -1):
 				ship_hits += maxi(0, before[index].hull - ship.hull)
+				enemy_shots += maxi(0, ship.shots_fired - before[index].shots)
+		enemy_warnings = maxi(enemy_warnings, game.enemy_encounters.director.warning_history.size())
 		peak_living = maxi(peak_living, game.enemy_encounters.living_ships().size())
 		max_yaw = maxf(max_yaw, absf(game.wave_sailing.yaw_rate))
 		max_roll = maxf(max_roll, absf(game.boat_motion.roll))
@@ -84,6 +88,7 @@ func _run() -> void:
 		"seconds": game.elapsed, "wave": game.enemy_encounters.wave_number,
 		"kills": game.enemy_encounters.ships_sunk, "hull": game.hull, "hits_taken": game.hits_taken,
 		"shots": shots, "ship_hits": ship_hits, "all_impacts": all_impacts,
+		"enemy_shots": enemy_shots, "enemy_warnings": enemy_warnings,
 		"peak_living": peak_living, "helm_exits": pilot.helm_exits, "max_wave_yaw": max_yaw,
 		"max_roll_degrees": rad_to_deg(max_roll), "waves": trace, "capture_counts": capture_counts,
 		"damage": damage_trace}
@@ -91,9 +96,15 @@ func _run() -> void:
 	var file := FileAccess.open(output.path_join("results.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(result, "\t"))
 	if capture_enabled:
-		game._update_view(1.0)
-		game.hud._process(0.0)
+		for frame in 60:
+			game._update_view(1.0 / 60.0)
+			game.hud._process(1.0 / 60.0)
+			await process_frame
 		await capture("ending")
 	game.queue_free()
 	await process_frame
+	if capture_enabled:
+		RenderingServer.force_draw(true, 1.0 / 60.0)
+		OS.delay_msec(200)
+		await process_frame
 	quit(0 if result.won else 1)

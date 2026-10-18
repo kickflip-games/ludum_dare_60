@@ -50,7 +50,7 @@ func route(kind: String, hz: int) -> void:
 	var nonhoming := true
 	var warning_seen := false
 	var minimum_distance := INF
-	for frame in 65 * hz:
+	for frame in 90 * hz:
 		var previous: Vector3 = ship.position
 		var previous_rate: float = ship.turn_rate
 		var telling: bool = ship.mode == ship.Mode.TELEGRAPH

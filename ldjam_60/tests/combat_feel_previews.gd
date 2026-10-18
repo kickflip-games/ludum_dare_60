@@ -4,11 +4,14 @@ var game
 var output := "/tmp/latitude-combat/after"
 var ships: Array[Node3D] = []
 const Pilot = preload("res://tests/cannon_sweep_pilot.gd")
+var baseline_mode := false
 
 func _initialize() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--output="):
 			output = argument.trim_prefix("--output=")
+		if argument == "--baseline":
+			baseline_mode = true
 	_run.call_deferred()
 
 func capture(label: String) -> void:
@@ -98,8 +101,9 @@ func _run() -> void:
 		if attacker != ship:
 			attacker.queue_free()
 	await process_frame
-	await encounter("skiff", true)
-	await encounter("heavy", false)
+	if not baseline_mode:
+		await encounter("skiff", true)
+		await encounter("heavy", false)
 	game.queue_free()
 	await process_frame
 	quit()
@@ -128,6 +132,10 @@ func encounter(kind: String, choppy: bool) -> void:
 	for frame in 720 if choppy else 480:
 		if choppy and frame >= 300:
 			pilot.update(game, 1.0 / 60.0)
+		elif choppy:
+			var correction: float = -game.heading * 3.0 - (game.boat.position.x - 310.0) * 0.10 - game.wave_sailing.drift.x * 0.22
+			pilot.action("steer_port", correction < -0.1)
+			pilot.action("steer_starboard", correction > 0.1)
 		elif not choppy:
 			pilot.action("watch_starboard", true)
 		game._physics_process(1.0 / 60.0)

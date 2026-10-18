@@ -1,0 +1,80 @@
+{
+	"all_impacts": 18,
+	"capture_counts": {
+		"Cutter": 0,
+		"Heavy": 0,
+		"Skiff": 0
+	},
+	"damage": [
+		{
+			"hull": 2,
+			"reason": "HULL STRUCK FLOATING BARRELS",
+			"seconds": 34.0833333333327
+		},
+		{
+			"hull": 2,
+			"reason": "HULL STRUCK THE HOSTILE CUTTER",
+			"seconds": 180.550000000036
+		},
+		{
+			"hull": 1,
+			"reason": "HULL STRUCK THE HOSTILE CUTTER",
+			"seconds": 182.766666666704
+		},
+		{
+			"hull": 0,
+			"reason": "HULL STRUCK A ROCK",
+			"seconds": 186.233333333374
+		}
+	],
+	"helm_exits": 0,
+	"hits_taken": 4,
+	"hull": 0,
+	"kills": 11,
+	"max_roll_degrees": 11.9999997905877,
+	"max_wave_yaw": 0.56,
+	"peak_living": 6,
+	"seconds": 186.233333333374,
+	"ship_hits": 18,
+	"shots": 23,
+	"state": 2,
+	"wave": 5,
+	"waves": [
+		{
+			"hull": 3,
+			"kills": 0,
+			"seconds": 0.0166666666666667,
+			"shots": 0,
+			"wave": 1
+		},
+		{
+			"hull": 3,
+			"kills": 2,
+			"seconds": 11.4333333333335,
+			"shots": 4,
+			"wave": 2
+		},
+		{
+			"hull": 2,
+			"kills": 3,
+			"seconds": 61.4499999999978,
+			"shots": 7,
+			"wave": 3
+		},
+		{
+			"hull": 3,
+			"kills": 9,
+			"seconds": 83.7333333333299,
+			"shots": 18,
+			"wave": 4
+		},
+		{
+			"hull": 3,
+			"kills": 11,
+			"seconds": 163.750000000022,
+			"shots": 23,
+			"wave": 5
+		}
+	],
+	"won": false
+}

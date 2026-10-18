@@ -6,6 +6,22 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Naval AI: committed navigation and independent weapons,
+  six pooled ships, fair slots and staggered warnings preserve the current
+  controls/rosters. Fixed stale interception and latched contact recovery;
+  input-only battles defeat all 20 ships with physical projectiles. Native
+  single/pair/fleet sequences reviewed. 486 checks pass after preserving main's
+  water, boost, narrow cone and camera toggle. Human balance remains open;
+  sparse-pressure and contact tolerances are documented in the
+  [naval AI review](artifacts/naval_ai_review.md).
+
+- Added readable cutter/skiff/heavy profiles (2/1/3 hits), aim-only occlusion-checked
+  sail illumination, confirmed hit/sinking feedback and exact 1/2/2/3/3 rosters.
+  Fixed remote approaches and reciprocal yielding; quicker helm response retains
+  physical shots, wave forces and current 9 m/s/chase-camera work. 862 checks pass;
+  input-only full run defeats all 11 ships through 22 physical hits. Native
+  comparisons and combat clips reviewed; human balance remains open. See the
+  [combat review](artifacts/combat_feel_review.md).
 - Narrowed the arena firing cone to ±10° (20° total), retaining
   the 65 m range. E toggles the close cannon and chase views without changing
   aiming, steering or fire. Both views retain bounded mouse look, idle

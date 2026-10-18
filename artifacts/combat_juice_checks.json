@@ -1,0 +1,111 @@
+{
+  "suites": [
+    {
+      "suite": "combat_particles",
+      "exit": 0,
+      "summary": [
+        "COMBAT PARTICLES: 44 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "starboard_cone",
+      "exit": 0,
+      "summary": [
+        "STARBOARD CONE: 33 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "cannon_arc",
+      "exit": 0,
+      "summary": [
+        "CANNON ARC: 25 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "arcade_controls",
+      "exit": 0,
+      "summary": [
+        "ARCADE CONTROLS: 74 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "combat_feel",
+      "exit": 1,
+      "summary": [
+        "COMBAT FEEL: 66 checks, 2 failures"
+      ],
+      "failures": [
+        "FAIL: cone targeting never erases or freezes an already visible wave",
+        "FAIL: quiet water outside shelter can launch one existing small seeded crest"
+      ]
+    },
+    {
+      "suite": "damage",
+      "exit": 0,
+      "summary": [
+        "DAMAGE CHECK: 38 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "damage_camera",
+      "exit": 0,
+      "summary": [
+        "DAMAGE CAMERA: 51 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "survival",
+      "exit": 0,
+      "summary": [
+        "SURVIVAL CHECK: 81 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "arena",
+      "exit": 0,
+      "summary": [
+        "ARENA CHECK: 139 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "controls_lifecycle",
+      "exit": 0,
+      "summary": [
+        "CONTROLS LIFECYCLE: 46 checks, 0 failures"
+      ],
+      "failures": []
+    },
+    {
+      "suite": "night_ocean",
+      "exit": 1,
+      "summary": [
+        "NIGHT OCEAN: 22 checks, 1 failures"
+      ],
+      "failures": [
+        "FAIL: foam mask matches the current terrain mesh and authored rock layout"
+      ]
+    },
+    {
+      "suite": "boss",
+      "exit": 0,
+      "summary": [
+        "BOSS CHECK: 120 checks, 0 failures"
+      ],
+      "failures": []
+    }
+  ],
+  "naval_ai": {
+    "checks": 30,
+    "failures": 0
+  },
+  "total_checks": 769,
+  "failures": 3
+}

@@ -6,11 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
-- Work in progress: directional warm cannon flashes, delayed smoke, snappy cosmetic
-  recoil and varied wood impacts retain the 192-instance combat batch. Four
-  preallocated splash groups reuse 24 meshes/materials; only actual water hits
-  make full splashes. Reduced motion now scales the existing cannon camera kick.
-  Focused pool/impact/recoil checks pass; rendered and browser review ongoing.
+- Added directional warm cannon flashes, delayed smoke, snappy recoil and varied
+  hull/sinking feedback in the existing 192-instance particle batch. Four pooled
+  water splashes reuse 24 meshes/materials; real collision types control feedback
+  and mid-air expiry creates no splash. Reduced motion scales cannon camera kick.
+  New checks, matched native captures and a Chrome WebGL2 comparison pass; three
+  inherited wave/foam assertions still fail on untouched main. Integrated the
+  current flagship and nautical UI; see the [combat effects review](artifacts/combat_juice_review.md).
 
 
 - Merged nautical UI into main while preserving the flagship encounter. Final

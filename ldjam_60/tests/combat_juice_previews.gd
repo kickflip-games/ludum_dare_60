@@ -35,6 +35,7 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	game.set_process_input(false)
+	game.set_process_unhandled_input(false)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)

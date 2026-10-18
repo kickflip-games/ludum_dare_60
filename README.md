@@ -242,13 +242,33 @@ At most **192 cubes** are drawn in one batch; busy frames replace the oldest
 cosmetic particles. Animation runs in the vertex shader, without particle nodes,
 collisions, textures, lights or shadows. Idle effects stop processing and drawing.
 Particles expire within 1.25 seconds, including after defeat; retry clears the pool.
-The existing wave-following splash rings/spray remain capped at 24 meshes.
+Water impacts reuse four preallocated six-mesh splash groups (24 meshes and
+24 independent opacity materials). Expired nodes stay hidden; saturation replaces
+a complete cosmetic splash. Rings follow the animated water height. Mid-air
+projectile expiry and solid hull/reef hits no longer create full water splashes.
 
 ```sh
 godot --headless --path ldjam_60 --script res://tests/combat_particles_smoke.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/combat_particles_previews.gd -- --output=/tmp/latitude-combat-particles
 godot --path ldjam_60 res://tests/combat_particles_benchmark.tscn
 ```
+
+Directional warm flame meshes and the existing player light give a brief 110 ms
+flash. The barrel kicks back in 45 ms and settles by 250 ms; cosmetic recoil does
+not move the launch marker. Delayed blue-grey smoke, varied wood chips and a
+larger final-hit burst retain the same particle batch. Full/Reduced motion scales
+the existing camera kick. Ordinary enemy and flagship flashes add no lights.
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/combat_juice_previews.gd -- --clip --output=/tmp/latitude-juice/after
+godot --path ldjam_60 res://tests/combat_particles_benchmark.tscn -- --full-vfx
+```
+
+`--full-vfx` extends the existing benchmark with idle, player muzzle, five enemy
+muzzles, hull impacts, pooled water, mixed combat and fully expired phases. For a
+separate development Web export, set its scene's `full_vfx` property to `true`.
+See the [combat effects review](artifacts/combat_juice_review.md) for matched
+captures, pool checks, timings and inherited test limitations.
 
 The benchmark alternates three idle/saturated pairs with a fixed gameplay camera,
 10 seconds per phase and three seconds of warmup. It emits 2,450 particles/second,

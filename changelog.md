@@ -22,7 +22,9 @@ recorded evidence and limitations.
   cleanup, restrained wave/countdown banners and THE SEA IS YOURS / SHIP SUNK
   endings. 740 checks pass (80 survival, 132 arena, 528 adjacent); native early/middle/final
   gameplay, countdowns and endings were inspected. Human balance and browser/mobile performance
-  remain open. See the [timed-survival review](artifacts/timed_survival_review.md).
+  remain open. [PR #8](https://github.com/kickflip-games/ludum_dare_60/pull/8)
+  follows the externally merged arena PR; see the
+  [timed-survival review](artifacts/timed_survival_review.md).
 
 - Refined the lighthouse arena to a 170 m, five-wave player-survival loop with
   a safe 75 m spawn, editable curved reef, broken wreck/cargo and three low

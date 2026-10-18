@@ -166,6 +166,25 @@ func _run() -> void:
 	check(fx.emitted == previous, "destroyed ship rejects repeat destruction burst")
 	game.restart()
 	check(cannon.effects.is_empty() and cannon.barrel.position == Vector3.ZERO and not cannon.flash.visible and not cannon.flash_light.visible, "retry clears pooled water, flash and recoil")
+	for close in [false, true]:
+		game.state = game.State.SAILING
+		game.arena_cannon_view = close
+		game.motion_setting = 0
+		for frame in 60: game._update_view(1.0 / 60)
+		game._cannon_impulse = 0.0
+		game._update_view(0.0)
+		var base_pose: Vector3 = game.camera.position
+		game._cannon_impulse = 1.0
+		game._update_view(0.0)
+		var full_offset: Vector3 = game.camera.position - base_pose
+		game.motion_setting = 1
+		game._update_view(0.0)
+		check(absf((game.camera.position - base_pose).length() / full_offset.length() - 0.28) < 0.001, "Reduced motion scales cannon displacement in %s view" % ["close" if close else "chase"])
+	game.cannon.water_splash(game.boat.position, false)
+	game.state = game.State.ARRIVED
+	game.cannon._physics_process(1.0)
+	check(game.cannon.effects.is_empty(), "final-hit foam expires after victory without resuming projectiles")
+	game.restart()
 	print("COMBAT PARTICLES: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

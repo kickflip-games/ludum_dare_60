@@ -1,7 +1,7 @@
 extends Node
 ## Fixed gameplay camera: alternating idle and saturated particle batches.
 ## Run this scene natively, or as the main scene of a separate development Web export.
-var full_vfx := false
+@export var full_vfx := false
 const FULL_PHASES := ["idle", "player", "enemy", "hull", "water", "mixed", "expired"]
 var game
 var fx
@@ -19,7 +19,7 @@ const PHASE_SECONDS := 10.0
 const WARMUP_SECONDS := 3.0
 
 func _ready() -> void:
-	full_vfx = "--full-vfx" in OS.get_cmdline_user_args()
+	full_vfx = full_vfx or "--full-vfx" in OS.get_cmdline_user_args()
 	if full_vfx:
 		get_tree().root.size = Vector2i(1280, 720)
 	game = load("res://game/crossing.tscn").instantiate()
@@ -70,7 +70,7 @@ func _next_phase() -> void:
 		else:
 			get_tree().quit()
 	elif OS.has_feature("web"):
-		JavaScriptBridge.eval("document.title='Particle benchmark %d/6: %s'" % [phase + 1, "saturated" if phase % 2 else "idle"])
+		JavaScriptBridge.eval("document.title='Combat benchmark %d/%d: %s'" % [phase + 1, 7 if full_vfx else 6, FULL_PHASES[phase] if full_vfx else "saturated" if phase % 2 else "idle"])
 
 func _process(delta: float) -> void:
 	if finished: return

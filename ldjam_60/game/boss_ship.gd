@@ -33,6 +33,7 @@ var attack_side := 1.0
 var launch_history: Array[Dictionary] = []
 var pattern_history: Array[int] = []
 var phase_bursts := 0
+var muzzle_flash_until := 0.0
 var flagship_model: Node3D
 var boss_materials: Array[StandardMaterial3D] = []
 
@@ -99,6 +100,7 @@ func display_name() -> String:
 func reset() -> void:
 	clear_hazards()
 	super.reset()
+	muzzle_flash_until = 0.0
 	phase_two = false
 	pattern_index = 0
 	pattern = Pattern.ROLLING
@@ -272,6 +274,10 @@ func _fire_due() -> void:
 		projectiles.append({"node":ball, "position":from, "velocity":launch, "ttl":4.0, "trail_clock":0.0})
 		game.combat_particles.muzzle(from, launch.normalized(), true)
 		flash.global_position = from
+		var direction := launch.normalized()
+		var up := (Vector3.UP - direction * direction.dot(Vector3.UP)).normalized()
+		flash.global_basis = Basis(direction, up, direction.cross(up))
+		muzzle_flash_until = game.sea_time + 0.11
 		shots_fired += 1
 		launch_history.append({"pattern":pattern, "salvo":salvo, "origin":from, "warning_origin":shot.origin, "direction":shot.direction, "velocity":launch})
 		if launch_history.size() > 128: launch_history.pop_front()
@@ -292,7 +298,8 @@ func _finish_pattern() -> void:
 	for line in warnings: line.visible = false
 
 func _update_tell() -> void:
-	flash.visible = weapon_state == Weapon.FIRE
+	flash.visible = game.sea_time < muzzle_flash_until and not get_meta("destroyed", true)
+	flash.scale = Vector3.ONE * (0.6 + 0.4 * clampf((muzzle_flash_until - game.sea_time) / 0.11, 0.0, 1.0))
 	for i in warnings.size():
 		var line := warnings[i]
 		line.visible = i < volley.size() and weapon_state in [Weapon.TELEGRAPH, Weapon.FIRE] and not volley[i].fired

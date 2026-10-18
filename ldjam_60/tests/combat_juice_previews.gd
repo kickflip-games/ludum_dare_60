@@ -34,6 +34,7 @@ func _run() -> void:
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
+	game.set_process_input(false)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)
@@ -87,6 +88,20 @@ func _run() -> void:
 		await capture("player-lethal" if lethal else "player-damage", 0.0)
 	tick(1.5)
 	await capture("expired", 0.0)
+	if "--clip" in OS.get_cmdline_user_args():
+		stage()
+		fleet()
+		DirAccess.make_dir_recursive_absolute(output.path_join("sequence"))
+		for frame in 90:
+			if frame == 0: game.cannon.fire()
+			if frame == 18: game.cannon.water_splash(game.boat.position + Vector3(10, 0, -6), false)
+			if frame == 27: game.cannon.water_splash(game.boat.position + Vector3(14, 0, -9), false)
+			if frame == 36:
+				var ship = game.enemy_encounters.ships[1]
+				game.cannon._impact(ship, ship.global_position + Vector3(0, 1.8, -1.8))
+			if frame == 54: game.take_damage(1, "Sequence hit")
+			tick(1.0 / 30)
+			await capture("sequence/frame-%03d" % frame, 0.0)
 	game.queue_free()
 	await process_frame
 	quit()

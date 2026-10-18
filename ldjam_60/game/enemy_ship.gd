@@ -229,7 +229,8 @@ func reset() -> void:
 	heading = 0.0
 	rotation = Vector3.ZERO
 	visual.transform = Transform3D.IDENTITY
-	pennant.flutter(0.0)
+	if is_instance_valid(pennant):
+		pennant.flutter(0.0)
 	sail_material.albedo_color = sail_color
 	sail_material.emission = sail_color
 	motion.reset()
@@ -279,7 +280,8 @@ func configure_archetype(profile: Resource, lane_offset: float = 0.0) -> void:
 	sail_color = profile.sail_color
 	sail_fill = profile.sail_fill
 	trim_material.albedo_color = profile.trim_color
-	pennant.configure(profile.pennant_color, profile.pennant_size)
+	if is_instance_valid(pennant):
+		pennant.configure(profile.pennant_color, profile.pennant_size)
 	broadside_separation = profile.broadside_separation + lane_offset
 	approach_lead = profile.approach_lead
 	approach_angle = profile.approach_angle
@@ -371,7 +373,8 @@ func update_ship(delta: float) -> void:
 	navigation_time += delta
 	hit_reaction = maxf(0, hit_reaction - delta)
 	_update_cloth()
-	pennant.flutter(game.sea_time)
+	if is_instance_valid(pennant):
+		pennant.flutter(game.sea_time)
 	if navigation_state == Navigation.SINKING:
 		visual.position.y -= delta * 2.5
 		visual.rotation.z += delta * 0.18
@@ -855,7 +858,8 @@ func take_hit() -> void:
 func update_visuals(delta: float) -> void:
 	if not visible or navigation_state == Navigation.SINKING:
 		return
-	pennant.flutter(game.sea_time)
+	if is_instance_valid(pennant):
+		pennant.flutter(game.sea_time)
 	motion.update_motion(game.ocean, self, visual, delta)
 	visual.rotation.z += sin(hit_reaction * 20.0) * hit_reaction * 0.21
 	_update_tell()

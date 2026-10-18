@@ -242,6 +242,7 @@ func fire() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if game.state != game.State.SAILING:
+		advance_effects(delta)
 		return
 	advance(delta)
 

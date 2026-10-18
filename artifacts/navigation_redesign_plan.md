@@ -67,8 +67,8 @@ actually entering Lighthouse Harbour.
   additional waypoint arrow is proposed.
 - Remove Space/astrolabe activation, focus delay/ramp, look-up camera mode and
   old sighting prompts. Do not simulate this by forcing the old reading flag
-  true, which would keep its cannon-priority behavior. Retain E aim, F fresh-
-  press firing, automatic forward motion, A/D steering, R restart and M mute.
+  true, which would keep its cannon-priority behavior. Retain E aim, firing on
+  each fresh F press, automatic forward motion, A/D steering, R restart and M mute.
   Gun view still suspends manual steering as today; releasing E restores it.
 
 ### Short navigation legs
@@ -166,8 +166,6 @@ scope are checked during publication. No gameplay tests, new route timings,
 engine gameplay captures, performance acceptance or human playtests have run for
 this proposal. Existing documentation timings are explicitly historical.
 
-## Planned evidence
-
-Review current bearing, sky, HUD, voyage, movement and encounter code. Specify
-positive, negative, lifecycle and rendered checks for the proposed behaviors.
-All numbers are starting hypotheses until tested in engine and by a player.
+The published GitHub document was rendered and its sextant/star section visually
+inspected. [Planning screenshot](navigation_plan_review.png) is durable review
+evidence of the written proposal, not an implemented game screen.

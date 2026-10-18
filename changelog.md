@@ -10,7 +10,8 @@ recorded evidence and limitations.
   for a permanent sextant, helm-visible stars, short route legs and faster sailing.
   The lighthouse-arena PR overlaps the voyage direction; gameplay remains unchanged.
   Added proposed tuning and requirement-to-evidence checks; documentation
-  whitespace checks pass. Implementation and gameplay validation remain pending.
+  whitespace checks pass, and the rendered proposal was inspected with a web
+  review capture. Implementation and gameplay validation remain pending.
 
 - Added the hull-mounted deck view, directional wave inertia and contact-driven
   spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the

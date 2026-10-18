@@ -12,6 +12,34 @@ func _initialize() -> void:
 		if arg == "--no-effects": effects = false
 	_run.call_deferred()
 
+func action(name: String,pressed: bool) -> void:
+	var event := InputEventAction.new()
+	event.action = name
+	event.pressed = pressed
+	event.strength = 1.0 if pressed else 0.0
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+func advance(seconds: float, steering: float = 0.0, clip: bool = false) -> void:
+	for frame in range(roundi(seconds/DT)):
+		if steering<0: Input.action_press("steer_port",-steering)
+		if steering>0: Input.action_press("steer_starboard",steering)
+		game._physics_process(DT)
+		game.cannon.advance(DT)
+		game.hud._process(DT)
+		if clip:
+			trace.append({"time":game.sea_time,"heave":game.boat_motion.heave,
+				"hull_pitch":game.boat_motion.pitch,"hull_roll":game.boat_motion.roll,
+				"camera_pitch":game.camera.rotation.x,"camera_roll":game.camera.rotation.z,
+				"camera_y":game.camera.position.y,"clearance":game.camera.position.y-game.ocean.height_at(Vector2(game.camera.position.x,game.camera.position.z)),
+				"contact_ids":game.turbulence_effects.last_events.duplicate(),"effects":game.turbulence_effects.active_count})
+		if frame%3==0:
+			await process_frame
+			if clip and record_clip:
+				RenderingServer.force_draw(true,DT)
+				root.get_texture().get_image().save_png(output.path_join("clip/%04d.png" % clip_index))
+				clip_index += 1
+
 func _run() -> void:
 	root.size = Vector2i(1280,720)
 	DirAccess.make_dir_recursive_absolute(output.path_join("clip"))
@@ -28,18 +56,18 @@ func _run() -> void:
 	await physics_frame
 	place()
 	await capture("01-calm-deck")
-	game.starboard_look = true
+	action("watch_starboard",true)
 	await advance(0.4)
-	await capture("02-glance")
-	game.starboard_look = false
-	game.cannon.set_fire_held(true)
-	game.cannon.set_fire_held(false)
+	await capture("02-cannon-entry")
+	action("fire_starboard",true)
+	action("fire_starboard",false)
 	await advance(0.6)
 	await capture("03-real-cannon")
-	game.reading = true
-	for frame in range(120): game._update_view(DT)
-	game.hud._process(DT)
+	action("astrolabe",true)
+	await advance(2.0)
 	await capture("04-sighting")
+	action("astrolabe",false)
+	action("watch_starboard",false)
 	if not views_only:
 		for scenario in ["front","port","starboard","oblique","four"]:
 			place()

@@ -1,5 +1,5 @@
 extends SceneTree
-## Staged moving AI duels using press-to-enter/fire and steering-to-exit.
+## Staged moving AI duels using hold-E aim, fresh-F fire and release-E steering.
 const Pilot = preload("res://tests/cannon_sweep_pilot.gd")
 var failures := 0
 var results: Array[Dictionary] = []

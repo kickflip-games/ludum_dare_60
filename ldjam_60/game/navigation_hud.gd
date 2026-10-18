@@ -124,7 +124,7 @@ func _build_menu() -> void:
 	menu_controls.add_theme_constant_override("v_separation", 9)
 	menu_controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(menu_controls)
-	for pair: Array in [["A / D   or   ← / →", "Steer"], ["Hold Space", "Find the guiding star"], ["F, then F", "Cannon view / shoot"], ["Hold E", "Glance starboard"]]:
+	for pair: Array in [["A / D", "Steer"], ["Hold Space", "Find the guiding star"], ["Hold E", "Aim cannon"], ["F", "Fire"]]:
 		_label(menu_controls, "Key", pair[0], 16, INK)
 		_label(menu_controls, "Action", pair[1], 16, MUTED)
 	menu_details = _label(column, "VoyageDetails", "", 21, BRASS)
@@ -209,7 +209,7 @@ func _sync_button() -> void:
 	menu_details.visible = won
 	menu_details.text = "Voyage time   %02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
 	action_button.text = "Play" if intro else "Retry"
-	menu_footer.text = "Enter play · R retry · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
+	menu_footer.text = "Enter play · Hold R to restart · M mute · Esc quit" if intro else "R retry · M mute · Esc quit"
 	action_button.grab_focus()
 	_menu_alpha = 0.0 if not intro else 1.0
 
@@ -287,11 +287,13 @@ func star_guidance() -> Dictionary:
 func _update_notice() -> void:
 	var value := ""
 	var alpha: float = 1.0
-	if game.discovery_left > 0:
+	if game.restart_elapsed > 0.0:
+		value = "Hold R to restart"
+	elif game.discovery_left > 0:
 		value = game.discovery_text
 		alpha = minf(1.0, game.discovery_left)
 	elif game.enemy_encounters.ship.age < 4.0 and game.enemy_encounters.battle_active():
-		value = "Cutter nearby · F for cannon"
+		value = "Cutter nearby · Hold E to aim"
 		alpha = clampf(4.0 - game.enemy_encounters.ship.age, 0.0, 1.0)
 	notice.text = value
 	notice.modulate.a = alpha
@@ -395,7 +397,7 @@ func _draw_cannon_sight() -> void:
 	_line(center + Vector2(tick, -5), center + Vector2(tick, 5), color, 2)
 	var hint_alpha: float = alpha * (1.0 - smoothstep(4.0, 7.0, game.cannon.mode_seconds)) if game.cannon.entries <= 2 else 0.0
 	if hint_alpha > 0.01:
-		_text(center + Vector2(0, -15), "F — Shoot     A/D — Steer", 14, Color(INK, hint_alpha * 0.8), true)
+		_text(center + Vector2(0, -15), "F · Fire", 14, Color(INK, hint_alpha * 0.8), true)
 
 
 func _draw_instrument() -> void:

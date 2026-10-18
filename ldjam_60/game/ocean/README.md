@@ -104,7 +104,7 @@ Player and enemy cannonballs find the first sampled surface crossing along each 
 - Waves travel at 8 m/s, have a characteristic profile width of 4–5 m, and span 24–52 m. Safe lanes can narrow the span.
 - Every proposed moving strip is checked against terrain depth, including its trailing trough. Unsafe lanes are retried. An encounter has a 100-second deadline so remaining permanently sheltered cannot stall it; this can end a set with fewer than ten launches. Goal arrival also ends any unfinished set.
 - After all crests expire, 20 seconds of protected calm blocks both ambient and regional events. Regional completion persists until retry. Leaving/re-entering cannot restart a set.
-- New pirate encounters wait while waves are active; wave sets wait for active combat and do not launch new crests while aiming. A fresh steering press still exits cannon view immediately. Existing waves continue while aiming.
+- New pirate encounters wait while waves are active; wave sets wait for active combat and do not launch new crests while aiming. Releasing E restores steering immediately. Existing waves continue while aiming.
 
 Left/right/front are chosen in a route frame captured when the region activates, then remain fixed in the world. Wave messages remain hidden in the quiet gameplay HUD; moving geometry, foam and warning audio carry the approach. Departure and harbour suppress ambient events. Retry resets events, regional state, momentum, clocks and the random seed.
 

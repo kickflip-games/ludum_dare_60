@@ -28,6 +28,7 @@ const TURN_SPEED: float = 0.64
 const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
+const RESTART_HOLD_SECONDS: float = 0.6
 # Leave room for the hull and camera inside the terrain's 512 m edges.
 const SAILING_LIMIT: float = 480.0
 const GUIDING_STAR_ELEVATION: float = PI / 3.0
@@ -84,8 +85,8 @@ var gust_strength := 0.0
 @export_range(80.0, 100.0, 1.0) var stargazing_fov: float = 94.0
 
 @export_group("Sextant assistance")
-@export_range(0.2, 2.5, 0.05) var focus_delay: float = 0.95
-@export_range(0.2, 1.2, 0.05) var focus_duration: float = 0.65
+@export_range(0.2, 2.5, 0.05) var focus_delay: float = 0.4
+@export_range(0.2, 1.2, 0.05) var focus_duration: float = 0.4
 @export_range(0.0, 1.0, 0.05) var target_highlight_strength: float = 0.65
 
 @export_group("Sailing camera")
@@ -156,8 +157,8 @@ var reading: bool = false
 var read_blend: float = 0.0
 var focus_elapsed: float = 0.0
 var focus_strength: float = 0.0
-var look_blend: float = 0.0
-var starboard_look: bool = false
+var restart_elapsed: float = 0.0
+var _restart_consumed: bool = false
 enum CameraMode { SAILING, COMBAT, CANNON, STARGAZING }
 var camera_mode: CameraMode = CameraMode.SAILING
 var aim_camera_blend: float = 0.0
@@ -290,14 +291,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			archipelago.debug_spawn(event.keycode - KEY_F3)
 		elif event.keycode == KEY_F6:
 			archipelago.debug_wave_zone()
-	if event.is_action_pressed("restart_crossing") and state in [State.SAILING, State.LOST, State.ARRIVED]:
-		restart()
+	if event.is_action("restart_crossing") and not event.is_echo():
+		if not event.is_pressed():
+			restart_elapsed = 0.0
+			_restart_consumed = false
+		elif not _restart_consumed and state in [State.LOST, State.ARRIVED]:
+			restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY:
 		start_crossing()
 	elif event.is_action("fire_starboard") and not event.is_echo():
 		cannon.set_fire_held(event.is_pressed())
-	elif (event.is_action("steer_port") or event.is_action("steer_starboard")) and not event.is_echo():
-		cannon.note_steering_event(maxf(event.get_action_strength("steer_port"), event.get_action_strength("steer_starboard")))
+	elif event.is_action("watch_starboard") and not event.is_echo():
+		cannon.set_aim_held(event.is_pressed())
 	elif event.is_action("astrolabe") and not event.is_echo():
 		# Even a release/repress between physics ticks starts a new sighting.
 		focus_elapsed = 0.0
@@ -317,12 +322,35 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(cannon):
-		cannon.cancel_aim()
-		Input.action_release("astrolabe")
-		reading = false
-		focus_elapsed = 0.0
-		focus_strength = 0.0
-		update_guiding_star()
+		_clear_player_controls()
+		Input.action_release("restart_crossing")
+		_restart_consumed = false
+
+
+func _clear_player_controls() -> void:
+	for action: String in ["watch_starboard", "fire_starboard", "astrolabe", "steer_port", "steer_starboard"]:
+		Input.action_release(action)
+	cannon.set_aim_held(false)
+	cannon.set_fire_held(false)
+	reading = false
+	turn_input = 0.0
+	focus_elapsed = 0.0
+	focus_strength = 0.0
+	restart_elapsed = 0.0
+	_restart_consumed = Input.is_action_pressed("restart_crossing")
+	update_guiding_star()
+
+
+func _update_restart_hold(delta: float) -> void:
+	if not Input.is_action_pressed("restart_crossing"):
+		restart_elapsed = 0.0
+		_restart_consumed = false
+	elif state == State.SAILING and not _restart_consumed:
+		restart_elapsed += delta
+		if restart_elapsed + 0.000001 >= RESTART_HOLD_SECONDS:
+			restart()
+	else:
+		restart_elapsed = 0.0
 
 
 func _on_cannon_fired(_direction: Vector3) -> void:
@@ -332,6 +360,8 @@ func _on_cannon_fired(_direction: Vector3) -> void:
 func start_crossing() -> void:
 	if state != State.READY:
 		return
+	restart_elapsed = 0.0
+	_restart_consumed = Input.is_action_pressed("restart_crossing")
 	transition_elapsed = 0.0
 	_transition_from = camera.transform
 	state = State.CASTING_OFF
@@ -379,6 +409,7 @@ func journey_progress() -> float:
 
 
 func restart() -> void:
+	_clear_player_controls()
 	cannon.reset()
 	wave_sailing.reset()
 	wave_encounters.reset(encounter_seed)
@@ -421,8 +452,6 @@ func restart() -> void:
 	read_blend = 0.0
 	focus_elapsed = 0.0
 	focus_strength = 0.0
-	look_blend = 0.0
-	starboard_look = false
 	aim_camera_blend = 0.0
 	combat_camera_blend = 0.0
 	_camera_aim_degrees = 0.0
@@ -449,15 +478,16 @@ func restart() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_update_restart_hold(delta)
 	if state != State.SAILING:
 		sea_time += delta
 	reading = state == State.SAILING and Input.is_action_pressed("astrolabe")
 	if reading or state != State.SAILING:
 		cannon.cancel_aim()
+	cannon.set_aim_held(Input.is_action_pressed("watch_starboard"))
 	cannon.set_fire_held(Input.is_action_pressed("fire_starboard"))
 	cannon.update_aim(delta)
 	if state == State.SAILING:
-		starboard_look = Input.is_action_pressed("watch_starboard") and not reading
 		turn_input = 0.0 if cannon.aiming else Input.get_axis("steer_port", "steer_starboard")
 		advance_sailing(delta, turn_input)
 	elif state == State.CASTING_OFF:
@@ -483,7 +513,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	wave_encounters.update(self, delta)
 	ocean.wave_time = sea_time
 	enemy_encounters.update_encounters(delta)
-	# A fresh steering press exits cannon view; waves continue throughout aiming.
+	# Holding E suspends manual rudder input; existing waves and momentum continue.
 	if cannon.aiming:
 		steering = 0.0
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
@@ -515,8 +545,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 		beacon_seen = true
 		beacon.visible = true
 	if state == State.LOST or state == State.ARRIVED:
-		reading = false
-		turn_input = 0.0
+		_clear_player_controls()
 		cannon.reset()
 		enemy_encounters.stop()
 		wave_encounters.stop(ocean.wave_field)
@@ -585,7 +614,7 @@ func take_damage(amount: int, reason: String) -> bool:
 		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
 		state = State.LOST
-		reading = false
+		_clear_player_controls()
 		cannon.reset()
 	return true
 
@@ -601,7 +630,6 @@ func _update_view(delta: float) -> void:
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	_update_weather(delta)
 	_apply_night_illumination()
-	look_blend = move_toward(look_blend, 1.0 if starboard_look and not reading and state == State.SAILING else 0.0, delta * 5.0)
 	read_blend = move_toward(read_blend, 1.0 if reading else 0.0, delta * 4.5)
 	# A fresh, uninterrupted hold is required every time; lowering erases assistance.
 	if reading and state == State.SAILING:
@@ -699,10 +727,10 @@ func _normal_sailing_pose(delta: float) -> Transform3D:
 		_camera_clear_fraction = 1.0
 	else:
 		_sailing_speed = lerpf(_sailing_speed, speed, 1.0 - exp(-3.0 * delta))
-	var result := deck_response.pose(helm_anchor, boat, boat_motion, ocean, heading, look_blend,
+	var result := deck_response.pose(helm_anchor, boat, boat_motion, ocean, heading, 0.0,
 		delta, motion_amount(), state == State.SAILING)
 	if development_tools and not development_camera_response:
-		return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading-deg_to_rad(75)*look_blend,0)),boat.to_global(helm_eye))
+		return Transform3D(Basis.from_euler(Vector3(-deg_to_rad(7),-heading,0)),boat.to_global(helm_eye))
 	return result
 
 

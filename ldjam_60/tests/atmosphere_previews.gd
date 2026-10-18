@@ -118,8 +118,7 @@ func _run() -> void:
 	await shot("09-storm-sailing")
 	await benchmark("storm")
 	ship.position = game.boat.position+game.cannon.starboard_direction()*40
-	action("fire_starboard",true)
-	action("fire_starboard",false)
+	action("watch_starboard",true)
 	# Settle the actual gun-camera transition without advancing the staged enemy.
 	for i in range(40):
 		game.cannon.update_aim(1.0/60)

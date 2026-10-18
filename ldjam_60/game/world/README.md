@@ -30,10 +30,13 @@ Normal inner sailing stays manual. Movement is bounded **before** collision
 sweeping at the hard limit; heading, tangent momentum and waves remain continuous,
 including while E is held. No boundary collider or teleport is used.
 
-The existing cutter is reused once per wave, targets the player and stays until
-sunk. A finished sinking animation plus clear enemy projectiles gates each
-10-second intermission and the fifth-wave victory. No timer-only progression or
-old harbour victory remains. Original territories/discoveries stay inactive;
+Three reusable cutters target the player and stay until sunk. The data-driven
+scheduler queues 1/2/4/6/8 arrivals, caps living combatants at three and normally
+staggers spawns eight seconds apart. Deadlines 40/50/65/80 start overlapping waves
+without resetting survivors. A safe early all-clear gives one capped hull repair
+and a three-second pause; final victory waits for all 21 kills, sinking and
+incoming shots. Old harbour victory remains disabled. Settings are authored in
+`game/survival_settings.tres`; see the [current review](../../../artifacts/timed_survival_review.md). Original territories/discoveries stay inactive;
 the old journey remains accessible through `tests/legacy_voyage.tscn`.
 
 Separate resources preserve the original voyage terrain and foam:

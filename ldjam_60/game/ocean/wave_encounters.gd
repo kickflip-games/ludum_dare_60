@@ -88,8 +88,7 @@ func update(game: Node3D, _delta: float) -> void:
 	field.advance(time)
 	if not enabled:
 		return
-	var ship = game.enemy_encounters.ship
-	var combat: bool = ship.visible and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING]
+	var combat: bool = game.enemy_encounters.battle_active()
 	var p := Vector2(game.boat.position.x, game.boat.position.z)
 	var departure: Vector3 = game.archipelago.get_node("SpawnPoints/Departure").position
 	var harbour: Vector3 = game.archipelago.get_node("NavigationRegions/Lighthouse").position

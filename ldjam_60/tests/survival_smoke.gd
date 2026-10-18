@@ -169,7 +169,7 @@ func _run() -> void:
 	check(not enemies.spawn_queue.is_empty() and enemies.phase==enemies.Phase.ACTIVE and enemies.wave_number==2,
 		"pending queued spawn prevents false early completion even with no living enemy")
 	game.hud._process(0)
-	check(game.hud.wave_label.text=="WAVE 2 / 5" and not game.hud.wave_countdown.visible,
+	check(game.hud.wave_label.text=="FLEETS 2 / V" and not game.hud.wave_countdown.visible,
 		"persistent top-centre wave label with no countdown outside last 15 seconds")
 	enemies.wave_remaining=12
 	enemies._update_arena(0)
@@ -177,7 +177,7 @@ func _run() -> void:
 	check(game.hud.wave_countdown.text=="NEXT WAVE IN 00:12", "last 15 seconds use mm:ss approaching-wave countdown")
 	enemies.announcement_left=1
 	game.hud._process(0)
-	check(game.hud.wave_announcement.text=="WAVE 2 INCOMING" and game.hud.wave_announcement.modulate.a==1,
+	check(game.hud.wave_announcement.text=="WAVE II" and game.hud.wave_announcement_detail.text=="THREE SHIPS APPROACH" and game.hud.wave_announcement.modulate.a==1,
 		"two-second wave banner has a visible plateau")
 	enemies.announcement_left=1.95
 	game.hud._process(0)
@@ -210,11 +210,12 @@ func _run() -> void:
 	enemies.update_encounters(100)
 	check(enemies.encounter_index==encounters, "defeat immediately prevents further spawns")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="SHIP SUNK", "defeat end screen uses SHIP SUNK")
+	check(game.hud.menu_title.text=="LOST\nAT SEA", "defeat end screen uses LOST AT SEA")
 	clean_retry("defeat")
 	for repeat in 4: clean_retry("repeated session %d"%repeat)
-	DirAccess.make_dir_recursive_absolute("/tmp/latitude-timed-waves")
-	var file:=FileAccess.open("/tmp/latitude-timed-waves/survival.json",FileAccess.WRITE)
+	var report_dir := ProjectSettings.globalize_path("res://../build/latitude-timed-waves")
+	DirAccess.make_dir_recursive_absolute(report_dir)
+	var file:=FileAccess.open(report_dir.path_join("survival.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"max_living":max_living,"timed_records":transitions,"no_input_seconds":no_input_seconds},"\t"))
 	print("SURVIVAL CHECK: %d checks, %d failures"%[checks,failures])
 	game.queue_free()
@@ -307,7 +308,7 @@ func _completion_checks() -> void:
 		check(enemies.ships_sunk==total and (game.state==game.State.ARRIVED)==(wave==5), "only final all-resolved clear can win after wave %d"%wave)
 	check(enemies.ships_sunk==20 and enemies.spawn_queue.is_empty() and not enemies.has_projectiles(), "all 20 required kills are accounted without duplicate instances or stale shots")
 	game.hud._process(0)
-	check(game.hud.menu_title.text=="THE SEA IS YOURS", "victory screen uses THE SEA IS YOURS")
+	check(game.hud.menu_title.text=="YOU HELD\nTHE LIGHT", "victory screen uses YOU HELD THE LIGHT")
 	action("restart_crossing",true)
 	await process_frame
 	action("restart_crossing",false)

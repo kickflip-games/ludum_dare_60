@@ -372,9 +372,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not event.is_pressed():
 			restart_elapsed = 0.0
 			_restart_consumed = false
-		elif not _restart_consumed and state in [State.LOST, State.ARRIVED]:
+		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and not hud.settings_open:
 			restart()
-	elif event.is_action_pressed("begin_crossing") and state == State.READY:
+	elif event.is_action_pressed("begin_crossing") and state == State.READY and not hud.settings_open:
 		start_crossing()
 	elif (event.is_action("fire_starboard") or (arena_mode and event.is_action("fire_mouse"))) and not event.is_echo():
 		if not arena_mode:
@@ -524,7 +524,7 @@ func journey_progress() -> float:
 	return (voyage.stage + local_progress) / 3.0
 
 
-func restart() -> void:
+func restart(to_menu: bool = false) -> void:
 	combat_particles.reset()
 	_clear_player_controls()
 	flow_zones.reset()
@@ -595,7 +595,8 @@ func restart() -> void:
 	state = State.READY
 	_build_hazards()
 	_update_view(1.0)
-	start_crossing()
+	if not to_menu:
+		start_crossing()
 
 
 func _physics_process(delta: float) -> void:
@@ -663,7 +664,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if arena_mode:
 		var earned := flow_zones.collect_at(Vector2(boat.global_position.x, boat.global_position.z))
 		if earned > 0:
-			show_discovery("Flow +25%% · %.1f m/s" % propulsion_speed(), 2.2)
+			show_discovery("CURRENT CAUGHT · +25%", 2.2)
 			cue_sound("victory")
 	var forward_speed := propulsion_speed()
 	# Only the retained voyage fixture has a gun-view steering gate.
@@ -1059,7 +1060,8 @@ func _safe_chase_pose(pose: Transform3D, delta: float) -> Transform3D:
 func _title_camera_pose() -> Transform3D:
 	if arena_mode:
 		var at := arena_center() + Vector3(95, 42, -145)
-		var focus := arena_center() + Vector3(0, 20, -12)
+		# Menu composition: leave sky for the centred title and light below it.
+		var focus := arena_center() + Vector3(0, 42, -12)
 		return Transform3D(Basis.looking_at(focus - at), at)
 	var orientation := Basis(Vector3.UP, -heading)
 	var at := boat.position + orientation * Vector3(7.0, 4.5, -7.0)
@@ -1191,6 +1193,17 @@ func _build_boat() -> void:
 	# Restore the visible canvas and boom angle from 534b021 for the chase view.
 	sail.basis = Basis(Vector3.UP, deg_to_rad(35.0)) * sail.basis
 	sail.visible = sailing_camera_rig == SailingCameraRig.CHASE
+	if arena_mode and sail is MeshInstance3D:
+		# Rolling/turning can bring our own canvas and boom through the close eye.
+		# Private surface overrides keep the licensed model and other wood unchanged.
+		for surface in sail.mesh.get_surface_count():
+			var source: StandardMaterial3D = sail.get_active_material(surface) as StandardMaterial3D
+			if source == null: continue
+			var close_material: StandardMaterial3D = source.duplicate()
+			close_material.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+			close_material.distance_fade_min_distance = 3.0
+			close_material.distance_fade_max_distance = 6.0
+			sail.set_surface_override_material(surface, close_material)
 	if sailing_camera_rig == SailingCameraRig.DECK:
 		_build_deck_floor()
 	boat_damage.configure(boat_visual, ship)

@@ -6,6 +6,33 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Issue #13 validation: 270 focused menu/HUD/survival checks
+  and three native cloth comparisons pass. Inspected desktop/small menus and
+  combat/Reduced/crest views. Thirteen failures across broader existing suites
+  reproduce with original scripts and preserved local resources. Web awaits
+  matching 4.8 templates; walkthrough deferred. See the [UI review](artifacts/ui_polish_review.md).
+- Issue #13 combat UI: shared warm ivory/brass/sea-glass type,
+  quiet FLEETS 1 / V progress (user feedback) and brief director-driven wave/count announcements.
+  Danger suppresses decorative banners; pickup feedback is CURRENT CAUGHT · +25%
+  while permanent flow rewards remain unchanged. Endings clear transient text.
+  Reproduced nearby enemy canvas blocking the close view; cloth and sail trim
+  fade within 6–10 m of the camera. Turning on a crest also exposed player
+  canvas/boom occlusion; those private surfaces fade within 3–6 m. Hulls/guns
+  and all camera controls remain unchanged.
+- Menu feedback: enlarged the centred title, raised the button
+  stack and removed bottom instructions. Full controls remain in Settings pending
+  a future in-game walkthrough; adjusted only the title backdrop framing to keep
+  the lighthouse below the lettering. Increased title size by another 25%,
+  keeping two lines and a wider title area above the narrower buttons.
+- Issue #13: nautical UI pass for title, settings and
+  victory/defeat menus. Bundled IM Fell English SC and Barlow Semi Condensed
+  with OFL licenses, original lighthouse/wave SVGs, brass buttons and a navy
+  readability gradient. Centred title and actions after user feedback, with
+  open space for the live lighthouse. Main Menu uses the existing full reset
+  without casting off; Retry and held-R retain their start behaviour. Menu,
+  retained HUD and survival checks pass; native desktop/small frames inspected.
+  Web and the walkthrough remain for later passes.
+
 - Replaced player arena containment and automatic return steering
   with a red storm line that fades in on approach, STORMY AHEAD, and a persistent
   return-to-lighthouse warning beyond 170 m. Slow red screen pulses (steady in

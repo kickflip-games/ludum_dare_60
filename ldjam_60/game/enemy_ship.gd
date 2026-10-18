@@ -164,6 +164,15 @@ func _ready() -> void:
 	var timber = game._material(Color("3b2423"))
 	game._box(presentation, Vector3(0.18, 6.0, 0.18), Vector3(0, 3.1, -1.8), timber)
 	sail_material = game._material(sail_color)
+	# Close passes must not put a wall of canvas across the firing view.
+	# Per-fragment distance fade keeps the hull, gun and mast physically readable.
+	sail_material.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER if game.arena_mode else BaseMaterial3D.DISTANCE_FADE_DISABLED
+	sail_material.distance_fade_min_distance = 6.0
+	sail_material.distance_fade_max_distance = 10.0
+	var sail_trim: StandardMaterial3D = timber.duplicate()
+	sail_trim.distance_fade_mode = sail_material.distance_fade_mode
+	sail_trim.distance_fade_min_distance = sail_material.distance_fade_min_distance
+	sail_trim.distance_fade_max_distance = sail_material.distance_fade_max_distance
 	# A restrained cloth fill keeps the red identity on the moon's shadow side.
 	sail_material.emission_enabled = true
 	sail_material.emission = sail_color
@@ -177,10 +186,10 @@ func _ready() -> void:
 		var panel = game._box(canvas, Vector3(2.5, 3.4, 0.09), Vector3(side * 1.02, 0, 0.72), sail_material)
 		panel.rotation.y = side * deg_to_rad(35.0)
 		for band_index in 2:
-			var band = game._box(panel, Vector3(2.5, 0.28, 0.11), Vector3(0, -0.6 + band_index * 1.1, 0), timber)
+			var band = game._box(panel, Vector3(2.5, 0.28, 0.11), Vector3(0, -0.6 + band_index * 1.1, 0), sail_trim)
 			band.visible = false
 			sail_bands.append(band)
-		game._box(panel, Vector3(2.6, 0.14, 0.14), Vector3(0, 1.8, 0), timber)
+		game._box(panel, Vector3(2.6, 0.14, 0.14), Vector3(0, 1.8, 0), sail_trim)
 	game._box(presentation, Vector3(1.6, 0.8, 0.06), Vector3(0.7, 7.0, -1.8), game._material(Color("151e23")))
 	var gun: Node3D = CANNON.instantiate()
 	gun.position = Vector3(-1.1, 0.55, -1.8)

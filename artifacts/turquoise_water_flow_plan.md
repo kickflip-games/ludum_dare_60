@@ -101,8 +101,8 @@ the preset, arena branch and production code above take precedence.
   hard limit, inward steering and the existing cannon-control priority.
 - Give a short entry sound, a brighter moving wake and one brief `Flow +25%`
   acknowledgement for each newly collected zone. After collection, soften that
-  spent zone visually so it does
-  not advertise another reward. Keep feedback legible against incoming-fire
+  spent zone visually so it does not advertise another reward. Keep feedback
+  legible against incoming-fire
   warnings; no permanent speed HUD or new control is needed.
 - Win/loss clears active speed state; retry restores normal speed, clears the
   collected-ID set, and restores every zone's reward and entry feedback.

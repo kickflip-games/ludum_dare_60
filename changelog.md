@@ -12,7 +12,8 @@ recorded evidence and limitations.
   speed by 25% once per run; revisiting cannot repeat its reward, and retry
   resets all collected zones. Added acceptance checks through all three boosts.
   Inspected native baseline helm/layout captures and the GitHub-rendered
-  proposal; screenshots included for web review. Documentation whitespace
+  proposal; refreshed its flow screenshot for the confirmed stacking rule.
+  Screenshots included for web review. Documentation whitespace
   check passes. Gameplay unchanged; implementation checks remain pending.
   See the [water and flow proposal](artifacts/turquoise_water_flow_plan.md).
 

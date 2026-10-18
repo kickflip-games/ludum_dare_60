@@ -3,8 +3,10 @@
 ## Active lighthouse arena
 
 Normal play is five-wave player survival inside a 170 m circle centred on
-`Landmarks/Lighthouse` (world X/Z 275/250). Only the existing central island,
-lighthouse, jetty and matching coast bake remain from the voyage. The lantern
+`Landmarks/Lighthouse` (world X/Z 275/250). The existing central island,
+lighthouse and jetty are framed by five nearby pine-covered rocky islands.
+Their shores remain beyond the combat boundary and its 10 m clearance margin;
+the inner routes and enemy sectors are unchanged. The lantern
 is always lit and has no health. The player starts 75 m north, heading 100°.
 
 `arena_layout.tscn` is the editable obstacle/spawn scene. No runtime random
@@ -49,6 +51,18 @@ Separate resources preserve the original voyage terrain and foam:
 ```sh
 godot --headless --path ldjam_60 --script res://tools/bake_archipelago.gd -- --arena
 godot --headless --path ldjam_60 --script res://tools/bake_coastal_foam.gd -- --arena
+```
+
+`ARENA_ISLANDS` in the terrain recipe and `ARENA_GROVES` in `island_dressing.gd`
+author the surrounding islands and sparse vegetation. The arena has 69 batched
+pines, including two beside the lighthouse; the original voyage dressing is
+retained. Terrain, full collision and shoreline foam are baked together.
+Run the focused scenery check and eight composition views with the native
+renderer (headless dummy MultiMeshes cannot return tree transforms):
+
+```sh
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arena_island_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arena_island_previews.gd -- --output=/tmp/latitude-islands/after
 ```
 
 Run `tests/arena_smoke.gd` and render `tests/arena_previews.gd`. The overhead

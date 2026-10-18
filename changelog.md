@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- Added five nearby rocky islands and 69 pines in the
+  earlier archipelago style, with matching terrain, collision and shoreline
+  foam. New shores leave the combat ring and a 10 m outer margin clear.
+  Native scenery checks (20), arena (139), survival (85) and retained voyage
+  composition (21) pass; eight native views inspected. Human playtesting and
+  Web/mobile performance remain untested.
+
 - In progress: Improve combat readability with folded, brighter sails, aim-only
   visibility/occlusion-checked cloth illumination and confirmed hit/sinking
   feedback. Added shared cutter/skiff/heavy profiles and bounded arena detours;

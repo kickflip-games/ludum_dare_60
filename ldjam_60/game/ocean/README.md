@@ -6,7 +6,7 @@ launch a small, terrain-checked event while clear of combat and cannon view.
 Voyage-region ten-crest sets are inactive. Existing crests continue while aiming,
 and arena return feeds a blended rudder into the unchanged `wave_sailing.step()`.
 The field, shader, hull sampler and cannon-water authority remain shared.
-Only the static coastal foam texture changes to match the isolated island.
+The static coastal foam texture matches the lighthouse and surrounding islands.
 The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.
 The arena player cruises at 9 m/s; the retained voyage fixture explicitly uses
 6.3 m/s. Both pass their configured speed into the same movement integrator;

@@ -16,6 +16,9 @@ enemy to win; entering the old harbour never wins.
   and three low islets offer alternate routes. Main rock gaps exceed 30 m;
   the outer ring remains open for broad combat turns. Both sides' shots stop on
   solids and shatter floating props. Retry restores all obstacles.
+- Five nearby rocky islands with pine groves frame the arena, using the earlier
+  archipelago style. Their shores sit beyond the combat boundary; the inner
+  sailing routes and enemy sectors remain clear.
 - The outer limit is a **170 m circle centred on the lighthouse**. Beyond
   **132.6 m**, outward sailing blends in a curved rudder return, including while
   aiming. Its obstacle probes favour clear water. Inward steering remains

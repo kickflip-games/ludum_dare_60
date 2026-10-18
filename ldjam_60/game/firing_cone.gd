@@ -1,7 +1,7 @@
 extends MeshInstance3D
 ## Lightweight, depth-tested water overlay. Geometry shares the targeting limits.
 const ANGLE_STEPS := 20
-const RANGE_STEPS := 12
+const RANGE_STEPS := 48
 var cannon: Node3D
 var surface := ImmediateMesh.new()
 
@@ -18,7 +18,7 @@ func _ready() -> void:
 
 func water_point(angle: float, distance: float) -> Vector3:
 	var point: Vector3 = cannon.cone_point(angle, distance)
-	point.y = cannon.game.ocean.height_at(Vector2(point.x, point.z)) + 0.09
+	point.y = cannon.game.ocean.height_at(Vector2(point.x, point.z)) + 0.16
 	return point
 
 func triangle(a: Vector3, b: Vector3, c: Vector3, color: Color) -> void:

@@ -124,7 +124,7 @@ func _run() -> void:
 	key(KEY_E, true)
 	key(KEY_F, true)
 	step(0.5)
-	check(game.cannon.shots_fired == 0 and not game.cannon.aiming and game.camera_mode == game.CameraMode.SAILING, "E/F have no arena action or camera mode")
+	check(game.cannon.shots_fired == 0 and not game.cannon.aiming and game.camera_mode == game.CameraMode.CANNON, "E switches only the view; F has no arena action")
 	key(KEY_LEFT, true)
 	step(0.4)
 	check(game.turn_input == -1, "left arrow steers")
@@ -172,10 +172,12 @@ func _run() -> void:
 			break
 		accurate = accurate and game.cannon.projectiles[0].physics_position.distance_to(expected.points[i]) < 0.0001
 	check(accurate, "preview samples agree with actual integrated projectile positions")
+	await camera_toggle_cases()
 	await trajectory_cases()
 	await safety()
 	await lifecycle()
 	await moving_combat()
+	await moving_combat(true)
 	print("ARCADE CONTROLS: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame
@@ -253,6 +255,7 @@ func lifecycle() -> void:
 		click(true)
 		key(KEY_D, true)
 		mouse(400)
+		key(KEY_E, true)
 		step(0.1)
 		if ending == game.State.LOST:
 			game.take_damage(game.hull, "arcade lifecycle test")
@@ -265,7 +268,7 @@ func lifecycle() -> void:
 		else:
 			game.restart()
 		step(2.0)
-		check(game.look_yaw == 0 and game.cannon.shots_fired == 0 and game.cannon.projectiles.is_empty() and game.turn_input == 0, "ending/restart %d clears fire, look and steering" % ending)
+		check(game.look_yaw == 0 and game.cannon.shots_fired == 0 and game.cannon.projectiles.is_empty() and game.turn_input == 0 and not game.arena_cannon_view, "ending/restart %d clears fire, look and steering" % ending)
 		game.restart()
 		step(2.0)
 		check(game.state == game.State.SAILING and game.cannon.shots_fired == 0, "ending %d retry has no phantom shots" % ending)
@@ -291,8 +294,12 @@ func lifecycle() -> void:
 	step(0.1)
 	check(game.cannon.shots_fired == shots + 1, "fresh click works after focus return")
 
-func moving_combat() -> void:
+func moving_combat(close_view: bool = false) -> void:
 	fresh()
+	captured_shot = false
+	if close_view:
+		key(KEY_E, true)
+		key(KEY_E, false)
 	game.boat.position = Vector3(310, 0, 342)
 	game._update_view(1.0)
 	game.enemy_encounters.enabled = true
@@ -328,7 +335,7 @@ func moving_combat() -> void:
 		if game.cannon.shots_fired > before and absf(game.turn_input) > 0 and absf(game.look_target) > 0:
 			simultaneous = true
 		if game.cannon.shots_fired > before and not captured_shot and frame > 0:
-			await capture("04-firing-at-moving-enemy")
+			await capture("07-close-firing-at-moving-enemy" if close_view else "04-firing-at-moving-enemy")
 			captured_shot = true
 		if frame % 30 == 0:
 			await process_frame
@@ -337,4 +344,82 @@ func moving_combat() -> void:
 	print("MOVING COMBAT: shots=%d hits=%d player=%d enemy=%d simultaneous=%s" % [total_shots, total_hits, game.hull, ship.hull, simultaneous])
 	check(simultaneous and moved, "in-engine moving enemy encounter includes simultaneous steering, mouse movement and fire")
 	check(ship.hull == 0 and game.cannon.targets_hit >= 2 and game.hull > 0, "input timing pilot hits and sinks moving cutter with real cannonballs")
+	if close_view:
+		check(game.arena_cannon_view and game.camera_mode == game.CameraMode.CANNON, "close camera stays selected through moving-enemy combat")
 	pilot.release()
+
+func camera_toggle_cases() -> void:
+	for hz in [30, 60, 120]:
+		fresh()
+		key(KEY_E, true)
+		step(0.5, hz)
+		check(game.arena_cannon_view and game.camera_mode == game.CameraMode.CANNON and game.aim_camera_blend == 1 and not game.cannon.aiming, "%d Hz: E enters close view without weapon aiming mode" % hz)
+		key(KEY_E, true, true)
+		step(0.1, hz)
+		check(game.arena_cannon_view, "%d Hz: held E/key repeat does not toggle repeatedly" % hz)
+		key(KEY_E, false)
+		key(KEY_A, true)
+		key(KEY_SPACE, true)
+		mouse(120)
+		var heading: float = game.heading
+		step(0.2, hz)
+		check(game.heading < heading and game.look_yaw < -1 and game.cannon.shots_fired == 1, "%d Hz: close view permits simultaneous steer, mouse and fire" % hz)
+		var look: float = game.look_target
+		key(KEY_E, true)
+		check(game.look_target == look, "%d Hz: E preserves the current mouse offset" % hz)
+		step(0.5, hz)
+		check(not game.arena_cannon_view and game.camera_mode == game.CameraMode.SAILING and game.aim_camera_blend == 0 and game.turn_input == -1, "%d Hz: E returns smoothly to chase while steering and reloading" % hz)
+	fresh()
+	key(KEY_E, true)
+	key(KEY_E, false)
+	for frame in 30: game._update_view(1.0 / 60)
+	await capture("05-close-cannon-view")
+	var boat_pose: Transform3D = game.boat.transform
+	var cannon_angle: float = game.cannon.aim_degrees
+	var edge: Vector3 = game.cannon.cone_point(game.cannon.cone_half_angle, 65) - game.cannon.cone_origin()
+	mouse(100000)
+	for frame in 60: game._update_view(1.0 / 60)
+	check(game.look_yaw < -44.9 and game.boat.transform == boat_pose and game.cannon.aim_degrees == cannon_angle and (game.cannon.cone_point(game.cannon.cone_half_angle, 65) - game.cannon.cone_origin()).is_equal_approx(edge), "close-view mouse is bounded and cannot steer, aim or rotate the cone")
+	await capture("06-close-mouse-limit")
+	mouse(-100000)
+	for frame in 60: game._update_view(1.0 / 60)
+	await capture("06b-close-opposite-limit")
+	for frame in 300: game._update_view(1.0 / 60)
+	check(absf(game.look_yaw) < 0.1, "close-view mouse recentres with the existing idle delay and easing")
+	var level := true
+	for frame in 240:
+		game.heading += TAU / 120
+		game.boat.rotation.y = -game.heading
+		game._update_view(1.0 / 60)
+		level = level and absf(game.camera.basis.x.y) < 0.00001 and game.camera.position.y >= game.ocean.height_at(Vector2(game.camera.position.x, game.camera.position.z)) + 1.19
+	check(level, "close view follows two full ship rotations with a level horizon and water clearance")
+	fresh()
+	key(KEY_E, true)
+	step(0.5)
+	var anchor: Vector3 = game._camera_shore_anchor()
+	var wall := StaticBody3D.new()
+	wall.collision_layer = 1
+	wall.position = anchor.lerp(game.camera.position, 0.65)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3.ONE * 0.7
+	shape.shape = box
+	wall.add_child(shape)
+	game.add_child(wall)
+	await physics_frame
+	await process_frame
+	game._update_view(1.0 / 60)
+	var ray := PhysicsRayQueryParameters3D.create(anchor, game.camera.position, 1)
+	check(game.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(), "close camera retracts before solid geometry")
+	wall.queue_free()
+	await process_frame
+	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+	key(KEY_E, true, true)
+	step(0.1)
+	check(not game.arena_cannon_view and game.aim_camera_blend == 0, "focus loss resets close view and held E cannot reopen it")
+	key(KEY_E, false)
+	key(KEY_E, true)
+	step(0.5)
+	game.restart()
+	check(not game.arena_cannon_view and game.aim_camera_blend == 0, "retry clears the camera toggle")

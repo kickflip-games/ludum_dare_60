@@ -11,6 +11,7 @@ enemy to win; entering the old harbour never wins.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
   without movement, the view eases back behind the port quarter.
+- **E:** toggle close cannon / chase view; bounded mouse look remains active in both.
 - **Space / Left Click:** fire; hold either to repeat every 1.5 seconds. Both
   together share one reload. Steering, camera look and firing are independent.
 - **Hold Shift:** sail **50% faster for the entire hold** (11.25 m/s from base).
@@ -68,11 +69,10 @@ enemy to win; entering the old harbour never wins.
 | 4 | Two cutters + two skiffs + heavy |
 | 5 | Two heavies + two skiffs + two cutters |
 
-Cutters pursue at 13 m/s, skiffs at 16 m/s and heavies at 10.5 m/s, with a
-bounded catch-up allowance. Spawns favour the nearest safe, clear approach;
-ships refresh pursuit courses sooner, take crossing broadside opportunities,
-and return after 3.5 / 2.5 / 5 seconds respectively. A clear pass can fire again
-after reloading. Warnings retain their full 1.65 / 1.8 / 2.3 seconds and fixed
+Transit profiles remain 13 m/s for cutters, 16 m/s for skiffs and 10.5 m/s
+for heavies. Attack runs slow to approximately player cruise speed and keep a
+committed heading. Spawns prefer safe starboard approaches, with separated
+sector fallbacks. Warnings retain their full 1.65 / 1.8 / 2.3 seconds and fixed
 aim point; launched shots never home. Crowded ships yield speed as well as turning.
 
 Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
@@ -95,7 +95,7 @@ out; blocked routes recover visibly, and retry clears the fleet and its shots.
 The current 2/3/4/5/6 roster, deadlines and existing ship types are unchanged.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
 
-The single starboard cannon uses a **±25° firing cone with a 65 m range**.
+The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.
 The translucent water sector and two thin boundaries rotate with the boat.
 Each shot selects an eligible hull centre by alignment with starboard first,
 then distance for equal alignment. The barrel rotates before launch and applies
@@ -109,8 +109,11 @@ acquisition and projectile range use those same settings.
 Tune **Arcade chase look** on the crossing: yaw limit, degrees per mouse pixel,
 look response, idle delay, recentring rate and port/starboard framing offsets.
 The existing chase tracking, level horizon, shore retraction and water guard remain.
-F/E and sextant activation are unbound in the arena. The old voyage’s camera and
-navigation controls are retained only in its explicit legacy fixture.
+E blends between chase and close cannon framing without changing cannon aim or
+locking steering/fire. It preserves the current mouse offset, ±45° limits and
+1.5-second idle recentring in either view. Retry, victory, defeat and focus loss
+return to chase. F and sextant activation remain inactive in the arena. The old
+voyage’s navigation and held-E controls remain in its explicit legacy fixture.
 
 See the [earlier combat review](artifacts/combat_feel_review.md),
 the [timed-survival baseline](artifacts/timed_survival_review.md) for scheduler

@@ -12,19 +12,6 @@ recorded evidence and limitations.
   input-only battles defeat all 20 ships with physical projectiles. Native
   single/pair/fleet sequences reviewed. Final main integration checks pending.
 
-- In progress: Stage 2 adds a six-hull pool, fair attack slots, independent
-  lighthouse holding routes and 1.6-second warning coordination. Physical
-  cannon tests sink all six holding hulls; fleet stress exposed contact and
-  stale-interception issues still under tuning. Concurrent arcade controls,
-  faster transit profiles and the new main-branch roster will be preserved.
-
-- In progress: Naval AI stage 1 separates navigation from cannon readiness,
-  warning, fire and reload. Interception commits to a predicted course; straight
-  passes end in bounded forward turns, with terrain-first steering and explicit
-  blocked-route recovery. 62 single-ship checks pass, including physical two-shot
-  sinking, dodging, persistence and 30/60 Hz motion. Native approach/run/turn
-  frames and a 22-second sequence were inspected; fleet coordination is next.
-
 - Added readable cutter/skiff/heavy profiles (2/1/3 hits), aim-only occlusion-checked
   sail illumination, confirmed hit/sinking feedback and exact 1/2/2/3/3 rosters.
   Fixed remote approaches and reciprocal yielding; quicker helm response retains
@@ -32,6 +19,17 @@ recorded evidence and limitations.
   input-only full run defeats all 11 ships through 22 physical hits. Native
   comparisons and combat clips reviewed; human balance remains open. See the
   [combat review](artifacts/combat_feel_review.md).
+- Narrowed the arena firing cone to ±10° (20° total), retaining
+  the 65 m range. E toggles the close cannon and chase views without changing
+  aiming, steering or fire. Both views retain bounded mouse look, idle
+  recentring, level horizon, boat tracking and shore/water clearance; focus loss
+  and session resets restore chase. Updated menu instructions and regressions.
+  Initial validation passes 303 checks across five suites and 41 native checks,
+  including moving-enemy duels in both views. After integrating current water,
+  flow and Shift boost, 206 checks across four suites and 41 native checks pass.
+  Close framing follows smoothed mount heave and the cone mesh follows the
+  larger rolling sea. Rendered framing inspected; human comfort and Web untested.
+
 - Integrated PR #9's navy water, 7.5 m/s base cruise, continuous Shift boost,
   permanent flow-zone rewards and recurring pushing waves with main's current
   starboard cone, mouse/held-fire controls, damage camera and enemy pressure.

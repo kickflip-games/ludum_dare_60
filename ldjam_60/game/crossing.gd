@@ -130,9 +130,12 @@ enum SailingCameraRig { CHASE, DECK }
 @export_range(0.2, 8.0, 0.1) var camera_recenter_speed: float = 2.2
 @export var camera_port_offset: float = 8.0
 @export var camera_starboard_focus: float = 8.0
+# Keep the close view outboard enough to see past the sail.
+@export var cannon_view_offset := Vector3(0.2, 0.8, -0.8)
 var look_yaw: float = 0.0
 var look_target: float = 0.0
 var look_idle: float = 0.0
+var arena_cannon_view: bool = false
 var _window_focused := true
 var _fire_armed := false
 
@@ -329,7 +332,7 @@ func _configure_inputs() -> void:
 		"steer_port": [KEY_A, KEY_LEFT], "steer_starboard": [KEY_D, KEY_RIGHT],
 		"astrolabe": [] if arena_mode else [KEY_SPACE], "restart_crossing": [KEY_R],
 		"begin_crossing": [KEY_ENTER], "mute_sea": [KEY_M],
-		"fire_starboard": [KEY_SPACE] if arena_mode else [KEY_F], "watch_starboard": [] if arena_mode else [KEY_E], "fire_mouse": [],
+		"fire_starboard": [KEY_SPACE] if arena_mode else [KEY_F], "watch_starboard": [KEY_E], "fire_mouse": [],
 		"boost_sailing": [KEY_SHIFT],
 	}
 	for action: String in bindings:
@@ -381,8 +384,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.is_pressed():
 				_fire_armed = true
 			cannon.set_fire_held(_fire_armed and (Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")))
-	elif not arena_mode and event.is_action("watch_starboard") and not event.is_echo():
-		cannon.set_aim_held(event.is_pressed())
+	elif event.is_action("watch_starboard") and not event.is_echo():
+		if arena_mode:
+			if event.is_pressed() and state == State.SAILING and _window_focused:
+				arena_cannon_view = not arena_cannon_view
+		else:
+			cannon.set_aim_held(event.is_pressed())
 	elif event.is_action("astrolabe") and not event.is_echo() and not arena_mode:
 		# Even a release/repress between physics ticks starts a new sighting.
 		focus_elapsed = 0.0
@@ -416,6 +423,9 @@ func _clear_player_controls() -> void:
 	look_target = 0.0
 	look_idle = 0.0
 	if arena_mode:
+		arena_cannon_view = false
+		aim_camera_blend = 0.0
+		camera_mode = CameraMode.SAILING
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	for action: String in ["watch_starboard", "fire_starboard", "fire_mouse", "astrolabe", "steer_port", "steer_starboard", "boost_sailing"]:
 		Input.action_release(action)
@@ -982,10 +992,25 @@ func _camera_shore_anchor() -> Vector3:
 
 func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 	if arena_mode:
-		camera_mode = CameraMode.SAILING
-		aim_camera_blend = 0.0
+		# E changes only the view. The cannon and steering have no aiming mode.
+		var close_view: bool = arena_cannon_view and state == State.SAILING
+		camera_mode = CameraMode.CANNON if close_view else CameraMode.SAILING
+		var seconds: float = aim_camera_seconds if close_view else camera_return_seconds
+		aim_camera_blend = move_toward(aim_camera_blend, 1.0 if close_view else 0.0, delta / seconds)
 		combat_camera_blend = 0.0
-		return _safe_chase_pose(helm_pose, delta)
+		var orientation := Basis(Vector3.UP, -_sailing_heading)
+		var mount := _sailing_anchor + orientation * (cannon.position - BoatWaveMotion.HULL_CENTER)
+		# The mount already has smoothed wave heave; follow it vertically so the
+		# barrel cannot rise through the close camera on the larger rolling sea.
+		mount.y = cannon.global_position.y
+		# Retain the old close mount framing, using the same bounded mouse yaw
+		# and filtered boat tracking as the chase view, without barrel tracking.
+		var at := mount + orientation * cannon_view_offset
+		var focus := mount + orientation * (Vector3.RIGHT * 22.0 + Vector3.UP * 0.5)
+		focus = at + (focus - at).rotated(Vector3.UP, deg_to_rad(look_yaw))
+		var close_pose := Transform3D(Basis.looking_at(focus - at, Vector3.UP), at)
+		var pose := helm_pose.interpolate_with(close_pose, smoothstep(0, 1, aim_camera_blend))
+		return _safe_chase_pose(pose, delta)
 	# Compose poses for the single transform writer in _update_view; never change gun yaw.
 	var ship = enemy_encounters.focus_ship()
 	var combat: bool = ocean.wave_field.waves.is_empty() and not wave_encounters.busy() and is_zero_approx(turn_input) and enemy_encounters.enabled and ship.mode not in [ship.Mode.DORMANT, ship.Mode.ESCAPED, ship.Mode.SINKING] and ship.position.distance_to(boat.position) < 80.0

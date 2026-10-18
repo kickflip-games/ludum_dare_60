@@ -79,7 +79,7 @@ func _run() -> void:
 	ship.rotation.y = -ship.heading
 	ship.velocity = Vector3.ZERO
 	ship.mode = ship.Mode.POSITION
-	pilot.tap()
+	pilot.action("watch_starboard", true)
 	await advance(0.4)
 	capture("02-elevated-gunner")
 	await advance(0.35)
@@ -90,18 +90,20 @@ func _run() -> void:
 	pilot.tap()
 	await advance(0.05)
 	capture("05-firing")
+	pilot.action("watch_starboard", false)
 	pilot.action("steer_port", true)
 	await advance(0.12)
 	capture("06-returning-to-steering")
 	await advance(0.45)
 	pilot.action("steer_port", false)
 	capture("07-sailing-again")
-	pilot.tap()
+	pilot.action("watch_starboard", true)
 	await advance(0.45)
 	pilot.action("astrolabe", true)
 	await advance(0.4)
 	capture("08-stargazing")
 	pilot.action("astrolabe", false)
+	pilot.action("watch_starboard", false)
 	await advance(0.6)
 	# Three actual moving AI battles with the real renderer, waves and input path.
 	for trial in range(0 if views_only else 3):

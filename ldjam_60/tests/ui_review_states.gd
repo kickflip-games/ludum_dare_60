@@ -15,7 +15,7 @@ const CASES := [
 	["cutter", "Cutter encounter / target", "Brief encounter notice; no target brackets or enemy hull dots."],
 	["incoming-port", "Incoming / port", "Port warning and left edge chevron."],
 	["incoming-starboard", "Incoming / starboard", "Starboard warning and right edge chevron."],
-	["cannon", "Cannon / ready", "Direction sight, sweep tick, shoot/steer tutorial and F · Shoot."],
+	["cannon", "Cannon / ready", "Direction sight, sweep tick, brief F · Fire hint."],
 	["reload", "Cannon / reloading", "Part-filled reload ring and muted direction sight."],
 	["reloaded", "Cannon / reload complete", "Ready ring pulse; repeat-use Ready feedback, then the cannon gauge disappears."],
 	["damage", "Hull hit", "Short impact feedback and two small scratches on the stern; no hull HUD."],
@@ -103,7 +103,7 @@ func apply(index: int) -> void:
 			if id in ["star-left", "star-right"]:
 				game.heading += 0.65 if id == "star-left" else -0.65
 			game.reading = true
-			game._update_view(0.3 if id == "searching" else 1.2 if id == "star-focusing" else 1.8)
+			game._update_view(0.3 if id == "searching" else 0.6 if id == "star-focusing" else 1.8)
 			if id == "star-release":
 				game.reading = false
 				game._update_view(1.0 / 60.0)
@@ -116,12 +116,10 @@ func apply(index: int) -> void:
 				_ship(1.0, true)
 		"cutter", "incoming-port", "incoming-starboard":
 			_ship(-1.0 if id == "incoming-port" else 1.0, id != "cutter")
-			game.starboard_look = id == "cutter"
 		"cannon", "reload", "tooltip-reload":
 			_ship(1.0, false)
-			game.cannon.set_fire_held(true)
+			game.cannon.set_aim_held(true)
 			game.cannon.update_aim(0.01)
-			game.cannon.set_fire_held(false)
 			game.cannon.update_aim(0.15)
 			if id != "cannon":
 				game.cannon.fire()
@@ -129,10 +127,12 @@ func apply(index: int) -> void:
 				for tick in range(48):
 					game.cannon.advance(1.0 / 60.0)
 		"reloaded":
-			game.cannon.entries = 1
+			game.cannon.set_aim_held(true)
+			game.cannon.update_aim(0.0)
 			game.cannon.fire()
 			game.hud._process(0.0)
 			game.cannon.advance(game.cannon.RELOAD_SECONDS)
+			game.cannon.set_aim_held(false)
 		"damage", "critical", "repair", "repaired", "full-hull", "salvage":
 			_damage(1 if id == "damage" else 2)
 			if id == "damage" or id == "critical":
@@ -226,7 +226,7 @@ func problem(index: int) -> String:
 				ok = cue.position.x < hud.size.x * 0.5 if id == "star-port" else cue.position.x > hud.size.x * 0.5
 		"cutter": ok = hud.notice.visible and not hud.cannon_gauge.visible and not game.cannon.aiming
 		"incoming-port", "incoming-starboard": ok = hud.threat_label.visible and hud.threat_label.text.contains("port" if id == "incoming-port" else "starboard")
-		"cannon": ok = game.cannon.aiming and game.cannon.indicator_alpha == 1.0 and hud.cannon_gauge.status.text == "F · Shoot"
+		"cannon": ok = game.cannon.aiming and game.cannon.indicator_alpha == 1.0 and hud.cannon_gauge.status.text == "F · Fire"
 		"reload", "tooltip-reload": ok = game.cannon.cooldown > 0 and hud.cannon_gauge.status.text == "Reloading"
 		"reloaded": ok = hud.cannon_gauge.pulse > 0 and hud.cannon_gauge.visible and hud.cannon_gauge.status.text == "Ready"
 		"damage": ok = game.boat_damage.flash_strength > 0 and game.boat_damage.severity == 1

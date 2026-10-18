@@ -105,20 +105,21 @@ func _run() -> void:
 	game.elapsed = 8
 	game.phase_banner_left = 0
 	var hud = game.hud
+	check(game.focus_delay == 0.4 and game.focus_duration == 0.4, "search and focus defaults total 0.8 seconds")
 	var start: Vector3 = game.boat.position
 	Input.action_press("astrolabe")
 	Input.action_press("watch_starboard")
-	step(0.6)
+	step(0.3)
 	check(hud.star_horizon_line().is_empty(), "searching draws no star-to-horizon line")
-	check(game.focus_strength == 0 and game.focus_elapsed > 0.5, "searching has no target assistance before delay")
+	check(game.focus_strength == 0 and game.focus_elapsed > 0.29, "searching has no target assistance before delay")
 	check(hud.instrument.get_child_count() == 0, "initial hold withholds star name and solution")
-	check(game.boat.position.distance_to(start) > 3, "sailing continues while the instrument is raised")
-	check(game.look_blend == 0 and game.camera.rotation.x > deg_to_rad(20) and game.camera.rotation.x < deg_to_rad(30) and is_equal_approx(game.camera.rotation.x, deg_to_rad(game.stargazing_pitch_degrees)), "tuned upward sky pitch takes precedence over held combat glance")
-	step(0.6)
+	check(game.boat.position.distance_to(start) > 1, "sailing continues while the instrument is raised")
+	check(not game.cannon.aiming and game.camera.rotation.x > deg_to_rad(20) and game.camera.rotation.x < deg_to_rad(30) and is_equal_approx(game.camera.rotation.x, deg_to_rad(game.stargazing_pitch_degrees)), "tuned upward sky pitch takes precedence over held cannon input")
+	step(0.3)
 	check(game.focus_strength > 0.05 and game.focus_strength < 0.8, "focus ramps gradually after the short search")
 	check(hud.instrument.get_child_count() == 0, "mid-focus still withholds exact bearing")
-	step(0.6)
-	check(game.focus_strength == 1 and game.sky_material.get_shader_parameter("target_focus") > 0.6, "continued hold identifies the star with light alone")
+	step(0.2)
+	check(game.focus_strength > 0.999 and game.sky_material.get_shader_parameter("target_focus") > 0.6, "continued hold identifies the star with light alone")
 	check(not hud.star_guidance().is_empty() and hud.instrument.get_child_count() == 0, "fully focused sky contains no navigation text")
 	step(1)
 	check(hud.instrument.get_child_count() == 0, "extended holds never introduce text or numbers")
@@ -130,7 +131,7 @@ func _run() -> void:
 	check(not hud.instrument.visible and hud.star_horizon_line().is_empty(), "one-frame release removes the sextant and line before camera return")
 	check(game.last_reading == last, "lowered instrument cannot update the remembered sighting")
 	step(0.3)
-	check(not hud.instrument.visible and game.look_blend == 1 and game.camera.rotation.x < 0, "release smoothly returns to the still-held combat glance")
+	check(not hud.instrument.visible and game.cannon.aiming and game.camera_mode == game.CameraMode.CANNON, "release returns to the still-held cannon view")
 	Input.action_release("watch_starboard")
 	for i in range(3):
 		Input.action_press("astrolabe")
@@ -198,7 +199,7 @@ func _run() -> void:
 	var ship_at: Vector3 = ship.position
 	step(2.0)
 	check(ship.shots_fired > 0 and ship.position.distance_to(ship_at) > 1, "enemy movement and real cannon fire continue during focus")
-	check(game.focus_strength == 1 and game.look_blend == 0, "enemy fire cannot take over the focused sky camera")
+	check(game.focus_strength == 1 and not game.cannon.aiming, "enemy fire cannot take over the focused sky camera")
 	game.damage_immunity = 0
 	var hull_before: int = game.hull
 	game.take_damage(1, "Sighting vulnerability check")
@@ -210,7 +211,7 @@ func _run() -> void:
 		game.voyage.set_target(game)
 		var region: Marker3D = game.archipelago.get_node("NavigationRegions").get_child(stage)
 		check(game.target == region.global_position and game.sky_material.get_shader_parameter("guiding_star").is_equal_approx(game.guiding_star_direction()), "stage %d selects its destination ray" % stage)
-		game._update_view(0.5)
+		game._update_view(0.3)
 		check(game.focus_strength == 0.0, "stage %d starts a fresh progressive search" % stage)
 		game._update_view(1.3)
 		hud._process(0.0)

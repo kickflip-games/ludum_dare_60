@@ -15,13 +15,13 @@ and a turn-back notice appears; steering remains available to sail back in.
 - **Play / Enter:** cast off; forward motion is automatic.
 - **A / D or arrows:** steer. Counter wave-induced turning and adjust your heading to recover from sideways drift.
 - **Hold Space:** raise the sextant; search briefly, then hold to focus. Movement and danger continue.
-- **Hold E:** glance starboard while steering; release to watch the bow.
-- **F:** enter the starboard gun view; press **F again** to shoot. The cannon sweeps automatically. **A / D or arrows** immediately return to steering on that same input. Shots require separate presses; holding/releasing F never shoots again.
-- Steering held on entry is ignored until neutral, then a fresh press exits. **Space** cancels gun view; releasing Space returns to sailing.
-- **R / Retry:** retry. **M:** mute. **Esc:** quit.
+- **Hold E:** aim the existing starboard cannon; release to return to steering immediately. The cannon sweeps automatically; sailing and danger continue while manual steering is suspended.
+- **F:** fire once while holding E. Holding F never repeats fire; reload presses are discarded. Reload remains 1.5 seconds.
+- **Space** takes priority over E and F; A/D can steer while sighting. If E stays held, gun view resumes after Space is released without a queued shot.
+- **Hold R for 0.6 seconds:** restart during sailing; release early to cancel. After sinking or winning, press **R / Retry** immediately. **M:** mute. **Esc:** quit.
 
-There is no sailing compass, numeric heading or course line. After 0.95 seconds of
-holding Space, one magical star brightens over 0.65 seconds. Its horizontal direction
+There is no sailing compass, numeric heading or course line. After 0.40 seconds of
+holding Space, one magical star brightens over 0.40 seconds. Its horizontal direction
 is always the live direction from the boat to the next destination, at 60° elevation.
 The Wreck's star is pale gold, Twin Peaks' pale blue, and the harbour's soft coral;
 two, three and four broken halo segments also distinguish them. There are no star
@@ -89,9 +89,9 @@ Select `TheLastBearing` in `game/crossing.tscn`:
   Procedural toon cloud banks drift in world space;
   a broad wind lane keeps the active star readable in storm weather. See the cloud
   controls and review notes below.
-- **Sextant assistance:** focus delay/ramp (0.95/0.65 s), highlight strength (0.65).
+- **Sextant assistance:** focus delay/ramp (0.40/0.40 s), highlight strength (0.65).
   Each release, discovery, focus loss and retry resets the search. Sky mode
-  suppresses combat glance and damps shock motion without changing sailing/damage.
+  suppresses cannon view and damps shock motion without changing sailing/damage.
 - **Cannon camera:** enter/return 0.4/0.4 s, FOV 76°, offset (-0.6, 1.0, -0.6)
   from the existing starboard mount. The level camera tracks 15% of sweep yaw.
   Priority: stargazing → gun view → nearby-hostile combat → sailing. Active
@@ -132,8 +132,8 @@ reload and firing. Recoil is 0.3 m and camera shake 0.055. Projectile speed
 (55 m/s), gravity (0.9 m/s²), initial lift (0.35 m/s), lifetime and damage are
 retained. Launch position/direction now follow the actual rocking muzzle, so
 visible and physical cannonballs coincide. The small sight indicates direction;
-it does not predict impact. Space, focus loss, retry and sinking clear gun mode
-and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
+it does not predict impact. E release, Space, focus loss, retry, sinking and victory
+clear gun mode and buffered inputs. Read the [cannon review](artifacts/cannon_sweep/REPORT.md).
 
 ## Quick UI review
 
@@ -175,8 +175,8 @@ Generated captures stay in the ignored `build/` folder.
 
 Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps 60`:
 
-- `--script res://tests/crossing_smoke.gd`: integrated input, menu, five strategies
-  across three seeds, both duels, four phases, arrival and retry.
+- `--script res://tests/crossing_smoke.gd`: movement and collisions
+  through both complete archipelago routes, discoveries, arrival and retry.
 - `--script res://tests/sailing_smoke.gd`: delegates to the current archipelago routes.
   `archipelago_pilot.gd` is test-only; the game never loads it.
 - `--script res://tests/landmark_smoke.gd`: prop/rock collision, open passage,
@@ -185,12 +185,14 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
   steering back into the map, camera following and retry.
 - `--script res://tests/wave_encounter_smoke.gd`: crest geometry, size-dependent
   drift/yaw, countersteering, frame-rate consistency, finite sets and calm recovery.
-- `--script res://tests/cannon_aim_smoke.gd`: input edges, held/analog steering,
+- `--script res://tests/cannon_aim_smoke.gd`: held-E input edges and immediate steering recovery,
   simultaneous presses, reload, camera priorities, terrain, aspect ratios,
   frame independence, wave-aligned launches, moving hits, damage, sinking and retry.
 - `--script res://tests/cannon_aim_battles.gd`: three staged moving AI duels using
-  timed presses and steering exits; results in `/tmp`. Legacy current/gust fixture
-  assignments no longer affect sailing.
+  hold-E aiming, timed F presses and release-E steering; results in `/tmp`.
+  Legacy current/gust fixture assignments no longer affect sailing.
+- `--script res://tests/controls_lifecycle_smoke.gd`: 30/60/120 Hz restart tap/hold/cancel,
+  Space/E/F event ordering, focus loss, active waves/collisions and ending/retry cleanup.
 - `--script res://tests/combat_smoke.gd`: collision damage, immunity, sinking,
   broadside timber hits, water feedback, and retry.
 - `--script res://tests/recovery_smoke.gd`: post-duel repairs, escape, lingering
@@ -210,6 +212,12 @@ Use your installed Godot executable with `--headless --path ldjam_60 --fixed-fps
 - `--script res://tests/navigation_smoke.gd`: compass/turn wraparound, actual A/D
   direction, independent hull-axis bearing checks, moving readings and discoveries.
 - `--script res://tests/ocean_smoke.gd` and `pirate_kit_smoke.gd`: retained water/art checks.
+
+Controls review: use the real renderer with `--fixed-fps 60 --script
+res://tests/controls_previews.gd -- --output=/tmp/latitude-controls/after`.
+Captures and a 20 fps frame sequence cover the opening controls, sailing, held E,
+firing, release-to-steer and full sextant focus at 0.8 seconds. See the
+[controls review](artifacts/controls_review.md) for acceptance evidence and limits.
 
 Gunner fixtures: use the real renderer with `--fixed-fps 60 --script
 res://tests/cannon_aim_previews.gd -- --output=/tmp/cannon-sweep-review`.

@@ -36,6 +36,10 @@ func _run() -> void:
 	await settle()
 	var hud = game.hud
 	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.action_button.has_focus(), "title has keyboard focus and hides sailing instruments")
+	var controls: Array[String] = []
+	for label: Label in hud.menu_controls.get_children():
+		controls.append(label.text)
+	check(controls == ["A / D", "Steer", "Hold Space", "Find the guiding star", "Hold E", "Aim cannon", "F", "Fire"], "opening menu lists only the current four controls")
 	for dimensions: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(960, 540), Vector2i(900, 506)]:
 		root.size = dimensions
 		await settle()
@@ -72,9 +76,14 @@ func _run() -> void:
 	hud._process(0.0)
 	check(not hud.instrument.visible and hud.star_guidance().is_empty(), "destination changes cannot produce a sailing guide")
 	game.voyage.set_target(game)
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
+	hud._process(0.0)
+	check(hud.cannon_gauge.status.text == "F · Fire" and hud.cannon_gauge.tooltip_text.contains("Hold E to aim") and not hud.cannon_gauge.tooltip_text.contains("again"), "aim status and tooltip teach hold E / F without obsolete double press")
 	game.cannon.fire()
 	hud._process(0.1)
 	check(hud.cannon_gauge.visible and hud.cannon_gauge.status.text == "Reloading" and hud.cannon_gauge.pulse == 0, "shot displays real reload state without a false ready flash")
+	game.cannon.set_aim_held(false)
 	game.cannon.advance(game.cannon.RELOAD_SECONDS)
 	hud._process(0.1)
 	check(hud.cannon_gauge.status.text == "Ready" and hud.cannon_gauge.pulse > 0, "reload completion gives a brief ready pulse")

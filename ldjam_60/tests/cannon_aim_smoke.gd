@@ -52,16 +52,21 @@ func _run() -> void:
 	var c = game.cannon
 	tap()
 	step()
-	check(c.aiming and c.shots_fired == 0, "first F tap enters gun view without shooting")
+	check(not c.aiming and c.shots_fired == 0, "F without E neither fires nor enters gun view")
+	action("watch_starboard", true)
+	step()
+	check(c.aiming and c.shots_fired == 0, "hold E enters gun view without shooting")
 	check(c.aim_degrees > 0 and c.aim_degrees < 2, "sweep starts immediately near centre toward the bow")
 	var expected: Vector3 = c.aimed_direction()
 	var origin: Vector3 = c.shot_origin()
 	tap()
 	step()
-	check(c.shots_fired == 1 and c.aiming, "second F tap fires once and stays in cannon mode during camera entry")
+	check(c.shots_fired == 1 and c.aiming, "fresh F fires once during camera entry")
 	check(c.projectiles[0].velocity.normalized().dot(expected) > 0.999, "press captures current barrel direction")
 	check(c.projectiles[0].node.global_position.distance_to(c.projectiles[0].physics_position) < 0.001, "visual and physical projectile positions coincide")
 	check(game.aim_camera_blend < 0.5, "firing works before the camera transition finishes")
+	check(c.flash.visible and c.flash_light.visible and c._recoil_left > 0 and game.shake_strength > 0, "shot retains flash, recoil and camera shake")
+	check(c.RELOAD_SECONDS == 1.5, "reload remains 1.5 seconds")
 	var angle: float = c.aim_degrees
 	step(0.3)
 	check(c.aim_degrees > angle and c.cooldown > 0, "barrel continues sweeping while reloading")
@@ -76,100 +81,78 @@ func _run() -> void:
 	tap()
 	step()
 	check(c.shots_fired == 2 and c.aiming, "fresh loaded press fires and retains gun view")
+	step(1.6)
+	action("fire_starboard", true)
+	step(2)
+	check(c.shots_fired == 3, "loaded F held through a full reload fires only once")
+	action("fire_starboard", false)
+	# A reload edge cannot become valid merely because reload completes before consumption.
+	c.cooldown = 0.001
+	tap()
+	c.advance(0.01)
+	step()
+	check(c.shots_fired == 3, "reload press is discarded even if reload completes before the physics tick")
 	for direction in ["steer_port", "steer_starboard"]:
-		if not c.aiming:
-			tap()
-			step()
-		step(0.5)
+		game.wave_sailing.reset()
 		var before: float = game.heading
-		var blend: float = game.aim_camera_blend
 		action(direction, true)
+		step(0.5)
+		check(c.aiming and game.turn_input == 0 and is_equal_approx(game.heading, before), direction + " neither steers nor exits while E is held")
+		var blend: float = game.aim_camera_blend
+		action("watch_starboard", false)
 		step()
-		check(not c.aiming and game.turn_input == (-1 if direction == "steer_port" else 1), direction + " exits and applies steering on the same tick")
+		check(not c.aiming and game.turn_input == (-1 if direction == "steer_port" else 1), "E release applies held steering on the first tick")
 		check((game.heading - before) * game.turn_input > 0, "hull turns during camera return: " + direction)
 		check(game.aim_camera_blend < blend and game.aim_camera_blend > 0.5, "camera begins return without locking steering")
 		action(direction, false)
-		step()
-	# Entry always wins over steering on the entry tick, regardless of event order.
+		action("watch_starboard", true)
+		step(0.5)
+	# Prior-frame F cannot leak into a later E hold, even when F stays held.
+	action("watch_starboard", false)
+	c.cooldown = 0
+	var shots: int = c.shots_fired
+	action("fire_starboard", true)
+	step()
+	action("watch_starboard", true)
+	step(0.6)
+	check(c.aiming and c.shots_fired == shots, "F before E never produces a delayed shot")
+	action("fire_starboard", false)
 	for fire_first in [true, false]:
-		c.cancel_aim()
-		if fire_first:
-			tap()
-			action("steer_port", true)
-		else:
-			action("steer_port", true)
-			tap()
-		step(0.3)
-		check(c.aiming and game.turn_input == 0, "simultaneous entry/steer remains in gun view, fire first=%s" % fire_first)
-		action("steer_starboard", true)
-		step()
-		action("steer_port", false)
-		step()
-		check(c.aiming, "opposing keys/net-zero cannot accidentally re-arm exit")
-		action("steer_starboard", false)
-		step()
-		action("steer_starboard", true)
-		step()
-		check(not c.aiming and game.turn_input == 1, "neutral then fresh steering press exits")
-		action("steer_starboard", false)
-		step()
-	# Held entry followed by a neutral/fresh press entirely between physics ticks.
-	action("steer_port", true)
-	tap()
-	step()
-	action("steer_port", false)
-	action("steer_port", true)
-	step()
-	check(not c.aiming and game.turn_input == -1, "sub-tick release/repress reliably re-arms held-entry steering")
-	action("steer_port", false)
-	step()
-	# Analog strength hysteresis: jitter below press threshold is harmless.
-	action("steer_port", true, 0.8)
-	tap()
-	step()
-	action("steer_port", true, 0.3)
-	step()
-	check(c.aiming, "analog must cross the neutral re-arm threshold")
-	action("steer_port", true, 0.1)
-	step()
-	action("steer_port", true, 0.4)
-	step()
-	check(c.aiming, "analog jitter below 0.55 cannot exit")
-	action("steer_port", true, 0.7)
-	step()
-	check(not c.aiming, "analog fresh crossing above 0.55 exits after re-arm")
-	action("steer_port", false)
-	step()
-	for fire_first in [true, false]:
-		tap()
+		action("watch_starboard", false)
 		step()
 		c.cooldown = 0
-		var count: int = c.shots_fired
+		shots = c.shots_fired
 		if fire_first:
 			tap()
-			action("steer_port", true)
+			action("watch_starboard", true)
 		else:
-			action("steer_port", true)
+			action("watch_starboard", true)
 			tap()
 		step()
-		check(not c.aiming and c.shots_fired == count, "steering beats simultaneous fire in either event order")
-		action("steer_port", false)
-		step()
+		check(c.aiming and c.shots_fired == shots + 1, "same-frame E + F fires once, fire first=%s" % fire_first)
+		check(c.projectiles[-1].velocity.x != 0, "same-frame shot creates a real projectile")
+	# Releasing E discards an edge and resets the next sweep, including sub-tick holds.
+	c.cooldown = 0
+	shots = c.shots_fired
+	tap()
+	action("watch_starboard", false)
+	action("watch_starboard", true)
+	step()
+	check(c.aiming and c.shots_fired == shots and c.aim_degrees > 0 and c.aim_degrees < 2, "release/repress clears pending shot and restarts sweep at centre")
 	for i in range(12):
+		action("watch_starboard", true)
+		step()
 		tap()
-		step()
-		action("steer_port", true)
-		step()
-		action("steer_port", false)
+		action("watch_starboard", false)
 		step()
 	step(0.8)
-	check(not c.aiming and game.aim_camera_blend < 0.001, "rapid switches settle to sailing with no stuck camera")
-	tap()
+	check(not c.aiming and game.aim_camera_blend < 0.001 and c.shots_fired == shots, "rapid E transitions settle without stuck camera or phantom shots")
+	action("watch_starboard", true)
 	step()
 	var start: Vector3 = game.boat.position
-	var shots: int = c.shots_fired
+	shots = c.shots_fired
 	step(3)
-	check(c.aiming and c.shots_fired == shots and game.boat.position.distance_to(start) > 18, "a full sweep preserves ship momentum and never auto-fires")
+	check(c.aiming and c.shots_fired == shots and game.boat.position.distance_to(start) > 18, "full sweep preserves automatic sailing and never auto-fires")
 	# Delta-independent sweep, including both endpoints and easing/direction exports.
 	for hz in [30, 60, 144]:
 		c.sweep_elapsed = 0
@@ -204,10 +187,9 @@ func _run() -> void:
 		check(game.last_reading == bearing, "camera shake cannot change navigation bearing")
 		action("astrolabe", false)
 		step(0.6)
-		check(not c.aiming and game.camera_mode == game.CameraMode.SAILING, "Space release returns to sailing despite held F")
+		check(c.aiming and c.shots_fired == shots and game.camera_mode == game.CameraMode.CANNON, "Space release resumes held E without firing held F")
 		action("fire_starboard", false)
 		step()
-		tap()
 		step()
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	step()
@@ -219,16 +201,19 @@ func _run() -> void:
 	ship.position = game.boat.position + c.starboard_direction() * 36
 	step(0.7)
 	check(game.camera_mode == game.CameraMode.COMBAT, "automatic combat framing remains available")
-	tap()
+	action("watch_starboard", true)
 	step(0.5)
 	check(game.camera_mode == game.CameraMode.CANNON and game.aim_camera_blend > 0.97, "gunner view overrides automatic enemy framing")
 	action("steer_starboard", true)
+	action("watch_starboard", false)
 	var before: float = game.heading
 	step()
 	check(not c.aiming and game.heading > before, "steering works immediately beside live hostile")
 	action("steer_starboard", false)
 	game.enemy_encounters.enabled = false
 	ship.reset()
+	action("watch_starboard", true)
+	step()
 	# Full world-space launch correspondence under pronounced rocking and arbitrary camera.
 	for degrees in [0, 90, 180, -90]:
 		game.heading = deg_to_rad(degrees)
@@ -243,7 +228,6 @@ func _run() -> void:
 	game.boat_visual.rotation = Vector3.ZERO
 	game.heading = game.TARGET_HEADING
 	game.boat.rotation.y = -game.heading
-	tap()
 	step(0.6)
 	for dimensions: Vector2i in [Vector2i(960, 540), Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(1920, 1080)]:
 		root.size = dimensions
@@ -304,7 +288,6 @@ func _run() -> void:
 	rock.queue_free()
 	await physics_frame
 	# Honest misses outside the arc; no target-based launch correction.
-	c.cancel_aim()
 	ship.begin()
 	ship.position = c.shot_origin() + c.starboard_direction().rotated(Vector3.UP, deg_to_rad(60)) * 28
 	ship.position.y = 0
@@ -320,7 +303,7 @@ func _run() -> void:
 	# Real moving hull collisions at centre and both sides, using timed presses.
 	for phase: float in [0.0, 0.25, 1.75]:
 		c.reset()
-		tap()
+		action("watch_starboard", true)
 		step()
 		c.sweep_elapsed = phase
 		c.update_aim(0)
@@ -348,7 +331,7 @@ func _run() -> void:
 	check(game.state == game.State.LOST and not c.aiming and c.projectiles.is_empty(), "sinking cancels gun mode, buffered input and projectiles")
 	game.restart()
 	step(1.4)
-	tap()
+	action("watch_starboard", true)
 	step()
 	check(c.aiming and game.hull == game.hull_capacity and c.shots_fired == 0, "retry restores clean working gun and ship")
 	print("SWEEPING CANNON CHECK: %d checks, %d failures" % [checks, failures])

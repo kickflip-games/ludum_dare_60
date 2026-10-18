@@ -63,10 +63,11 @@ func _run() -> void:
 	game.boat.position = game.course_forward() * 160.0 + game.course_right() * 20.0
 	game.elapsed = 27.0
 	game.enemy_encounters.ship.begin()
-	game.starboard_look = true
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
 	game._update_view(1.0)
 	await capture("05-choppy-cutter")
-	game.starboard_look = false
+	game.cannon.set_aim_held(false)
 	game.boat.position = game.course_forward() * 610.0 + game.course_right() * -12.0
 	game.elapsed = 105.0
 	game.beacon.visible = true

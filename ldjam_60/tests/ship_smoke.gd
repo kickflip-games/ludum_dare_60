@@ -136,7 +136,7 @@ func real_duel() -> void:
 		if ship.hull <= 0 or game.state != game.State.SAILING:
 			break
 		if ship.passes > 0 and not entered:
-			tap()
+			action("watch_starboard", true)
 			entered = true
 		if game.cannon.aiming and game.cannon.cooldown <= 0.0:
 			# A timing observer presses F; barrel direction and projectile physics are untouched.

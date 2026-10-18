@@ -17,8 +17,6 @@ signal fired(direction: Vector3)
 ## 1 is sinusoidal; higher values linger longer at each end, with continuous velocity.
 @export_range(1.0, 2.5, 0.1) var sweep_easing: float = 1.0
 @export_enum("Toward bow", "Toward stern") var initial_sweep_direction: int = 0
-const STEERING_NEUTRAL: float = 0.18
-const STEERING_PRESS: float = 0.55
 @export_group("Firing feedback")
 @export_range(0.0, 0.5, 0.01) var recoil_strength: float = 0.3
 @export_range(0.0, 0.15, 0.005) var camera_shake_strength: float = 0.055
@@ -31,9 +29,8 @@ var entries: int = 0
 var indicator_alpha: float = 0.0
 var _fire_held: bool = false
 var _recoil_left: float = 0.0
-var _fire_presses: int = 0
-var _steering_armed: bool = false
-var _steer_pressed: bool = false
+var _fire_pending: bool = false
+var _aim_held: bool = false
 var yaw_pivot: Node3D
 var game: Node3D
 var cooldown: float = 0.0
@@ -106,75 +103,57 @@ func shot_origin() -> Vector3:
 	return muzzle.global_position
 
 
+func set_aim_held(pressed: bool) -> void:
+	_aim_held = pressed
+	if not pressed:
+		cancel_aim()
+
+
 func set_fire_held(pressed: bool) -> void:
-	# Buffer edges until the physics tick so Space > steering > fire has the same
-	# result in either event order. A release never shoots, and held F never repeats.
-	if pressed and not _fire_held:
-		_fire_presses += 1
+	# Resolve fresh edges on the next physics tick so E + F works in either order.
+	# Reload/Space presses are discarded at receipt, never deferred until ready.
+	if pressed and not _fire_held and cooldown <= 0.0 and game.state == game.State.SAILING and not game.reading and not Input.is_action_pressed("astrolabe"):
+		_fire_pending = true
 	_fire_held = pressed
 
 
-func note_steering_event(strength: float) -> void:
-	# Keep even a press/release shorter than a physics tick. Held steering on entry
-	# is ignored until both actions are neutral, including opposing A + D inputs.
-	if not aiming:
-		return
-	if maxf(Input.get_action_strength("steer_port"), Input.get_action_strength("steer_starboard")) <= STEERING_NEUTRAL:
-		_steering_armed = true
-	elif _steering_armed and strength >= STEERING_PRESS:
-		_steer_pressed = true
-
-
 func cancel_aim() -> void:
-	_fire_presses = 0
-	_steer_pressed = false
-	_steering_armed = false
+	_fire_pending = false
 	if not aiming:
 		return
 	aiming = false
-	# Leave the barrel at its last angle while the camera returns. Every entry
-	# starts at centre, so no hidden sweep phase carries over between attempts.
+	# Retain the last barrel angle during camera return; entry resets to centre.
 	aiming_ended.emit()
 
 
 func update_aim(delta: float) -> void:
-	var presses: int = _fire_presses
-	_fire_presses = 0
-	var steering: float = maxf(Input.get_action_strength("steer_port"), Input.get_action_strength("steer_starboard"))
-	if game.reading or Input.is_action_pressed("astrolabe") or game.state != game.State.SAILING:
-		cancel_aim()
-	elif aiming and (_steer_pressed or (_steering_armed and steering >= STEERING_PRESS)):
-		# Steering wins over a simultaneous fire press; the crossing applies this
-		# very input to the rudder on this tick, independently of camera blending.
+	var fire_pressed := _fire_pending
+	_fire_pending = false
+	if not _aim_held or game.reading or Input.is_action_pressed("astrolabe") or game.state != game.State.SAILING:
 		cancel_aim()
 	else:
-		for i in range(presses):
-			if aiming:
-				fire()
-			else:
-				aiming = true
-				entries += 1
-				mode_seconds = 0.0
-				sweep_elapsed = 0.0
-				aim_degrees = 0.0
-				yaw_pivot.rotation.y = 0.0
-				_steering_armed = steering <= STEERING_NEUTRAL
-				aiming_started.emit()
-		if aiming:
-			if steering <= STEERING_NEUTRAL:
-				_steering_armed = true
-			mode_seconds += delta
-			sweep_elapsed = fposmod(sweep_elapsed + delta, sweep_period)
-			var wave: float = sin(sweep_elapsed * TAU / sweep_period)
-			var eased: float = signf(wave) * (1.0 - pow(1.0 - absf(wave), sweep_easing))
-			aim_degrees = max_aim_degrees * eased * (1.0 if initial_sweep_direction == 0 else -1.0)
-			yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
-	_steer_pressed = false
+		if not aiming:
+			aiming = true
+			entries += 1
+			mode_seconds = 0.0
+			sweep_elapsed = 0.0
+			aim_degrees = 0.0
+			yaw_pivot.rotation.y = 0.0
+			aiming_started.emit()
+		# Fire along the currently visible barrel before advancing its sweep.
+		if fire_pressed:
+			fire()
+		mode_seconds += delta
+		sweep_elapsed = fposmod(sweep_elapsed + delta, sweep_period)
+		var wave: float = sin(sweep_elapsed * TAU / sweep_period)
+		var eased: float = signf(wave) * (1.0 - pow(1.0 - absf(wave), sweep_easing))
+		aim_degrees = max_aim_degrees * eased * (1.0 if initial_sweep_direction == 0 else -1.0)
+		yaw_pivot.rotation.y = deg_to_rad(aim_degrees)
 	indicator_alpha = move_toward(indicator_alpha, 1.0 if aiming else 0.0, delta * (10.0 if aiming else 5.0))
 
 
 func fire() -> bool:
-	if game.state != game.State.SAILING or cooldown > 0.0 or game.reading or Input.is_action_pressed("astrolabe"):
+	if not aiming or not _aim_held or game.state != game.State.SAILING or cooldown > 0.0 or game.reading or Input.is_action_pressed("astrolabe"):
 		return false
 	shots_fired += 1
 	game.shake(camera_shake_strength)
@@ -374,7 +353,7 @@ func _splinters(at: Vector3, timber: bool) -> void:
 
 
 func reset() -> void:
-	cancel_aim()
+	set_aim_held(false)
 	_fire_held = Input.is_action_pressed("fire_starboard")
 	aim_degrees = 0.0
 	sweep_elapsed = 0.0

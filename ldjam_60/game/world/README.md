@@ -108,8 +108,8 @@ On 18 October, all 21 composition checks and 65 full-voyage checks passed. Both 
 
 `voyage_director.gd` owns WRECK → TWIN_PEAKS → LIGHTHOUSE → COMPLETE. Discovery uses a generous radial test against the actual CharacterBody3D position. Early visits cannot skip stages; sinking cannot trigger victory. Replay resets stages, enemy territories, navigation memory and salvage.
 
-Hold Space to search the sky. After 0.95 seconds, one guiding star gradually
-brightens over 0.65 seconds. Its world direction uses `destination_bearing()`
+Hold Space to search the sky. After 0.40 seconds, one guiding star gradually
+brightens over 0.40 seconds. Its world direction uses `destination_bearing()`
 (north = -Z, east = +X), at a constant 60° elevation. The shader, focus halo and
 camera projection share that ray. Boat movement updates it exactly; heading
 changes rotate the view naturally. Ordinary stars retain their world-fixed hashes.

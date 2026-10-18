@@ -63,6 +63,8 @@ func _run() -> void:
 	game.boat.position = Vector3(140,0,10)
 	game.heading = 0.0
 	game.boat.rotation.y = 0.0
+	game.cannon.set_aim_held(true)
+	game.cannon.update_aim(0.0)
 	check(game.cannon.fire(), "real broadside launches toward eastern island")
 	for i in range(90):
 		game.cannon.advance(1.0/60.0)

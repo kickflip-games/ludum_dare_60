@@ -30,7 +30,7 @@ func bounds_of(node: Node, relative_to: Node3D) -> AABB:
 
 
 func _run() -> void:
-	var game = load("res://game/crossing.tscn").instantiate()
+	var game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await physics_frame
 	game.set_physics_process(false)

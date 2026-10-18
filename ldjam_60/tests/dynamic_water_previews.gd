@@ -126,7 +126,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(output.path_join("clip"))
 	root.size = Vector2i(1280,720)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

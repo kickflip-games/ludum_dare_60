@@ -17,7 +17,7 @@ func _ready() -> void:
 	run_index = int(params.get("run","0"))
 	cohort = str(params.get("cohort","final"))
 	baseline = str(params.get("version","final"))=="baseline"
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

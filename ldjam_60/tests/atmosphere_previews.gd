@@ -64,7 +64,7 @@ func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--baseline-source="):
 			baseline_source = arg.trim_prefix("--baseline-source=")
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

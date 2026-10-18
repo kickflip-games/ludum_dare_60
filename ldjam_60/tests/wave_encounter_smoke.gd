@@ -68,7 +68,7 @@ func _run() -> void:
 	check(absf(slow.x - fast.x) < 0.15 and absf(slow.heading - fast.heading) < 0.01, "wave response remains consistent at 30, 60 and 120 Hz")
 	field.advance(8.1)
 	check(field.waves.is_empty() and field.sample(Vector2.ZERO, 8.1) == Vector3.ZERO, "finite waves expire completely")
-	var game = load("res://game/crossing.tscn").instantiate()
+	var game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

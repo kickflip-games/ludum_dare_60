@@ -13,7 +13,7 @@ func _run() -> void:
 	root.size = Vector2i(1280, 720)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	if "--legacy" in OS.get_cmdline_user_args():

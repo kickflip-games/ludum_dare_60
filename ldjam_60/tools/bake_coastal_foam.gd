@@ -7,11 +7,15 @@ var segments := 0
 
 func _initialize() -> void:
 	mask.fill(Color.BLACK)
-	var mesh: ArrayMesh = load("res://game/world/archipelago_mesh.res")
+	var arena := "--arena" in OS.get_cmdline_user_args()
+	var mesh_path := "res://game/world/arena_mesh.res" if arena else "res://game/world/archipelago_mesh.res"
+	var mesh: ArrayMesh = load(mesh_path)
 	var settings = load("res://game/ocean/presets/calm.tres")
 	_raster_mesh(mesh,Transform3D(Basis.from_scale(Vector3(4,1,4)),Vector3.ZERO),settings.sea_level)
 	var islands = load("res://game/world/archipelago.tscn").instantiate()
 	for marker: Marker3D in islands.get_node("Hazards").get_children():
+		if arena:
+			continue
 		if marker.get_meta("kind","rock") != "rock":
 			continue
 		var rock: Node3D = load("res://assets/pirate_kit/rock.glb").instantiate()
@@ -20,12 +24,13 @@ func _initialize() -> void:
 		_rock_meshes(rock,pose,settings.sea_level)
 		rock.free()
 	islands.free()
-	mask.set_meta("terrain_hash",FileAccess.get_sha256("res://game/world/archipelago_mesh.res"))
+	mask.set_meta("terrain_hash",FileAccess.get_sha256(mesh_path))
 	mask.set_meta("layout_hash",FileAccess.get_sha256("res://game/world/archipelago.tscn"))
 	mask.set_meta("sea_level",settings.sea_level)
 	mask.set_meta("radius_m",RADIUS)
 	mask.set_meta("segments",segments)
-	assert(ResourceSaver.save(mask,"res://game/ocean/coastal_foam_mask.res",ResourceSaver.FLAG_COMPRESS)==OK)
+	var output_path := "res://game/ocean/arena_coastal_foam_mask.res" if arena else "res://game/ocean/coastal_foam_mask.res"
+	assert(ResourceSaver.save(mask,output_path,ResourceSaver.FLAG_COMPRESS)==OK)
 	print("COASTAL FOAM: %d exact waterline segments, %dx%d R8, %.1fm band" % [segments,RESOLUTION,RESOLUTION,RADIUS])
 	quit()
 

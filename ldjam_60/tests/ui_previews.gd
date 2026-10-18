@@ -35,7 +35,7 @@ func _run() -> void:
 	root.gui_embed_subwindows = true
 	root.size = requested_size
 	await process_frame
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	states = States.new(game)
 	var cards := ""

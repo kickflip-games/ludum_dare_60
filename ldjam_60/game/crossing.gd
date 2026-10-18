@@ -1,5 +1,5 @@
 extends Node3D
-## A compact, authored three-star archipelago. Distances are in metres.
+## Lighthouse arena with retained voyage fixtures. Distances are in metres.
 
 const VoyageDirector = preload("res://game/voyage_director.gd")
 const NavigationBearings = preload("res://game/navigation_bearings.gd")
@@ -12,6 +12,8 @@ const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
+const ArenaReturn = preload("res://game/arena_return.gd")
+var arena_return := ArenaReturn.new()
 var wave_sailing := WaveSailing.new()
 var wave_encounters := WaveEncounters.new()
 var actual_speed := 0.0
@@ -36,6 +38,11 @@ const GUIDING_STAR_COLORS := [Color("ffe8b8"), Color("b8ddff"), Color("ffd0be")]
 
 @export_group("Sailing difficulty")
 @export var encounter_seed: int = 60
+@export_group("Lighthouse arena")
+@export var arena_mode: bool = false
+@export_range(140.0, 200.0, 1.0) var arena_radius: float = 170.0
+@export_range(0.75, 0.8, 0.01) var arena_soft_fraction: float = 0.78
+@export_range(0.25, 0.7, 0.05) var arena_inward_bias: float = 0.5
 # Legacy fixture properties; no invisible current or gust forces in gameplay.
 var current_strength := 0.0
 var gust_strength := 0.0
@@ -225,15 +232,18 @@ func _ready() -> void:
 	_build_world()
 	_build_boat()
 	archipelago = ARCHIPELAGO.instantiate()
+	archipelago.arena_mode = arena_mode
 	add_child(archipelago)
 	archipelago.configure(self)
-	boat.position = archipelago.get_node("SpawnPoints/Departure").position
+	_place_player()
 	cannon = CANNON_SCENE.instantiate()
 	cannon.set("game", self)
 	boat_visual.add_child(cannon)
 	cannon.fired.connect(_on_cannon_fired)
 	voyage.reset(encounter_seed)
 	voyage.set_target(self)
+	if arena_mode:
+		target = arena_center()
 	wave_encounters.reset(encounter_seed)
 	_build_hazards()
 	enemy_encounters = Node3D.new()
@@ -241,6 +251,10 @@ func _ready() -> void:
 	enemy_encounters.set("game", self)
 	add_child(enemy_encounters)
 	_build_destination()
+	if arena_mode:
+		beacon_seen = true
+		beacon.visible = true
+		water_material.set_shader_parameter("coastal_foam_mask", ImageTexture.create_from_image(load("res://game/ocean/arena_coastal_foam_mask.res")))
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	hud = Control.new()
@@ -291,6 +305,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			archipelago.debug_spawn(event.keycode - KEY_F3)
 		elif event.keycode == KEY_F6:
 			archipelago.debug_wave_zone()
+		elif event.keycode == KEY_F7 and arena_mode and state == State.SAILING:
+			enemy_encounters.debug_cutter()
 	if event.is_action("restart_crossing") and not event.is_echo():
 		if not event.is_pressed():
 			restart_elapsed = 0.0
@@ -303,7 +319,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		cannon.set_fire_held(event.is_pressed())
 	elif event.is_action("watch_starboard") and not event.is_echo():
 		cannon.set_aim_held(event.is_pressed())
-	elif event.is_action("astrolabe") and not event.is_echo():
+	elif event.is_action("astrolabe") and not event.is_echo() and not arena_mode:
 		# Even a release/repress between physics ticks starts a new sighting.
 		focus_elapsed = 0.0
 		focus_strength = 0.0
@@ -365,6 +381,20 @@ func start_crossing() -> void:
 	transition_elapsed = 0.0
 	_transition_from = camera.transform
 	state = State.CASTING_OFF
+	if arena_mode:
+		show_discovery("Cutters incoming · survive five waves", 3.5)
+
+
+func arena_center() -> Vector3:
+	var landmark: Vector3 = archipelago.get_node("Landmarks/Lighthouse").global_position
+	return Vector3(landmark.x, 0.0, landmark.z)
+
+
+func _place_player() -> void:
+	var spawn: Marker3D = archipelago.get_node("SpawnPoints/ArenaSpawn" if arena_mode else "SpawnPoints/Departure")
+	var forward := -spawn.global_basis.z
+	heading = atan2(forward.x, -forward.z) if arena_mode else START_HEADING
+	boat.global_transform = Transform3D(Basis(Vector3.UP, -heading), spawn.global_position)
 
 
 func destination_bearing() -> float:
@@ -401,6 +431,8 @@ func show_discovery(value: String, seconds: float = 4.0) -> void:
 
 
 func journey_progress() -> float:
+	if arena_mode:
+		return 0.0
 	if voyage.stage == voyage.Stage.COMPLETE:
 		return 1.0
 	var lengths := [350.0, 470.0, 410.0]
@@ -412,6 +444,7 @@ func restart() -> void:
 	_clear_player_controls()
 	cannon.reset()
 	wave_sailing.reset()
+	arena_return.reset()
 	wave_encounters.reset(encounter_seed)
 	ocean.wave_field.clear()
 	sea_time = 0.0
@@ -438,12 +471,13 @@ func restart() -> void:
 	ocean.floating_visuals = ocean.floating_visuals.filter(func(o: Dictionary) -> bool: return is_instance_valid(o.visual) and o.visual.get_parent().get_meta("landmark", false))
 	voyage.reset(encounter_seed)
 	voyage.set_target(self)
+	if arena_mode:
+		target = arena_center()
 	archipelago.reset()
 	discovery_left = 0.0
 	_at_sailing_boundary = false
-	boat.position = archipelago.get_node("SpawnPoints/Departure").position
+	_place_player()
 	boat.velocity = Vector3.ZERO
-	heading = START_HEADING
 	boat_motion.reset()
 	ocean.reset_wake(heading)
 	elapsed = 0.0
@@ -464,10 +498,10 @@ func restart() -> void:
 	_cannon_impulse = 0.0
 	camera_mode = CameraMode.SAILING
 	turn_input = 0.0
-	last_reading = START_HEADING
+	last_reading = heading
 	has_reading = false
-	beacon_seen = false
-	beacon.visible = false
+	beacon_seen = arena_mode
+	beacon.visible = arena_mode
 	failure_reason = ""
 	transition_elapsed = 0.0
 	end_view_blend = 0.0
@@ -481,7 +515,7 @@ func _physics_process(delta: float) -> void:
 	_update_restart_hold(delta)
 	if state != State.SAILING:
 		sea_time += delta
-	reading = state == State.SAILING and Input.is_action_pressed("astrolabe")
+	reading = not arena_mode and state == State.SAILING and Input.is_action_pressed("astrolabe")
 	if reading or state != State.SAILING:
 		cannon.cancel_aim()
 	cannon.set_aim_held(Input.is_action_pressed("watch_starboard"))
@@ -504,6 +538,13 @@ func _physics_process(delta: float) -> void:
 
 
 func advance_sailing(delta: float, steering: float) -> void:
+	# Bound long frames as well as normal ticks: collision sweeps and return
+	# steering stay continuous even after a stalled frame.
+	if arena_mode and delta > 1.0 / 30.0 + 0.00001:
+		var steps := ceili(delta * 60.0)
+		for step in steps:
+			advance_sailing(delta / steps, steering)
+		return
 	# Also used by the deterministic smoke test, with real physics collisions.
 	if state != State.SAILING:
 		return
@@ -516,12 +557,28 @@ func advance_sailing(delta: float, steering: float) -> void:
 	# Holding E suspends manual rudder input; existing waves and momentum continue.
 	if cannon.aiming:
 		steering = 0.0
+	if arena_mode:
+		var offset := boat.global_position - arena_center()
+		var was_returning: bool = arena_return.active
+		steering = arena_return.rudder(Vector2(offset.x, offset.z), heading, steering,
+			wave_sailing.drift, wave_sailing.yaw_rate, delta, arena_radius,
+			arena_soft_fraction, arena_inward_bias)
+		if arena_return.active:
+			steering = archipelago.safe_return_rudder(steering)
+		if arena_return.active and not was_returning and not _at_sailing_boundary:
+			show_discovery("Returning to the light", 2.5)
+			_at_sailing_boundary = true
+		elif not arena_return.active and arena_return.blend == 0.0:
+			_at_sailing_boundary = false
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta)
 	boat.rotation.y = -heading
 	boat.velocity = Vector3(wave_sailing.displacement.x, 0, wave_sailing.displacement.y) / maxf(delta, 0.0001)
 	var previous_position := boat.position
-	var hit := boat.move_and_collide(boat.velocity * delta)
+	var travel := boat.velocity * delta
+	if arena_mode:
+		travel = arena_return.bounded_motion(boat.global_position - arena_center(), travel, arena_radius)
+	var hit := boat.move_and_collide(travel, false, 0.001, arena_mode)
 	if hit:
 		take_damage(contact_damage, "Hull struck %s" % hit.get_collider().get_meta("hazard_name", "wreckage"))
 		# Keep responsive steering and let glancing hits slide; never teleport through a reef.
@@ -531,6 +588,10 @@ func advance_sailing(delta: float, steering: float) -> void:
 	boat.position.y = 0.0
 	_constrain_sailing_area()
 	boat.velocity = (boat.position - previous_position) / maxf(delta, 0.0001)
+	if arena_mode:
+		var radial := (boat.global_position - arena_center()).normalized()
+		if boat.global_position.distance_to(arena_center()) >= arena_radius - 0.001 and boat.velocity.dot(radial) > 0.0:
+			boat.velocity = boat.velocity.slide(radial)
 	actual_speed = boat.velocity.length()
 	if reading and focus_strength >= 1.0:
 		# This snapshot is a focused landmark reading, not the bow's heading.
@@ -538,8 +599,9 @@ func advance_sailing(delta: float, steering: float) -> void:
 		last_reading = destination_bearing()
 		has_reading = true
 		last_sighting_time = elapsed
-	voyage.update_progress(self)
-	archipelago.update_discoveries()
+	if not arena_mode:
+		voyage.update_progress(self)
+		archipelago.update_discoveries()
 	var distance := boat.position.distance_to(archipelago.get_node("Landmarks/Lighthouse").position)
 	if voyage.stage >= voyage.Stage.LIGHTHOUSE and distance < 230.0 and not beacon_seen:
 		beacon_seen = true
@@ -580,6 +642,13 @@ func _update_hull_recovery(delta: float) -> void:
 
 
 func _constrain_sailing_area() -> void:
+	if arena_mode:
+		var offset := boat.global_position - arena_center()
+		var distance := offset.length()
+		if distance >= arena_radius - 0.001:
+			var radial := offset / maxf(distance, 0.001)
+			wave_sailing.slide(Vector2(-radial.x, -radial.z))
+		return
 	var at_boundary := false
 	for axis: int in [Vector3.AXIS_X, Vector3.AXIS_Z]:
 		var coordinate: float = boat.position[axis]
@@ -814,6 +883,10 @@ func _sailing_camera_pose(helm_pose: Transform3D, delta: float) -> Transform3D:
 
 
 func _title_camera_pose() -> Transform3D:
+	if arena_mode:
+		var at := arena_center() + Vector3(95, 42, -145)
+		var focus := arena_center() + Vector3(0, 20, -12)
+		return Transform3D(Basis.looking_at(focus - at), at)
 	var orientation := Basis(Vector3.UP, -heading)
 	var at := boat.position + orientation * Vector3(7.0, 4.5, -7.0)
 	var look_at_point := boat.position + orientation * Vector3(0.0, 0.8, -1.6)

@@ -19,7 +19,7 @@ func set_target(game: Node3D) -> void:
 		game.update_guiding_star()
 
 func update_progress(game: Node3D) -> void:
-	if stage == Stage.COMPLETE or game.state != game.State.SAILING:
+	if game.arena_mode or stage == Stage.COMPLETE or game.state != game.State.SAILING:
 		return
 	var destination := region(game)
 	if game.boat.global_position.distance_to(destination.global_position) > destination.radius:

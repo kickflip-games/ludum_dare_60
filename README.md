@@ -1,6 +1,49 @@
-# The Last Bearing — Ludum Dare 60
+# Latitude Lines — Lighthouse Arena
 
-Open `ldjam_60/project.godot` in the installed Godot 4.8 and press **F5**.
+Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
+compact arena around the existing lighthouse at **(275, 250)**. The boat starts
+75 m north of the tower, facing east-southeast into safe water. Survive **five
+waves**, each featuring the existing hostile cutter. Enemies attack the player;
+the lighthouse is a lit landmark with no health or damage system. Sink each
+cutter to advance. Waiting or entering the old harbour never wins.
+
+- **Play / Enter:** cast off; forward sailing remains automatic.
+- **A / D or arrows:** steer; **hold E** to aim and **press F** to fire once.
+  Release E to return to steering. Cannonballs follow the visible barrel.
+- **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
+  **M:** mute; **Esc:** quit. Full/Reduced motion remains available.
+- A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
+  and three low islets offer alternate routes. Main rock gaps exceed 30 m;
+  the outer ring remains open for broad combat turns. Both sides' shots stop on
+  solids and shatter floating props. Retry restores all obstacles.
+- The outer limit is a **170 m circle centred on the lighthouse**. Beyond
+  **132.6 m**, outward sailing blends in a curved rudder return, including while
+  aiming. Its obstacle probes favour clear water. Inward steering remains
+  effective. The hard limit bounds swept movement while retaining tangent motion.
+- The first cutter arrives after five seconds. Sinking it and resolving its last
+  cannonball starts a ten-second recovery interval before the next wave. A small
+  wave indicator shows progress; the fifth defeat ends the survival run.
+- Voyage progression, sextant and old territory triggers are inactive. Ambient
+  sea motion, occasional open-water crests, damage and self-repair remain.
+
+Edit obstacle and four enemy sector markers in `game/world/arena_layout.tscn`;
+spawn position/facing remain in `SpawnPoints/ArenaSpawn` in `archipelago.tscn`.
+Radius and return settings are exposed on the main crossing; first-wave delay,
+intermission and minimum spawn separation are in `enemy_encounters.gd`.
+See the [arena review](artifacts/lighthouse_arena_review.md) for rendered captures,
+requirement checks and remaining human playtesting limits.
+
+```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arena_smoke.gd
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/arena_previews.gd -- --output=/tmp/latitude-arena-revision/after
+```
+
+Historical voyage tests and captures explicitly load `tests/legacy_voyage.tscn`,
+retaining their original scenarios and acceptance gates.
+
+## Retained voyage reference (inactive in normal play)
+
+Open `ldjam_60/tests/legacy_voyage.tscn` in the installed Godot 4.8 to inspect the retained journey.
 Find the Wreck, cross Twin Peaks, then reach Lighthouse Harbour. Sailing has no
 destination labels or route instructions. Hold Space until a guiding star glows,
 remember its direction, then steer. Quiet sailing has no hull indicators.

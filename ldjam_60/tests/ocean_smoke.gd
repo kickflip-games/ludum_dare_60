@@ -16,7 +16,7 @@ func check(condition: bool, message: String) -> void:
 
 
 func _run() -> void:
-	var game = load("res://game/crossing.tscn").instantiate()
+	var game = load("res://tests/legacy_voyage.tscn").instantiate()
 	game.weather_enabled = false
 	root.add_child(game)
 	await physics_frame

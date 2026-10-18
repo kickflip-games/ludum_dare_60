@@ -6,6 +6,26 @@ recorded evidence and limitations.
 
 ## 2026-10-18
 
+- In progress: Add lighthouse defence on the integrated arena: five data-driven
+  cutter waves (1/2/2/3/3), staggered spawns, five lighthouse integrity, warned
+  breaches, intermissions and complete endings/retry. Planned checks include
+  real projectile interceptions, no-fire defeat, multi-ship lifecycle and
+  rendered combat/end screens. This follow-up implementation and its dedicated
+  defence-mode checks remain pending.
+
+- Refined the lighthouse arena to a 170 m, five-wave player-survival loop with
+  a safe 75 m spawn, editable curved reef, broken wreck/cargo and three low
+  islets. Four clear-water sectors spawn the existing cutter; the lighthouse
+  remains atmospheric, and harbour victory stays disabled. Preserved the night
+  sea, cannon, damage, repair and retry.
+- Added obstacle-aware gradual return steering and bounded swept movement,
+  including while aiming and under strong crests. Mesh-matched collision uses
+  baked imported transforms; both sides shatter floating props. Retry clears
+  old obstacle lights/float registrations. 671 checks pass (143 arena + 528
+  adjacent), with native overhead, obstacle and return captures inspected.
+  Human combat balance and browser/mobile performance remain open. See the
+  [arena review](artifacts/lighthouse_arena_review.md).
+
 - Added the hull-mounted deck view, directional wave inertia and contact-driven
   spray/audio, localized turquoise crests and Full/Reduced motion. Stowed the
   obstructing canvas, retained the real cannon and added a fitted planked floor.

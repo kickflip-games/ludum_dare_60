@@ -14,7 +14,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.enemy_encounters.visited.assign(["WreckPatrol", "EasternPatrol"])
 	game.start_crossing()

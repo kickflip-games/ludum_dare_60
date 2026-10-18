@@ -84,7 +84,7 @@ func trial(height: float, hz: int, preset_path: String = "res://game/ocean/prese
 		"camera_ok":camera_ok,"limits_ok":limits_ok}
 
 func _run() -> void:
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)

@@ -93,7 +93,7 @@ func update(game: Node3D, _delta: float) -> void:
 	var p := Vector2(game.boat.position.x, game.boat.position.z)
 	var departure: Vector3 = game.archipelago.get_node("SpawnPoints/Departure").position
 	var harbour: Vector3 = game.archipelago.get_node("NavigationRegions/Lighthouse").position
-	var quiet_water: bool = game.boat.position.distance_to(departure) < 75.0 or game.boat.position.distance_to(harbour) < 90.0
+	var quiet_water: bool = game.boat.position.distance_to(game.arena_center()) < 95.0 if game.arena_mode else game.boat.position.distance_to(departure) < 75.0 or game.boat.position.distance_to(harbour) < 90.0
 	if phase == Phase.RECOVERY:
 		if time >= phase_until:
 			phase = Phase.CALM
@@ -125,7 +125,7 @@ func update(game: Node3D, _delta: float) -> void:
 				next_event = time + 1.5
 		return
 	if not quiet_water and not combat and not game.cannon.aiming and field.waves.is_empty():
-		for region: Vector4 in REGIONS:
+		for region: Vector4 in ([] if game.arena_mode else REGIONS):
 			var id := int(region.w)
 			if id not in completed and p.distance_to(Vector2(region.x, region.y)) < region.z:
 				var forward: Vector3 = game.course_forward()

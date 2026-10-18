@@ -1,5 +1,14 @@
 # Calm ocean and directional waves
 
+Normal play now uses the lighthouse arena. Its inner 95 m is sheltered from
+scheduled crests; outside it the existing 25–45 second ambient scheduler can
+launch a small, terrain-checked event while clear of combat and cannon view.
+Voyage-region ten-crest sets are inactive. Existing crests continue while aiming,
+and arena return feeds a blended rudder into the unchanged `wave_sailing.step()`.
+The field, shader, hull sampler and cannon-water authority remain shared.
+Only the static coastal foam texture changes to match the isolated island.
+The voyage descriptions and checks below refer to `tests/legacy_voyage.tscn`.
+
 `game/crossing.tscn` uses `presets/calm.tres`: gentle rolling swells, no ambient foam and negligible uncommanded horizontal motion. Weather changes lighting/clouds, not wave height. Choppy/stormy presets retain stronger surfaces for stress checks.
 
 ## Deck camera and turbulence — 18 October 2026

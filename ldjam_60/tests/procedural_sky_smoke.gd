@@ -17,7 +17,7 @@ func check(ok: bool, label: String) -> void:
 
 
 func _run() -> void:
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

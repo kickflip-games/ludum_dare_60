@@ -45,6 +45,8 @@ func island_height(p: Vector2, island: Array) -> float:
 	return height
 
 func _initialize() -> void:
+	var arena := "--arena" in OS.get_cmdline_user_args()
+	var resource_prefix := "arena" if arena else "archipelago"
 	var heights := PackedFloat32Array()
 	heights.resize(SIZE * SIZE)
 	for z in range(SIZE):
@@ -52,26 +54,28 @@ func _initialize() -> void:
 			var p := Vector2(x - (SIZE - 1) * 0.5, z - (SIZE - 1) * 0.5) * SPACING
 			var h := -14.0
 			for island in ISLANDS:
+				if arena and island != ISLANDS[7]:
+					continue
 				h = maxf(h, island_height(p, island))
-			for cove: Vector4 in COVES:
+			for cove: Vector4 in ([] if arena else COVES):
 				h -= smoothstep(cove.z, 0.0, p.distance_to(Vector2(cove.x, cove.y))) * cove.w
 			# Keep the established lighthouse foundation at its authored elevation.
 			h = lerpf(h, 19.0, 1.0 - smoothstep(24.0, 37.0, p.distance_to(Vector2(275, 250))))
 			h = maxf(-14.0, h)
 			heights[z * SIZE + x] = h
 	var image := Image.create_from_data(SIZE, SIZE, false, Image.FORMAT_RF, heights.to_byte_array())
-	assert(ResourceSaver.save(image, "res://game/world/archipelago_height.res", ResourceSaver.FLAG_COMPRESS) == OK)
+	assert(ResourceSaver.save(image, "res://game/world/%s_height.res" % resource_prefix, ResourceSaver.FLAG_COMPRESS) == OK)
 	var shape := HeightMapShape3D.new()
 	shape.map_width = SIZE
 	shape.map_depth = SIZE
 	shape.map_data = heights
-	assert(ResourceSaver.save(shape, "res://game/world/archipelago_collision.res", ResourceSaver.FLAG_COMPRESS) == OK)
+	assert(ResourceSaver.save(shape, "res://game/world/%s_collision.res" % resource_prefix, ResourceSaver.FLAG_COMPRESS) == OK)
 	var terrain := Terrain.new()
 	terrain._ensure_children()
 	terrain.surface_material = load("res://game/world/moonlit_terrain.tres")
 	terrain.set_heightmap(heights, SIZE, SIZE)
 	terrain._rebuild_editor_full()
-	assert(ResourceSaver.save(terrain.mesh_instance.mesh, "res://game/world/archipelago_mesh.res", ResourceSaver.FLAG_COMPRESS) == OK)
+	assert(ResourceSaver.save(terrain.mesh_instance.mesh, "res://game/world/%s_mesh.res" % resource_prefix, ResourceSaver.FLAG_COMPRESS) == OK)
 	terrain.free()
-	print("BAKED: 1024m archipelago, 257x257 R32F + full collision + LiteTerrain preview mesh")
+	print("BAKED: %s, 257x257 R32F + full collision + LiteTerrain preview mesh" % resource_prefix)
 	quit()

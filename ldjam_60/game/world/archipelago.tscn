@@ -38,6 +38,9 @@ position = Vector3(-175, 0, -110)
 position = Vector3(220, 0, -100)
 [node name="HarbourApproach" type="Marker3D" parent="SpawnPoints"]
 position = Vector3(350, 0, 155)
+[node name="ArenaSpawn" type="Marker3D" parent="SpawnPoints"]
+position = Vector3(275, 0, 175)
+rotation = Vector3(0, -1.74532925, 0)
 [node name="NavigationRegions" type="Node3D" parent="."]
 [node name="Wreck" type="Marker3D" parent="NavigationRegions"]
 position = Vector3(-230, 0, -155)

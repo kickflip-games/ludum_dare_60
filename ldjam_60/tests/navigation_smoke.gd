@@ -35,7 +35,7 @@ func _run() -> void:
 	for example in [[2.4, 0], [2.6, 5], [357.4, 355], [357.6, 0]]:
 		check(Bearings.compass_degrees(deg_to_rad(example[0]), 5) == example[1], "approximate reading %s° rounds to %03d°" % example)
 	check(Bearings.bearing_to(Vector3(2, 0, 3), Vector3(2, 30, 3), 0.73) == 0.73, "coincident planar destination retains the heading")
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
 	game.set_physics_process(false)

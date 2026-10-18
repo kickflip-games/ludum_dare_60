@@ -30,7 +30,7 @@ func _run() -> void:
 		quit(1)
 		return
 	DirAccess.make_dir_recursive_absolute(output_dir.path_join("motion"))
-	game = load("res://game/crossing.tscn").instantiate()
+	game = load("res://tests/legacy_voyage.tscn").instantiate()
 	game.weather_enabled = false
 	root.add_child(game)
 	await process_frame

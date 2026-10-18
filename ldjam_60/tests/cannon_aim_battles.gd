@@ -11,7 +11,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	for trial in range(3):
-		var game = load("res://game/crossing.tscn").instantiate()
+		var game = load("res://tests/legacy_voyage.tscn").instantiate()
 		game.encounter_seed = 60 + trial
 		root.add_child(game)
 		await process_frame

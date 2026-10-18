@@ -100,12 +100,28 @@
         "BOSS CHECK: 120 checks, 0 failures"
       ],
       "failures": []
+    },
+    {
+      "suite": "ocean_juice",
+      "exit": 0,
+      "summary": [
+        "OCEAN JUICE: 34 checks, 0 failures"
+      ],
+      "failures": []
     }
   ],
   "naval_ai": {
     "checks": 30,
     "failures": 0
   },
-  "total_checks": 769,
-  "failures": 3
+  "total_checks": 803,
+  "failures": 3,
+  "post_ocean_rechecked": [
+    "combat_particles",
+    "starboard_cone",
+    "cannon_arc",
+    "arcade_controls",
+    "boss",
+    "ocean_juice"
+  ]
 }

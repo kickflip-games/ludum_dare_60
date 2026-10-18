@@ -194,5 +194,101 @@
     ],
     "renderer": "WebKit WebGL",
     "viewport": "(1280, 720)"
+  },
+  "vfx_after_commit": "b087440",
+  "integrated_after_commit": "707bac4",
+  "integrated_after": {
+    "capacity": 192,
+    "full_vfx": true,
+    "nodes_end": 575,
+    "nodes_start": 575,
+    "phases": [
+      {
+        "case": "idle",
+        "draw_calls": 268,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 9.9,
+        "particle_cpu_mean_us": 35.9400998336106,
+        "particle_cpu_p95_us": 100,
+        "resources": 132,
+        "samples": 601,
+        "saturated": false
+      },
+      {
+        "case": "player",
+        "draw_calls": 269,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.3,
+        "particle_cpu_mean_us": 41.2645590682196,
+        "particle_cpu_p95_us": 100,
+        "resources": 132,
+        "samples": 601,
+        "saturated": true
+      },
+      {
+        "case": "enemy",
+        "draw_calls": 269,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.3,
+        "particle_cpu_mean_us": 42.6666666666667,
+        "particle_cpu_p95_us": 100,
+        "resources": 132,
+        "samples": 600,
+        "saturated": false
+      },
+      {
+        "case": "hull",
+        "draw_calls": 269,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.3,
+        "particle_cpu_mean_us": 41.8333333333333,
+        "particle_cpu_p95_us": 100,
+        "resources": 132,
+        "samples": 600,
+        "saturated": true
+      },
+      {
+        "case": "water",
+        "draw_calls": 292,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.3,
+        "particle_cpu_mean_us": 150.664451827243,
+        "particle_cpu_p95_us": 300,
+        "resources": 132,
+        "samples": 602,
+        "saturated": false
+      },
+      {
+        "case": "mixed",
+        "draw_calls": 295,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.3,
+        "particle_cpu_mean_us": 146.089850249584,
+        "particle_cpu_p95_us": 300,
+        "resources": 132,
+        "samples": 601,
+        "saturated": true
+      },
+      {
+        "case": "expired",
+        "draw_calls": 268,
+        "median_ms": 8.3,
+        "nodes": 575,
+        "p95_ms": 10.2,
+        "particle_cpu_mean_us": 38.4359400998336,
+        "particle_cpu_p95_us": 100,
+        "resources": 132,
+        "samples": 601,
+        "saturated": false
+      }
+    ],
+    "renderer": "WebKit WebGL",
+    "viewport": "(1280, 720)"
   }
 }

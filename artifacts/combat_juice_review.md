@@ -24,8 +24,8 @@
 ## Visual evidence
 
 Actual Compatibility renders at 1280×720, matching staging and wave time.
-Local media stays out of Git. Baseline is current-main `8593d13`; final includes
-that same interface. Earlier pre-interface comparisons were also inspected.
+Local media stays out of Git. Baseline is main `8593d13`; final includes that same interface plus main's subsequent ocean presentation (`fb248fd`). Earlier pre-interface comparisons
+were also inspected.
 
 | View | Before | After |
 | --- | --- | --- |
@@ -83,8 +83,9 @@ Logs are local under `/tmp/latitude-juice/test-*.log`.
 | `night_ocean_smoke.gd` | 22 checks, 1 failures |
 | `boss_smoke.gd` | 120 checks, 0 failures |
 | `naval_ai_smoke.gd` | 30 checks, 0 failures |
+| `ocean_juice_smoke.gd` | 34 checks, 0 failures |
 
-**766/769 assertions pass; 3 inherited failures.**
+**800/803 assertions pass; 3 inherited failures.**
 Both `combat_feel` wave-launch/visible-crest assertions and `night_ocean`'s
 terrain/foam-mask hash assertion fail on untouched main as well. Baseline logs:
 [wave fixture](/tmp/latitude-juice/baseline-combat-feel.log),
@@ -100,7 +101,8 @@ independence, both Reduced-motion views, retry and after-victory foam expiry.
 
 ## Chrome WebGL2 benchmark
 
-Same machine, scene, 1280×720 release viewport and browser tab. Extended the
+Matched VFX comparison: main `8593d13` versus integration `b087440`, before
+main's later ocean polish. Same machine, scene, 1280×720 release viewport and browser tab. Extended the
 existing fixture with seven eight-second phases, discarding three seconds per
 phase. Five frozen production ships, frequent cosmetics, no screenshot readback
 inside the timing loop. Values below are median / p95 frame intervals (ms).
@@ -124,7 +126,17 @@ observed. Warm fire, smoke and overlapping water effects were inspected in Chrom
 This desktop run is refresh-limited near 120 Hz. It shows no measured median
 regression and no recurring p95 increase; it cannot establish a sub-5% isolated
 GPU cost or low-end/mobile performance. The earlier pre-interface matched pair
-also held 8.3 ms medians. No public itch.io upload was performed.
+also held 8.3 ms medians.
+
+A final run after retaining upstream ocean polish (`707bac4`) again held **8.3 ms**
+medians and **575 nodes / 132 reported resources** through every phase. Its p95
+was **9.9 ms idle, 10.3 ms for all active cases, and 10.2 ms expired**. This broader
+p95 increase was not isolated to VFX and its cause was not determined; the final
+integration cannot be described as meeting an isolated 5% GPU-cost bound.
+Particle, cone, arc, controls, boss and ocean-juice suites were rerun after that
+merge: **330 checks, zero failures or script errors**. Native evidence and the
+production Web export were refreshed for the integrated result.
+No public itch.io upload was performed.
 
 ## Acceptance checklist
 

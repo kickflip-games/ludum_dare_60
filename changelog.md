@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: refreshed the repository README with browser-play and Ludum
+  Dare links, concise controls, three native stills and the optimized animated
+  cover. Preserved the former README in a linked development reference; added
+  a matching 1280 × 640 social preview card using existing game art and fonts.
+  Updated GitHub About description, play URL and topics; uploaded the social
+  card and verified it after reload. The Ludum Dare entry now shows as a Jam Game.
+
 - Work in progress: enemies defend themselves while waiting for pursuit slots
   and at close range; cutter/skiff/heavy reloads are now 1.6/1.25/2.3 seconds.
   Flagship guns are visible on all four faces, with deck-matched launch points,

@@ -151,7 +151,7 @@ func _run() -> void:
 		check(hud.menu_details.text == "Reached wave %d of 5" % number, "loss reports actual wave %d" % number)
 	if OS.get_cmdline_user_args().has("--realtime"):
 		await realtime_paths()
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("RESULT FLOW: %d checks, %d failures; staged runtime fixtures, not a human playthrough" % [checks, failures])
-	game.queue_free()
-	await process_frame
 	quit(1 if failures else 0)

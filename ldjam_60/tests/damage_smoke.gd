@@ -135,7 +135,7 @@ func _run() -> void:
 	check(game.state == game.State.CASTING_OFF and game.hull == 3 and visuals.severity == 0 and visuals.flash_strength == 0.0 and visuals.red_strength == 0.0 and visuals.smoke_clock == 0.0 and not visuals.smoke.visible and not visuals.light_marks.visible and not visuals.heavy_marks.visible, "real retry input clears all persistent and transient damage effects")
 	game.hud._process(0.0)
 	check(game.hud.gameplay_hud.get_node_or_null("Hull") == null and not game.hud.menu_details.text.contains("Hull"), "neither gameplay nor result UI contains a hull indicator")
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("DAMAGE CHECK: %d checks, %d failures" % [checks, failures])
-	game.queue_free()
-	await process_frame
 	quit(0 if failures == 0 else 1)

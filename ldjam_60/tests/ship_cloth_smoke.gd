@@ -116,7 +116,7 @@ func _run() -> void:
 	combined.add_child(inert)
 	check(not inert.is_processing() and inert._parts.is_empty(), "unsupported/combined model safely does nothing")
 	combined.free()
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("SHIP CLOTH: %d checks, %d failures" % [checks, failures])
-	game.queue_free()
-	await process_frame
 	quit(0 if failures == 0 else 1)

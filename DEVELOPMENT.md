@@ -93,9 +93,9 @@ earlier survivors alive. Entering the old harbour never wins.
   triangle marks incoming fire on the left or right; storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
   Player health stays on the ship: full hull is clean, damaged hull has a clear
   pale-grey stern plume, and critical hull has larger, denser charcoal smoke. Retained
-  scratches and restrained scorch support those cues. Damaged sails have a
-  scorched hole and frayed foot; critical sails have larger holes and missing edge
-  sections. These cutouts follow the existing cloth animation, restore with hull
+  scratches and restrained scorch support those cues. Damaged sails have uneven edge tears and a frayed foot; critical sails
+  lose larger edge sections and the outer tip. Damage opens from existing edges
+  rather than making isolated holes. These cutouts follow the existing cloth animation, restore with hull
   repairs, and preserve the original mesh, mast and boom. Accepted hits still flash
   red briefly. Repair immediately reduces/clears the plume. No health HUD.
 - Voyage progression, sextant and old territory triggers are inactive. Visible

@@ -6,6 +6,16 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Resolved the changelog conflicts while retaining both histories.
+  Native close and current smoke fixtures now wait for queued audio playback to
+  release before exit, with a bounded deadline. Gameplay and visuals are preserved;
+  shutdown, music, result/replay, hull/sail and adjacent checks pass without resource
+  warnings. Local Web export succeeds.
+
+- Replaced the sail's isolated punctures with uneven edge tears,
+  frayed hems and missing outer sections. Critical damage loses the outer tip;
+  every tear opens onto an existing edge. Repairs and restart restore the cloth.
+
 - Work in progress: player sails now show scorched holes and ragged edges when
   damaged, with larger tears and missing sections at critical hull. Reuses the
   animated canvas material with opaque cutouts; preserves the source model,
@@ -37,6 +47,12 @@ recorded evidence and limitations.
   Native result/GUI regression: 237 checks pass with normal callbacks, plus 226
   capture checks at 1280×720, 960×540 and 900×506. Seven adjacent suites pass
   691 checks; local Web export succeeds. Human playthrough/browser profiling remain open.
+- Bound Web rendering to Performance 640×360, Standard 960×540 (default) or
+  High 1280×720; keep aspect and remove the Web canvas-scaling comparison.
+  Cap the presentation buffer at 1280×720 through resize, zoom and fullscreen.
+  Separate viewport/texture counters from GPU attachment evidence; preserve
+  native quality and licensed music. Browser gestures respect explicit audio
+  Resume. Investigation and real iframe checks: [resolution review](artifacts/web_resolution_review.md).
 
 - Work in progress: refreshed the repository README with browser-play and Ludum
   Dare links, concise controls, three native stills and the optimized animated
@@ -387,7 +403,6 @@ recorded evidence and limitations.
   377 checks pass across five suites; eight native desktop/small-window menu
   frames inspected. Human playtesting and Web remain untested.
 
-<<<<<<< HEAD
 - Work in progress: Development Tools `+` (Shift+= / numpad +) releases the
   current wave's queued ships, bypassing stagger and the ordinary ship cap.
   Preserves safe placement, survivors, timers and wave/defeat accounting;
@@ -395,7 +410,6 @@ recorded evidence and limitations.
   Enable Development Tools in the inspector or launch with `--debug-tools`.
   306 checks pass across debug, survival, flagship and control suites; native
   nine-ship fleet frame inspected. Human playtesting and Web remain untested.
-=======
 - Added directional warm cannon flashes, delayed smoke, snappy recoil and varied
   hull/sinking feedback in the existing 192-instance particle batch. Four pooled
   water splashes reuse 24 meshes/materials; real collision types control feedback
@@ -410,7 +424,6 @@ recorded evidence and limitations.
   Existing wave physics, controls and ballistics remain unchanged. Wake retains
   two meshes / 576 vertices; spray uses one fixed 64-instance pool (four bow slots
   on Low). Validation and matched arena captures: [ocean review](artifacts/ocean_juice_review.md).
->>>>>>> 2c96f4d17bea26a2bc2fb50a50d784085d4b3a4c
 
 - Merged nautical UI into main while preserving the flagship encounter. Final
   fleet icons include the flagship and queued escorts; its health bar sits

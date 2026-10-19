@@ -5,7 +5,11 @@ const VoyageDirector = preload("res://game/voyage_director.gd")
 const NavigationBearings = preload("res://game/navigation_bearings.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const LiveDiagnostics = preload("res://game/live_diagnostics.gd")
+const AudioShutdown = preload("res://game/audio_shutdown.gd")
 var diagnostics: CanvasLayer
+var _owns_quit_request := false
+var _previous_auto_accept_quit := true
+var _closing := false
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
@@ -303,6 +307,10 @@ func course_right() -> Vector3:
 
 
 func _ready() -> void:
+	_owns_quit_request = not OS.has_feature("web") and get_tree().current_scene == self
+	if _owns_quit_request:
+		_previous_auto_accept_quit = get_tree().auto_accept_quit
+		get_tree().auto_accept_quit = false
 	ocean_settings = ocean_settings.duplicate(true)
 	hull = hull_capacity
 	target = Vector3(-230, 0, -155)
@@ -473,6 +481,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and _owns_quit_request:
+		if not _closing:
+			_closing = true
+			AudioShutdown.close_scene(self)
+		return
 	if what not in [NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_IN, NOTIFICATION_WM_WINDOW_FOCUS_OUT]: return
 	if not is_instance_valid(cannon): return
 	var focused := what in [NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_WM_WINDOW_FOCUS_IN]
@@ -1305,6 +1318,8 @@ func _process(delta: float) -> void:
 
 
 func _exit_tree() -> void:
+	if _owns_quit_request and not _closing:
+		get_tree().auto_accept_quit = _previous_auto_accept_quit
 	if paused:
 		get_tree().paused = false
 		paused = false

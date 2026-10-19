@@ -221,9 +221,9 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(report_dir)
 	var file:=FileAccess.open(report_dir.path_join("survival.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"max_living":max_living,"timed_records":transitions,"no_input_seconds":no_input_seconds},"\t"))
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("SURVIVAL CHECK: %d checks, %d failures"%[checks,failures])
-	game.queue_free()
-	await process_frame
 	quit(0 if failures==0 else 1)
 
 func _projectile_and_multi_ship_checks() -> void:

@@ -12,7 +12,9 @@ Open `http://127.0.0.1:8782/index.html` or `/embed.html`. The export runs
 `game/crossing.tscn` with normal controls, HUD, audio and browser resizing.
 It uses the Compatibility renderer, one thread and a 960×540 internal viewport.
 Native settings stay at their existing quality. The frame scales to the available
-canvas with 16:9 letterboxing; CSS/backing sizes can be larger than the render target.
+canvas with 16:9 letterboxing. The presentation backing buffer is independently
+capped at 1280×720, including HiDPI, zoom and fullscreen. Canvas Resize Policy is
+None; the runtime matches the bounded buffer's aspect to the CSS canvas.
 
 ## Record a problem
 
@@ -44,7 +46,18 @@ Click a diagnostic option to cycle its choices. Test each for at least 60 second
   that offset problem after Resume. Leaving a solo mode restarts its sample.
 - **Ocean playback:** loop sample versus the original 22,050 Hz, 0.15-second generator.
   Switching away captures its cumulative `get_skips()` before discarding playback.
-- **Render resolution:** 960×540, 1280×720, or the original canvas scaling.
+- **Render resolution (Web):** Performance 640×360, Standard 960×540 (default),
+  High 1280×720. All use fixed viewport scaling with preserved aspect.
+  The original canvas comparison is available only on native desktop.
+
+Schema 2 distinguishes `viewport_internal` (reconstructed from logical size and
+canvas stretch), `viewport_texture_reported` (the engine getter), logical UI size,
+window size, CSS canvas, backing buffer, WebGL drawing buffer, current color
+attachments and historical allocation events. In Godot 4.8.dev6, the root texture
+getter multiplies the internal size by stretch again in canvas mode; it is not
+proof of a physical allocation. Texture dimensions are observed at storage calls;
+renderbuffer dimensions are queried from GL. Contexts identify their canvas, so
+engine capability probes can be separated from the game's `canvas` context.
 
 Use the same scene, camera and display for comparisons. Keep the tab visible and
 run one renderer at a time. Reports include pauses and menu frames; filter samples
@@ -71,7 +84,8 @@ tested. These local pages are test harnesses, not the live itch release.
 
 ## Upload the prepared ZIP
 
-`build/blackwater-web.zip` contains the complete release with `index.html` at the
+`build/blackwater-web-<commit>-<source fingerprint>.zip` is the versioned test
+archive; `build/blackwater-web.zip` is a convenience copy. Each contains `index.html` at the
 ZIP root. Keep `build.json` and `checksums.json` with the game. Engine/pack assets
 use content-specific names; PWA/service-worker generation is disabled.
 
@@ -99,3 +113,12 @@ two clean exports were not byte-identical. Rebuild commands reproduce the source
 configuration, while the exact supplied archive is identified by its checksums.
 
 Validation results and remaining gaps: [Web stability review](artifacts/web_stability_review.md).
+
+The subsequent [resolution investigation](artifacts/web_resolution_review.md)
+supersedes that review's canvas comparison and resolution-counter interpretation.
+Reproduce the DPR 2 iframe test with
+`python3 tools/web_resolution_review.py --root build/web`, then open
+`http://127.0.0.1:8783/review.html` in Chrome at 100% zoom on a DPR 2 display.
+The page measures child-frame rAF with the production recorder off or on and
+saves only to ignored local `build/resolution/results/`. It uses the real scene,
+normal input/audio and wall time, without fixed physics delta or a combat pilot.

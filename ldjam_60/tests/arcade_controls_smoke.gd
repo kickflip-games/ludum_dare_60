@@ -178,9 +178,9 @@ func _run() -> void:
 	await lifecycle()
 	await moving_combat()
 	await moving_combat(true)
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("ARCADE CONTROLS: %d checks, %d failures" % [checks, failures])
-	game.queue_free()
-	await process_frame
 	quit(0 if failures == 0 else 1)
 
 func trajectory_cases() -> void:

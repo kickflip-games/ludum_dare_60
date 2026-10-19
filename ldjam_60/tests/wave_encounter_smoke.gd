@@ -177,7 +177,7 @@ func _run() -> void:
 	game.ocean.wave_field.add_wave(Vector2.ZERO, Vector2.RIGHT, 1, 4, 24, 8, 0, 8)
 	game.take_damage(game.hull_capacity, "fixture")
 	check(game.ocean.wave_field.waves.is_empty() and not director.busy(), "loss clears encounter forces and scheduling")
-	game.queue_free()
-	await process_frame
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("WAVE ENCOUNTERS: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

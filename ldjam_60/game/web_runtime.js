@@ -6,7 +6,7 @@
     const times = new Float64Array(capacity), intervals = new Float32Array(capacity);
     let cursor = 0, count = 0, recording = false, previous = 0, raf = 0;
     let lifecycle = 0, wasLocked = false, audioPaused = false;
-    const events = [], contexts = [], keys = new Set(), renderTargets = [];
+    const events = [], contexts = [], keys = new Set(), renderTargets = [], gpuContexts = [];
     // Observe actual GPU attachment allocations independently of CSS dimensions
     // (rare calls, no per-draw hook).
     const getContext = HTMLCanvasElement.prototype.getContext;
@@ -15,13 +15,46 @@
         if (!gl || !args[0].startsWith('webgl') || gl.__blackwaterObserved) return gl;
         gl.__blackwaterObserved = true;
         const dimensions = new WeakMap();
+        const observedSizes = new WeakMap();
+        const attachments = new Map();
+        const colorAttachment = a => a >= gl.COLOR_ATTACHMENT0 && a < gl.COLOR_ATTACHMENT0 + 16;
+        const remember = (framebuffer, point, object, kind) => {
+            if (!framebuffer) return;
+            if (!attachments.has(framebuffer)) attachments.set(framebuffer, new Map());
+            if (object) attachments.get(framebuffer).set(point, {object, kind});
+            else attachments.get(framebuffer).delete(point);
+            const size = dimensions.get(object);
+            const signature = size ? kind + ':' + size.join('x') : null;
+            // Cubemap faces are reattached while rendering the sky. Retain size
+            // changes, without flooding history with identical per-frame binds.
+            if (size && colorAttachment(point) && observedSizes.get(object) !== signature) {
+                observedSizes.set(object, signature);
+                renderTargets.push({t_ms: now(), size, kind});
+                if (renderTargets.length > 64) renderTargets.shift();
+            }
+        };
+        const binding = target => gl.getParameter(target === gl.READ_FRAMEBUFFER ? gl.READ_FRAMEBUFFER_BINDING : gl.FRAMEBUFFER_BINDING);
+        const debug = gl.getExtension('WEBGL_debug_renderer_info');
+        const renderer = debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        gpuContexts.push(() => ({
+            canvas_id: this.id || null,
+            drawing_buffer: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+            renderer,
+            context_lost: gl.isContextLost(),
+            // Current attachments, including resized storage and deletions. This is
+            // distinct from allocation history and from the default drawing buffer.
+            color_attachments: [...attachments.values()].flatMap(points => [...points].filter(([point]) => colorAttachment(point)).map(([point, a]) => ({
+                attachment: point - gl.COLOR_ATTACHMENT0, kind: a.kind, size: dimensions.get(a.object) ?? null
+            })))
+        }));
         for (const method of ['texImage2D', 'texStorage2D']) {
             const original = gl[method].bind(gl);
             gl[method] = (...a) => {
                 const result = original(...a);
-                const size = method === 'texStorage2D' ? [a[3], a[4]] : a.length >= 9 ? [a[3], a[4]] : null;
-                if (size && a[0] === gl.TEXTURE_2D) {
-                    const texture = gl.getParameter(gl.TEXTURE_BINDING_2D);
+                const size = method === 'texStorage2D' || a.length >= 9 ? [a[3], a[4]] : a[5]?.width ? [a[5].width, a[5].height] : null;
+                const cube = a[0] === gl.TEXTURE_CUBE_MAP || (a[0] >= gl.TEXTURE_CUBE_MAP_POSITIVE_X && a[0] <= gl.TEXTURE_CUBE_MAP_NEGATIVE_Z);
+                if (size && (a[0] === gl.TEXTURE_2D || cube) && (method === 'texStorage2D' || a[1] === 0)) {
+                    const texture = gl.getParameter(cube ? gl.TEXTURE_BINDING_CUBE_MAP : gl.TEXTURE_BINDING_2D);
                     if (texture) dimensions.set(texture, size);
                 }
                 return result;
@@ -29,13 +62,36 @@
         }
         const attach = gl.framebufferTexture2D.bind(gl);
         gl.framebufferTexture2D = (...a) => {
-            const result = attach(...a), size = dimensions.get(a[3]);
-            if (size && a[1] === gl.COLOR_ATTACHMENT0) {
-                renderTargets.push({t_ms: now(), size});
-                if (renderTargets.length > 32) renderTargets.shift();
-            }
+            const result = attach(...a);
+            remember(binding(a[0]), a[1], a[3], 'texture');
             return result;
         };
+        for (const method of ['renderbufferStorage', 'renderbufferStorageMultisample']) {
+            if (!gl[method]) continue;
+            const original = gl[method].bind(gl);
+            gl[method] = (...a) => {
+                const result = original(...a), rb = gl.getParameter(gl.RENDERBUFFER_BINDING);
+                if (rb) dimensions.set(rb, [gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_WIDTH),
+                    gl.getRenderbufferParameter(gl.RENDERBUFFER, gl.RENDERBUFFER_HEIGHT)]);
+                return result;
+            };
+        }
+        const attachRB = gl.framebufferRenderbuffer.bind(gl);
+        gl.framebufferRenderbuffer = (...a) => {
+            const result = attachRB(...a);
+            remember(binding(a[0]), a[1], a[3], 'renderbuffer');
+            return result;
+        };
+        const deleteFB = gl.deleteFramebuffer.bind(gl);
+        gl.deleteFramebuffer = fb => { attachments.delete(fb); return deleteFB(fb); };
+        for (const method of ['deleteTexture', 'deleteRenderbuffer']) {
+            const original = gl[method].bind(gl);
+            gl[method] = object => {
+                dimensions.delete(object);
+                for (const points of attachments.values()) for (const [point, a] of points) if (a.object === object) points.delete(point);
+                return original(object);
+            };
+        }
         return gl;
     };
     const controls = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW',
@@ -71,6 +127,10 @@
         window[name] = new Proxy(Original, {construct(Target, args) {
             const ctx = Reflect.construct(Target, args);
             contexts.push(ctx);
+            const resume = ctx.resume.bind(ctx);
+            // The engine also resumes on browser gestures. Focus restoration or
+            // diagnostic clicks must not bypass the game's explicit Resume.
+            ctx.resume = (...a) => audioPaused ? Promise.resolve() : resume(...a);
             ctx.addEventListener('statechange', () => event('audio_context', {state: ctx.state}));
             const create = ctx.createBufferSource.bind(ctx);
             ctx.createBufferSource = () => {
@@ -125,6 +185,20 @@
     function installCanvas() {
         const c = canvas();
         if (!c) return;
+        // Canvas Resize Policy=None: the engine follows this backing buffer.
+        // Match its aspect to CSS so Window's KEEP letterboxing and pointer
+        // coordinates stay aligned. Presentation is bounded even at extreme DPR,
+        // zoom, iframe resize or fullscreen; the 3D viewport is bounded separately.
+        const resize = () => {
+            const width = Math.max(1, innerWidth), height = Math.max(1, innerHeight);
+            const scale = Math.min(devicePixelRatio || 1, 1280 / width, 720 / height);
+            const w = Math.max(1, Math.floor(width * scale)), h = Math.max(1, Math.floor(height * scale));
+            if (c.width !== w) c.width = w;
+            if (c.height !== h) c.height = h;
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        document.addEventListener('fullscreenchange', resize);
         c.addEventListener('blur', () => { keys.clear(); notify('canvas_blur'); });
         c.addEventListener('focus', () => notify('canvas_focus'));
     }
@@ -149,6 +223,7 @@
             fullscreen: !!document.fullscreenElement, embedded: window !== window.top,
             service_worker_controlled: !!navigator.serviceWorker?.controller,
             gpu_color_target_allocations: renderTargets.slice(),
+            webgl: gpuContexts.map(snapshot => snapshot()),
             audio_contexts: contexts.map(c => ({state: c.state, sample_rate: c.sampleRate,
                 base_latency_s: c.baseLatency ?? null, output_latency_s: c.outputLatency ?? null}))};
     }

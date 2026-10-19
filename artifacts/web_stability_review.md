@@ -1,5 +1,9 @@
 # Web stability review — 2026-10-19
 
+Historical review. The subsequent [resolution investigation](web_resolution_review.md)
+removes the public Web canvas comparison, caps presentation buffers and corrects
+the interpretation of the root viewport texture-size counter below.
+
 Local production-scene validation. The public itch build has not been replaced.
 Reproduction and JSON export: [Web release guide](../WEB_RELEASE.md).
 Raw local evidence stays in ignored `build/stability/`.

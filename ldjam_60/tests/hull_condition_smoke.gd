@@ -193,7 +193,7 @@ func _run() -> void:
 	check(game.hud.gameplay_hud.get_node_or_null("Hull") == null, "no health HUD was added")
 	if OS.get_cmdline_user_args().has("--realtime"):
 		await realtime_check()
+	var clean := await preload("res://game/audio_shutdown.gd").release_scene(game, self)
+	check(clean, "shutdown releases all audio playbacks")
 	print("HULL CONDITION: %d checks, %d failures" % [checks, failures])
-	game.queue_free()
-	await process_frame
 	quit(1 if failures else 0)

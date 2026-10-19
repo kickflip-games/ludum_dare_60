@@ -12,11 +12,9 @@ uniform vec4 canvas_bounds;
 uniform int damage_stage = 0;
 varying vec2 cloth_uv;
 
-float tear_distance(vec2 p, vec2 centre, vec2 radius) {
-	vec2 q = (p - centre) / radius;
-	// Fixed angular fraying stays attached to the cloth, without a noise texture.
-	float fray = abs(fract(p.x * 31.0 + p.y * 23.0) * 2.0 - 1.0) * 0.20;
-	return length(q) + fray - 1.0;
+float edge_rip(float p, float tip, vec2 widths) {
+	// Unequal sides give the cloth a few authored tears instead of repeated teeth.
+	return max(0.0, min((p - tip + widths.x) / widths.x, (tip + widths.y - p) / widths.y));
 }
 
 void vertex() {
@@ -32,21 +30,21 @@ void fragment() {
 	float scorch = 0.0;
 	if (damage_stage > 0) {
 		bool critical = damage_stage > 1;
-		float tear = tear_distance(cloth_uv, vec2(0.81, 0.53), critical ? vec2(0.10, 0.21) : vec2(0.065, 0.14));
-		if (critical) {
-			tear = min(tear, tear_distance(cloth_uv, vec2(0.34, 0.25), vec2(0.09, 0.12)));
-			tear = min(tear, tear_distance(cloth_uv, vec2(0.78, 0.86), vec2(0.055, 0.085)));
-		}
-		float teeth = 1.0 - abs(fract(cloth_uv.x * 8.0 + 0.2) * 2.0 - 1.0);
-		float foot = cloth_uv.y - teeth * (critical ? 0.14 : 0.05);
-		float edge_teeth = 1.0 - abs(fract(cloth_uv.y * 6.0) * 2.0 - 1.0);
-		float edge = 1.0 - edge_teeth * (critical ? 0.075 : 0.025) - cloth_uv.x;
-		if (tear < 0.0 || (cloth_uv.x < 0.58 && foot < 0.0) || edge < 0.0) {
+		float foot_depth = (critical ? 0.34 : 0.10) * edge_rip(cloth_uv.x, 0.16, vec2(0.13, 0.07));
+		foot_depth = max(foot_depth, (critical ? 0.24 : 0.07) * edge_rip(cloth_uv.x, 0.43, vec2(0.06, 0.09)));
+		float foot = cloth_uv.y - foot_depth;
+		float edge_depth = (critical ? 0.33 : 0.13) * edge_rip(cloth_uv.y, 0.50, vec2(0.20, 0.15));
+		edge_depth = max(edge_depth, (critical ? 0.21 : 0.07) * edge_rip(cloth_uv.y, 0.83, vec2(0.10, 0.08)));
+		float edge = 1.015 - edge_depth - cloth_uv.x;
+		float corner = cloth_uv.x - (critical ? 0.16 : 0.0);
+		// Every missing section opens onto an existing edge; no isolated punctures.
+		// Lose the critical outer tip completely so it cannot become a floating scrap.
+		if ((cloth_uv.x < 0.58 && foot < 0.0) || edge < 0.0 || corner < 0.0) {
 			discard;
 		}
-		scorch = (1.0 - smoothstep(0.0, 0.28, tear)) * 0.88;
-		if (cloth_uv.x < 0.58) {
-			scorch = max(scorch, (1.0 - smoothstep(0.0, 0.045, foot)) * 0.6);
+		scorch = (1.0 - smoothstep(0.0, 0.035, edge)) * 0.55;
+		if (cloth_uv.x < 0.58 && foot_depth > 0.001) {
+			scorch = max(scorch, (1.0 - smoothstep(0.0, 0.035, foot)) * 0.55);
 		}
 	}
 	ALBEDO = mix(canvas_color.rgb, vec3(0.16, 0.12, 0.09), scorch);

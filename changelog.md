@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-20
 
+- Work in progress: added six straight, tapered boost ribbons alongside the hull
+  and sail, streaming aft with the existing camera streaks. Both effects share
+  the boost fade and clear together on focus loss, pause and restart.
+
+- Work in progress: made boost much more dramatic with 16 long, broad, icy-blue
+  speed streaks rushing outward across the outer quarter of each side.
+  Retained the clear center, camera independence, fade and reset behavior.
+
 - Increased cannon pressure with configurable 1.00/0.90/0.80/0.70/0.65 wave
   reload multipliers, wider existing gun arcs and clear-lane fire during terrain
   avoidance. Surviving ships keep active warnings and cooldowns. Heavy broadsides

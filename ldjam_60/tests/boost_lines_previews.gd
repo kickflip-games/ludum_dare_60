@@ -6,6 +6,7 @@ func capture(label: String) -> void:
 	game.set_paused(false, false)
 	game.boosting = held
 	game.boost_wind.update_wind(held, game.sea_time, 0.2, game.camera, false, false)
+	game.boost_trails.update_trails(game.boost_wind.strength, game.sea_time, game.camera, false, false)
 	game.hud._process(0)
 	RenderingServer.force_draw(true, 1.0 / 60)
 	check(root.get_texture().get_image().save_png(output.path_join(label + ".png")) == OK, "native capture " + label)

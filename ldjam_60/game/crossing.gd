@@ -23,6 +23,7 @@ const TurbulenceEffects = preload("res://game/ocean/turbulence_effects.gd")
 const CombatParticles = preload("res://game/combat_particles.gd")
 const BoatDamage = preload("res://game/boat_damage.gd")
 const BoostWind = preload("res://game/boost_wind.gd")
+const BoatBoostTrails = preload("res://game/boat_boost_trails.gd")
 const WaveSailing = preload("res://game/ocean/wave_sailing.gd")
 const WaveEncounters = preload("res://game/ocean/wave_encounters.gd")
 ## Retained for enemy navigation bounds; never applied to the player.
@@ -281,6 +282,7 @@ var boat_motion := BoatWaveMotion.new()
 var combat_particles: Node3D
 var boat_damage := BoatDamage.new()
 var boost_wind: Control
+var boost_trails: MeshInstance3D
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
@@ -584,6 +586,7 @@ func _clear_player_controls(reset_view: bool = true, release_mouse: bool = true)
 	reading = false
 	boosting = false
 	if is_instance_valid(boost_wind): boost_wind.reset()
+	if is_instance_valid(boost_trails): boost_trails.reset()
 	turn_input = 0.0
 	focus_elapsed = 0.0
 	focus_strength = 0.0
@@ -1111,6 +1114,7 @@ func _measured__update_view(delta: float) -> void:
 	boat_motion.update_motion(ocean, boat, boat_visual, delta, false, trim_speed, sailing_turn)
 	player_pennant.flutter(sea_time)
 	boost_wind.update_wind(boosting and state==State.SAILING,sea_time,delta,camera,motion_setting==1,cannon.aiming)
+	boost_trails.update_trails(boost_wind.strength, sea_time, camera, motion_setting == 1, cannon.aiming)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
 		var sink := smoothstep(0.15, LOSS_HOLD_SECONDS, result_elapsed) if result_active else end_view_blend
@@ -1483,6 +1487,9 @@ func _build_boat() -> void:
 	wind_layer.layer = 0 # Above the storm grade, beneath the HUD created later.
 	add_child(wind_layer)
 	wind_layer.add_child(boost_wind)
+	boost_trails = BoatBoostTrails.new()
+	boost_trails.name = "BoatBoostTrails"
+	boat_visual.add_child(boost_trails)
 	helm_anchor = Marker3D.new()
 	helm_anchor.name = "HelmEye"
 	helm_anchor.position = helm_eye

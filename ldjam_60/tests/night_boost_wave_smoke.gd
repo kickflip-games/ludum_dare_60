@@ -53,7 +53,7 @@ func _run() -> void:
 		shift(true)
 		step(0.5,hz)
 		check(is_equal_approx(game.propulsion_speed(),11.25) and absf(start.distance_to(game.boat.position)-5.625)<0.002, "%d Hz real Shift gives exactly 50 percent movement" % hz)
-		check(game.boost_wind.visible and game.boost_wind.strength>0.99 and game.boost_wind.active_streams==8, "%d Hz held Shift shows bounded wind ribbons" % hz)
+		check(game.boost_wind.visible and game.boost_wind.strength>0.99 and game.boost_wind.active_streams==game.boost_wind.STREAMS, "%d Hz held Shift shows bounded wind ribbons" % hz)
 		shift(true,true)
 		step(0.2,hz)
 		check(is_equal_approx(game.propulsion_speed(),11.25), "%d Hz key echo and holding never stack boost" % hz)

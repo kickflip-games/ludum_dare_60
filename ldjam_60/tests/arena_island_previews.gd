@@ -1,5 +1,24 @@
 extends "res://tests/arena_previews.gd"
 ## Repeatable arena scenery views; helm shots use the normal chase camera.
+var comparison_mesh: Mesh
+
+func _initialize() -> void:
+	super._initialize()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--compare-mesh="):
+			comparison_mesh = load(arg.trim_prefix("--compare-mesh="))
+
+func capture(label: String) -> void:
+	if comparison_mesh == null:
+		await super.capture(label)
+		return
+	var instance: MeshInstance3D = game.archipelago.get_node("Terrain/MeshInstance3D")
+	var current := instance.mesh
+	instance.mesh = comparison_mesh
+	await super.capture(label + "-before")
+	instance.mesh = current
+	await super.capture(label + "-after")
+
 func _run() -> void:
 	if DisplayServer.get_name() == "headless":
 		quit(1)
@@ -8,6 +27,7 @@ func _run() -> void:
 	root.size = Vector2i(1280, 720)
 	game = load("res://game/crossing.tscn").instantiate()
 	root.add_child(game)
+	game.set_process_unhandled_input(false)
 	game.set_physics_process(false)
 	game.cannon.set_physics_process(false)
 	game.hud.set_process(false)

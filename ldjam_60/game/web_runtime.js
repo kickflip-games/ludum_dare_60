@@ -233,6 +233,42 @@
                 base_latency_s: c.baseLatency ?? null, output_latency_s: c.outputLatency ?? null}))};
     }
     window.BlackwaterRuntime = {
+        investigationCases: () => new URLSearchParams(location.search).get('perf_cases') || '',
+        installInvestigation(callback) {
+            // Explicit URL opt-in for a one-button run on an affected device.
+            if (new URLSearchParams(location.search).get('perf_ab') !== '1') return;
+            const button = document.createElement('button');
+            button.textContent = 'Run FPS A/B (restarts run)';
+            button.style.cssText = 'position:fixed;right:8px;top:8px;z-index:9000;padding:8px;background:#102838;color:#f0e5cc';
+            button.onclick = () => { canvas()?.focus(); callback(); };
+            document.body.append(button);
+        },
+        investigationProgress(text) {
+            let status = document.getElementById('blackwater-ab-status');
+            if (!status) {
+                status = document.createElement('div'); status.id = 'blackwater-ab-status';
+                status.style.cssText = 'position:fixed;bottom:4px;left:4px;z-index:9000;background:#102838;color:#f0e5cc;font:14px sans-serif;pointer-events:none';
+                document.body.append(status);
+            }
+            status.textContent = text;
+        },
+        investigationFinished(data) {
+            this.investigationProgress('A/B complete/stopped · Export Diagnostics');
+            let result = document.getElementById('blackwater-ab-result');
+            if (!result) {
+                result = document.createElement('textarea'); result.id = 'blackwater-ab-result';
+                result.hidden = true; document.body.append(result);
+            }
+            result.value = data;
+            let button = document.getElementById('blackwater-ab-export');
+            if (!button) {
+                button = document.createElement('button'); button.id = 'blackwater-ab-export';
+                button.textContent = 'Export FPS A/B JSON';
+                button.style.cssText = 'position:fixed;right:8px;top:48px;z-index:9000;padding:8px';
+                button.onclick = () => this.offerExport(result.value, 'blackwater-active-fps.json');
+                document.body.append(button);
+            }
+        },
         clockMs: now,
         takeLifecycle() { const value = lifecycle; lifecycle = 0; return value; },
         detach() { this.setRecording(false); },

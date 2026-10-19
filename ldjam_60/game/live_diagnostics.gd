@@ -15,6 +15,12 @@ var events: Array[Dictionary] = []
 var samples: Array[Dictionary] = []
 var frame_times := PackedFloat64Array()
 var frame_intervals := PackedFloat32Array()
+var frame_states := PackedStringArray()
+var frame_physics := PackedInt32Array()
+var frame_draws := PackedInt32Array()
+var _last_state := ""
+var _last_physics := 0
+var _last_draw := 0
 var _cursor := 0
 var _count := 0
 var _last_frame := 0
@@ -40,6 +46,9 @@ func _ready() -> void:
 		if data is Dictionary: build_info = data
 	frame_times.resize(FRAME_LIMIT)
 	frame_intervals.resize(FRAME_LIMIT)
+	frame_states.resize(FRAME_LIMIT)
+	frame_physics.resize(FRAME_LIMIT)
+	frame_draws.resize(FRAME_LIMIT)
 	if OS.has_feature("web"):
 		_browser = JavaScriptBridge.get_interface("BlackwaterRuntime")
 		_has_browser = is_instance_valid(_browser)
@@ -77,6 +86,7 @@ func set_enabled(value: bool) -> void:
 	_refresh_stats()
 
 func open_panel() -> void:
+	if is_instance_valid(game.active_fps) and game.active_fps.running: game.active_fps.cancel("diagnostics opened")
 	game.set_paused(true)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	panel.visible = true
@@ -135,12 +145,19 @@ func _process(_delta: float) -> void:
 	poll_lifecycle()
 	if not enabled: return
 	var now := Time.get_ticks_usec()
+	var state_key: String = game.State.keys()[game.state] + ("_PAUSED" if game.paused else "")
 	if _last_frame > 0:
 		frame_times[_cursor] = now / 1000.0
 		frame_intervals[_cursor] = (now - _last_frame) / 1000.0
+		frame_states[_cursor] = state_key if state_key == _last_state else "TRANSITION"
+		frame_physics[_cursor] = Engine.get_physics_frames() - _last_physics
+		frame_draws[_cursor] = Engine.get_frames_drawn() - _last_draw
 		_cursor = (_cursor + 1) % FRAME_LIMIT
 		_count = mini(_count + 1, FRAME_LIMIT)
 	_last_frame = now
+	_last_state = state_key
+	_last_physics = Engine.get_physics_frames()
+	_last_draw = Engine.get_frames_drawn()
 	if now - _last_sample >= 200000:
 		_last_sample = now
 		samples.append(_sample())
@@ -172,6 +189,8 @@ func _sample() -> Dictionary:
 		"render_frame": Engine.get_frames_drawn(),
 		"process_ms": Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		"render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
 		"resources": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),
 		"static_memory_bytes": _positive_monitor(Performance.MEMORY_STATIC),
@@ -199,7 +218,7 @@ func _recent_frames() -> Array:
 	var cutoff := Time.get_ticks_msec() - KEEP_SECONDS * 1000
 	for i in _count:
 		var index := (_cursor - _count + i + FRAME_LIMIT) % FRAME_LIMIT
-		if frame_times[index] >= cutoff: rows.append([snappedf(frame_times[index], 0.001), snappedf(frame_intervals[index], 0.001)])
+		if frame_times[index] >= cutoff: rows.append([snappedf(frame_times[index], 0.001), snappedf(frame_intervals[index], 0.001), frame_states[index], frame_physics[index], frame_draws[index]])
 	return rows
 
 static func summarize(rows: Array) -> Dictionary:
@@ -217,6 +236,7 @@ static func summarize(rows: Array) -> Dictionary:
 	values.sort()
 	var median: float = values[floori((values.size() - 1) * 0.5)]
 	return {"frames": values.size(), "duration_s": sum / 1000.0, "mean_ms": sum / values.size(),
+		"fps_mean": 1000.0 * values.size() / maxf(sum, 0.001),
 		"median_ms": median, "p95_ms": values[ceili((values.size() - 1) * 0.95)],
 		"p99_ms": values[ceili((values.size() - 1) * 0.99)], "max_ms": values[-1],
 		"fps_median": 1000.0 / maxf(median, 0.001),
@@ -229,14 +249,22 @@ func report() -> Dictionary:
 	var browser: Dictionary = JSON.parse_string(JavaScriptBridge.get_interface("BlackwaterRuntime").report()) if _has_browser else {}
 	if browser.has("raf_frames"): browser["frame_summary"] = summarize(browser.raf_frames)
 	var cutoff := Time.get_ticks_msec() - KEEP_SECONDS * 1000
-	return {"schema": 2, "build": build_info, "godot": Engine.get_version_info(),
+	var by_state := {}
+	for row in frames:
+		if not by_state.has(row[2]): by_state[row[2]] = []
+		by_state[row[2]].append(row)
+	var state_summaries := {}
+	for key in by_state: state_summaries[key] = summarize(by_state[key])
+	return {"schema": 3, "build": build_info, "godot": Engine.get_version_info(),
 		"platform": OS.get_name(), "renderer": RenderingServer.get_current_rendering_method(),
 		"recording_enabled": enabled, "retention_seconds": KEEP_SECONDS,
 		"created_utc": Time.get_datetime_string_from_system(true), "engine_clock_ms": Time.get_ticks_msec(),
 		"browser_clock_ms": _browser.clockMs() if _has_browser else null,
-		"frame_columns": ["engine_ms", "interval_ms"], "engine_frames": frames, "frame_summary": summarize(frames),
+		"frame_columns": ["engine_ms", "interval_ms", "state", "physics_ticks", "rendered_frames"],
+		"engine_frames": frames, "frame_summary": summarize(frames), "state_frame_summaries": state_summaries,
 		"current_state": _sample(), "samples": samples.filter(func(s): return s.t_ms >= cutoff),
 		"events": events.filter(func(e): return e.t_ms >= cutoff), "browser": browser,
+		"active_fps_investigation": game.active_fps.report() if is_instance_valid(game.active_fps) else {},
 		"counter_notes": "viewport_internal is reconstructed from the logical rect and canvas stretch; viewport_texture_reported is the root ViewportTexture getter and may include stretch again. Browser GPU attachments and drawing buffer are independent observations. Frame intervals use wall time including pauses. Null memory means unavailable. Engine/browser clocks are joined using export clock_ms values."}
 
 func export_report() -> void:
@@ -337,6 +365,11 @@ func _build_panel() -> void:
 	else:
 		_add_options(column, "Render resolution", ["960 x 540", "1280 x 720", "Original canvas scaling (comparison)"], set_resolution, 2)
 	var buttons := HBoxContainer.new()
+	var investigate := Button.new()
+	investigate.text = "Run active FPS A/B (~3 minutes; restarts this run)"
+	NauticalTheme.style_button(investigate)
+	investigate.pressed.connect(func(): game.active_fps.start())
+	column.add_child(investigate)
 	column.add_child(buttons)
 	for caption: String in ["Export Diagnostics", "Close"]:
 		var button := Button.new()

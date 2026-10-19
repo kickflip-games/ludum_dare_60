@@ -50,6 +50,12 @@ the old journey remains accessible through `tests/legacy_voyage.tscn`.
 
 Separate resources preserve the original voyage terrain and foam:
 
+The arena visual mesh now omits triangles entirely below -12 m and their unused
+vertices: 4,949 triangles / 3,044 vertices, covering 480×496 m instead of the old
+1,024 m square. The six island silhouettes and all visible coastlines stay in
+place. The 170 m red boundary, collision/height resources and foam pixels are
+unchanged. The compact visual mesh is baked offline; there is no runtime rebuild.
+
 ```sh
 godot --headless --path ldjam_60 --script res://tools/bake_archipelago.gd -- --arena
 godot --headless --path ldjam_60 --script res://tools/bake_coastal_foam.gd -- --arena
@@ -142,7 +148,13 @@ The existing LiteTerrain 1.1 addon supplies the heightmap API, editor sculpting 
 
 The bake samples authored, irregular island lobes into a 257 × 257 R32F image at 4 m spacing, with a -14 m seabed and submerged map edges. It saves `archipelago_height.res`, `archipelago_collision.res` and `archipelago_mesh.res` using compressed Godot resources. The moonlit shader uses slate rock, muted sand and moss zones without snow.
 
-For this compact map, `archipelago_terrain.gd` extends the installed terrain node and uses the baked full mesh plus a full HeightMapShape3D. Runtime streaming and LOD are deliberately bypassed: screenshot review found visible coarse/fine seams on steep peaks. This also gives cannonballs permanent collision, without relying on body tracking. Both ships keep their physics roots at sea level when sliding along shore. Seven embedded coastal outcrops have convex collision matching their meshes. Twin Peaks are separate spires with an open sailing passage; the old rectangular overhead lintel has been removed.
+`archipelago_terrain.gd` extends the installed terrain node and uses a full
+HeightMapShape3D. The arena loads its trimmed visual mesh; the retained voyage
+uses its full mesh. Runtime streaming and LOD are bypassed because earlier review
+found coarse/fine seams on steep peaks. Cannonballs retain permanent collision
+without body tracking, and ship collision roots stay planar when sliding ashore.
+Seven coastal outcrops retain matching convex collision. Twin Peaks remain
+separate spires with an open sailing passage.
 
 Rebake from the repository root:
 

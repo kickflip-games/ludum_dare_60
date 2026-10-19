@@ -1,5 +1,12 @@
 # Calm ocean and directional waves
 
+The starboard firing guide now builds its existing grid once. Its registered
+surface material receives the same settings, focus, time and finite-wave arrays
+as the sea/wake, and uses `waves.gdshaderinc` for vertex height. Target selection,
+ballistics and physical water hits still use their existing CPU authorities.
+This removes 1,029 cosmetic height queries and a mesh upload from each gameplay
+tick; it changes neither the wave model nor the guide's range/angle/density.
+
 ## Ocean interaction polish — 18 October 2026
 
 The current wake keeps its 96 world-space samples, two meshes and 576 vertices,

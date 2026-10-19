@@ -1,6 +1,6 @@
 @tool
 extends "res://addons/lite_terrain/map.gd"
-## Compact-map adapter: use LiteTerrain's baked full mesh and full collision.
+## Baked visual mesh (trimmed in the arena) with the full physical heightfield.
 ## Avoids streamed coarse/fine seams on these small, steep coastal silhouettes.
 func _ready() -> void:
 	if Engine.is_editor_hint():

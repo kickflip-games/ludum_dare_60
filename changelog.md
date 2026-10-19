@@ -6,6 +6,18 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: trimmed invisible deep seabed from the arena's rendered map:
+  131,072 → 4,949 triangles and a 1,024 m square → 480×496 m visual extent.
+  Retained the red boundary, playable area, island silhouettes, physical terrain
+  and every shoreline-foam pixel. The arena bake now retains this optimization.
+
+- Work in progress: replaced the firing guide's per-tick mesh rebuild and 1,029
+  CPU wave queries with persistent geometry using the shared ocean shader.
+  WebGL physics CPU fell from 6.42 to 1.87 ms/tick on the local M4 Pro; targeting,
+  physical waves, ships, arena and 960×540 rendering remain intact. Added opt-in
+  production-scene A/Bs and separate state/frame/physics JSON evidence. Affected
+  Mac retesting remains required; [investigation](artifacts/active_gameplay_fps_review.md).
+
 - Added landscape touch controls using Virtual Joystick DX,
   held FIRE/BOOST, independent swipe camera and pause. Menus and the full tutorial
   accept touch; focus, reset and resize release owned fingers. Added safe-area

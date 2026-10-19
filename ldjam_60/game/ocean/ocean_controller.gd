@@ -1,4 +1,5 @@
 extends Node3D
+const ActiveMetrics = preload("res://game/active_frame_metrics.gd")
 ## Shared surface for rendering, flotation, projectiles and directional wave forces.
 
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
@@ -23,6 +24,7 @@ var wake_strength: float = 0.0
 var wake_yaw: float = 0.0
 var floating_visuals: Array[Dictionary] = []
 var cells: int = 192
+var surface_materials: Array[ShaderMaterial] = []
 var turbulence_center := Vector2.ZERO
 var turbulence_radius := 80.0
 var turbulence_intensity := 0.0
@@ -54,6 +56,17 @@ func configure(value: WaveSettings) -> void:
 	_sync_settings()
 
 
+func register_surface_material(mat: ShaderMaterial) -> void:
+	if mat in surface_materials: return
+	surface_materials.append(mat)
+	settings.apply_waves(mat)
+	mat.set_shader_parameter("fade_start", fade_start)
+	mat.set_shader_parameter("fade_end", fade_end)
+	mat.set_shader_parameter("wave_time", wave_time)
+	mat.set_shader_parameter("focus_xz", focus_xz)
+	wave_field.apply_to(mat)
+
+
 func _instance(node_name: String, mat: ShaderMaterial) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
 	mesh.name = node_name
@@ -64,8 +77,8 @@ func _instance(node_name: String, mat: ShaderMaterial) -> MeshInstance3D:
 	return mesh
 
 
-func _build_geometry() -> void:
-	cells = [160, 192, 256][clampi(quality, 0, 2)]
+func _build_geometry(diagnostic_cells: int = 0) -> void:
+	cells = diagnostic_cells if diagnostic_cells > 0 else [160, 192, 256][clampi(quality, 0, 2)]
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE * PATCH_SIZE
 	plane.subdivide_width = cells - 1
@@ -121,7 +134,9 @@ func _sync_settings() -> void:
 	settings.apply_palette(material)
 	for mat: ShaderMaterial in wake_root.materials:
 		settings.apply_waves(mat)
-	for mat: ShaderMaterial in [material]+wake_root.materials:
+	for mat: ShaderMaterial in surface_materials:
+		settings.apply_waves(mat)
+	for mat: ShaderMaterial in [material]+wake_root.materials+surface_materials:
 		mat.set_shader_parameter("fade_start", fade_start)
 		mat.set_shader_parameter("fade_end", fade_end)
 	var margin: float = settings.maximum_displacement() + absf(settings.sea_level) + wave_field.MAX_WAVES * wave_field.MAX_HEIGHT + 0.6
@@ -136,6 +151,12 @@ func _sync_settings() -> void:
 
 
 func update_surface(boat_position: Vector3, time: float, delta: float, speed_factor: float, heading: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured_update_surface(boat_position, time, delta, speed_factor, heading)
+	ActiveMetrics.finish("ocean_update", started)
+
+
+func _measured_update_surface(boat_position: Vector3, time: float, delta: float, speed_factor: float, heading: float) -> void:
 	wave_time = time
 	focus_xz = Vector2(boat_position.x, boat_position.z)
 	# Only X/Z recenter. Phase and LOD focus use continuous world coordinates.
@@ -144,7 +165,7 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 	material.set_shader_parameter("wave_time", wave_time)
 	material.set_shader_parameter("focus_xz", focus_xz)
 	wave_field.apply_to(material)
-	for mat: ShaderMaterial in wake_root.materials:
+	for mat: ShaderMaterial in wake_root.materials+surface_materials:
 		mat.set_shader_parameter("wave_time",wave_time)
 		mat.set_shader_parameter("focus_xz",focus_xz)
 		wave_field.apply_to(mat)
@@ -157,6 +178,13 @@ func update_surface(boat_position: Vector3, time: float, delta: float, speed_fac
 
 
 func sample_surface(p: Vector2, time: float = -1.0) -> Vector3:
+	var started := ActiveMetrics.start()
+	var result := _measured_sample_surface(p, time)
+	ActiveMetrics.finish("wave_queries", started)
+	return result
+
+
+func _measured_sample_surface(p: Vector2, time: float = -1.0) -> Vector3:
 	var value: Vector3 = settings.sample_wave(p, wave_time if time < 0.0 else time)
 	var offset := p - focus_xz
 	var distance_value := offset.length()
@@ -213,6 +241,13 @@ func update_turbulence(encounters: RefCounted, delta: float) -> void:
 
 
 func water_hit(from: Vector3, to: Vector3, delta: float, end_time: float = -1.0) -> Dictionary:
+	var started := ActiveMetrics.start()
+	var result := _measured_water_hit(from, to, delta, end_time)
+	ActiveMetrics.finish("projectile_water_queries", started)
+	return result
+
+
+func _measured_water_hit(from: Vector3, to: Vector3, delta: float, end_time: float = -1.0) -> Dictionary:
 	var sample_time := wave_time if end_time < 0.0 else end_time
 	# Subdivide fast shots, then refine the first surface crossing in space AND time.
 	var steps := clampi(ceili(from.distance_to(to) / 0.4), 1, 128)

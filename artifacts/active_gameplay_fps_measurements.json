@@ -1,0 +1,6555 @@
+{
+  "player_report": {
+    "build": {
+      "commit_utc": "2026-10-19T06:57:04+00:00",
+      "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+      "dirty": false,
+      "git_sha": "f7d45d223f2334d0b556d3f4bcc51804b6ff5ff8",
+      "godot_version": "4.8.dev6.official.8898c2b3d",
+      "runtime_script": "blackwater-runtime-e836a2b4ec46.js",
+      "source_sha256": "e836a2b4ec465079703c0e1eb96270e8f2c853b65232d4c89eff0e2ca5ff368d"
+    },
+    "state_attribution": "preceding 200 ms sample; transition uncertainty",
+    "states": {
+      "SAILING_PAUSED": {
+        "frame_ms": {
+          "n": 281,
+          "mean": 17.199288256227756,
+          "median": 16.6,
+          "p95": 17.8,
+          "p99": 44.8,
+          "maximum": 63.9
+        },
+        "fps": 58.14194082350507
+      },
+      "SAILING": {
+        "frame_ms": {
+          "n": 197,
+          "mean": 173.46649746192895,
+          "median": 183.5,
+          "p95": 259.3,
+          "p99": 266.9,
+          "maximum": 267.9
+        },
+        "fps": 5.764801933695999
+      },
+      "LOST": {
+        "frame_ms": {
+          "n": 536,
+          "mean": 16.691791044776117,
+          "median": 16.6,
+          "p95": 18.1,
+          "p99": 19.2,
+          "maximum": 42.0
+        },
+        "fps": 59.90968838020298
+      },
+      "READY": {
+        "frame_ms": {
+          "n": 302,
+          "mean": 17.17152317880795,
+          "median": 16.6,
+          "p95": 19.4,
+          "p99": 27.0,
+          "maximum": 89.4
+        },
+        "fps": 58.235952022831576
+      }
+    },
+    "cases": []
+  },
+  "paired_web": {
+    "build": {
+      "commit_utc": "2026-10-19T06:57:04+00:00",
+      "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+      "dirty": true,
+      "git_sha": "f7d45d223f2334d0b556d3f4bcc51804b6ff5ff8",
+      "godot_version": "4.8.dev6.official.8898c2b3d",
+      "runtime_script": "blackwater-runtime-5af57dba796e.js",
+      "source_sha256": "5af57dba796e9e2cdf1148b8497335d0c9b551573ca396b148c97ccf39297d7a"
+    },
+    "cases": [
+      {
+        "case": "legacy_guide",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00329999999998,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 104.166666666667,
+          "fps_p95": 400.0,
+          "fps_p99": 434.782608695652,
+          "frames": 719,
+          "max_ms": 24.1,
+          "mean_ms": 8.34951321279553,
+          "median_ms": 9.6,
+          "p95_ms": 14.5,
+          "p99_ms": 15.5,
+          "presented_fps": 119.767461229657,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.08277777777777777,
+          "enemy_movement": 0.16916666666666666,
+          "enemy_navigation": 0.17472222222222222,
+          "enemy_path_probes": 0.1413888888888889,
+          "enemy_projectiles": 0.08083333333333333,
+          "enemy_route": 0.0002777777777777778,
+          "enemy_total": 0.9422222222222222,
+          "firing_guide": 4.7375,
+          "ocean_update": 0.16916666666666666,
+          "physics_tick": 6.4225,
+          "player_movement": 0.04805555555555556,
+          "player_projectiles": 0.0077777777777777776,
+          "projectile_water_queries": 0.035555555555555556,
+          "view": 0.5313888888888889,
+          "wave_queries": 2.7469444444444444
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 719,
+            "mean": 0.04144645340751043,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 719,
+            "mean": 0.0847009735744089,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 12.2
+          },
+          "enemy_navigation": {
+            "n": 719,
+            "mean": 0.0874826147426982,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 719,
+            "mean": 0.07079276773296245,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 719,
+            "mean": 0.04047287899860918,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_route": {
+            "n": 719,
+            "mean": 0.00013908205841446454,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 719,
+            "mean": 0.4717663421418637,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 12.9
+          },
+          "firing_guide": {
+            "n": 719,
+            "mean": 2.3720445062586926,
+            "median": 3.8,
+            "p95": 5.7,
+            "p99": 7.3,
+            "maximum": 7.4
+          },
+          "ocean_update": {
+            "n": 719,
+            "mean": 0.0847009735744089,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 719,
+            "mean": 3.2157162726008344,
+            "median": 4.9,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 17.8
+          },
+          "player_movement": {
+            "n": 719,
+            "mean": 0.024061196105702367,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 719,
+            "mean": 0.003894297635605007,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 719,
+            "mean": 0.01780250347705146,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 719,
+            "mean": 0.2660639777468707,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 719,
+            "mean": 1.3753824756606396,
+            "median": 1.3,
+            "p95": 4.1,
+            "p99": 5.4,
+            "maximum": 6.0
+          }
+        },
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 9.450208623087622,
+          "median": 8.3,
+          "p95": 18.0,
+          "p99": 18.0,
+          "maximum": 18.0
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 5.782336578581363,
+          "median": 4.4,
+          "p95": 10.3,
+          "p99": 10.3,
+          "maximum": 10.3
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384472,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 246.58692628650903,
+            "median": 243.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 581285.3282336579,
+            "median": 584345.0,
+            "p95": 587605.0,
+            "p99": 587889.0,
+            "maximum": 587889.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1089.2267037552156,
+            "median": 1089.0,
+            "p95": 1108.0,
+            "p99": 1108.0,
+            "maximum": 1111.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1159.0,
+            "median": 1159,
+            "p95": 1159,
+            "p99": 1159,
+            "maximum": 1159
+          },
+          "resources": {
+            "n": 719,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "legacy_downward_camera",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0032,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 263.157894736842,
+          "fps_p95": 434.782608695652,
+          "fps_p99": 476.190476190476,
+          "frames": 720,
+          "max_ms": 16.4,
+          "mean_ms": 8.33777777777778,
+          "median_ms": 3.8,
+          "p95_ms": 14.6,
+          "p99_ms": 15.2,
+          "presented_fps": 119.936034115139,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07694444444444444,
+          "enemy_movement": 0.145,
+          "enemy_navigation": 0.165,
+          "enemy_path_probes": 0.13444444444444445,
+          "enemy_projectiles": 0.07916666666666668,
+          "enemy_route": 0.0008333333333333334,
+          "enemy_total": 0.9188888888888889,
+          "firing_guide": 4.728611111111111,
+          "ocean_update": 0.175,
+          "physics_tick": 6.4125,
+          "player_movement": 0.04388888888888889,
+          "player_projectiles": 0.005833333333333333,
+          "projectile_water_queries": 0.035,
+          "view": 0.5441666666666666,
+          "wave_queries": 2.7422222222222223
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.03847222222222223,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.07250000000000001,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.0825,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06722222222222222,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.03958333333333333,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.00041666666666666675,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.45944444444444443,
+            "median": 0.6,
+            "p95": 1.2,
+            "p99": 1.2,
+            "maximum": 1.3
+          },
+          "firing_guide": {
+            "n": 720,
+            "mean": 2.3643055555555557,
+            "median": 3.8,
+            "p95": 5.8,
+            "p99": 7.2,
+            "maximum": 7.3
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.0875,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.20625,
+            "median": 5.1,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 9.3
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.021944444444444447,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.002916666666666667,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.0175,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.27208333333333334,
+            "median": 0.3,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.3711111111111112,
+            "median": 1.1,
+            "p95": 4.2,
+            "p99": 5.4,
+            "maximum": 5.9
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 6.816666666666666,
+          "median": 6.6,
+          "p95": 8.2,
+          "p99": 8.2,
+          "maximum": 8.2
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 3.01875,
+          "median": 3.0,
+          "p95": 3.5,
+          "p99": 3.5,
+          "maximum": 3.5
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384480,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 211.93333333333334,
+            "median": 213.0,
+            "p95": 224.0,
+            "p99": 225.0,
+            "maximum": 228.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 585925.6944444445,
+            "median": 585985.0,
+            "p95": 589705.0,
+            "p99": 589705.0,
+            "maximum": 589705.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1067.9333333333334,
+            "median": 1069.0,
+            "p95": 1080.0,
+            "p99": 1081.0,
+            "maximum": 1084.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1159.0,
+            "median": 1159,
+            "p95": 1159,
+            "p99": 1159,
+            "maximum": 1159
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "legacy_frozen_simulation",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0006,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 138.888888888889,
+          "frames": 720,
+          "max_ms": 11.1,
+          "mean_ms": 8.33416666666667,
+          "median_ms": 8.3,
+          "p95_ms": 9.4,
+          "p99_ms": 9.5,
+          "presented_fps": 119.98800119988,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 1.5798611111111112,
+          "median": 0.2,
+          "p95": 6.6,
+          "p99": 6.6,
+          "maximum": 6.6
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 4.530833333333333,
+          "median": 4.8,
+          "p95": 5.1,
+          "p99": 5.1,
+          "maximum": 5.1
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 232.0,
+            "median": 232.0,
+            "p95": 232.0,
+            "p99": 232.0,
+            "maximum": 232.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 575305.0,
+            "median": 575305.0,
+            "p95": 575305.0,
+            "p99": 575305.0,
+            "maximum": 575305.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1090.0,
+            "median": 1090.0,
+            "p95": 1090.0,
+            "p99": 1090.0,
+            "maximum": 1090.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1159.0,
+            "median": 1159,
+            "p95": 1159,
+            "p99": 1159,
+            "maximum": 1159
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(237.5, 0.0, 118.75)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1302.5, 0.0, -1421.25)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "baseline",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00010000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 123.456790123457,
+          "fps_p95": 169.491525423729,
+          "fps_p99": 188.679245283019,
+          "frames": 720,
+          "max_ms": 12.6,
+          "mean_ms": 8.33347222222224,
+          "median_ms": 8.1,
+          "p95_ms": 10.7,
+          "p99_ms": 11.5,
+          "presented_fps": 119.998000033333,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.09194444444444444,
+          "enemy_movement": 0.16027777777777777,
+          "enemy_navigation": 0.18138888888888888,
+          "enemy_path_probes": 0.145,
+          "enemy_projectiles": 0.07916666666666668,
+          "enemy_route": 0.0005555555555555556,
+          "enemy_total": 1.0222222222222221,
+          "firing_guide": 0.0011111111111111111,
+          "ocean_update": 0.2013888888888889,
+          "physics_tick": 1.8736111111111111,
+          "player_movement": 0.03916666666666666,
+          "player_projectiles": 0.0077777777777777776,
+          "projectile_water_queries": 0.03694444444444444,
+          "view": 0.6147222222222222,
+          "wave_queries": 0.145
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.04597222222222223,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.0801388888888889,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.09069444444444444,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.07250000000000001,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.03958333333333333,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0002777777777777778,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.5111111111111111,
+            "median": 0.7,
+            "p95": 1.3,
+            "p99": 1.4,
+            "maximum": 1.5
+          },
+          "firing_guide": {
+            "n": 720,
+            "mean": 0.0005555555555555556,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.10069444444444445,
+            "median": 0.0,
+            "p95": 0.4,
+            "p99": 0.5,
+            "maximum": 0.5
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 0.9368055555555556,
+            "median": 1.2,
+            "p95": 2.2,
+            "p99": 2.3,
+            "maximum": 2.8
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.019583333333333335,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.003888888888888889,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.018472222222222223,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.30736111111111114,
+            "median": 0.3,
+            "p95": 0.8,
+            "p99": 0.9,
+            "maximum": 1.0
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 0.07250000000000001,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.6
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 2.620416666666667,
+          "median": 2.6,
+          "p95": 3.2,
+          "p99": 3.2,
+          "maximum": 3.2
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 4.84875,
+          "median": 4.9,
+          "p95": 5.0,
+          "p99": 5.0,
+          "maximum": 5.0
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 13924,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 246.51527777777778,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 581359.4708333333,
+            "median": 584337.0,
+            "p95": 587605.0,
+            "p99": 587889.0,
+            "maximum": 587889.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1088.5152777777778,
+            "median": 1093.0,
+            "p95": 1107.0,
+            "p99": 1108.0,
+            "maximum": 1108.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(280.0, 0.0, 126.25)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1260.0, 0.0, -1413.75)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "downward_camera",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0106,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 114.942528735632,
+          "fps_p95": 188.679245283019,
+          "fps_p99": 204.081632653061,
+          "frames": 721,
+          "max_ms": 14.3,
+          "mean_ms": 8.3364771151179,
+          "median_ms": 8.7,
+          "p95_ms": 11.4,
+          "p99_ms": 11.8,
+          "presented_fps": 119.954746614315,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.09362880886426593,
+          "enemy_movement": 0.16731301939058174,
+          "enemy_navigation": 0.18698060941828254,
+          "enemy_path_probes": 0.15650969529085873,
+          "enemy_projectiles": 0.08060941828254847,
+          "enemy_route": 0.00110803324099723,
+          "enemy_total": 1.0606648199445983,
+          "firing_guide": 0.0013850415512465374,
+          "ocean_update": 0.20498614958448752,
+          "physics_tick": 1.9357340720221607,
+          "player_movement": 0.046814404432132965,
+          "player_projectiles": 0.0030470914127423824,
+          "projectile_water_queries": 0.03407202216066482,
+          "view": 0.6390581717451523,
+          "wave_queries": 0.1481994459833795
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 721,
+            "mean": 0.04687933425797504,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 721,
+            "mean": 0.08377253814147018,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_navigation": {
+            "n": 721,
+            "mean": 0.09361997226074896,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 721,
+            "mean": 0.07836338418862691,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 721,
+            "mean": 0.04036061026352289,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 721,
+            "mean": 0.0005547850208044383,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 721,
+            "mean": 0.5310679611650485,
+            "median": 0.7,
+            "p95": 1.3,
+            "p99": 1.4,
+            "maximum": 1.5
+          },
+          "firing_guide": {
+            "n": 721,
+            "mean": 0.0006934812760055479,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "ocean_update": {
+            "n": 721,
+            "mean": 0.10263522884882108,
+            "median": 0.0,
+            "p95": 0.4,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "physics_tick": {
+            "n": 721,
+            "mean": 0.9692094313453536,
+            "median": 1.2,
+            "p95": 2.3,
+            "p99": 2.4,
+            "maximum": 3.1
+          },
+          "player_movement": {
+            "n": 721,
+            "mean": 0.02343966712898752,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 721,
+            "mean": 0.0015256588072122053,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 721,
+            "mean": 0.017059639389736477,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 721,
+            "mean": 0.31997226074895974,
+            "median": 0.2,
+            "p95": 0.9,
+            "p99": 1.0,
+            "maximum": 1.1
+          },
+          "wave_queries": {
+            "n": 721,
+            "mean": 0.07420249653259361,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          }
+        },
+        "engine_physics_ms": {
+          "n": 721,
+          "mean": 2.741886269070735,
+          "median": 2.6,
+          "p95": 3.3,
+          "p99": 3.3,
+          "maximum": 3.3
+        },
+        "engine_process_ms": {
+          "n": 721,
+          "mean": 5.285298196948682,
+          "median": 5.3,
+          "p95": 5.8,
+          "p99": 5.8,
+          "maximum": 5.8
+        },
+        "physics_ticks_per_render": {
+          "n": 721,
+          "mean": 0.5006934812760055,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 361,
+        "wave_queries": 14074,
+        "counters": {
+          "draw_calls": {
+            "n": 721,
+            "mean": 211.9140083217753,
+            "median": 213.0,
+            "p95": 224.0,
+            "p99": 225.0,
+            "maximum": 228.0
+          },
+          "render_primitives": {
+            "n": 721,
+            "mean": 585903.5520110957,
+            "median": 585959.0,
+            "p95": 589647.0,
+            "p99": 589691.0,
+            "maximum": 589691.0
+          },
+          "render_objects": {
+            "n": 721,
+            "mean": 1060.9140083217753,
+            "median": 1062.0,
+            "p95": 1073.0,
+            "p99": 1074.0,
+            "maximum": 1077.0
+          },
+          "nodes": {
+            "n": 721,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 721,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 721,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 721,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "frozen_simulation",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0083,
+          "estimated_missed_60hz_slots": 1,
+          "fps_median": 120.481927710843,
+          "fps_p95": 133.333333333333,
+          "fps_p99": 185.185185185185,
+          "frames": 720,
+          "max_ms": 25.6,
+          "mean_ms": 8.34486111111111,
+          "median_ms": 8.3,
+          "p95_ms": 9.3,
+          "p99_ms": 9.5,
+          "presented_fps": 119.834229316113,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 0.7827777777777778,
+          "median": 0.2,
+          "p95": 3.3,
+          "p99": 3.3,
+          "maximum": 3.3
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 6.116666666666666,
+          "median": 6.2,
+          "p95": 6.7,
+          "p99": 6.7,
+          "maximum": 6.7
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5013888888888889,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 232.0,
+            "median": 232.0,
+            "p95": 232.0,
+            "p99": 232.0,
+            "maximum": 232.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 575291.0,
+            "median": 575291.0,
+            "p95": 575291.0,
+            "p99": 575291.0,
+            "maximum": 575291.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1083.0,
+            "median": 1083.0,
+            "p95": 1083.0,
+            "p99": 1083.0,
+            "maximum": 1083.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(237.5, 0.0, 118.75)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1302.5, 0.0, -1421.25)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      }
+    ]
+  },
+  "original_render_isolation": {
+    "build": {
+      "commit_utc": "2026-10-19T06:57:04+00:00",
+      "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+      "dirty": true,
+      "git_sha": "f7d45d223f2334d0b556d3f4bcc51804b6ff5ff8",
+      "godot_version": "4.8.dev6.official.8898c2b3d",
+      "runtime_script": "blackwater-runtime-4f382ee2d7e4.js",
+      "source_sha256": "4f382ee2d7e47e54a745562023d30ab733471c0013d96461e3d87783f51757f0"
+    },
+    "state_attribution": "preceding 200 ms sample; transition uncertainty",
+    "states": {
+      "SAILING": {
+        "frame_ms": {
+          "n": 12182,
+          "mean": 8.409423739944181,
+          "median": 8.3,
+          "p95": 14.5,
+          "p99": 15.2,
+          "maximum": 320.7
+        },
+        "fps": 118.9142123080407
+      },
+      "SAILING_PAUSED": {
+        "frame_ms": {
+          "n": 696,
+          "mean": 8.490948275862069,
+          "median": 8.3,
+          "p95": 9.6,
+          "p99": 20.0,
+          "maximum": 34.5
+        },
+        "fps": 117.77247576019087
+      },
+      "LOST": {
+        "frame_ms": {
+          "n": 1096,
+          "mean": 8.442974452554745,
+          "median": 8.3,
+          "p95": 9.5,
+          "p99": 12.1,
+          "maximum": 72.3
+        },
+        "fps": 118.44167071918733
+      },
+      "READY": {
+        "frame_ms": {
+          "n": 1064,
+          "mean": 8.337312030075188,
+          "median": 8.4,
+          "p95": 9.7,
+          "p99": 10.5,
+          "maximum": 23.2
+        },
+        "fps": 119.94273410815137
+      }
+    },
+    "cases": [
+      {
+        "case": "baseline",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0117,
+          "estimated_missed_60hz_slots": 1,
+          "fps_median": 106.382978723404,
+          "fps_p95": 400.0,
+          "fps_p99": 434.782608695652,
+          "frames": 720,
+          "max_ms": 25.7,
+          "mean_ms": 8.34958333333334,
+          "median_ms": 9.4,
+          "p95_ms": 14.6,
+          "p99_ms": 15.3,
+          "presented_fps": 119.766455411947,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07972222222222222,
+          "enemy_movement": 0.17777777777777778,
+          "enemy_navigation": 0.15555555555555553,
+          "enemy_path_probes": 0.12916666666666665,
+          "enemy_projectiles": 0.0775,
+          "enemy_route": 0.0,
+          "enemy_total": 0.9052777777777778,
+          "ocean_update": 0.1575,
+          "physics_tick": 6.3677777777777775,
+          "player_movement": 0.041388888888888885,
+          "player_projectiles": 0.0077777777777777776,
+          "projectile_water_queries": 0.03222222222222222,
+          "view": 0.5186111111111111,
+          "wave_queries": 2.716944444444444
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.03986111111111112,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.08888888888888889,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 12.0
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.07777777777777778,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06458333333333334,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.03875,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.5
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.4526388888888889,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 12.8
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.07875,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.183888888888889,
+            "median": 5.0,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 17.5
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.020694444444444446,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.003888888888888889,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.016111111111111114,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.25930555555555557,
+            "median": 0.3,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.3584722222222223,
+            "median": 0.9,
+            "p95": 4.1,
+            "p99": 5.3,
+            "maximum": 5.9
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 9.45888888888889,
+          "median": 8.3,
+          "p95": 17.7,
+          "p99": 17.7,
+          "maximum": 17.7
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 5.6281944444444445,
+          "median": 3.8,
+          "p95": 10.6,
+          "p99": 10.6,
+          "maximum": 10.6
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384480,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 246.6027777777778,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 581285.6,
+            "median": 584337.0,
+            "p95": 587605.0,
+            "p99": 587889.0,
+            "maximum": 587889.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1088.6027777777779,
+            "median": 1093.0,
+            "p95": 1107.0,
+            "p99": 1108.0,
+            "maximum": 1108.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "downward_camera",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0031,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 256.410256410256,
+          "fps_p95": 454.545454545455,
+          "fps_p99": 500.0,
+          "frames": 720,
+          "max_ms": 16.5,
+          "mean_ms": 8.33763888888889,
+          "median_ms": 3.9,
+          "p95_ms": 14.8,
+          "p99_ms": 15.5,
+          "presented_fps": 119.938032016791,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07527777777777778,
+          "enemy_movement": 0.14194444444444446,
+          "enemy_navigation": 0.15833333333333335,
+          "enemy_path_probes": 0.12666666666666668,
+          "enemy_projectiles": 0.07277777777777777,
+          "enemy_route": 0.001388888888888889,
+          "enemy_total": 0.8761111111111111,
+          "ocean_update": 0.16833333333333333,
+          "physics_tick": 6.343333333333333,
+          "player_movement": 0.03888888888888888,
+          "player_projectiles": 0.006388888888888889,
+          "projectile_water_queries": 0.03194444444444444,
+          "view": 0.528611111111111,
+          "wave_queries": 2.742777777777778
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.03763888888888889,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.07097222222222223,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.07916666666666666,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06333333333333334,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.036388888888888894,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0006944444444444445,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.43805555555555553,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 1.9
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.08416666666666667,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.1716666666666664,
+            "median": 5.0,
+            "p95": 7.5,
+            "p99": 9.0,
+            "maximum": 9.4
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.019444444444444445,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.0031944444444444446,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.01597222222222222,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.2643055555555555,
+            "median": 0.3,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.3713888888888888,
+            "median": 1.3,
+            "p95": 4.1,
+            "p99": 5.6,
+            "maximum": 6.1
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 6.845555555555555,
+          "median": 6.6,
+          "p95": 8.0,
+          "p99": 8.0,
+          "maximum": 8.0
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 3.0791666666666666,
+          "median": 3.2,
+          "p95": 3.5,
+          "p99": 3.5,
+          "maximum": 3.5
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384472,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 211.9388888888889,
+            "median": 213.0,
+            "p95": 224.0,
+            "p99": 225.0,
+            "maximum": 228.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 585904.2888888889,
+            "median": 585971.0,
+            "p95": 589691.0,
+            "p99": 589691.0,
+            "maximum": 589691.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1060.9388888888889,
+            "median": 1062.0,
+            "p95": 1073.0,
+            "p99": 1074.0,
+            "maximum": 1077.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "frozen_simulation",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00110000000001,
+          "estimated_missed_60hz_slots": 1,
+          "fps_median": 120.481927710843,
+          "fps_p95": 136.986301369863,
+          "fps_p99": 151.515151515152,
+          "frames": 719,
+          "max_ms": 28.4,
+          "mean_ms": 8.34645340751044,
+          "median_ms": 8.3,
+          "p95_ms": 9.4,
+          "p99_ms": 9.7,
+          "presented_fps": 119.811367915882,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 1.2809457579972183,
+          "median": 0.2,
+          "p95": 6.6,
+          "p99": 6.6,
+          "maximum": 6.6
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 5.023783031988874,
+          "median": 5.1,
+          "p95": 8.7,
+          "p99": 8.7,
+          "maximum": 8.7
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.502086230876217,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 232.0,
+            "median": 232.0,
+            "p95": 232.0,
+            "p99": 232.0,
+            "maximum": 232.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 575291.0,
+            "median": 575291.0,
+            "p95": 575291.0,
+            "p99": 575291.0,
+            "maximum": 575291.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1083.0,
+            "median": 1083.0,
+            "p95": 1083.0,
+            "p99": 1083.0,
+            "maximum": 1083.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(237.5, 0.0, 118.75)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1302.5, 0.0, -1421.25)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "clouds_off",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0032,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 212.765957446808,
+          "fps_p95": 416.666666666667,
+          "fps_p99": 434.782608695652,
+          "frames": 720,
+          "max_ms": 16.4,
+          "mean_ms": 8.33777777777778,
+          "median_ms": 4.7,
+          "p95_ms": 14.7,
+          "p99_ms": 15.3,
+          "presented_fps": 119.936034115139,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.08472222222222223,
+          "enemy_movement": 0.13583333333333333,
+          "enemy_navigation": 0.14833333333333334,
+          "enemy_path_probes": 0.12388888888888888,
+          "enemy_projectiles": 0.07555555555555556,
+          "enemy_route": 0.0005555555555555556,
+          "enemy_total": 0.8336111111111111,
+          "ocean_update": 0.15638888888888888,
+          "physics_tick": 6.3052777777777775,
+          "player_movement": 0.03972222222222222,
+          "player_projectiles": 0.009166666666666667,
+          "projectile_water_queries": 0.03805555555555556,
+          "view": 0.5072222222222222,
+          "wave_queries": 2.7844444444444445
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.04236111111111111,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.06791666666666667,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.07416666666666666,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06194444444444445,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.037777777777777785,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0002777777777777778,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.4168055555555556,
+            "median": 0.5,
+            "p95": 1.0,
+            "p99": 1.1,
+            "maximum": 1.3
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.07819444444444444,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.152638888888889,
+            "median": 5.1,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 9.4
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.01986111111111111,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.004583333333333333,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.01902777777777778,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.2536111111111111,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.3922222222222222,
+            "median": 1.3,
+            "p95": 4.1,
+            "p99": 5.5,
+            "maximum": 5.9
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 6.846666666666668,
+          "median": 6.6,
+          "p95": 8.0,
+          "p99": 8.0,
+          "maximum": 8.0
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 4.215972222222222,
+          "median": 4.2,
+          "p95": 4.6,
+          "p99": 4.6,
+          "maximum": 4.6
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384465,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 246.59166666666667,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 581297.3166666667,
+            "median": 584339.0,
+            "p95": 587607.0,
+            "p99": 587891.0,
+            "maximum": 587891.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1089.5916666666667,
+            "median": 1094.0,
+            "p95": 1108.0,
+            "p99": 1109.0,
+            "maximum": 1109.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "static_sky",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0008,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 92.5925925925926,
+          "fps_p95": 476.190476190476,
+          "fps_p99": 526.315789473684,
+          "frames": 719,
+          "max_ms": 18.0,
+          "mean_ms": 8.34603616133519,
+          "median_ms": 10.8,
+          "p95_ms": 15.0,
+          "p99_ms": 15.8,
+          "presented_fps": 119.817357685642,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.0825,
+          "enemy_movement": 0.14333333333333334,
+          "enemy_navigation": 0.15027777777777776,
+          "enemy_path_probes": 0.11944444444444444,
+          "enemy_projectiles": 0.075,
+          "enemy_route": 0.0002777777777777778,
+          "enemy_total": 0.8563888888888889,
+          "ocean_update": 0.1663888888888889,
+          "physics_tick": 6.361944444444444,
+          "player_movement": 0.03861111111111112,
+          "player_projectiles": 0.0061111111111111106,
+          "projectile_water_queries": 0.03,
+          "view": 0.5158333333333334,
+          "wave_queries": 2.7730555555555556
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 719,
+            "mean": 0.04130737134909597,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 719,
+            "mean": 0.0717663421418637,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 719,
+            "mean": 0.07524339360222532,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 719,
+            "mean": 0.059805285118219746,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_projectiles": {
+            "n": 719,
+            "mean": 0.037552155771905425,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 719,
+            "mean": 0.00013908205841446454,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 719,
+            "mean": 0.4287899860917942,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 1.4
+          },
+          "ocean_update": {
+            "n": 719,
+            "mean": 0.08331015299026426,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 719,
+            "mean": 3.1853963838664816,
+            "median": 5.2,
+            "p95": 7.5,
+            "p99": 9.1,
+            "maximum": 9.5
+          },
+          "player_movement": {
+            "n": 719,
+            "mean": 0.01933240611961057,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 719,
+            "mean": 0.00305980528511822,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 719,
+            "mean": 0.015020862308762171,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 719,
+            "mean": 0.2582753824756606,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.8
+          },
+          "wave_queries": {
+            "n": 719,
+            "mean": 1.3884561891515994,
+            "median": 1.2,
+            "p95": 4.1,
+            "p99": 5.4,
+            "maximum": 6.0
+          }
+        },
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 6.975799721835884,
+          "median": 6.9,
+          "p95": 8.2,
+          "p99": 8.2,
+          "maximum": 9.5
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 4.333379694019471,
+          "median": 4.3,
+          "p95": 4.8,
+          "p99": 4.8,
+          "maximum": 4.8
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384472,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 246.61752433936022,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 581302.8275382476,
+            "median": 584341.0,
+            "p95": 587609.0,
+            "p99": 587893.0,
+            "maximum": 587893.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1090.6175243393602,
+            "median": 1095.0,
+            "p95": 1109.0,
+            "p99": 1110.0,
+            "maximum": 1110.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "flat_ocean",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00080000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 93.4579439252336,
+          "fps_p95": 384.615384615385,
+          "fps_p99": 416.666666666667,
+          "frames": 719,
+          "max_ms": 17.3,
+          "mean_ms": 8.3460361613352,
+          "median_ms": 10.7,
+          "p95_ms": 14.7,
+          "p99_ms": 15.4,
+          "presented_fps": 119.817357685642,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07888888888888888,
+          "enemy_movement": 0.13361111111111112,
+          "enemy_navigation": 0.15611111111111112,
+          "enemy_path_probes": 0.12833333333333335,
+          "enemy_projectiles": 0.07416666666666667,
+          "enemy_route": 0.0,
+          "enemy_total": 0.8555555555555555,
+          "ocean_update": 0.15805555555555553,
+          "physics_tick": 6.288333333333333,
+          "player_movement": 0.04416666666666667,
+          "player_projectiles": 0.008055555555555555,
+          "projectile_water_queries": 0.03777777777777778,
+          "view": 0.5072222222222222,
+          "wave_queries": 2.687777777777778
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 719,
+            "mean": 0.03949930458970793,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 719,
+            "mean": 0.06689847009735744,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 719,
+            "mean": 0.07816411682892907,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 719,
+            "mean": 0.06425591098748262,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 719,
+            "mean": 0.03713490959666203,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "enemy_total": {
+            "n": 719,
+            "mean": 0.4283727399165508,
+            "median": 0.6,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 1.4
+          },
+          "ocean_update": {
+            "n": 719,
+            "mean": 0.07913769123783032,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 719,
+            "mean": 3.1485396383866484,
+            "median": 5.1,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 9.6
+          },
+          "player_movement": {
+            "n": 719,
+            "mean": 0.02211404728789986,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 719,
+            "mean": 0.004033379694019472,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 719,
+            "mean": 0.01891515994436718,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 719,
+            "mean": 0.25396383866481226,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.8
+          },
+          "wave_queries": {
+            "n": 719,
+            "mean": 1.3457579972183589,
+            "median": 1.0,
+            "p95": 4.0,
+            "p99": 5.3,
+            "maximum": 6.4
+          }
+        },
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 6.869401947148818,
+          "median": 6.5,
+          "p95": 8.1,
+          "p99": 8.1,
+          "maximum": 9.7
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 4.694019471488178,
+          "median": 4.8,
+          "p95": 5.4,
+          "p99": 5.4,
+          "maximum": 5.4
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384415,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 246.5827538247566,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 581342.0848400557,
+            "median": 584339.0,
+            "p95": 587607.0,
+            "p99": 587891.0,
+            "maximum": 587891.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1089.5827538247565,
+            "median": 1094.0,
+            "p95": 1108.0,
+            "p99": 1109.0,
+            "maximum": 1109.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(280.625, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1259.375, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "ocean_64",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0035,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 175.438596491228,
+          "fps_p95": 400.0,
+          "fps_p99": 434.782608695652,
+          "frames": 720,
+          "max_ms": 21.7,
+          "mean_ms": 8.33819444444445,
+          "median_ms": 5.7,
+          "p95_ms": 14.4,
+          "p99_ms": 15.2,
+          "presented_fps": 119.930040809528,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07027777777777777,
+          "enemy_movement": 0.12833333333333335,
+          "enemy_navigation": 0.15944444444444444,
+          "enemy_path_probes": 0.13055555555555554,
+          "enemy_projectiles": 0.08333333333333333,
+          "enemy_route": 0.0,
+          "enemy_total": 0.8625,
+          "ocean_update": 0.1625,
+          "physics_tick": 6.33,
+          "player_movement": 0.04388888888888889,
+          "player_projectiles": 0.006666666666666667,
+          "projectile_water_queries": 0.03861111111111112,
+          "view": 0.5202777777777778,
+          "wave_queries": 2.7580555555555555
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.03513888888888889,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.06416666666666668,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.07972222222222222,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06527777777777778,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.041666666666666664,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.4
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.43125,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 1.3
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.08125,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.165,
+            "median": 5.0,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 9.5
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.021944444444444447,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.003333333333333334,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.019305555555555555,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.2601388888888889,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.8
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.3790277777777777,
+            "median": 1.3,
+            "p95": 4.2,
+            "p99": 5.5,
+            "maximum": 5.9
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 6.927638888888889,
+          "median": 6.8,
+          "p95": 8.0,
+          "p99": 9.6,
+          "maximum": 9.6
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 5.287638888888889,
+          "median": 5.4,
+          "p95": 5.5,
+          "p99": 5.5,
+          "maximum": 5.5
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384472,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 246.59722222222223,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 508586.4583333333,
+            "median": 511633.0,
+            "p95": 514901.0,
+            "p99": 515185.0,
+            "maximum": 515185.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1088.5972222222222,
+            "median": 1093.0,
+            "p95": 1107.0,
+            "p99": 1108.0,
+            "maximum": 1108.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 77862705.0,
+            "median": 77862705.0,
+            "p95": 77862705.0,
+            "p99": 77862705.0,
+            "maximum": 77862705.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 8192,
+              "vertices": 4225,
+              "visible": true,
+              "world_aabb_position": "(281.25, 0.0, 127.5)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 3584,
+              "vertices": 2080,
+              "visible": true,
+              "world_aabb_position": "(-1258.75, 0.0, -1412.5)"
+            }
+          ],
+          "ocean_cells": 64,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "terrain_hidden",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0042,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 158.730158730159,
+          "fps_p95": 454.545454545455,
+          "fps_p99": 500.0,
+          "frames": 720,
+          "max_ms": 17.7,
+          "mean_ms": 8.33916666666666,
+          "median_ms": 6.3,
+          "p95_ms": 15.1,
+          "p99_ms": 15.9,
+          "presented_fps": 119.916058758869,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07222222222222223,
+          "enemy_movement": 0.12611111111111112,
+          "enemy_navigation": 0.15555555555555553,
+          "enemy_path_probes": 0.12138888888888888,
+          "enemy_projectiles": 0.06944444444444445,
+          "enemy_route": 0.0,
+          "enemy_total": 0.8261111111111111,
+          "ocean_update": 0.15694444444444447,
+          "physics_tick": 6.3694444444444445,
+          "player_movement": 0.035555555555555556,
+          "player_projectiles": 0.007222222222222222,
+          "projectile_water_queries": 0.03166666666666667,
+          "view": 0.5022222222222222,
+          "wave_queries": 2.794722222222222
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.03611111111111111,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.06305555555555556,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.07777777777777778,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.06069444444444445,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.034722222222222224,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.4130555555555555,
+            "median": 0.5,
+            "p95": 1.0,
+            "p99": 1.1,
+            "maximum": 1.2
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.07847222222222222,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 3.1847222222222222,
+            "median": 5.1,
+            "p95": 7.6,
+            "p99": 9.1,
+            "maximum": 9.4
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.017777777777777778,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.0036111111111111114,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.015833333333333335,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.2511111111111111,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.7,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 1.397361111111111,
+            "median": 1.1,
+            "p95": 4.1,
+            "p99": 5.6,
+            "maximum": 6.1
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 6.879166666666666,
+          "median": 6.6,
+          "p95": 8.0,
+          "p99": 9.6,
+          "maximum": 9.6
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 5.4875,
+          "median": 5.6,
+          "p95": 6.0,
+          "p99": 6.0,
+          "maximum": 6.0
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 384480,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 230.00277777777777,
+            "median": 235.0,
+            "p95": 248.0,
+            "p99": 249.0,
+            "maximum": 249.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 139392.6222222222,
+            "median": 142418.0,
+            "p95": 145686.0,
+            "p99": 145970.0,
+            "maximum": 145970.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1079.8138888888889,
+            "median": 1085.0,
+            "p95": 1096.0,
+            "p99": 1097.0,
+            "maximum": 1097.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": false,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "sky_time_frozen",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.012,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 106.382978723404,
+          "fps_p95": 416.666666666667,
+          "fps_p99": 454.545454545455,
+          "frames": 721,
+          "max_ms": 18.0,
+          "mean_ms": 8.3384188626907,
+          "median_ms": 9.4,
+          "p95_ms": 14.7,
+          "p99_ms": 15.4,
+          "presented_fps": 119.926813040586,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.0775623268698061,
+          "enemy_movement": 0.13130193905817175,
+          "enemy_navigation": 0.1559556786703601,
+          "enemy_path_probes": 0.12354570637119112,
+          "enemy_projectiles": 0.06371191135734072,
+          "enemy_route": 0.0002770083102493075,
+          "enemy_total": 0.8318559556786704,
+          "ocean_update": 0.15983379501385042,
+          "physics_tick": 6.298337950138504,
+          "player_movement": 0.03905817174515236,
+          "player_projectiles": 0.006925207756232687,
+          "projectile_water_queries": 0.027146814404432132,
+          "view": 0.506371191135734,
+          "wave_queries": 2.7354570637119116
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 721,
+            "mean": 0.038834951456310676,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 721,
+            "mean": 0.06574202496532594,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 721,
+            "mean": 0.07808599167822469,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "enemy_path_probes": {
+            "n": 721,
+            "mean": 0.06185852981969487,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 721,
+            "mean": 0.0319001386962552,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 721,
+            "mean": 0.00013869625520110957,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 721,
+            "mean": 0.41650485436893203,
+            "median": 0.6,
+            "p95": 1.0,
+            "p99": 1.1,
+            "maximum": 1.3
+          },
+          "ocean_update": {
+            "n": 721,
+            "mean": 0.08002773925104023,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 721,
+            "mean": 3.153536754507628,
+            "median": 5.0,
+            "p95": 7.5,
+            "p99": 9.0,
+            "maximum": 9.3
+          },
+          "player_movement": {
+            "n": 721,
+            "mean": 0.019556171983356452,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 721,
+            "mean": 0.0034674063800277394,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 721,
+            "mean": 0.01359223300970874,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 721,
+            "mean": 0.2535367545076283,
+            "median": 0.2,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 721,
+            "mean": 1.369625520110957,
+            "median": 1.1,
+            "p95": 4.1,
+            "p99": 5.5,
+            "maximum": 5.9
+          }
+        },
+        "engine_physics_ms": {
+          "n": 721,
+          "mean": 6.988072122052706,
+          "median": 7.0,
+          "p95": 8.1,
+          "p99": 9.5,
+          "maximum": 9.5
+        },
+        "engine_process_ms": {
+          "n": 721,
+          "mean": 6.066296809986131,
+          "median": 6.1,
+          "p95": 6.6,
+          "p99": 6.6,
+          "maximum": 6.6
+        },
+        "physics_ticks_per_render": {
+          "n": 721,
+          "mean": 0.5006934812760055,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 361,
+        "wave_queries": 385536,
+        "counters": {
+          "draw_calls": {
+            "n": 721,
+            "mean": 246.5395284327323,
+            "median": 243.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 721,
+            "mean": 581295.3578363385,
+            "median": 584367.0,
+            "p95": 587635.0,
+            "p99": 587919.0,
+            "maximum": 587919.0
+          },
+          "render_objects": {
+            "n": 721,
+            "mean": 1103.5395284327324,
+            "median": 1100.0,
+            "p95": 1122.0,
+            "p99": 1123.0,
+            "maximum": 1123.0
+          },
+          "nodes": {
+            "n": 721,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 721,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 721,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 721,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "baseline_unprofiled",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 120.481927710843,
+          "fps_p95": 400.0,
+          "fps_p99": 434.782608695652,
+          "frames": 719,
+          "max_ms": 18.4,
+          "mean_ms": 8.34492350486787,
+          "median_ms": 8.3,
+          "p95_ms": 14.4,
+          "p99_ms": 15.1,
+          "presented_fps": 119.833333333333,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 6.086648122392211,
+          "median": 5.7,
+          "p95": 7.2,
+          "p99": 8.5,
+          "maximum": 8.5
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 6.632823365785813,
+          "median": 6.5,
+          "p95": 7.1,
+          "p99": 7.1,
+          "maximum": 7.1
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 246.61752433936022,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 581336.8275382476,
+            "median": 584375.0,
+            "p95": 587643.0,
+            "p99": 587927.0,
+            "maximum": 587927.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1107.6175243393602,
+            "median": 1112.0,
+            "p95": 1126.0,
+            "p99": 1127.0,
+            "maximum": 1127.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "baseline_repeat",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0108,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 123.456790123457,
+          "fps_p95": 416.666666666667,
+          "fps_p99": 434.782608695652,
+          "frames": 721,
+          "max_ms": 19.2,
+          "mean_ms": 8.3367545076283,
+          "median_ms": 8.1,
+          "p95_ms": 14.7,
+          "p99_ms": 15.4,
+          "presented_fps": 119.950755307114,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07313019390581718,
+          "enemy_movement": 0.13185595567867037,
+          "enemy_navigation": 0.1617728531855956,
+          "enemy_path_probes": 0.13047091412742381,
+          "enemy_projectiles": 0.0745152354570637,
+          "enemy_route": 0.0002770083102493075,
+          "enemy_total": 0.8576177285318559,
+          "ocean_update": 0.16204986149584488,
+          "physics_tick": 6.324653739612189,
+          "player_movement": 0.03933518005540167,
+          "player_projectiles": 0.00886426592797784,
+          "projectile_water_queries": 0.033795013850415515,
+          "view": 0.5191135734072022,
+          "wave_queries": 2.7343490304709137
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 721,
+            "mean": 0.03661581137309293,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "enemy_movement": {
+            "n": 721,
+            "mean": 0.06601941747572816,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_navigation": {
+            "n": 721,
+            "mean": 0.08099861303744799,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 721,
+            "mean": 0.06532593619972261,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 721,
+            "mean": 0.03730929264909848,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_route": {
+            "n": 721,
+            "mean": 0.00013869625520110957,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 721,
+            "mean": 0.4294036061026353,
+            "median": 0.5,
+            "p95": 1.1,
+            "p99": 1.2,
+            "maximum": 1.3
+          },
+          "ocean_update": {
+            "n": 721,
+            "mean": 0.0811373092926491,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "physics_tick": {
+            "n": 721,
+            "mean": 3.1667128987517335,
+            "median": 5.0,
+            "p95": 7.5,
+            "p99": 9.0,
+            "maximum": 9.6
+          },
+          "player_movement": {
+            "n": 721,
+            "mean": 0.01969486823855756,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 721,
+            "mean": 0.004438280166435506,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "projectile_water_queries": {
+            "n": 721,
+            "mean": 0.01692094313453537,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 721,
+            "mean": 0.25991678224687936,
+            "median": 0.3,
+            "p95": 0.7,
+            "p99": 0.8,
+            "maximum": 0.9
+          },
+          "wave_queries": {
+            "n": 721,
+            "mean": 1.3690707350901525,
+            "median": 1.0,
+            "p95": 4.1,
+            "p99": 5.4,
+            "maximum": 5.8
+          }
+        },
+        "engine_physics_ms": {
+          "n": 721,
+          "mean": 7.105547850208045,
+          "median": 6.9,
+          "p95": 8.2,
+          "p99": 9.8,
+          "maximum": 9.8
+        },
+        "engine_process_ms": {
+          "n": 721,
+          "mean": 7.154368932038835,
+          "median": 7.4,
+          "p95": 7.7,
+          "p99": 7.7,
+          "maximum": 7.7
+        },
+        "physics_ticks_per_render": {
+          "n": 721,
+          "mean": 0.5006934812760055,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 361,
+        "wave_queries": 385536,
+        "counters": {
+          "draw_calls": {
+            "n": 721,
+            "mean": 246.54368932038835,
+            "median": 243.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 721,
+            "mean": 581298.5839112344,
+            "median": 584369.0,
+            "p95": 587637.0,
+            "p99": 587921.0,
+            "maximum": 587921.0
+          },
+          "render_objects": {
+            "n": 721,
+            "mean": 1104.5436893203882,
+            "median": 1101.0,
+            "p95": 1123.0,
+            "p99": 1124.0,
+            "maximum": 1124.0
+          },
+          "nodes": {
+            "n": 721,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 721,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 721,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 721,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "paused",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0006,
+          "estimated_missed_60hz_slots": 6,
+          "fps_median": 120.481927710843,
+          "fps_p95": 142.857142857143,
+          "fps_p99": 250.0,
+          "frames": 707,
+          "max_ms": 35.2,
+          "mean_ms": 8.48741159830268,
+          "median_ms": 8.3,
+          "p95_ms": 9.6,
+          "p99_ms": 15.5,
+          "presented_fps": 117.821551178216,
+          "slow_frames_over_33_ms": 2
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 707,
+          "mean": 2.518811881188119,
+          "median": 0.9,
+          "p95": 6.5,
+          "p99": 6.5,
+          "maximum": 6.5
+        },
+        "engine_process_ms": {
+          "n": 707,
+          "mean": 24.527298444130125,
+          "median": 27.6,
+          "p95": 32.5,
+          "p99": 33.8,
+          "maximum": 33.8
+        },
+        "physics_ticks_per_render": {
+          "n": 707,
+          "mean": 0.5091937765205092,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 707,
+            "mean": 225.0,
+            "median": 225.0,
+            "p95": 225.0,
+            "p99": 225.0,
+            "maximum": 225.0
+          },
+          "render_primitives": {
+            "n": 707,
+            "mean": 573870.7157001414,
+            "median": 573868.0,
+            "p95": 573868.0,
+            "p99": 573932.0,
+            "maximum": 573932.0
+          },
+          "render_objects": {
+            "n": 707,
+            "mean": 798.3578500707214,
+            "median": 797.0,
+            "p95": 797.0,
+            "p99": 829.0,
+            "maximum": 829.0
+          },
+          "nodes": {
+            "n": 707,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 707,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 707,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 707,
+            "mean": 80502363.0,
+            "median": 80502363.0,
+            "p95": 80502363.0,
+            "p99": 80502363.0,
+            "maximum": 80502363.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(237.5, 0.0, 118.75)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1302.5, 0.0, -1421.25)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "lost",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00420000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 322.58064516129,
+          "frames": 721,
+          "max_ms": 20.6,
+          "mean_ms": 8.32760055478503,
+          "median_ms": 8.3,
+          "p95_ms": 9.1,
+          "p99_ms": 9.8,
+          "presented_fps": 120.082608840478,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "physics_tick": 0.020833333333333332
+        },
+        "inclusive_cpu_ms_per_render": {
+          "physics_tick": {
+            "n": 721,
+            "mean": 0.010402219140083218,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.1
+          }
+        },
+        "engine_physics_ms": {
+          "n": 721,
+          "mean": 0.5940360610263523,
+          "median": 0.4,
+          "p95": 1.3,
+          "p99": 1.3,
+          "maximum": 1.3
+        },
+        "engine_process_ms": {
+          "n": 721,
+          "mean": 12.605963938973646,
+          "median": 12.4,
+          "p95": 13.9,
+          "p99": 13.9,
+          "maximum": 13.9
+        },
+        "physics_ticks_per_render": {
+          "n": 721,
+          "mean": 0.49930651872399445,
+          "median": 0,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 721,
+            "mean": 151.0,
+            "median": 151.0,
+            "p95": 151.0,
+            "p99": 151.0,
+            "maximum": 151.0
+          },
+          "render_primitives": {
+            "n": 721,
+            "mean": 552917.0,
+            "median": 552917.0,
+            "p95": 552917.0,
+            "p99": 552917.0,
+            "maximum": 552917.0
+          },
+          "render_objects": {
+            "n": 721,
+            "mean": 836.0,
+            "median": 836.0,
+            "p95": 836.0,
+            "p99": 836.0,
+            "maximum": 836.0
+          },
+          "nodes": {
+            "n": 721,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 721,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 721,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 721,
+            "mean": 80633435.0,
+            "median": 80633435.0,
+            "p95": 80633435.0,
+            "p99": 80633435.0,
+            "maximum": 80633435.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(215.0, 0.0, 115.0)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1325.0, 0.0, -1425.0)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "ready",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_median": 119.047619047619,
+          "fps_p95": 142.857142857143,
+          "fps_p99": 256.410256410256,
+          "frames": 720,
+          "max_ms": 19.0,
+          "mean_ms": 8.33347222222222,
+          "median_ms": 8.4,
+          "p95_ms": 9.5,
+          "p99_ms": 10.3,
+          "presented_fps": 119.998000033333,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": null,
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.060833333333333336,
+          "ocean_update": 0.26166666666666666,
+          "physics_tick": 0.675,
+          "view": 0.6058333333333333,
+          "wave_queries": 0.05555555555555556
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.030416666666666668,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.13083333333333333,
+            "median": 0.0,
+            "p95": 0.5,
+            "p99": 0.5,
+            "maximum": 0.6
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 0.3375,
+            "median": 0.3,
+            "p95": 0.9,
+            "p99": 1.0,
+            "maximum": 1.1
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.30291666666666667,
+            "median": 0.3,
+            "p95": 0.9,
+            "p99": 0.9,
+            "maximum": 1.0
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 0.027777777777777776,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.3
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 1.15,
+          "median": 1.2,
+          "p95": 1.2,
+          "p99": 1.2,
+          "maximum": 1.2
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 11.434166666666668,
+          "median": 11.6,
+          "p95": 12.5,
+          "p99": 12.5,
+          "maximum": 12.5
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 5040,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 224.0,
+            "median": 224.0,
+            "p95": 224.0,
+            "p99": 224.0,
+            "maximum": 224.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 564234.0,
+            "median": 564234.0,
+            "p95": 564234.0,
+            "p99": 564234.0,
+            "maximum": 564234.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 813.0,
+            "median": 813.0,
+            "p95": 813.0,
+            "p99": 813.0,
+            "maximum": 813.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 172.0,
+            "median": 172.0,
+            "p95": 172.0,
+            "p99": 172.0,
+            "maximum": 172.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79934385.0,
+            "median": 79934385.0,
+            "p95": 79934385.0,
+            "p99": 79934385.0,
+            "maximum": 79934385.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(215.0, 0.0, 115.0)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1325.0, 0.0, -1425.0)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      }
+    ]
+  },
+  "final_web": {
+    "build": {
+      "commit_utc": "2026-10-19T06:57:04+00:00",
+      "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+      "dirty": true,
+      "git_sha": "f7d45d223f2334d0b556d3f4bcc51804b6ff5ff8",
+      "godot_version": "4.8.dev6.official.8898c2b3d",
+      "runtime_script": "blackwater-runtime-a370e213f247.js",
+      "source_sha256": "a370e213f24779e9b0fabe41edcd2cac4693a2ca8eff610c7b863f05b90658e3"
+    },
+    "state_attribution": "per frame",
+    "states": {
+      "SAILING": {
+        "frame_ms": {
+          "n": 2505,
+          "mean": 8.40690618762475,
+          "median": 8.3,
+          "p95": 10.7,
+          "p99": 11.4,
+          "maximum": 88.4
+        },
+        "fps": 118.94982264367762
+      },
+      "TRANSITION": {
+        "frame_ms": {
+          "n": 3,
+          "mean": 48.666666666666664,
+          "median": 64.6,
+          "p95": 71.4,
+          "p99": 71.4,
+          "maximum": 71.4
+        },
+        "fps": 20.54794520547945
+      },
+      "SAILING_PAUSED": {
+        "frame_ms": {
+          "n": 718,
+          "mean": 8.342479108635096,
+          "median": 8.3,
+          "p95": 9.5,
+          "p99": 11.3,
+          "maximum": 14.7
+        },
+        "fps": 119.8684452161138
+      },
+      "LOST": {
+        "frame_ms": {
+          "n": 1076,
+          "mean": 8.360037174721189,
+          "median": 8.3,
+          "p95": 9.4,
+          "p99": 10.2,
+          "maximum": 26.9
+        },
+        "fps": 119.61669297641016
+      },
+      "READY": {
+        "frame_ms": {
+          "n": 1080,
+          "mean": 8.328703703703704,
+          "median": 8.4,
+          "p95": 10.2,
+          "p99": 10.9,
+          "maximum": 11.3
+        },
+        "fps": 120.06670372429127
+      }
+    },
+    "cases": [
+      {
+        "case": "baseline",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00230000000002,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.787414824317,
+          "fps_median": 117.647058823529,
+          "fps_p95": 175.438596491228,
+          "fps_p99": 188.679245283019,
+          "frames": 719,
+          "max_ms": 22.1,
+          "mean_ms": 8.34812239221143,
+          "median_ms": 8.5,
+          "p95_ms": 11.0,
+          "p99_ms": 11.5,
+          "presented_fps": 119.787414824317,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": {
+          "duration_s": 5.98330000000002,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.833536677084,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 136.986301369863,
+          "frames": 717,
+          "max_ms": 16.7,
+          "mean_ms": 8.34490934449096,
+          "median_ms": 8.3,
+          "p95_ms": 9.3,
+          "p99_ms": 9.4,
+          "slow_frames_over_33_ms": 0
+        },
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.09805555555555556,
+          "enemy_movement": 0.20055555555555554,
+          "enemy_navigation": 0.18805555555555553,
+          "enemy_path_probes": 0.15833333333333335,
+          "enemy_projectiles": 0.08805555555555555,
+          "enemy_route": 0.0002777777777777778,
+          "enemy_total": 1.1027777777777779,
+          "firing_guide": 0.0011111111111111111,
+          "ocean_update": 0.20277777777777778,
+          "physics_tick": 1.9761111111111112,
+          "player_movement": 0.04861111111111111,
+          "player_projectiles": 0.0061111111111111106,
+          "projectile_water_queries": 0.03805555555555556,
+          "view": 0.6194444444444445,
+          "wave_queries": 0.1436111111111111
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 719,
+            "mean": 0.049095966620305985,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_movement": {
+            "n": 719,
+            "mean": 0.10041724617524339,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 12.8
+          },
+          "enemy_navigation": {
+            "n": 719,
+            "mean": 0.0941585535465925,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "enemy_path_probes": {
+            "n": 719,
+            "mean": 0.07927677329624479,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 719,
+            "mean": 0.04408901251738526,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.3,
+            "maximum": 0.5
+          },
+          "enemy_route": {
+            "n": 719,
+            "mean": 0.00013908205841446454,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "enemy_total": {
+            "n": 719,
+            "mean": 0.5521557719054242,
+            "median": 0.6,
+            "p95": 1.3,
+            "p99": 1.4,
+            "maximum": 14.0
+          },
+          "firing_guide": {
+            "n": 719,
+            "mean": 0.0005563282336578582,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.1
+          },
+          "ocean_update": {
+            "n": 719,
+            "mean": 0.10152990264255911,
+            "median": 0.0,
+            "p95": 0.4,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "physics_tick": {
+            "n": 719,
+            "mean": 0.9894297635605007,
+            "median": 1.2,
+            "p95": 2.2,
+            "p99": 2.4,
+            "maximum": 14.8
+          },
+          "player_movement": {
+            "n": 719,
+            "mean": 0.024339360222531293,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 719,
+            "mean": 0.00305980528511822,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 719,
+            "mean": 0.019054242002781642,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 719,
+            "mean": 0.3101529902642559,
+            "median": 0.3,
+            "p95": 0.8,
+            "p99": 0.9,
+            "maximum": 1.0
+          },
+          "wave_queries": {
+            "n": 719,
+            "mean": 0.07190542420027816,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.4
+          }
+        },
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 5.175938803894297,
+          "median": 2.8,
+          "p95": 15.0,
+          "p99": 15.0,
+          "maximum": 15.0
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 6.054102920723226,
+          "median": 4.1,
+          "p95": 12.4,
+          "p99": 12.4,
+          "maximum": 12.4
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 14040,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 246.6230876216968,
+            "median": 251.0,
+            "p95": 265.0,
+            "p99": 266.0,
+            "maximum": 266.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 581283.9624478442,
+            "median": 584327.0,
+            "p95": 587595.0,
+            "p99": 587879.0,
+            "maximum": 587879.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 1083.6230876216969,
+            "median": 1088.0,
+            "p95": 1102.0,
+            "p99": 1103.0,
+            "maximum": 1103.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "downward_camera",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0003,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.994000299985,
+          "fps_median": 117.647058823529,
+          "fps_p95": 175.438596491228,
+          "fps_p99": 192.307692307692,
+          "frames": 720,
+          "max_ms": 12.4,
+          "mean_ms": 8.33375,
+          "median_ms": 8.5,
+          "p95_ms": 10.9,
+          "p99_ms": 11.4,
+          "presented_fps": 119.994000299985,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": {
+          "duration_s": 5.98240000000002,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 120.018721583311,
+          "fps_median": 120.481927710843,
+          "fps_p95": 133.333333333333,
+          "fps_p99": 135.135135135135,
+          "frames": 718,
+          "max_ms": 9.4,
+          "mean_ms": 8.33203342618387,
+          "median_ms": 8.3,
+          "p95_ms": 9.2,
+          "p99_ms": 9.3,
+          "slow_frames_over_33_ms": 0
+        },
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.09777777777777777,
+          "enemy_movement": 0.17527777777777778,
+          "enemy_navigation": 0.19166666666666665,
+          "enemy_path_probes": 0.15166666666666664,
+          "enemy_projectiles": 0.08777777777777777,
+          "enemy_route": 0.0,
+          "enemy_total": 1.0894444444444444,
+          "firing_guide": 0.0038888888888888888,
+          "ocean_update": 0.20416666666666666,
+          "physics_tick": 1.9702777777777778,
+          "player_movement": 0.04583333333333334,
+          "player_projectiles": 0.006388888888888889,
+          "projectile_water_queries": 0.0375,
+          "view": 0.6305555555555555,
+          "wave_queries": 0.14472222222222222
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.04888888888888889,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.3
+          },
+          "enemy_movement": {
+            "n": 720,
+            "mean": 0.08763888888888889,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_navigation": {
+            "n": 720,
+            "mean": 0.09583333333333334,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "enemy_path_probes": {
+            "n": 720,
+            "mean": 0.07583333333333334,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.3,
+            "maximum": 0.4
+          },
+          "enemy_projectiles": {
+            "n": 720,
+            "mean": 0.043888888888888894,
+            "median": 0.0,
+            "p95": 0.2,
+            "p99": 0.2,
+            "maximum": 0.4
+          },
+          "enemy_route": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "enemy_total": {
+            "n": 720,
+            "mean": 0.5447222222222222,
+            "median": 0.6,
+            "p95": 1.4,
+            "p99": 1.5,
+            "maximum": 1.7
+          },
+          "firing_guide": {
+            "n": 720,
+            "mean": 0.0019444444444444446,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.10208333333333333,
+            "median": 0.0,
+            "p95": 0.4,
+            "p99": 0.4,
+            "maximum": 0.5
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 0.9851388888888888,
+            "median": 1.4,
+            "p95": 2.3,
+            "p99": 2.4,
+            "maximum": 3.1
+          },
+          "player_movement": {
+            "n": 720,
+            "mean": 0.022916666666666665,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "player_projectiles": {
+            "n": 720,
+            "mean": 0.0031944444444444446,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.1,
+            "maximum": 0.1
+          },
+          "projectile_water_queries": {
+            "n": 720,
+            "mean": 0.01875,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.31527777777777777,
+            "median": 0.3,
+            "p95": 0.9,
+            "p99": 1.0,
+            "maximum": 1.1
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 0.07236111111111111,
+            "median": 0.0,
+            "p95": 0.3,
+            "p99": 0.4,
+            "maximum": 0.5
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 2.688333333333333,
+          "median": 2.7,
+          "p95": 3.2,
+          "p99": 3.2,
+          "maximum": 3.2
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 3.7274999999999996,
+          "median": 3.8,
+          "p95": 4.1,
+          "p99": 4.1,
+          "maximum": 4.1
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 14032,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 211.9388888888889,
+            "median": 213.0,
+            "p95": 224.0,
+            "p99": 225.0,
+            "maximum": 228.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 585894.2888888889,
+            "median": 585961.0,
+            "p95": 589681.0,
+            "p99": 589681.0,
+            "maximum": 589681.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 1055.9388888888889,
+            "median": 1057.0,
+            "p95": 1068.0,
+            "p99": 1069.0,
+            "maximum": 1072.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79305521.0,
+            "median": 79305521.0,
+            "p95": 79305521.0,
+            "p99": 79305521.0,
+            "maximum": 79305521.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(281.875, 0.0, 126.875)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "paused",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.0,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.833333333333,
+          "fps_median": 120.481927710843,
+          "fps_p95": 140.845070422535,
+          "fps_p99": 222.222222222222,
+          "frames": 719,
+          "max_ms": 14.9,
+          "mean_ms": 8.34492350486787,
+          "median_ms": 8.3,
+          "p95_ms": 9.6,
+          "p99_ms": 13.2,
+          "presented_fps": 119.833333333333,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": {
+          "duration_s": 5.98240000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.851564589462,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 135.135135135135,
+          "frames": 717,
+          "max_ms": 16.6,
+          "mean_ms": 8.34365411436542,
+          "median_ms": 8.3,
+          "p95_ms": 9.3,
+          "p99_ms": 9.4,
+          "slow_frames_over_33_ms": 0
+        },
+        "cpu_ms_per_gameplay_tick": {},
+        "inclusive_cpu_ms_per_render": {},
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 0.8808066759388038,
+          "median": 0.3,
+          "p95": 3.1,
+          "p99": 3.1,
+          "maximum": 3.1
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 10.201947148817803,
+          "median": 10.5,
+          "p95": 12.5,
+          "p99": 12.5,
+          "maximum": 12.5
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.5006954102920723,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 0,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 225.0,
+            "median": 225.0,
+            "p95": 225.0,
+            "p99": 225.0,
+            "maximum": 225.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 573840.0890125174,
+            "median": 573840.0,
+            "p95": 573840.0,
+            "p99": 573840.0,
+            "maximum": 573904.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 783.0445062586926,
+            "median": 783.0,
+            "p95": 783.0,
+            "p99": 783.0,
+            "maximum": 815.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 80502363.0,
+            "median": 80502363.0,
+            "p95": 80502363.0,
+            "p99": 80502363.0,
+            "maximum": 80502363.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(237.5, 0.0, 118.75)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1302.5, 0.0, -1421.25)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "lost",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00039999999999,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.825344977002,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 166.666666666667,
+          "frames": 719,
+          "max_ms": 24.7,
+          "mean_ms": 8.34547983310152,
+          "median_ms": 8.3,
+          "p95_ms": 9.3,
+          "p99_ms": 9.6,
+          "presented_fps": 119.825344977002,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": {
+          "duration_s": 5.98330000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.833536677084,
+          "fps_median": 120.481927710843,
+          "fps_p95": 135.135135135135,
+          "fps_p99": 135.135135135135,
+          "frames": 717,
+          "max_ms": 16.5,
+          "mean_ms": 8.34490934449095,
+          "median_ms": 8.3,
+          "p95_ms": 9.3,
+          "p99_ms": 9.4,
+          "slow_frames_over_33_ms": 0
+        },
+        "cpu_ms_per_gameplay_tick": {
+          "physics_tick": 0.02022160664819945
+        },
+        "inclusive_cpu_ms_per_render": {
+          "physics_tick": {
+            "n": 719,
+            "mean": 0.010152990264255911,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.1,
+            "maximum": 0.2
+          }
+        },
+        "engine_physics_ms": {
+          "n": 719,
+          "mean": 0.5998609179415856,
+          "median": 0.3,
+          "p95": 1.3,
+          "p99": 1.3,
+          "maximum": 1.3
+        },
+        "engine_process_ms": {
+          "n": 719,
+          "mean": 6.303894297635605,
+          "median": 6.4,
+          "p95": 7.9,
+          "p99": 7.9,
+          "maximum": 7.9
+        },
+        "physics_ticks_per_render": {
+          "n": 719,
+          "mean": 0.502086230876217,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 361,
+        "wave_queries": 0,
+        "counters": {
+          "draw_calls": {
+            "n": 719,
+            "mean": 151.0,
+            "median": 151.0,
+            "p95": 151.0,
+            "p99": 151.0,
+            "maximum": 151.0
+          },
+          "render_primitives": {
+            "n": 719,
+            "mean": 552753.0,
+            "median": 552753.0,
+            "p95": 552753.0,
+            "p99": 552753.0,
+            "maximum": 552753.0
+          },
+          "render_objects": {
+            "n": 719,
+            "mean": 754.0,
+            "median": 754.0,
+            "p95": 754.0,
+            "p99": 754.0,
+            "maximum": 754.0
+          },
+          "nodes": {
+            "n": 719,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 719,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 719,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 719,
+            "mean": 80633435.0,
+            "median": 80633435.0,
+            "p95": 80633435.0,
+            "p99": 80633435.0,
+            "maximum": 80633435.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(215.0, 0.0, 115.0)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1325.0, 0.0, -1425.0)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      },
+      {
+        "case": "ready",
+        "interrupted": "",
+        "summary": {
+          "duration_s": 6.00099999999999,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 119.980003332778,
+          "fps_median": 119.047619047619,
+          "fps_p95": 161.290322580645,
+          "fps_p99": 178.571428571429,
+          "frames": 720,
+          "max_ms": 13.7,
+          "mean_ms": 8.33472222222221,
+          "median_ms": 8.4,
+          "p95_ms": 10.6,
+          "p99_ms": 11.1,
+          "presented_fps": 119.980003332778,
+          "slow_frames_over_33_ms": 0
+        },
+        "browser_raf": {
+          "duration_s": 5.98320000000001,
+          "estimated_missed_60hz_slots": 0,
+          "fps_mean": 120.002674154298,
+          "fps_median": 120.481927710843,
+          "fps_p95": 149.253731343284,
+          "fps_p99": 153.846153846154,
+          "frames": 718,
+          "max_ms": 10.4,
+          "mean_ms": 8.33314763231199,
+          "median_ms": 8.3,
+          "p95_ms": 10.0,
+          "p99_ms": 10.3,
+          "slow_frames_over_33_ms": 0
+        },
+        "cpu_ms_per_gameplay_tick": {
+          "camera_collision": 0.07555555555555556,
+          "ocean_update": 0.28,
+          "physics_tick": 0.7183333333333334,
+          "view": 0.6436111111111111,
+          "wave_queries": 0.05277777777777778
+        },
+        "inclusive_cpu_ms_per_render": {
+          "camera_collision": {
+            "n": 720,
+            "mean": 0.037777777777777785,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.2
+          },
+          "ocean_update": {
+            "n": 720,
+            "mean": 0.13999999999999999,
+            "median": 0.0,
+            "p95": 0.5,
+            "p99": 0.6,
+            "maximum": 0.7
+          },
+          "physics_tick": {
+            "n": 720,
+            "mean": 0.3591666666666667,
+            "median": 0.4,
+            "p95": 1.0,
+            "p99": 1.0,
+            "maximum": 1.1
+          },
+          "view": {
+            "n": 720,
+            "mean": 0.32180555555555557,
+            "median": 0.3,
+            "p95": 0.9,
+            "p99": 1.0,
+            "maximum": 1.1
+          },
+          "wave_queries": {
+            "n": 720,
+            "mean": 0.02638888888888889,
+            "median": 0.0,
+            "p95": 0.1,
+            "p99": 0.2,
+            "maximum": 0.3
+          }
+        },
+        "engine_physics_ms": {
+          "n": 720,
+          "mean": 1.175138888888889,
+          "median": 1.2,
+          "p95": 1.2,
+          "p99": 1.2,
+          "maximum": 1.2
+        },
+        "engine_process_ms": {
+          "n": 720,
+          "mean": 5.9688888888888885,
+          "median": 6.1,
+          "p95": 6.3,
+          "p99": 6.3,
+          "maximum": 6.3
+        },
+        "physics_ticks_per_render": {
+          "n": 720,
+          "mean": 0.5,
+          "median": 1,
+          "p95": 1,
+          "p99": 1,
+          "maximum": 1
+        },
+        "gameplay_ticks": 360,
+        "wave_queries": 5040,
+        "counters": {
+          "draw_calls": {
+            "n": 720,
+            "mean": 224.0,
+            "median": 224.0,
+            "p95": 224.0,
+            "p99": 224.0,
+            "maximum": 224.0
+          },
+          "render_primitives": {
+            "n": 720,
+            "mean": 564206.0,
+            "median": 564206.0,
+            "p95": 564206.0,
+            "p99": 564206.0,
+            "maximum": 564206.0
+          },
+          "render_objects": {
+            "n": 720,
+            "mean": 799.0,
+            "median": 799.0,
+            "p95": 799.0,
+            "p99": 799.0,
+            "maximum": 799.0
+          },
+          "nodes": {
+            "n": 720,
+            "mean": 1158.0,
+            "median": 1158,
+            "p95": 1158,
+            "p99": 1158,
+            "maximum": 1158
+          },
+          "resources": {
+            "n": 720,
+            "mean": 174.0,
+            "median": 174.0,
+            "p95": 174.0,
+            "p99": 174.0,
+            "maximum": 174.0
+          },
+          "static_bytes": {
+            "n": 720,
+            "mean": 0.0,
+            "median": 0.0,
+            "p95": 0.0,
+            "p99": 0.0,
+            "maximum": 0.0
+          },
+          "video_bytes": {
+            "n": 720,
+            "mean": 79934385.0,
+            "median": 79934385.0,
+            "p95": 79934385.0,
+            "p99": 79934385.0,
+            "maximum": 79934385.0
+          }
+        },
+        "inventory": {
+          "meshes": [
+            {
+              "aabb_size": "(256.0, 57.30724, 256.0)",
+              "path": "Archipelago/Terrain/MeshInstance3D",
+              "triangles": 131072,
+              "vertices": 73984,
+              "visible": true,
+              "world_aabb_position": "(-512.0, -14.0, -512.0)"
+            },
+            {
+              "aabb_size": "(120.0, 0.0, 120.0)",
+              "path": "Ocean/DetailedOcean",
+              "triangles": 73728,
+              "vertices": 37249,
+              "visible": true,
+              "world_aabb_position": "(215.0, 0.0, 115.0)"
+            },
+            {
+              "aabb_size": "(3200.0, 0.00001, 3200.0)",
+              "path": "Ocean/HorizonSkirt",
+              "triangles": 10752,
+              "vertices": 6176,
+              "visible": true,
+              "world_aabb_position": "(-1325.0, 0.0, -1425.0)"
+            }
+          ],
+          "ocean_cells": 192,
+          "physics_hz": 60,
+          "terrain_collision_disabled": false
+        }
+      }
+    ]
+  },
+  "unprofiled_cpu_control": [
+    {
+      "calls": 180,
+      "elapsed_us": 461405,
+      "guide": "original",
+      "round": 0
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 110,
+      "guide": "fixed",
+      "round": 0
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 468695,
+      "guide": "original",
+      "round": 1
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 101,
+      "guide": "fixed",
+      "round": 1
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 462921,
+      "guide": "original",
+      "round": 2
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 125,
+      "guide": "fixed",
+      "round": 2
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 465520,
+      "guide": "original",
+      "round": 3
+    },
+    {
+      "calls": 180,
+      "elapsed_us": 101,
+      "guide": "fixed",
+      "round": 3
+    }
+  ],
+  "visual_comparison": {
+    "dimensions": [
+      960,
+      540
+    ],
+    "mean_abs_rgb_8bit": [
+      0.1643923611,
+      0.1527662037,
+      0.1087268519
+    ],
+    "pixels_changed_gt_1": 1447,
+    "total_pixels": 518400
+  },
+  "limitations": [
+    "Affected Mac final FPS is unverified. Local Apple M4 Pro was display limited near 120 FPS.",
+    "Engine render counts and browser rAF measure delivery/scheduling, not compositor scanout.",
+    "GPU execution time is unavailable; primitive counts include all reported render passes.",
+    "Physics/process monitors may lag; inclusive callback timings are recorded separately.",
+    "Original schema 2 state assignment has a 200 ms sample-boundary uncertainty."
+  ],
+  "map_trim": {
+    "before_mesh_triangles": 131072,
+    "after_mesh_triangles": 4949,
+    "before_vertices": 73984,
+    "after_vertices": 3044,
+    "before_world_extent_m": [
+      1024,
+      1024
+    ],
+    "after_world_extent_m": [
+      480,
+      496
+    ],
+    "before_resource_bytes": 630927,
+    "after_resource_bytes": 66277,
+    "height_and_collision_byte_identical": true,
+    "foam_pixels_byte_identical": true,
+    "max_normal_roundtrip_error": 7.343585457e-05,
+    "matched_views": [
+      {
+        "view": "01-menu-before.png",
+        "mean_abs_rgb": [
+          0.001179,
+          0.00159,
+          0.002061
+        ]
+      },
+      {
+        "view": "02-spawn-before.png",
+        "mean_abs_rgb": [
+          0.000905,
+          0.000893,
+          0.000857
+        ]
+      },
+      {
+        "view": "03-northeast-grove-before.png",
+        "mean_abs_rgb": [
+          0.000897,
+          0.001186,
+          0.001338
+        ]
+      },
+      {
+        "view": "04-southeast-grove-before.png",
+        "mean_abs_rgb": [
+          0.001918,
+          0.002177,
+          0.00251
+        ]
+      },
+      {
+        "view": "05-southwest-grove-before.png",
+        "mean_abs_rgb": [
+          0.001471,
+          0.001889,
+          0.002198
+        ]
+      },
+      {
+        "view": "06-west-grove-before.png",
+        "mean_abs_rgb": [
+          0.000607,
+          0.000702,
+          0.000744
+        ]
+      },
+      {
+        "view": "07-north-grove-before.png",
+        "mean_abs_rgb": [
+          0.001293,
+          0.001577,
+          0.001748
+        ]
+      },
+      {
+        "view": "08-overhead-before.png",
+        "mean_abs_rgb": [
+          0.002739,
+          0.003339,
+          0.004007
+        ]
+      }
+    ],
+    "web": {
+      "build": {
+        "commit_utc": "2026-10-19T06:57:04+00:00",
+        "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+        "dirty": true,
+        "git_sha": "f7d45d223f2334d0b556d3f4bcc51804b6ff5ff8",
+        "godot_version": "4.8.dev6.official.8898c2b3d",
+        "runtime_script": "blackwater-runtime-d5fd445742ed.js",
+        "source_sha256": "d5fd445742ed10340b46fa0109989e77944b1be9a7c56db02e8f811ca55570d9"
+      },
+      "state_attribution": "per frame",
+      "states": {
+        "SAILING": {
+          "frame_ms": {
+            "n": 2143,
+            "mean": 8.408819412039197,
+            "median": 8.2,
+            "p95": 10.7,
+            "p99": 11.2,
+            "maximum": 88.3
+          },
+          "fps": 118.92275847525819
+        }
+      },
+      "cases": [
+        {
+          "case": "baseline",
+          "interrupted": "",
+          "summary": {
+            "duration_s": 6.0023,
+            "estimated_missed_60hz_slots": 0,
+            "fps_mean": 119.787414824317,
+            "fps_median": 119.047619047619,
+            "fps_p95": 169.491525423729,
+            "fps_p99": 188.679245283019,
+            "frames": 719,
+            "max_ms": 24.8,
+            "mean_ms": 8.34812239221141,
+            "median_ms": 8.4,
+            "p95_ms": 10.7,
+            "p99_ms": 11.2,
+            "presented_fps": 119.787414824317,
+            "slow_frames_over_33_ms": 0
+          },
+          "browser_raf": {
+            "duration_s": 5.98330000000002,
+            "estimated_missed_60hz_slots": 0,
+            "fps_mean": 119.833536677084,
+            "fps_median": 120.481927710843,
+            "fps_p95": 129.87012987013,
+            "fps_p99": 135.135135135135,
+            "frames": 717,
+            "max_ms": 16.7,
+            "mean_ms": 8.34490934449096,
+            "median_ms": 8.3,
+            "p95_ms": 9.0,
+            "p99_ms": 9.3,
+            "slow_frames_over_33_ms": 0
+          },
+          "cpu_ms_per_gameplay_tick": {
+            "camera_collision": 0.09111111111111111,
+            "enemy_movement": 0.2038888888888889,
+            "enemy_navigation": 0.19611111111111112,
+            "enemy_path_probes": 0.15638888888888888,
+            "enemy_projectiles": 0.09361111111111112,
+            "enemy_route": 0.0005555555555555556,
+            "enemy_total": 1.0980555555555556,
+            "firing_guide": 0.0030555555555555553,
+            "ocean_update": 0.19805555555555554,
+            "physics_tick": 1.9666666666666668,
+            "player_movement": 0.04416666666666667,
+            "player_projectiles": 0.004722222222222222,
+            "projectile_water_queries": 0.03861111111111112,
+            "view": 0.6222222222222221,
+            "wave_queries": 0.14472222222222222
+          },
+          "inclusive_cpu_ms_per_render": {
+            "camera_collision": {
+              "n": 719,
+              "mean": 0.04561891515994437,
+              "median": 0.0,
+              "p95": 0.2,
+              "p99": 0.2,
+              "maximum": 0.3
+            },
+            "enemy_movement": {
+              "n": 719,
+              "mean": 0.10208623087621697,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 14.2
+            },
+            "enemy_navigation": {
+              "n": 719,
+              "mean": 0.09819193324061197,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.5
+            },
+            "enemy_path_probes": {
+              "n": 719,
+              "mean": 0.07830319888734354,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.3,
+              "maximum": 0.4
+            },
+            "enemy_projectiles": {
+              "n": 719,
+              "mean": 0.04687065368567455,
+              "median": 0.0,
+              "p95": 0.2,
+              "p99": 0.3,
+              "maximum": 0.8
+            },
+            "enemy_route": {
+              "n": 719,
+              "mean": 0.0002781641168289291,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.0,
+              "maximum": 0.1
+            },
+            "enemy_total": {
+              "n": 719,
+              "mean": 0.5497913769123783,
+              "median": 0.7,
+              "p95": 1.3,
+              "p99": 1.4,
+              "maximum": 14.9
+            },
+            "firing_guide": {
+              "n": 719,
+              "mean": 0.00152990264255911,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.1,
+              "maximum": 0.1
+            },
+            "ocean_update": {
+              "n": 719,
+              "mean": 0.09916550764951321,
+              "median": 0.0,
+              "p95": 0.4,
+              "p99": 0.4,
+              "maximum": 0.5
+            },
+            "physics_tick": {
+              "n": 719,
+              "mean": 0.9847009735744089,
+              "median": 1.3,
+              "p95": 2.2,
+              "p99": 2.4,
+              "maximum": 15.8
+            },
+            "player_movement": {
+              "n": 719,
+              "mean": 0.02211404728789986,
+              "median": 0.0,
+              "p95": 0.1,
+              "p99": 0.2,
+              "maximum": 0.2
+            },
+            "player_projectiles": {
+              "n": 719,
+              "mean": 0.0023643949930458974,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.1,
+              "maximum": 0.1
+            },
+            "projectile_water_queries": {
+              "n": 719,
+              "mean": 0.01933240611961057,
+              "median": 0.0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "maximum": 0.2
+            },
+            "view": {
+              "n": 719,
+              "mean": 0.31154381084840055,
+              "median": 0.3,
+              "p95": 0.8,
+              "p99": 0.9,
+              "maximum": 1.1
+            },
+            "wave_queries": {
+              "n": 719,
+              "mean": 0.07246175243393603,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.7
+            }
+          },
+          "engine_physics_ms": {
+            "n": 719,
+            "mean": 5.553546592489569,
+            "median": 2.7,
+            "p95": 16.1,
+            "p99": 16.1,
+            "maximum": 16.1
+          },
+          "engine_process_ms": {
+            "n": 719,
+            "mean": 6.244089012517385,
+            "median": 4.4,
+            "p95": 12.1,
+            "p99": 12.1,
+            "maximum": 12.1
+          },
+          "physics_ticks_per_render": {
+            "n": 719,
+            "mean": 0.5006954102920723,
+            "median": 1,
+            "p95": 1,
+            "p99": 1,
+            "maximum": 1
+          },
+          "gameplay_ticks": 360,
+          "wave_queries": 14032,
+          "counters": {
+            "draw_calls": {
+              "n": 719,
+              "mean": 246.61752433936022,
+              "median": 251.0,
+              "p95": 265.0,
+              "p99": 266.0,
+              "maximum": 266.0
+            },
+            "render_primitives": {
+              "n": 719,
+              "mean": 202919.82753824757,
+              "median": 205958.0,
+              "p95": 209226.0,
+              "p99": 209510.0,
+              "maximum": 209510.0
+            },
+            "render_objects": {
+              "n": 719,
+              "mean": 1083.6175243393602,
+              "median": 1088.0,
+              "p95": 1102.0,
+              "p99": 1103.0,
+              "maximum": 1103.0
+            },
+            "nodes": {
+              "n": 719,
+              "mean": 1158.0,
+              "median": 1158,
+              "p95": 1158,
+              "p99": 1158,
+              "maximum": 1158
+            },
+            "resources": {
+              "n": 719,
+              "mean": 174.0,
+              "median": 174.0,
+              "p95": 174.0,
+              "p99": 174.0,
+              "maximum": 174.0
+            },
+            "static_bytes": {
+              "n": 719,
+              "mean": 0.0,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.0,
+              "maximum": 0.0
+            },
+            "video_bytes": {
+              "n": 719,
+              "mean": 75492271.0,
+              "median": 75492271.0,
+              "p95": 75492271.0,
+              "p99": 75492271.0,
+              "maximum": 75492271.0
+            }
+          },
+          "inventory": {
+            "meshes": [
+              {
+                "aabb_size": "(120.0, 57.30724, 124.0)",
+                "path": "Archipelago/Terrain/MeshInstance3D",
+                "triangles": 4949,
+                "vertices": 3044,
+                "visible": true,
+                "world_aabb_position": "(-4.0, -14.0, -24.0)"
+              },
+              {
+                "aabb_size": "(120.0, 0.0, 120.0)",
+                "path": "Ocean/DetailedOcean",
+                "triangles": 73728,
+                "vertices": 37249,
+                "visible": true,
+                "world_aabb_position": "(281.875, 0.0, 126.875)"
+              },
+              {
+                "aabb_size": "(3200.0, 0.00001, 3200.0)",
+                "path": "Ocean/HorizonSkirt",
+                "triangles": 10752,
+                "vertices": 6176,
+                "visible": true,
+                "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+              }
+            ],
+            "ocean_cells": 192,
+            "physics_hz": 60,
+            "terrain_collision_disabled": false
+          }
+        },
+        {
+          "case": "downward_camera",
+          "interrupted": "",
+          "summary": {
+            "duration_s": 6.00120000000001,
+            "estimated_missed_60hz_slots": 0,
+            "fps_mean": 119.97600479904,
+            "fps_median": 126.582278481013,
+            "fps_p95": 169.491525423729,
+            "fps_p99": 188.679245283019,
+            "frames": 720,
+            "max_ms": 11.8,
+            "mean_ms": 8.33500000000001,
+            "median_ms": 7.9,
+            "p95_ms": 10.8,
+            "p99_ms": 11.3,
+            "presented_fps": 119.97600479904,
+            "slow_frames_over_33_ms": 0
+          },
+          "browser_raf": {
+            "duration_s": 5.98430000000002,
+            "estimated_missed_60hz_slots": 0,
+            "fps_mean": 119.980615945056,
+            "fps_median": 120.481927710843,
+            "fps_p95": 128.205128205128,
+            "fps_p99": 135.135135135135,
+            "frames": 718,
+            "max_ms": 9.4,
+            "mean_ms": 8.33467966573819,
+            "median_ms": 8.3,
+            "p95_ms": 8.9,
+            "p99_ms": 9.3,
+            "slow_frames_over_33_ms": 0
+          },
+          "cpu_ms_per_gameplay_tick": {
+            "camera_collision": 0.09583333333333333,
+            "enemy_movement": 0.16944444444444445,
+            "enemy_navigation": 0.2,
+            "enemy_path_probes": 0.16694444444444445,
+            "enemy_projectiles": 0.08722222222222223,
+            "enemy_route": 0.0008333333333333334,
+            "enemy_total": 1.0708333333333333,
+            "firing_guide": 0.001388888888888889,
+            "ocean_update": 0.21305555555555555,
+            "physics_tick": 1.956388888888889,
+            "player_movement": 0.05305555555555556,
+            "player_projectiles": 0.007222222222222222,
+            "projectile_water_queries": 0.04472222222222222,
+            "view": 0.6383333333333334,
+            "wave_queries": 0.1511111111111111
+          },
+          "inclusive_cpu_ms_per_render": {
+            "camera_collision": {
+              "n": 720,
+              "mean": 0.04791666666666667,
+              "median": 0.0,
+              "p95": 0.2,
+              "p99": 0.2,
+              "maximum": 0.3
+            },
+            "enemy_movement": {
+              "n": 720,
+              "mean": 0.08472222222222223,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.5
+            },
+            "enemy_navigation": {
+              "n": 720,
+              "mean": 0.1,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.5
+            },
+            "enemy_path_probes": {
+              "n": 720,
+              "mean": 0.08347222222222223,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.4
+            },
+            "enemy_projectiles": {
+              "n": 720,
+              "mean": 0.043611111111111114,
+              "median": 0.0,
+              "p95": 0.2,
+              "p99": 0.2,
+              "maximum": 0.3
+            },
+            "enemy_route": {
+              "n": 720,
+              "mean": 0.00041666666666666675,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.0,
+              "maximum": 0.1
+            },
+            "enemy_total": {
+              "n": 720,
+              "mean": 0.5354166666666667,
+              "median": 0.7,
+              "p95": 1.3,
+              "p99": 1.4,
+              "maximum": 1.6
+            },
+            "firing_guide": {
+              "n": 720,
+              "mean": 0.0006944444444444445,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.0,
+              "maximum": 0.1
+            },
+            "ocean_update": {
+              "n": 720,
+              "mean": 0.10652777777777778,
+              "median": 0.0,
+              "p95": 0.4,
+              "p99": 0.5,
+              "maximum": 0.5
+            },
+            "physics_tick": {
+              "n": 720,
+              "mean": 0.9781944444444444,
+              "median": 1.3,
+              "p95": 2.2,
+              "p99": 2.4,
+              "maximum": 3.0
+            },
+            "player_movement": {
+              "n": 720,
+              "mean": 0.02652777777777778,
+              "median": 0.0,
+              "p95": 0.1,
+              "p99": 0.2,
+              "maximum": 0.2
+            },
+            "player_projectiles": {
+              "n": 720,
+              "mean": 0.0036111111111111114,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.1,
+              "maximum": 0.1
+            },
+            "projectile_water_queries": {
+              "n": 720,
+              "mean": 0.022361111111111113,
+              "median": 0.0,
+              "p95": 0.1,
+              "p99": 0.2,
+              "maximum": 0.2
+            },
+            "view": {
+              "n": 720,
+              "mean": 0.3191666666666667,
+              "median": 0.3,
+              "p95": 0.9,
+              "p99": 1.0,
+              "maximum": 1.3
+            },
+            "wave_queries": {
+              "n": 720,
+              "mean": 0.07555555555555556,
+              "median": 0.0,
+              "p95": 0.3,
+              "p99": 0.4,
+              "maximum": 0.5
+            }
+          },
+          "engine_physics_ms": {
+            "n": 720,
+            "mean": 2.6695833333333336,
+            "median": 2.7,
+            "p95": 3.2,
+            "p99": 3.2,
+            "maximum": 3.2
+          },
+          "engine_process_ms": {
+            "n": 720,
+            "mean": 3.6925,
+            "median": 3.8,
+            "p95": 4.0,
+            "p99": 4.1,
+            "maximum": 4.1
+          },
+          "physics_ticks_per_render": {
+            "n": 720,
+            "mean": 0.5,
+            "median": 1,
+            "p95": 1,
+            "p99": 1,
+            "maximum": 1
+          },
+          "gameplay_ticks": 360,
+          "wave_queries": 14032,
+          "counters": {
+            "draw_calls": {
+              "n": 720,
+              "mean": 211.9388888888889,
+              "median": 213.0,
+              "p95": 224.0,
+              "p99": 225.0,
+              "maximum": 228.0
+            },
+            "render_primitives": {
+              "n": 720,
+              "mean": 207525.2888888889,
+              "median": 207592.0,
+              "p95": 211312.0,
+              "p99": 211312.0,
+              "maximum": 211312.0
+            },
+            "render_objects": {
+              "n": 720,
+              "mean": 1055.9388888888889,
+              "median": 1057.0,
+              "p95": 1068.0,
+              "p99": 1069.0,
+              "maximum": 1072.0
+            },
+            "nodes": {
+              "n": 720,
+              "mean": 1158.0,
+              "median": 1158,
+              "p95": 1158,
+              "p99": 1158,
+              "maximum": 1158
+            },
+            "resources": {
+              "n": 720,
+              "mean": 174.0,
+              "median": 174.0,
+              "p95": 174.0,
+              "p99": 174.0,
+              "maximum": 174.0
+            },
+            "static_bytes": {
+              "n": 720,
+              "mean": 0.0,
+              "median": 0.0,
+              "p95": 0.0,
+              "p99": 0.0,
+              "maximum": 0.0
+            },
+            "video_bytes": {
+              "n": 720,
+              "mean": 75492271.0,
+              "median": 75492271.0,
+              "p95": 75492271.0,
+              "p99": 75492271.0,
+              "maximum": 75492271.0
+            }
+          },
+          "inventory": {
+            "meshes": [
+              {
+                "aabb_size": "(120.0, 57.30724, 124.0)",
+                "path": "Archipelago/Terrain/MeshInstance3D",
+                "triangles": 4949,
+                "vertices": 3044,
+                "visible": true,
+                "world_aabb_position": "(-4.0, -14.0, -24.0)"
+              },
+              {
+                "aabb_size": "(120.0, 0.0, 120.0)",
+                "path": "Ocean/DetailedOcean",
+                "triangles": 73728,
+                "vertices": 37249,
+                "visible": true,
+                "world_aabb_position": "(281.875, 0.0, 126.875)"
+              },
+              {
+                "aabb_size": "(3200.0, 0.00001, 3200.0)",
+                "path": "Ocean/HorizonSkirt",
+                "triangles": 10752,
+                "vertices": 6176,
+                "visible": true,
+                "world_aabb_position": "(-1258.125, 0.0, -1413.125)"
+              }
+            ],
+            "ocean_cells": 192,
+            "physics_hz": 60,
+            "terrain_collision_disabled": false
+          }
+        }
+      ]
+    }
+  }
+}

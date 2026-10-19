@@ -100,6 +100,51 @@ Rebuild the ocean asset deterministically with `python3 tools/build_ocean_audio.
 The source music is not edited. Browser sample playback supports static OGG/WAV;
 see [Godot's Web audio implementation notes](https://godotengine.org/article/progress-report-web-export-in-4-3/).
 
+## Investigate active-game FPS
+
+F8 → **Run active FPS A/B** starts a bounded, roughly 2½-minute investigation in
+the actual production scene. It restarts the run; keep the game focused and do
+not steer during comparisons. Focus loss or F8 stops it and restores temporary
+changes. Export Diagnostics retains completed cases; interrupted cases are marked.
+The run uses 960×540, restoring the previous setting afterward.
+
+- Original CPU firing guide versus the persistent shared-wave guide.
+- Chase versus loss-style downward camera with AI, physics and waves running;
+  separately freeze simulation while retaining the chase view and no pause card.
+- Clouds off, minimal gradient, flat-colour water, 64-cell water and hidden terrain
+  visuals, each separately. Physics waves, terrain collision and boundaries remain.
+- Independent inclusive CPU counters for AI/navigation, projectiles, wave queries,
+  movement, camera collisions, view updates and the firing guide. Nested totals overlap.
+- SAILING, paused, LOST and READY have separate cases, wall-time percentiles,
+  rendered FPS, engine process/physics time, ticks/render, draw/primitive/object
+  counters and memory/resource counts. Browser rAF is a scheduling proxy; neither
+  it nor the engine render count proves compositor presentation.
+
+Schema 3 also tags each ordinary recorded interval with its state and physics/
+render counts, and exports `state_frame_summaries`. Transition intervals have
+their own group, so smooth menus cannot conceal slow sailing. Zero memory counters
+may be unavailable. Existing schema 2 recordings can be analysed with an explicit
+200 ms state-attribution uncertainty:
+
+```sh
+python3 tools/analyze_active_fps.py /path/to/blackwater-report.json
+```
+
+For the affected player, use the local test ZIP and F8, or append `?perf_ab=1`
+to the game's URL for a one-button run and JSON export. Nothing is uploaded.
+For a repeatable local browser iframe:
+
+```sh
+./build_web.sh
+python3 tools/web_active_fps_review.py
+```
+
+Open `http://127.0.0.1:8784/review.html`. The loopback review server saves a completed
+report to ignored `build/active_fps/results.json`; use `--output` for another run.
+Optional `--cases baseline,downward_camera,paused,lost,ready` selects a short subset.
+Measurements, the specific firing-guide fix and remaining device gap are in the
+[active gameplay review](artifacts/active_gameplay_fps_review.md).
+
 ## Focus and pause
 
 Canvas blur, window blur and hidden documents pause gameplay and suspend audio.

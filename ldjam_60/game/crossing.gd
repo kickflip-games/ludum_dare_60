@@ -1,10 +1,13 @@
 extends Node3D
+const ActiveMetrics = preload("res://game/active_frame_metrics.gd")
 ## Lighthouse arena with retained voyage fixtures. Distances are in metres.
 
 const VoyageDirector = preload("res://game/voyage_director.gd")
 const NavigationBearings = preload("res://game/navigation_bearings.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const LiveDiagnostics = preload("res://game/live_diagnostics.gd")
+const ActiveFPS = preload("res://game/active_fps_investigation.gd")
+var active_fps: Node
 const AudioShutdown = preload("res://game/audio_shutdown.gd")
 const MobileControls = preload("res://game/mobile_controls.gd")
 var mobile_controls: CanvasLayer
@@ -367,6 +370,9 @@ func _ready() -> void:
 	diagnostics = LiveDiagnostics.new()
 	diagnostics.game = self
 	add_child(diagnostics)
+	active_fps = ActiveFPS.new()
+	active_fps.game = self
+	add_child(active_fps)
 	mobile_controls = MobileControls.new()
 	mobile_controls.game = self
 	add_child(mobile_controls)
@@ -761,6 +767,12 @@ func restart(to_menu: bool = false) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured__physics_process(delta)
+	ActiveMetrics.finish("physics_tick", started)
+
+
+func _measured__physics_process(delta: float) -> void:
 	if is_instance_valid(diagnostics): diagnostics.poll_lifecycle()
 	if not _window_focused and state in [State.SAILING, State.CASTING_OFF]:
 		set_paused(true)
@@ -886,6 +898,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	if not arena_mode and cannon.aiming:
 		steering = 0.0
 	if is_instance_valid(diagnostics): diagnostics.steering(steering)
+	var movement_started := ActiveMetrics.start()
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	wave_sailing.rudder_response = arena_rudder_response if arena_mode else 7.0
 	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, forward_speed)
@@ -904,6 +917,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	_constrain_sailing_area()
 	boat.velocity = (boat.position - previous_position) / maxf(delta, 0.0001)
 	actual_speed = boat.velocity.length()
+	ActiveMetrics.finish("player_movement", movement_started)
 	if reading and focus_strength >= 1.0:
 		# This snapshot is a focused landmark reading, not the bow's heading.
 		# It never supplies a sailing arrow or persistent HUD label.
@@ -1062,6 +1076,12 @@ func shake(amount: float) -> void:
 
 
 func _update_view(delta: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured__update_view(delta)
+	ActiveMetrics.finish("view", started)
+
+
+func _measured__update_view(delta: float) -> void:
 	flow_zones.present(water_material, arena_mode and state == State.SAILING)
 	var light := arena_center()
 	water_material.set_shader_parameter("storm_boundary", Vector4(light.x, light.z, arena_radius, storm_warning_strength()))
@@ -1169,6 +1189,7 @@ func _update_view(delta: float) -> void:
 	sky_material.set_shader_parameter("cloud_highlights", cloud_highlights)
 	sky_material.set_shader_parameter("cloud_softness", cloud_softness)
 	sky_material.set_shader_parameter("cloud_variation", cloud_variation)
+	if is_instance_valid(active_fps): active_fps.after_view()
 	update_guiding_star()
 	if is_instance_valid(beacon_lamp):
 		beacon_lamp.scale = Vector3.ONE * (1.0 + sin(sea_time * 1.7) * 0.12)
@@ -1216,6 +1237,13 @@ func motion_amount() -> float:
 
 
 func _camera_obstruction_limit(at: Vector3) -> Vector3:
+	var started := ActiveMetrics.start()
+	var result := _measured__camera_obstruction_limit(at)
+	ActiveMetrics.finish("camera_collision", started)
+	return result
+
+
+func _measured__camera_obstruction_limit(at: Vector3) -> Vector3:
 	# Extend the existing terrain-only feeler to every sailing pose. A small swept
 	# sphere protects the near plane and the screen edges rather than one thin ray.
 	var anchor := _camera_shore_anchor()

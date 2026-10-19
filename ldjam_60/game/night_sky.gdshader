@@ -2,6 +2,7 @@ shader_type sky;
 render_mode disable_fog;
 
 uniform float visual_time = 0.0;
+uniform bool diagnostic_clouds_off = false;
 // A fixed low moon, shared with the water's reflection corridor.
 uniform vec3 moon_direction = vec3(0.43, 0.105, 0.897);
 uniform float storm = 0.0;
@@ -183,7 +184,7 @@ void sky() {
 		float moon_halo = exp(-moon_separation * moon_separation / 0.0018) * 0.16;
 		night += vec3(0.91, 0.89, 0.79) * moon_disc * 1.35;
 		night += vec3(0.52, 0.63, 0.75) * moon_halo * smoothstep(0.0, 0.08, d.y);
-		vec4 clouds = procedural_clouds ? toon_clouds(d) : painted_clouds(d);
+		vec4 clouds = diagnostic_clouds_off ? vec4(0.0) : (procedural_clouds ? toon_clouds(d) : painted_clouds(d));
 		COLOR = night * (1.0 - clouds.a) + clouds.rgb + vec3(lightning);
 		if (cloud_debug == 1) { COLOR = vec3(clouds.a); }
 		if (cloud_debug == 2) { COLOR = night; }

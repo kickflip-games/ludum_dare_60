@@ -3,6 +3,7 @@ extends SceneTree
 const Terrain = preload("res://addons/lite_terrain/map.gd")
 const SIZE := 257
 const SPACING := 4.0
+const ArenaMeshTrim = preload("res://tools/trim_arena_mesh.gd")
 # Centre x/z, existing footprint radii x/z, summit height, coastline phase,
 # inset summit x/z (relative to radius), ridge angle. The map topology is retained.
 const ISLANDS := [
@@ -83,7 +84,9 @@ func _initialize() -> void:
 	terrain.surface_material = load("res://game/world/moonlit_terrain.tres")
 	terrain.set_heightmap(heights, SIZE, SIZE)
 	terrain._rebuild_editor_full()
-	assert(ResourceSaver.save(terrain.mesh_instance.mesh, "res://game/world/%s_mesh.res" % resource_prefix, ResourceSaver.FLAG_COMPRESS) == OK)
+	var visual_mesh: ArrayMesh = terrain.mesh_instance.mesh
+	if arena: visual_mesh = ArenaMeshTrim.trim(visual_mesh)
+	assert(ResourceSaver.save(visual_mesh, "res://game/world/%s_mesh.res" % resource_prefix, ResourceSaver.FLAG_COMPRESS) == OK)
 	terrain.free()
-	print("BAKED: %s, 257x257 R32F + full collision + LiteTerrain preview mesh" % resource_prefix)
+	print("BAKED: %s, 257x257 R32F + full collision + %d visual triangles" % [resource_prefix, visual_mesh.surface_get_array_index_len(0) / 3])
 	quit()

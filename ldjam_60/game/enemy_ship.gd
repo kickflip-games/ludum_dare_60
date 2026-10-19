@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const ActiveMetrics = preload("res://game/active_frame_metrics.gd")
 const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## Planar navigation and committed cannon fire use independent state machines.
 
@@ -457,6 +458,12 @@ func _turn_toward(direction: Vector3, delta: float) -> void:
 
 
 func update_ship(delta: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured_update_ship(delta)
+	ActiveMetrics.finish("enemy_total", started)
+
+
+func _measured_update_ship(delta: float) -> void:
 	_advance_shots(delta)
 	if game.arena_mode and game.state != game.State.SAILING:
 		return
@@ -565,6 +572,7 @@ func update_ship(delta: float) -> void:
 		target_speed = _traffic_speed(target_speed)
 	var speed_change := braking_acceleration if game.arena_mode and target_speed < _speed else acceleration
 	_speed = move_toward(_speed, target_speed, delta * speed_change)
+	var movement_started := ActiveMetrics.start()
 	var before := position
 	velocity = forward() * _speed
 	var travel := velocity * delta
@@ -584,6 +592,7 @@ func update_ship(delta: float) -> void:
 	_contacting = collision != null
 	position.y = 0.0
 	velocity = (position - before) / maxf(delta, 0.0001)
+	ActiveMetrics.finish("enemy_movement", movement_started)
 	_blocked_elapsed = _blocked_elapsed + delta if velocity.length() < _speed * 0.3 else 0.0
 	if _blocked_elapsed > 1.0:
 		if _recovery_left <= 0.0:
@@ -743,6 +752,13 @@ func _water_lane_clear(from: Vector3, to: Vector3) -> bool:
 
 
 func _arena_approach(goal: Vector3, delta: float) -> Vector3:
+	var started := ActiveMetrics.start()
+	var result := _measured__arena_approach(goal, delta)
+	ActiveMetrics.finish("enemy_route", started)
+	return result
+
+
+func _measured__arena_approach(goal: Vector3, delta: float) -> Vector3:
 	_route_check_left = maxf(0.0, _route_check_left - delta)
 	var reached := _route_point.is_finite() and global_position.distance_to(_route_point) < 14.0
 	if _route_check_left <= 0.0 or reached:
@@ -793,6 +809,13 @@ func _capture_course() -> void:
 
 
 func _path_clear(direction: Vector3, distance: float = 30.0) -> bool:
+	var started := ActiveMetrics.start()
+	var result := _measured__path_clear(direction, distance)
+	ActiveMetrics.finish("enemy_path_probes", started)
+	return result
+
+
+func _measured__path_clear(direction: Vector3, distance: float = 30.0) -> bool:
 	var terrain = game.archipelago.get_node("Terrain")
 	var side := Vector3(-direction.z, 0, direction.x) * terrain_margin
 	for step in [0.35, 0.7, 1.0]:
@@ -837,6 +860,13 @@ func _separation_course(away: Vector3) -> Vector3:
 
 
 func _safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
+	var started := ActiveMetrics.start()
+	var result := _measured__safe_direction(desired, to_player, delta)
+	ActiveMetrics.finish("enemy_navigation", started)
+	return result
+
+
+func _measured__safe_direction(desired: Vector3, to_player: Vector3, delta: float) -> Vector3:
 	_avoid_left = maxf(0.0, _avoid_left - delta)
 	_recovery_left = maxf(0.0, _recovery_left - delta)
 	safety_priority = 0
@@ -949,6 +979,12 @@ func _launch_ball(from: Vector3) -> void:
 
 
 func _advance_shots(delta: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured__advance_shots(delta)
+	ActiveMetrics.finish("enemy_projectiles", started)
+
+
+func _measured__advance_shots(delta: float) -> void:
 	for i in range(projectiles.size() - 1, -1, -1):
 		var shot: Dictionary = projectiles[i]
 		var from: Vector3 = shot.position

@@ -1,4 +1,5 @@
 extends Node3D
+const ActiveMetrics = preload("res://game/active_frame_metrics.gd")
 const CombatMetrics = preload("res://game/combat_event_metrics.gd")
 ## One starboard cannon: bounded arena targeting, retained legacy voyage sweep.
 
@@ -258,6 +259,12 @@ func _physics_process(delta: float) -> void:
 
 
 func advance(delta: float) -> void:
+	var started := ActiveMetrics.start()
+	_measured_advance(delta)
+	ActiveMetrics.finish("player_projectiles", started)
+
+
+func _measured_advance(delta: float) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
 	_advance_muzzle(delta)
 	feedback_time = maxf(0.0, feedback_time - delta)

@@ -4,6 +4,26 @@ Concise development history for Blackwater (formerly Latitude Lines). Dates use 
 This initial history summarises recent Git commits; linked reviews contain their
 recorded evidence and limitations.
 
+## 2026-10-20
+
+- Increased cannon pressure with configurable 1.00/0.90/0.80/0.70/0.65 wave
+  reload multipliers, wider existing gun arcs and clear-lane fire during terrain
+  avoidance. Surviving ships keep active warnings and cooldowns. Heavy broadsides
+  now diverge across three predicted impact points, spaced ±2.75 m.
+- Flagship recovery is now 0.6/0.8 s, with a 0.75 phase-two multiplier. Safe
+  partial batteries can fire without blocked barrels silencing every gun;
+  full warnings, rolling spacing, scatter gaps and mine intervals remain.
+  Automated pursuit volleys rose 1.58×/2.04× by phase; player rules and pools
+  remain unchanged. [Measurements and validation](artifacts/aggression_review.md).
+
+- Replaced boat-mounted boost ribbons with sparse, tapered
+  camera-space streaks at the screen edges. Kept the ship and center clear,
+  with the existing boost fade, controls and reset behavior.
+
+- Doubled heavy minelayer drop frequency, from every 8 seconds
+  to every 4 seconds while pursued. Retained the three-mine cap, arming delay,
+  safe placement and cleanup rules.
+
 ## 2026-10-19
 
 - Work in progress: trimmed invisible deep seabed from the arena's rendered map:

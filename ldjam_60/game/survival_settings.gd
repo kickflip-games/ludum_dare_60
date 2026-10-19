@@ -21,6 +21,10 @@ var enemy_counts: PackedInt32Array:
 @export var deadlines := PackedFloat32Array([40.0, 50.0, 65.0, 80.0, 0.0])
 @export_range(0.05, 15.0, 0.05) var spawn_interval := 2.5
 @export_range(1, 6, 1) var maximum_living := 6
+# Applied to the unscaled archetype reload only when a new reload starts.
+# Existing warnings and cooldowns finish unchanged, including timed-wave survivors.
+@export var reload_multipliers := PackedFloat32Array([1.0, 0.90, 0.80, 0.70, 0.65])
+
 @export var attack_slots := PackedInt32Array([1, 1, 2, 2, 2])
 @export_range(0.6, 3.0, 0.1) var warning_interval := 0.7
 @export_range(0.0, 3.0, 0.1) var holding_entry_seconds := 0.75
@@ -28,3 +32,7 @@ var enemy_counts: PackedInt32Array:
 @export_range(0.0, 10.0, 0.1) var first_wave_delay := 0.0
 @export_range(50.0, 100.0, 1.0) var player_spawn_separation := 65.0
 @export_range(16.0, 40.0, 1.0) var ship_spawn_separation := 25.0
+
+func reload_multiplier(wave: int) -> float:
+	if reload_multipliers.is_empty(): return 1.0
+	return clampf(reload_multipliers[clampi(wave - 1, 0, reload_multipliers.size() - 1)], 0.5, 1.0)

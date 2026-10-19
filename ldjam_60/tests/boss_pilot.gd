@@ -23,11 +23,14 @@ func clearance(game, steering: float) -> float:
 	var score := 1000.0
 	var position: Vector3 = game.boat.position
 	var heading: float = game.heading
+	var hazards: Array = game.enemy_encounters.boss.mines.duplicate()
+	for ship in game.enemy_encounters.ships:
+		if ship.mine_layer != null: hazards.append_array(ship.mine_layer.mines)
 	for i in 12:
 		heading += steering * 0.72 * 0.2
 		position += Vector3(sin(heading), 0, -cos(heading)) * game.propulsion_speed() * 0.2
 		var time := (i + 1) * 0.2
-		for mine in game.enemy_encounters.boss.mines:
+		for mine in hazards:
 			if is_instance_valid(mine) and not mine.spent and mine.age + time >= mine.arming_delay:
 				var offset: Vector3 = position - mine.position
 				offset.y = 0

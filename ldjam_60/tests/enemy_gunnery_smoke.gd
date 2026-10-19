@@ -42,10 +42,10 @@ func _run() -> void:
 	ship.begin(game.boat.position + Vector3(40,0,0))
 	ship.heading = 0
 	ship.rotation.y = 0
-	for degrees in [-37.5, 37.5]:
+	for degrees in [-44.5, 44.5]:
 		check(ship._select_battery(Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(degrees))) == ship.Battery.PORT,
 			"wide port arc accepts a physically plausible broadside")
-	check(ship._select_battery(Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(39.0))) < 0,
+	check(ship._select_battery(Vector3.LEFT.rotated(Vector3.UP, deg_to_rad(46.0))) < 0,
 		"beyond the gun arc is rejected")
 	var obstacle := StaticBody3D.new()
 	obstacle.collision_layer = 4 # Another ship, not an island.

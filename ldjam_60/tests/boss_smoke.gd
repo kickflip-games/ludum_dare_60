@@ -232,7 +232,7 @@ func _run() -> void:
 				boss._update_weapon(1.0 / hz)
 				boss._update_mines(1.0 / hz)
 			check(boss.weapon_state == boss.Weapon.RELOAD and boss.mines.size() == mine_count and boss.shots_fired == shot_count, "%d Hz phase %s reload allows approach without new attacks" % [hz, second_phase])
-			check(reload_mine.armed() and reload_mine.age >= reload_seconds - 0.15, "reload keeps existing mine hazards ticking and armed")
+			check(reload_mine.age >= reload_seconds - 0.15 and reload_mine.armed() == (reload_mine.age >= reload_mine.arming_delay), "short reload keeps mines ticking without shortening their arming delay")
 			game.hud._process(0.0)
 			check(game.hud.wave_announcement.visible and game.hud.wave_announcement.text == "FLAGSHIP", "reload keeps the Flagship ribbon without reload text")
 			boss.cooldown = 0.0

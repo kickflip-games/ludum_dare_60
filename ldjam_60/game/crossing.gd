@@ -280,7 +280,7 @@ var ocean: Node3D
 var boat_motion := BoatWaveMotion.new()
 var combat_particles: Node3D
 var boat_damage := BoatDamage.new()
-var boost_wind: MeshInstance3D
+var boost_wind: Control
 var water_material: ShaderMaterial
 var _cloud_layout := NightClouds.new()
 var sky_material: ShaderMaterial
@@ -1477,8 +1477,12 @@ func _build_boat() -> void:
 	boat_visual.name = "BoatVisualPivot"
 	boat.add_child(boat_visual)
 	boost_wind = BoostWind.new()
-	boost_wind.name = "BoostTailwind"
-	boat_visual.add_child(boost_wind)
+	boost_wind.name = "BoostSlipstream"
+	var wind_layer := CanvasLayer.new()
+	wind_layer.name = "BoostWindLayer"
+	wind_layer.layer = 0 # Above the storm grade, beneath the HUD created later.
+	add_child(wind_layer)
+	wind_layer.add_child(boost_wind)
 	helm_anchor = Marker3D.new()
 	helm_anchor.name = "HelmEye"
 	helm_anchor.position = helm_eye

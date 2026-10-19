@@ -102,6 +102,49 @@ func run() -> void:
 				boss.heading += 0.4
 				boss._advance_shots(1.0 / hz)
 				check(projectile.velocity.x == velocity.x and projectile.velocity.z == velocity.z, "launched cannonball never follows subsequent hull movement")
+	# One obstructed muzzle leaves the other authored lanes available.
+	stage(boss.DeckBattery.PORT, boss.Pattern.ROLLING)
+	await physics_frame
+	check(boss._prepare_volley(0.9), "partial-battery fixture first prepares five clear lanes")
+	var blocked_lane: Dictionary = boss._shot_lane(boss.volley[0])
+	boss._finish_pattern()
+	var obstacle := StaticBody3D.new()
+	obstacle.collision_layer = 1
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(1, 8, 1)
+	shape.shape = box
+	obstacle.add_child(shape)
+	game.add_child(obstacle)
+	obstacle.position = blocked_lane.origin + blocked_lane.direction * 2.0
+	await physics_frame
+	check(boss._prepare_volley(0.9) and boss.volley.size() == 4, "one blocked outer muzzle retains four safe warned rounds")
+	var partial_plan: Array = boss.volley.duplicate(true)
+	for tick in 130: boss._update_weapon(1.0 / 60)
+	check(boss.shots_fired == 4 and boss.weapon_state == boss.Weapon.RELOAD, "partial battery actually completes four physical launches")
+	check(partial_plan[0].time == boss.rolling_gap and partial_plan.back().time == boss.rolling_gap * 4, "partial volley preserves original rolling spacing")
+	obstacle.queue_free()
+	await physics_frame
+	stage(boss.DeckBattery.PORT, boss.Pattern.ROLLING)
+	await physics_frame
+	boss.safety_priority = 2
+	boss._update_weapon(0)
+	check(boss.weapon_state == boss.Weapon.TELEGRAPH, "terrain avoidance can acquire individually safe gun lanes")
+	boss._update_weapon(boss.telegraph_seconds)
+	check(boss.shots_fired == 1, "safe terrain-avoidance gun fires only after the full warning")
+	boss.safety_priority = 3
+	boss._update_weapon(0)
+	check(boss.weapon_state == boss.Weapon.RELOAD and boss.shots_fired == 1, "actual collision recovery aborts remaining guns")
+	stage(boss.DeckBattery.PORT, boss.Pattern.ROLLING)
+	await physics_frame
+	check(boss._prepare_volley(0.9), "cross-pattern mine interval fixture prepares")
+	boss._update_mines(0)
+	check(boss.mines.size() == 1, "first warning retains its original mine cue")
+	boss.position += Vector3(25, 0, 0)
+	boss._finish_pattern()
+	boss._prepare_volley(0.9)
+	boss._update_mines(0.1)
+	check(boss.mines.size() == 1, "starting a faster cannon pattern cannot bypass mine interval")
 	# New bow lane must still reject the lighthouse.
 	stage(boss.DeckBattery.BOW, boss.Pattern.ROLLING)
 	boss.position = game.arena_center() + Vector3(-45, 0, 0)
@@ -121,6 +164,5 @@ func run() -> void:
 	game.restart()
 	check(boss.volley.is_empty() and not boss.warnings[0].visible and boss.attack_battery == boss.DeckBattery.PORT, "retry resets attached warnings and deck battery")
 	print("BOSS BATTERIES: %d checks, %d failures" % [checks, failures])
-	game.queue_free()
-	await process_frame
+	await preload("res://game/audio_shutdown.gd").release_scene(game, self)
 	quit(0 if failures == 0 else 1)

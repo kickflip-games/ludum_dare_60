@@ -126,14 +126,18 @@ sector fallbacks. Warnings hold one intercept point from their start, using meas
 ship velocity plus warning and flight time; launched shots never home. A steady
 course is hittable; steering after the warning spoils the prediction. Crowded ships yield speed as well as turning.
 Ordinary guns reach **78 m** and reload in **1.6 / 1.25 / 2.3 seconds** for
-cutters/skiffs/heavies. They can fire repeatedly during a pass, or from a stable
+cutters/skiffs/heavies before wave scaling. One configurable
+`reload_multipliers` array in `game/survival_settings.gd` applies
+**1.00 / 0.90 / 0.80 / 0.70 / 0.65** across Waves 1–5, including survivors.
+A new reload reads the base profile once; advancing a wave never changes an
+active warning or remaining cooldown. They can fire repeatedly during a pass, or from a stable
 approach, turn, reposition or holding leg when the player is on their gun side and
 the lane is clear. Guns defend down to **10 m**, independently of pursuit slots.
 Every volley still receives its full warning. Cutters and skiffs carry two
 cannons per side; heavies carry three per side. Only the battery facing the player
 fires, using one shared reload. Skiffs also have a forward cannon for targets off
 the bow. Heavies leave up to three stationary mines astern while pursued: a
-5 m warning ring, 1.2 s arming delay and at least 8 s between drops.
+5 m warning ring, 1.2 s arming delay and at least 4 s between drops.
 Drops require clear water and a safe player gap. Mines remain after their ship
 sinks, until triggered or shot by the player; retry and endings clear them.
 Mines can be acquired and destroyed by the normal cannon inside its firing cone.
@@ -161,8 +165,11 @@ Arena enemies use independent navigation and weapon states: a committed approach
 parallel pass, broad turn and reposition; guns keep sailing through warnings and
 reload. A lightweight director allocates 1/1/2/2/2 navigation attack slots, queues ships fairly,
 and separates ordinary warning starts by 0.7 seconds. Waiting ships can fire
-through a clear facing battery without taking a pursuit slot. Ordinary batteries accept ±38°
-and recheck the lane at launch. Their glow is visible throughout the warning,
+through a clear facing battery without taking a pursuit slot. Ordinary batteries accept ±45°
+and recheck each actual lane at launch. Clear guns may fire during terrain
+avoidance; collision recovery still blocks them. Three-gun Heavy batteries keep
+the central prediction and diverge to symmetric ±2.75 m lateral impact points.
+One/two-gun batteries retain their original aim. Their glow is visible throughout the warning,
 and acquisition waits until arrival readiness completes. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
 out; blocked routes recover visibly, and retry clears the fleet and its shots.
@@ -170,6 +177,7 @@ Wave 2 introduces the heavy minelayer; wave counts and deadlines remain unchange
 uses no director slot, but reserves warning spacing for its whole volley.
 See [naval AI validation and tuning](artifacts/naval_ai_review.md).
 See [combat event measurements and reproduction](artifacts/combat_events_review.md).
+See [current cannon aggression parameters and measurements](artifacts/aggression_review.md).
 See [enemy cannon accuracy, pressure and acceptance evidence](artifacts/enemy_cannon_review.md).
 
 The single starboard cannon uses a **±10° firing cone (20° total) with a 65 m range**.

@@ -37,6 +37,8 @@ enum Battery { PORT, STARBOARD, BOW }
 @export var braking_acceleration: float = 5.0
 @export var hull_capacity: int = 2
 @export var firing_range: float = 62.0
+@export_range(38.0, 50.0, 1.0) var firing_half_angle := 45.0
+@export_range(0.0, 4.0, 0.25) var three_gun_spread := 2.75
 @export var reload_seconds: float = 3.8
 @export var telegraph_seconds: float = 1.65
 @export var minimum_firing_distance: float = 10.0
@@ -85,6 +87,7 @@ var timer: float:
 		else: navigation_time = value
 var cooldown: float = 0.0
 var locked_point := Vector3.ZERO
+var locked_spread_axis := Vector3.ZERO
 var hit_reaction: float = 0.0
 var shots_fired: int = 0
 var shots_hit: int = 0
@@ -242,7 +245,7 @@ func _battery_direction(battery: int) -> Vector3:
 
 func _select_battery(offset: Vector3) -> int:
 	var selected := -1
-	var best := cos(deg_to_rad(38.0)) if game.arena_mode else 0.90
+	var best := cos(deg_to_rad(firing_half_angle)) if game.arena_mode else 0.90
 	for mount in gun_mounts:
 		var alignment: float = _battery_direction(mount.battery).dot(offset.normalized())
 		if alignment > best:
@@ -309,6 +312,7 @@ func _reset_ship(clear_mines: bool) -> void:
 	cooldown = 0.0
 	hit_reaction = 0.0
 	locked_point = Vector3.ZERO
+	locked_spread_axis = Vector3.ZERO
 	heading = 0.0
 	rotation = Vector3.ZERO
 	visual.transform = Transform3D.IDENTITY
@@ -678,13 +682,15 @@ func _change_weapon(value: Weapon) -> void:
 
 
 func _shot_lane_valid(point: Vector3) -> bool:
+	_update_spread_axis(point)
 	for mount in gun_mounts:
 		if mount.battery != active_battery:
 			continue
-		var flat := (point - _mount_position(mount)) * Vector3(1, 0, 1)
-		if _battery_direction(active_battery).dot(flat.normalized()) < cos(deg_to_rad(38.0)):
+		var target := _mount_target(mount, point)
+		var flat := (target - _mount_position(mount)) * Vector3(1, 0, 1)
+		if _battery_direction(active_battery).dot(flat.normalized()) < cos(deg_to_rad(firing_half_angle if game.arena_mode else 38.0)):
 			return false
-		var query := PhysicsRayQueryParameters3D.create(_mount_position(mount), point, 5, [get_rid()])
+		var query := PhysicsRayQueryParameters3D.create(_mount_position(mount), target, 5, [get_rid()])
 		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 			return false
 	return true
@@ -694,12 +700,15 @@ func _update_weapon(delta: float) -> void:
 	weapon_time += delta
 	if navigation_state in [Navigation.DORMANT, Navigation.ESCAPED, Navigation.SINKING, Navigation.RETREAT] or hull <= 0:
 		return
+	var unsafe := safety_priority >= (3 if game.arena_mode else 2)
 	match weapon_state:
 		Weapon.READY:
 			var offset: Vector3 = game.boat.position - global_position
 			var sailing_leg: bool = navigation_state in [Navigation.APPROACH, Navigation.REPOSITION, Navigation.TURN_AWAY, Navigation.HOLDING]
-			var attack_course: bool = navigation_state == Navigation.ATTACK_RUN or (game.arena_mode and sailing_leg and absf(turn_rate) < 0.7)
-			if not attack_course or safety_priority >= 2 or cooldown > 0.0:
+			# Navigation still avoids terrain. Clear physical gun lanes can defend
+			# during that manoeuvre; actual collision recovery silences the guns.
+			var attack_course: bool = navigation_state == Navigation.ATTACK_RUN or (game.arena_mode and sailing_leg and absf(turn_rate) < 0.9)
+			if not attack_course or unsafe or cooldown > 0.0:
 				return
 			if offset.length() <= (minimum_firing_distance if game.arena_mode else player_separation) or offset.length() >= firing_range:
 				return
@@ -715,12 +724,12 @@ func _update_weapon(delta: float) -> void:
 			game.cue_sound("warning")
 		Weapon.TELEGRAPH:
 			if weapon_time >= telegraph_seconds:
-				if safety_priority < 2 and _shot_lane_valid(locked_point):
+				if not unsafe and _shot_lane_valid(locked_point):
 					_fire()
 					_change_weapon(Weapon.FIRE)
 				else:
 					cancelled_shots += 1
-					cooldown = reload_seconds
+					cooldown = firing_reload_seconds()
 					_change_weapon(Weapon.RELOAD)
 		Weapon.FIRE:
 			if weapon_time >= 0.18:
@@ -918,7 +927,7 @@ func _change(value: Mode) -> void:
 func _lock_shot() -> bool:
 	# Freeze a world-space intercept at warning start. Use measured motion rather
 	# than the navigation goal; the short warning may begin on an approach leg.
-	var future_origin := muzzle_position() + velocity * telegraph_seconds
+	var future_origin := _aim_origin() + velocity * telegraph_seconds
 	var v: Vector3 = game.boat.velocity * Vector3(1, 0, 1)
 	var player_at: Vector3 = game.boat.position + v * telegraph_seconds
 	var r := (player_at - future_origin) * Vector3(1, 0, 1)
@@ -927,6 +936,7 @@ func _lock_shot() -> bool:
 		return false
 	locked_point = player_at + v * flight
 	locked_point.y = 0.8
+	_update_spread_axis(locked_point)
 	return true
 
 
@@ -955,22 +965,57 @@ func _update_tell() -> void:
 
 func _fire() -> void:
 	var _profile_started := CombatMetrics.start()
+	_update_spread_axis(locked_point)
 	for mount in gun_mounts:
 		if mount.battery == active_battery:
-			_launch_ball(_mount_position(mount))
+			_launch_ball(_mount_position(mount), _mount_target(mount, locked_point))
 	salvos_fired += 1
 	game.note_event("cannon_volley", {"side": "enemy", "ship": name, "battery": active_battery})
-	cooldown = reload_seconds
+	cooldown = firing_reload_seconds()
 	game.cue_sound("enemy_shot")
 	CombatMetrics.finish("enemy_ship.gd:_fire", _profile_started)
 
 
-func _launch_ball(from: Vector3) -> void:
-	var offset := locked_point - from
+func firing_reload_seconds() -> float:
+	if game.arena_mode and archetype != null:
+		return reload_seconds * game.enemy_encounters.survival_settings.reload_multiplier(game.enemy_encounters.wave_number)
+	return reload_seconds
+
+
+func _aim_origin() -> Vector3:
+	if archetype != null and archetype.broadside_guns == 3:
+		var index := 0
+		for mount in gun_mounts:
+			if mount.battery != active_battery: continue
+			if index == 1: return _mount_position(mount)
+			index += 1
+	return muzzle_position()
+
+
+func _update_spread_axis(point: Vector3) -> void:
+	if archetype == null or archetype.broadside_guns != 3: return
+	# Keep the central prediction fixed. Reconcile the lateral axis with the
+	# actual central muzzle at lane validation/launch, including hull motion.
+	locked_spread_axis = ((point - _aim_origin()) * Vector3(1, 0, 1)).normalized().cross(Vector3.UP)
+	if locked_spread_axis.dot(forward()) < 0: locked_spread_axis = -locked_spread_axis
+
+
+func _mount_target(mount: Dictionary, point: Vector3) -> Vector3:
+	if archetype == null or archetype.broadside_guns != 3 or mount.battery == Battery.BOW:
+		return point
+	# Axis is perpendicular to central fire, pointing toward the bow.
+	# Fore/centre/aft barrels keep that order at impact on either broadside.
+	var index := gun_mounts.find(mount) % 3
+	return point + locked_spread_axis * three_gun_spread * (1 - index)
+
+
+func _launch_ball(from: Vector3, target: Vector3 = Vector3.INF) -> void:
+	if not target.is_finite(): target = locked_point
+	var offset := target - from
 	var flat := Vector3(offset.x, 0, offset.z)
 	var flight: float = maxf(0.2, flat.length() / projectile_speed)
 	var launch := flat.normalized() * projectile_speed
-	launch.y = (locked_point.y - from.y) / flight + 2.5 * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second)
+	launch.y = (target.y - from.y) / flight + 2.5 * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second)
 	var ball: MeshInstance3D = game.cannon.projectile_visuals.acquire(from, true)
 	assert(ball != null, "Configured projectile budget must cover every live shot")
 	projectiles.append({"node": ball, "position": from, "velocity": launch, "ttl": 4.0, "trail_clock": 0.0})

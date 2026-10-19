@@ -13,8 +13,9 @@ enum DeckBattery { PORT, STARBOARD, BOW, STERN }
 @export var minimum_attack_distance := 14.0
 @export var maximum_projectiles := 12
 @export var scatter_half_angle := 24.0
-@export var volley_reload := 1.8
-@export var double_reload := 2.1
+@export var volley_reload := 0.6
+@export var double_reload := 0.8
+@export_range(0.5, 1.0, 0.05) var phase_two_reload_multiplier := 0.75
 @export_group("Flagship mines")
 @export var mine_interval := 2.2
 @export var phase_two_mine_interval := 1.8
@@ -33,6 +34,7 @@ var warnings: Array[MeshInstance3D] = []
 var mines: Array[Node3D] = []
 var mine_pool: Array[Node3D] = []
 var mine_clock := 0.0
+var mine_grace := 0.0
 var smoke_clock := 0.0
 var sequence_time := 0.0
 var warning_duration := 1.6
@@ -133,6 +135,7 @@ func reset() -> void:
 	attack_battery = DeckBattery.PORT
 	salvo = 0
 	mine_clock = 0.0
+	mine_grace = 0.0
 	smoke_clock = 0.0
 	sequence_time = 0.0
 	launch_history.clear()
@@ -172,6 +175,7 @@ func update_ship(delta: float) -> void:
 			game.combat_particles.smoke(visual.to_global(Vector3(0, 3, 2)))
 
 func _update_mines(delta: float) -> void:
+	mine_grace = maxf(0.0, mine_grace - delta)
 	for i in range(mines.size() - 1, -1, -1):
 		var mine = mines[i]
 		if not is_instance_valid(mine) or mine.spent:
@@ -185,9 +189,13 @@ func _update_mines(delta: float) -> void:
 		return
 	mine_clock += delta
 	var interval := phase_two_mine_interval if phase_two else mine_interval
-	if mine_clock >= interval:
-		# A blocked stern retries once space opens without stacking delayed drops.
-		mine_clock = fmod(mine_clock, interval) if deploy_mine() else interval
+	if mine_clock >= interval and mine_grace <= 0.0:
+		# Faster cannon recovery never bypasses the existing mine interval.
+		if deploy_mine():
+			mine_clock = fmod(mine_clock, interval)
+			mine_grace = interval
+		else:
+			mine_clock = interval
 
 func _change_navigation(value: Navigation) -> void:
 	super._change_navigation(value)
@@ -208,14 +216,17 @@ func _turn_toward(direction: Vector3, delta: float) -> void:
 
 func _update_weapon(delta: float) -> void:
 	weapon_time += delta
-	if weapon_state in [Weapon.TELEGRAPH, Weapon.FIRE] and safety_priority >= 2:
+	# Terrain avoidance already steers the hull safely, and each gun lane is
+	# checked at planning and launch. Only actual collision recovery silences
+	# the whole battery; a safe gun can fire while the hull avoids a reef.
+	if weapon_state in [Weapon.TELEGRAPH, Weapon.FIRE] and safety_priority >= 3:
 		_finish_pattern()
 		cancelled_shots += 1
 		return
 	match weapon_state:
 		Weapon.READY:
 			var offset: Vector3 = game.boat.position - global_position
-			if cooldown > 0.0 or safety_priority >= 2 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN, Navigation.TURN_AWAY, Navigation.REPOSITION]: return
+			if cooldown > 0.0 or safety_priority >= 3 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN, Navigation.TURN_AWAY, Navigation.REPOSITION]: return
 			if offset.length() < minimum_attack_distance or offset.length() > firing_range: return
 			if game.enemy_encounters.director.clock < game.enemy_encounters.director.next_warning: return
 			var rotation_one := [Pattern.ROLLING, Pattern.DOUBLE]
@@ -224,7 +235,7 @@ func _update_weapon(delta: float) -> void:
 			pattern = rotation_set[pattern_index % rotation_set.size()]
 			salvo = 0
 			if _prepare_volley(telegraph_seconds):
-				game.enemy_encounters.director.reserve_boss_warning(telegraph_seconds + 1.2)
+				game.enemy_encounters.director.reserve_boss_warning(telegraph_seconds + volley.back().time + 0.15)
 				pattern_index += 1
 				pattern_history.append(pattern)
 				if pattern_history.size() > 64: pattern_history.pop_front()
@@ -262,8 +273,7 @@ func _prepare_volley(seconds: float) -> bool:
 		var player_at: Vector3 = game.boat.position + v * (seconds + time)
 		var flight := intercept_time((player_at - future) * Vector3(1, 0, 1), v, projectile_speed)
 		if flight <= 0.0 or flight >= 3.8:
-			volley.clear()
-			return false
+			continue
 		target = player_at + v * flight
 		aim = (target - future) * Vector3(1, 0, 1)
 		var degrees: float = (-scatter_half_angle + i * angle_step) if pattern == Pattern.SCATTER else ((i - (count - 1) * 0.5) * 3.0)
@@ -272,11 +282,15 @@ func _prepare_volley(seconds: float) -> bool:
 			"local_direction":Vector2(direction.dot(port_direction()), direction.dot(forward())),
 			"distance":aim.length(), "time":time, "fired":false}
 		var lane := _shot_lane(shot)
-		if not _volley_lane_clear(lane.origin, lane.end):
-			volley.clear()
-			cooldown = 0.5
-			return false
-		volley.append(shot)
+		if _volley_lane_clear(lane.origin, lane.end):
+			volley.append(shot)
+	# Keep safe authored lanes, including their original spacing and warning.
+	# A single blocked outer gun must not silence the other four. Reject a
+	# wholly obstructed battery with bounded retry, never shoot through terrain.
+	if volley.size() < (1 if pattern == Pattern.DOUBLE else 2):
+		volley.clear()
+		cooldown = 0.5
+		return false
 	locked_point = target
 	if navigation_state == Navigation.APPROACH:
 		run_heading = heading
@@ -285,7 +299,8 @@ func _prepare_volley(seconds: float) -> bool:
 		passes += 1
 		_change_navigation(Navigation.ATTACK_RUN)
 	_change_weapon(Weapon.TELEGRAPH)
-	# Start laying with the first warning; the double salvo shares one mine clock.
+	# Retain the first-warning cue; mine_grace spans patterns so faster cannon
+	# recovery cannot increase mine frequency. Double shares one mine clock.
 	if salvo == 0:
 		mine_clock = phase_two_mine_interval if phase_two else mine_interval
 	game.cue_sound("warning")
@@ -334,7 +349,7 @@ func _fire_due() -> void:
 
 func _finish_pattern() -> void:
 	volley.clear()
-	cooldown = (double_reload if pattern == Pattern.DOUBLE else volley_reload) * (0.90 if phase_two else 1.0)
+	cooldown = (double_reload if pattern == Pattern.DOUBLE else volley_reload) * (phase_two_reload_multiplier if phase_two else 1.0)
 	_change_weapon(Weapon.RELOAD)
 	for area in warnings: area.visible = false
 

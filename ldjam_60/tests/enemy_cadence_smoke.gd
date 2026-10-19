@@ -80,14 +80,14 @@ func _run() -> void:
 	check(ship.locked_point.distance_to(first_point) < 0.001,
 		"every salvo uses accurate aim without alternating deliberate misses")
 	ship.salvos_fired = 0
-	ship.turn_rate = 0.8
+	ship.turn_rate = 0.95
 	await physics_frame
 	ship._update_weapon(0)
 	check(ship.weapon_state == ship.Weapon.READY, "a hard-turning holding ship cannot start a warning")
 	ship.turn_rate = 0
-	ship.safety_priority = 2
+	ship.safety_priority = 3
 	ship._update_weapon(0)
-	check(ship.weapon_state == ship.Weapon.READY, "an avoidance manoeuvre cannot start an opportunistic broadside")
+	check(ship.weapon_state == ship.Weapon.READY, "collision recovery cannot start an opportunistic broadside")
 	ship.safety_priority = 0
 	ship._update_weapon(0)
 	check(ship.weapon_state == ship.Weapon.TELEGRAPH and not game.enemy_encounters.director.owners.has(ship), "queued holding ships can defend themselves without a pursuit slot")

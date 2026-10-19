@@ -1,7 +1,7 @@
 extends RefCounted
 ## Bounded stern hazards for ordinary ships, using the existing mine and ring.
 const MINE = preload("res://game/boss_mine.tscn")
-const INTERVAL := 8.0
+const INTERVAL := 4.0
 const MAXIMUM := 3
 const RADIUS := 5.0
 var ship: CharacterBody3D

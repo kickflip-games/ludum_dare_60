@@ -102,10 +102,10 @@ func _run() -> void:
 		ship.position = game.arena_center() + Vector3(40, 0, 95)
 		ship.velocity = ship.forward() * 10
 		game.boat.position = ship.position - ship.forward() * 45
-		for tick in hz * 8 - 1: ship.mine_layer.update(1.0 / hz)
+		for tick in hz * 4 - 1: ship.mine_layer.update(1.0 / hz)
 		check(ship.mine_layer.mines.is_empty(), "%d Hz mine interval has full initial grace" % hz)
 		ship.mine_layer.update(2.0 / hz)
-		check(ship.mine_layer.mines.size() == 1, "%d Hz pursuit automatically lays a stern mine after eight seconds" % hz)
+		check(ship.mine_layer.mines.size() == 1, "%d Hz pursuit automatically lays a stern mine after four seconds" % hz)
 		var mine = ship.mine_layer.mines[0]
 		check(mine.position.distance_to(ship.position - ship.forward() * 9) < 0.01 and mine.get_parent() != ship, "mine stays in the water astern rather than following its hull")
 		check(not mine.armed() and mine.trigger_radius == 5 and mine.arming_delay == 1.2, "ordinary mine has a matching five-metre ring and longer arming delay")

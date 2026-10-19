@@ -6,6 +6,18 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: removed gameplay HUD, speed ribbons, targeting/attack cones
+  and warning rings from every studio artwork preset, retaining the cover title
+  and real combat effects. Regenerated native stills/cover frames and added a
+  looping GIF preview in ignored capture output; 107 studio checks pass.
+
+- Work in progress: added a standalone native Marketing Studio with four shot
+  presets, editable camera/presentation, replay, PNG stills and deterministic
+  cover sequences. Reuses real sailing, cloth, water, combat and flagship systems;
+  output stays in ignored `build/marketing_studio/`. Reviewed four native stills
+  and a 150-frame cover; 85 studio, 83 native control and 33 finite-wave checks
+  pass. Existing boss/legacy voyage failures are recorded in [CAPTURE.md](CAPTURE.md).
+
 - Combat stutters: retain seven prepared cannon mounts per ordinary ship;
   replace transparent hull arrivals with the existing small water burst and
   retain the 0.9 s readiness delay. Cache unchanged damage/wake/wave uploads;
@@ -14,6 +26,54 @@ recorded evidence and limitations.
   Added real combat-event CPU/frame windows with normal audio/HUD/AI and
   benchmark-only diagnostics. Measurements and validation:
   [combat event review](artifacts/combat_events_review.md).
+
+- Work in progress: flagship warning cones now follow hull position and heading,
+  sharing their moving lanes with unlaunched shots. Added bow and stern batteries
+  alongside both broadsides, with one shared reload and matching warning cones.
+  In-flight shells retain ballistic motion; mine cadence and cleanup remain.
+  All 402 battery, 209 boss and 83 native material checks pass; reviewed moving
+  bow/stern cones and firing at 1280×720 and 900×506. Human balance untested.
+
+- Work in progress: Retry after sinking restarts the current wave with full hull
+  and fresh enemies; Main Menu and Play Again start a new run. Removed survival
+  time from all result screens and next-wave countdowns from the HUD.
+  Seven focused suites pass (602 checks); native result/respawn frames inspected
+  at 1280×720 and 900×506. Three legacy voyage failures also reproduce without
+  the respawn change; human playtesting remains open.
+
+- Work in progress: made wave/Flagship lettering follow the banner's cloth
+  ripples using a shared displacement field and clock. Kept the existing text,
+  fonts, colours, bounds, pause behavior and announcement fade. All 136 focused
+  checks pass; reviewed native animation at both HUD sizes.
+
+- Work in progress: expanded the native material regression to render every
+  tick of all three flagship volleys in both health phases, including mines,
+  smoke, sinking and Retry: 83 checks pass with no engine/script errors.
+  Boss suite: 209 checks pass. A protected input-driven native fight wins in
+  89.8 s without material errors; the reported cause remains unresolved.
+
+- Work in progress: added gentle cloth ripples and soft fold shading to the
+  existing Kenney wave/Flagship banner. Text stays still, the original bounds
+  and fade remain, pause freezes the cloth and retry resets its clock.
+  All 135 focused checks pass; native animation/fade frames reviewed at both HUD
+  sizes and local Web export rebuilt. Added a rendered animated close-up.
+
+- Work in progress: added a native material-lifecycle regression covering cannon
+  fire, impacts, sinking, mine destruction, ship reuse and Retry. The reported
+  null-material errors did not reproduce in Godot 4.8.dev6; cause remains open.
+
+- Work in progress: put FLAGSHIP in the existing Kenney banner above its HP bar
+  for the full boss fight. Removed the separate label and RELOADING text;
+  retained reload mechanics, damage feedback and ordinary wave announcements.
+  All 424 checks in five relevant suites pass; native views reviewed at both
+  HUD sizes and the local Web export rebuilt.
+
+- Work in progress: wave banners now show WAVE 1 / 5 through WAVE 5 / 5,
+  making the total clear while retaining their styling, placement and timing.
+
+- Work in progress: corrected hidden `=` / `+` to start the next numbered wave
+  immediately with its normal banner and sound. Keeps survivors and safe spawns,
+  grants no free kills/repair, and stops advancing at the flagship.
 
 - Work in progress: added plain `=` to the hidden wave-arrival shortcut alongside
   `+`. Starting wave one retains its banner; releasing an active wave keeps its

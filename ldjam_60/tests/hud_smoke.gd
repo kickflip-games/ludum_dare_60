@@ -141,7 +141,7 @@ func _run() -> void:
 	game.boat.position = game.target + Vector3(0,0,-5)
 	game.advance_sailing(0.001, 0.0)
 	await settle()
-	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.contains("01:42") and not hud.menu_details.text.contains("Hull"), "arrival menu shows real voyage time without numeric hull health")
+	check(hud.menu.visible and not hud.gameplay_hud.visible and hud.menu_details.text.is_empty() and not hud.menu_details.text.contains("Hull"), "arrival menu omits voyage time and numeric hull health")
 	check_inside(hud.menu_body, "result text stays inside the small window")
 	var mute := InputEventAction.new()
 	mute.action = "mute_sea"

@@ -52,6 +52,7 @@ func projectile(cutter, start: Vector3, velocity: Vector3, ttl:=2.0) -> void:
 	cutter.projectiles.append({"node":ball,"position":start,"velocity":velocity,"ttl":ttl})
 
 func clean_retry(label: String) -> void:
+	game.restart(true) # Explicit new run; death Retry is covered by wave_respawn_smoke.
 	game.restart()
 	var marker: Marker3D=game.archipelago.get_node("SpawnPoints/ArenaSpawn")
 	check(game.state==game.State.CASTING_OFF and enemies.phase==enemies.Phase.PREPARING
@@ -137,7 +138,7 @@ func _run() -> void:
 	schedule(2.8)
 	check(enemies.wave_number==1 and game.hull==2, "early-clear pause lasts three seconds without duplicate repair")
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="WAVE CLEARED · NEXT IN 1", "early-clear countdown uses fleet wording")
+	check(not game.hud.wave_countdown.visible, "early-clear intermission omits countdown")
 	check(not game.hud.wave_announcement.visible, "early clear suppresses any unfinished incoming-wave banner")
 	clean_retry("early intermission")
 	fresh()
@@ -172,14 +173,14 @@ func _run() -> void:
 	check(not enemies.spawn_queue.is_empty() and enemies.phase==enemies.Phase.ACTIVE and enemies.wave_number==2,
 		"pending queued spawn prevents false early completion even with no living enemy")
 	game.hud._process(0)
-	check(game.hud.wave_announcement.text=="WAVE II" and not game.hud.wave_countdown.visible,
+	check(game.hud.wave_announcement.text=="WAVE 2 / 5" and not game.hud.wave_countdown.visible,
 		"temporary wave announcement with no countdown outside last 15 seconds")
 	enemies.wave_remaining=12
 	enemies._update_arena(0)
 	game.hud._process(0)
-	check(game.hud.wave_countdown.text=="NEXT WAVE IN 00:12", "last 15 seconds use mm:ss approaching-wave countdown")
+	check(not game.hud.wave_countdown.visible, "approaching wave omits countdown")
 	game.hud._process(0.3)
-	check(game.hud.wave_announcement.text=="WAVE II" and game.hud.wave_announcement.modulate.a==1,
+	check(game.hud.wave_announcement.text=="WAVE 2 / 5" and game.hud.wave_announcement.modulate.a==1,
 		"brief fleet ribbon has a visible plateau")
 	game.hud._fleet_banner_left=game.hud.FLEET_BANNER_SECONDS
 	game.hud._process(0)

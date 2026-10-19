@@ -409,7 +409,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode in [KEY_EQUAL, KEY_PLUS, KEY_KP_ADD] or event.unicode == KEY_PLUS:
 			if not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
-				enemy_encounters.debug_release_wave()
+				enemy_encounters.debug_skip_wave()
 				get_viewport().set_input_as_handled()
 				return
 	if event.is_action("restart_crossing") and not event.is_echo():
@@ -593,6 +593,7 @@ func journey_progress() -> float:
 
 
 func restart(to_menu: bool = false) -> void:
+	var retry_wave: int = maxi(1, enemy_encounters.wave_number) if arena_mode and state == State.LOST and not to_menu else 0
 	set_paused(false, false)
 	_web_had_mouse_capture = false
 	walkthrough.cancel()
@@ -671,6 +672,8 @@ func restart(to_menu: bool = false) -> void:
 	_update_view(1.0)
 	if not to_menu:
 		start_crossing()
+		if retry_wave > 0:
+			enemy_encounters.resume_wave(retry_wave)
 
 
 func _physics_process(delta: float) -> void:

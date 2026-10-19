@@ -17,6 +17,7 @@ func capture(label: String) -> void:
 		game._update_view(1.0 / 60)
 		game.hud._process(1.0 / 60)
 		await process_frame
+	boss._update_tell()
 	RenderingServer.force_draw(true, 1.0 / 60)
 	assert(root.get_texture().get_image().save_png(output.path_join(label + ".png")) == OK)
 func stage() -> void:
@@ -106,6 +107,33 @@ func _run() -> void:
 	root.size = Vector2i(900, 506)
 	await capture("reload-small")
 	root.size = Vector2i(1280, 720)
+	for battery in [boss.DeckBattery.BOW, boss.DeckBattery.STERN]:
+		stage()
+		game.enemy_encounters.announcement_left = 0
+		game.boat.velocity = Vector3.ZERO
+		boss.heading = 0.0 if battery == boss.DeckBattery.BOW else PI
+		boss.rotation.y = -boss.heading
+		boss.velocity = boss.forward() * boss._speed
+		boss.pattern = boss.Pattern.ROLLING
+		assert(boss._prepare_volley(1.6))
+		assert(boss.attack_battery == battery)
+		boss._update_mines(0.0)
+		var label := "bow" if battery == boss.DeckBattery.BOW else "stern"
+		await capture(label + "-warning-before")
+		boss.position += Vector3(8, 0, -3)
+		boss.heading += 0.18
+		boss.rotation.y = -boss.heading
+		await capture(label + "-warning-moved")
+		for i in 107:
+			boss.position += boss.forward() * boss._speed / 60
+			boss._update_weapon(1.0 / 60)
+			boss._update_mines(1.0 / 60)
+			boss._advance_shots(1.0 / 60)
+			game.combat_particles.advance(1.0 / 60)
+		await capture(label + "-fire")
+		root.size = Vector2i(900, 506)
+		await capture(label + "-fire-small")
+		root.size = Vector2i(1280, 720)
 	stage()
 	game.enemy_encounters.announcement_left = 0
 	boss.position = game.boat.position + Vector3(22, 0, 28)

@@ -4,6 +4,7 @@ const FLAGSHIP = preload("res://assets/kenney_ships/ship-pirate-large.glb")
 const WARNING = preload("res://game/boss_warning.gdshader")
 const MINE = preload("res://game/boss_mine.tscn")
 enum Pattern { ROLLING, DOUBLE, SCATTER }
+enum DeckBattery { PORT, STARBOARD, BOW, STERN }
 @export_group("Flagship volleys")
 @export var rolling_gap := 0.21
 @export var second_warning := 0.8
@@ -34,7 +35,7 @@ var smoke_clock := 0.0
 var sequence_time := 0.0
 var warning_duration := 1.6
 var committed_heading := 0.0
-var attack_side := 1.0
+var attack_battery := DeckBattery.PORT
 var launch_history: Array[Dictionary] = []
 var pattern_history: Array[int] = []
 var phase_bursts := 0
@@ -111,6 +112,7 @@ func reset() -> void:
 	phase_two = false
 	pattern_index = 0
 	pattern = Pattern.ROLLING
+	attack_battery = DeckBattery.PORT
 	salvo = 0
 	mine_clock = 0.0
 	smoke_clock = 0.0
@@ -197,7 +199,7 @@ func _update_weapon(delta: float) -> void:
 			var offset: Vector3 = game.boat.position - global_position
 			if cooldown > 0.0 or safety_priority >= 2 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN, Navigation.TURN_AWAY, Navigation.REPOSITION]: return
 			if offset.length() < minimum_attack_distance or offset.length() > firing_range: return
-			if absf(port_direction().dot(offset.normalized())) < 0.78 or absf(turn_rate) > 0.12: return
+			if absf(turn_rate) > 0.12: return
 			if not game.enemy_encounters.director.request_boss_warning(telegraph_seconds + 1.2): return
 			var rotation_one := [Pattern.ROLLING, Pattern.DOUBLE]
 			var rotation_two := [Pattern.ROLLING, Pattern.DOUBLE, Pattern.SCATTER, Pattern.ROLLING, Pattern.SCATTER]
@@ -223,7 +225,6 @@ func _prepare_volley(seconds: float) -> bool:
 	volley.clear()
 	warning_duration = seconds
 	committed_heading = heading
-	attack_side = 1.0 if port_direction().dot(game.boat.position - position) > 0 else -1.0
 	var count := 5 if pattern != Pattern.DOUBLE else 2
 	var gap := rolling_gap if pattern == Pattern.ROLLING else (0.10 if pattern == Pattern.DOUBLE else 0.025)
 	var future: Vector3 = position + forward() * _speed * seconds
@@ -231,23 +232,31 @@ func _prepare_volley(seconds: float) -> bool:
 	var aim := target - future
 	aim.y = 0
 	if aim.length() < 1.0: return false
+	if salvo == 0:
+		attack_battery = _select_deck_battery(aim)
 	var angle_step := scatter_half_angle * 2.0 / 4.0
-	var fan_sign := signf(forward().dot(Vector3(aim.z, 0, -aim.x)))
 	for i in count:
 		var time: float = i * gap
-		var along: float = (-1.8 + i * 3.6) if pattern == Pattern.DOUBLE else -5.2 + i * (10.4 / maxf(1.0, count - 1.0))
-		var muzzle: Vector3 = future + forward() * (along + _speed * time) + port_direction() * attack_side * 3.5
-		var degrees: float = ((-scatter_half_angle + i * angle_step) * fan_sign) if pattern == Pattern.SCATTER else ((i - (count - 1) * 0.5) * 3.0)
+		var spread := float(i) / maxf(1.0, count - 1.0) * 2.0 - 1.0
+		var along: float
+		var across: float
+		if attack_battery in [DeckBattery.BOW, DeckBattery.STERN]:
+			along = 7.5 if attack_battery == DeckBattery.BOW else -8.0
+			across = spread * (1.8 if pattern == Pattern.DOUBLE else 2.6)
+		else:
+			along = spread * (1.8 if pattern == Pattern.DOUBLE else 5.2)
+			across = 3.5 if attack_battery == DeckBattery.PORT else -3.5
+		var degrees: float = (-scatter_half_angle + i * angle_step) if pattern == Pattern.SCATTER else ((i - (count - 1) * 0.5) * 3.0)
 		var direction := aim.normalized().rotated(Vector3.UP, deg_to_rad(degrees))
-		var distance := clampf(aim.length(), 35.0, 72.0)
-		var end := muzzle + direction * distance
-		muzzle.y = 2.0
-		end.y = 0.8
-		if not _volley_lane_clear(muzzle, end):
+		var shot := {"across":across, "along":along,
+			"local_direction":Vector2(direction.dot(port_direction()), direction.dot(forward())),
+			"distance":clampf(aim.length(), 35.0, 72.0), "time":time, "fired":false}
+		var lane := _shot_lane(shot)
+		if not _volley_lane_clear(lane.origin, lane.end):
 			volley.clear()
 			cooldown = 0.5
 			return false
-		volley.append({"origin":muzzle, "direction":direction, "end":end, "along":along, "time":time, "fired":false})
+		volley.append(shot)
 	locked_point = target
 	if navigation_state == Navigation.APPROACH:
 		run_heading = heading
@@ -270,16 +279,15 @@ func _fire_due() -> void:
 	for shot in volley:
 		if shot.fired or shot.time > sequence_time: continue
 		shot.fired = true
-		var from: Vector3 = position + forward() * shot.along + port_direction() * attack_side * 3.5
-		from.y = 2.0
-		# If an avoidance manoeuvre invalidated the advertised water lane, skip it.
-		if from.distance_to(shot.origin) > 3.0 or projectiles.size() >= maximum_projectiles:
-			continue
-		var end: Vector3 = from + shot.direction * Vector3(1, 0, 1) * from.distance_to(shot.end)
-		end.y = 0.8
+		# The cone and unlaunched rounds share this hull-relative lane. Terrain
+		# is rechecked after movement; launched cannonballs never follow the hull.
+		var lane := _shot_lane(shot)
+		var from: Vector3 = lane.origin
+		var end: Vector3 = lane.end
+		if projectiles.size() >= maximum_projectiles: continue
 		if not _volley_lane_clear(from, end): continue
-		var flight: float = maxf(0.2, Vector2(end.x - from.x, end.z - from.z).length() / projectile_speed)
-		var launch: Vector3 = shot.direction * projectile_speed
+		var flight: float = maxf(0.2, shot.distance / projectile_speed)
+		var launch: Vector3 = lane.direction * projectile_speed
 		launch.y = (end.y - from.y + 2.5 * flight * flight) / flight
 		var ball: MeshInstance3D = game.cannon.projectile_visuals.acquire(from, true)
 		assert(ball != null, "Configured projectile budget must cover every live shot")
@@ -291,7 +299,7 @@ func _fire_due() -> void:
 		flash.global_basis = Basis(direction, up, direction.cross(up))
 		muzzle_flash_until = game.sea_time + 0.11
 		shots_fired += 1
-		launch_history.append({"pattern":pattern, "salvo":salvo, "origin":from, "warning_origin":shot.origin, "direction":shot.direction, "velocity":launch})
+		launch_history.append({"pattern":pattern, "salvo":salvo, "origin":from, "warning_origin":lane.origin, "direction":lane.direction, "velocity":launch, "battery":attack_battery})
 		if launch_history.size() > 128: launch_history.pop_front()
 		game.cue_sound("enemy_shot")
 	if volley.all(func(shot): return shot.fired):
@@ -329,15 +337,33 @@ func _update_tell() -> void:
 	mat.set_shader_parameter("fade_start", game.ocean.fade_start)
 	mat.set_shader_parameter("fade_end", game.ocean.fade_end)
 
+func _select_deck_battery(aim: Vector3) -> DeckBattery:
+	var along := aim.dot(forward())
+	var across := aim.dot(port_direction())
+	if absf(along) > absf(across):
+		return DeckBattery.BOW if along > 0.0 else DeckBattery.STERN
+	return DeckBattery.PORT if across > 0.0 else DeckBattery.STARBOARD
+
+func _shot_lane(shot: Dictionary) -> Dictionary:
+	var origin: Vector3 = position + forward() * shot.along + port_direction() * shot.across
+	origin.y = 2.0
+	var direction: Vector3 = port_direction() * shot.local_direction.x + forward() * shot.local_direction.y
+	var end: Vector3 = origin + direction * shot.distance
+	end.y = 0.8
+	return {"origin":origin, "direction":direction, "end":end}
+
 func warning_geometry() -> Dictionary:
-	# Bound the entire locked volley, including separated muzzles. The broad fill
-	# advertises danger, while individual cannonballs still leave dodgeable gaps.
+	# Rebuild from hull-relative lanes so translation and yaw move both the
+	# warning and the next shots. The area itself never deals damage.
+	var lanes: Array[Dictionary] = []
 	var origin := Vector3.ZERO
 	var direction := Vector3.ZERO
 	for shot in volley:
-		origin += shot.origin
-		direction += shot.direction
-	origin /= maxi(1, volley.size())
+		var lane := _shot_lane(shot)
+		lanes.append(lane)
+		origin += lane.origin
+		direction += lane.direction
+	origin /= maxi(1, lanes.size())
 	direction.y = 0
 	direction = direction.normalized()
 	origin -= direction * 20.0
@@ -345,8 +371,8 @@ func warning_geometry() -> Dictionary:
 	var side := direction.cross(Vector3.UP)
 	var length := 1.0
 	var slope := 0.0
-	for shot in volley:
-		for point: Vector3 in [shot.origin, shot.end]:
+	for lane in lanes:
+		for point: Vector3 in [lane.origin, lane.end]:
 			var offset := point - origin
 			var along := maxf(0.1, offset.dot(direction))
 			length = maxf(length, along)
@@ -404,4 +430,4 @@ func _build_mine_pool() -> void:
 		mine_pool.append(mine)
 
 func warning() -> String:
-	return "FLAGSHIP BROADSIDE · SAIL CLEAR" if weapon_state == Weapon.TELEGRAPH else ""
+	return "FLAGSHIP %s · SAIL CLEAR" % (["BROADSIDE", "BROADSIDE", "BOW GUNS", "STERN GUNS"][attack_battery]) if weapon_state == Weapon.TELEGRAPH else ""

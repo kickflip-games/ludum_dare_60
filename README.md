@@ -1,5 +1,8 @@
 # Blackwater — Lighthouse Arena
 
+Marketing screenshots and fixed-step cover recording: [Capture Studio](CAPTURE.md)
+(`res://tools/marketing_studio.tscn`, F6).
+
 Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
 compact arena around the existing lighthouse at **(275, 250)**. The boat starts
 75 m north of the tower, facing east-southeast into safe water. Survive **five
@@ -33,17 +36,21 @@ earlier survivors alive. Entering the old harbour never wins.
 - Dark navy night water uses **4x the first implementation's modulation**
   (height multiplier 0.88). Existing directional crest force is **50% stronger**,
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
-- **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**.
+- **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**
+  to respawn with full hull at the start of the current wave. Earlier waves and their survivors are skipped; the current
+  roster (including a fresh flagship on wave five) restarts. Main Menu and Play
+  Again start a fresh run.
   **M:** mute, including background music; **Esc:** pause / resume. The pause menu offers Resume, Settings, Credits and Main Menu;
   Esc in Settings returns to the previous menu. Settings shows the control reference
   and Back. Motion is always Full. Menus share recoloured Kenney
   Adventure buttons; the compact practice card sits at bottom right.
-- **Hidden developer `=` / `+` (plain =, Shift+= or numpad +):** available during normal play
-  without enabling Development Tools; spawn all remaining ships for the current wave.
-  This skips arrival delays and the ordinary ship cap; survivors, wave timers
-  and defeat counts stay intact. If safe spawn positions are occupied, arrivals
-  retry as space opens. Retry removes temporary extra ship slots. The shortcut
-  stays hidden from in-game control hints and menus.
+- **Hidden developer `=` / `+` (plain =, Shift+= or numpad +):** start the next
+  numbered wave immediately, showing its normal banner and spawning its ships.
+  Available without Development Tools; hidden from in-game control hints and menus.
+  Survivors and defeat counts stay intact; skipping grants no repair or free kills.
+  Safe spawn checks remain, and blocked arrivals retry. The flagship is the final
+  wave; further presses do nothing. Retry clears temporary ship slots and restarts
+  the current wave after sinking.
 - A curved jagged reef, broken half-sunken wreck with shootable timber/barrels,
   and three low islets offer alternate routes. Main rock gaps exceed 30 m;
   the outer ring remains open for broad combat turns. Both sides' shots stop on
@@ -70,9 +77,11 @@ earlier survivors alive. Entering the old harbour never wins.
   over 0.4 seconds. During
   combat, only a centred row of small gold circles tracks outstanding enemies,
   including survivors and queued arrivals. Once the flagship is active, its HP
-  bar replaces the circles and briefly flashes/shakes when hit. Defeats leave hollow
+  bar replaces the circles beneath a persistent **FLAGSHIP** Kenney ribbon and
+  briefly flashes/shakes when hit. Defeats leave hollow
   circles until the next wave rebuilds the group; an all-hollow row hides after
-  one second. A final-15-second countdown signals the next wave. A pulsing warning
+  one second. Result screens show the wave reached, with no survival time or
+  wave countdowns. A pulsing warning
   triangle marks incoming fire on the left or right; storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
   The existing player hull-damage presentation remains.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
@@ -251,18 +260,23 @@ missed approaches refresh only after six seconds. The encounter manager owns
 spawning, targeting, victory and cleanup; the six ordinary slots remain available.
 
 - **9 hits**, **8.7 m/s**, **0.34 rad/s** maximum turn; attacks at **35–65 m**.
-- **Rolling Broadside:** five separated gun positions, **1.6 s** warning,
+- Guns cover **port, starboard, bow and stern**. The battery facing the predicted
+  player position fires, with one shared attack/reload cycle.
+- **Rolling volley:** five separated gun positions, **1.6 s** warning,
   **0.21 s** shot spacing and **3 s** recovery.
 - **Double Salvo:** two shots, a newly locked **0.8 s** second warning, two
-  further shots; **3.4 s** recovery. Each pair keeps its advertised direction.
+  further shots; **3.4 s** recovery. Each pair keeps its advertised aim relative
+  to the hull; the second pair gets a fresh warning.
 - **Scattershot:** five outward fan trajectories across **±24°**, with visible
   gaps. Introduced below half health, with a splinter burst and persistent smoke.
   Phase two rotates fan/rolling/fan/rolling/double and reduces recovery by 10%.
 - All shells use existing ballistic collision, gravity, water interception,
   muzzle effects and trails; they never home. Terrain cancels obstructed shots.
-  One translucent triangle follows the water and covers the entire committed
-  volley. Amber/gold/coral distinguish patterns and the second salvo; the area
-  stays fixed while the ships move and clears when the volley ends. Real shells
+  One translucent triangle follows the hull position and heading on the water,
+  covering the active battery’s whole volley, including bow/stern fire. The
+  unlaunched shots move with this cone; shells already in flight keep their
+  ballistic course. Amber/gold/coral distinguish patterns and the second salvo;
+  the cone clears when the volley ends. Real shells
   retain gaps inside this danger envelope; the fill itself deals no damage.
 - Mines drop astern throughout cannon warnings and fire, starting with the first
   warning, then every **2.2 s**, or **1.8 s** in phase two: **six** active,
@@ -271,8 +285,8 @@ spawning, targeting, victory and cleanup; the six ordinary slots remain availabl
   horizontally and bob with the real sea. The thin coral ring pulses in opacity
   at its actual fixed trigger radius. A detonation consumes one mine and calls
   normal one-hit damage, respecting immunity. The player cannon can target and destroy mines.
-- During the **3 / 3.4 s reload** (10% shorter in phase two), the health bar reads
-  **FLAGSHIP · RELOADING** and no new shells or mines launch. Existing hazards
+- During the **3 / 3.4 s reload** (10% shorter in phase two), no new shells
+  or mines launch. Existing hazards
   remain dangerous: steer around the mine trail and approach during this opening.
   Clear, steady broadsides can also start on turn-away and reposition legs.
 - Boss defeat starts sinking and wins immediately. Escort kills alone never win.
@@ -285,6 +299,7 @@ see [credits](CREDITS.md).
 
 ```sh
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/boss_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/boss_battery_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/boss_playtest.gd
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/boss_previews.gd -- --output=/tmp/latitude-flagship-review
 godot --path ldjam_60 --fixed-fps 60 --script res://tests/boss_playtest.gd -- --render --output=/tmp/latitude-flagship-native-play

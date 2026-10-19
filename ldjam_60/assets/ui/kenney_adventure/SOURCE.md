@@ -5,7 +5,10 @@ License: CC0; original `License.txt` included.
 Unmodified `PNG/Double/banner_classic_curtain.png` (512 × 128) is displayed at
 256 × 64 with preserved aspect ratio. `game/wave_ribbon.gdshader` maps the
 original red cloth and cream trim separately to navy `#243746` and brass
-`#B99B65`, retaining their shade weights and original alpha. The PNG is unchanged.
+`#B99B65`, retaining their shade weights and original alpha. A bounded UV ripple
+and gentle fold shading animate the cloth; the lettering uses the same shared
+displacement field so it follows the cloth.
+The PNG is unchanged.
 
 The SVGs in `originals/` are unmodified `Vector/` files from that archive.
 `minimap_icon_exclamation_red.svg` supplies the pulsing incoming-threat mark;

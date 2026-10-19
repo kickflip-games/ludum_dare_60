@@ -123,9 +123,9 @@ func _run() -> void:
 	game.take_damage(1, "The last shot found its mark.")
 	await settle()
 	check(hud.menu_title.text == "SUNK" and hud.action_button.text == "RETRY", "real lethal damage presents defeat/retry")
-	check(hud.menu_details.text.contains("WAVE REACHED 3 / 5") and hud.menu_details.text.contains("01:42"), "defeat reports actual reached wave and elapsed time")
+	check(hud.menu_details.text == "WAVE REACHED 3 / 5", "defeat reports reached wave without timing")
 	check(not hud.gameplay_hud.visible and not hud.wave_announcement.visible and not hud.wave_countdown.visible, "defeat hides wave transients")
-	check(not hud.menu_body.visible and hud.menu_body.text.is_empty(), "results omit flavour text and show only wave/time")
+	check(not hud.menu_body.visible and hud.menu_body.text.is_empty(), "results omit flavour text and show only wave")
 	for control: Control in [hud.menu_title, hud.main_menu_button]:
 		check(inside(control), "small result %s fits" % control.name)
 	click(hud.credits_button)

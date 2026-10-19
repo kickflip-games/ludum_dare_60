@@ -9,6 +9,7 @@ const BOSS_HIT_SECONDS := 0.3
 const BOSS_HEALTH_COLOR := Color("c78d70")
 const WAVE_RIBBON = preload("res://assets/ui/kenney_adventure/banner_classic_curtain.png")
 const WAVE_RIBBON_PALETTE = preload("res://game/wave_ribbon.gdshader")
+const WAVE_RIBBON_TEXT = preload("res://game/ribbon_text.gdshader")
 const STORM_NOTICE_SECONDS := 10.0
 const INK := Color("f0e5cc")
 const MUTED := Color("a6cac7")
@@ -46,7 +47,9 @@ var cannon_gauge: Control
 var gameplay_hud: Control
 var wave_countdown: Label
 var wave_announcement: Label
-var boss_label: Label
+var _ribbon_material: ShaderMaterial
+var _ribbon_text_material: ShaderMaterial
+var _ribbon_time := 0.0
 var boss_health: ProgressBar
 var _boss_last_hull := -1
 var _boss_hit_left := 0.0
@@ -125,13 +128,6 @@ func _ready() -> void:
 	gameplay_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cannon_gauge = _gauge("StarboardCannon", Control.PRESET_BOTTOM_RIGHT, Rect2(-198, -86, 174, 62))
 	_build_fleet_status()
-	boss_label = _label(gameplay_hud, "FlagshipTitle", "FLAGSHIP", 12, BRASS)
-	boss_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	boss_label.offset_left = -130
-	boss_label.offset_right = 130
-	boss_label.offset_top = 60
-	boss_label.offset_bottom = 78
-	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_health = ProgressBar.new()
 	boss_health.name = "FlagshipHealth"
 	boss_health.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -156,12 +152,15 @@ func _ready() -> void:
 	wave_announcement.offset_left = -128
 	wave_announcement.offset_right = 128
 	wave_announcement.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ribbon_text_material = ShaderMaterial.new()
+	_ribbon_text_material.shader = WAVE_RIBBON_TEXT
+	wave_announcement.material = _ribbon_text_material
 	var ribbon := TextureRect.new()
 	ribbon.name = "AdventureRibbon"
 	ribbon.texture = WAVE_RIBBON
-	var palette := ShaderMaterial.new()
-	palette.shader = WAVE_RIBBON_PALETTE
-	ribbon.material = palette
+	_ribbon_material = ShaderMaterial.new()
+	_ribbon_material.shader = WAVE_RIBBON_PALETTE
+	ribbon.material = _ribbon_material
 	ribbon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ribbon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	ribbon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -465,9 +464,8 @@ func _refresh_menu_copy() -> void:
 	menu_title.text = "PAUSED" if game.paused else "BLACKWATER" if intro else "VICTORY" if won else "SUNK"
 	menu_body.text = ""
 	menu_body.visible = not menu_body.text.is_empty() and not subpage_open
-	menu_details.visible = not intro and not game.paused
-	var clock := "%02d:%02d" % [int(game.elapsed) / 60, int(game.elapsed) % 60]
-	menu_details.text = "WAVE REACHED %d / 5   ·   TIME SURVIVED %s" % [maxi(1, game.enemy_encounters.wave_number), clock] if game.arena_mode else "TIME SURVIVED " + clock
+	menu_details.visible = game.arena_mode and not intro and not game.paused
+	menu_details.text = "WAVE REACHED %d / 5" % maxi(1, game.enemy_encounters.wave_number) if game.arena_mode else ""
 	action_button.text = "RESUME" if game.paused else "PLAY" if intro else "PLAY AGAIN" if won else "RETRY"
 	main_menu_button.visible = not intro
 	walkthrough_button.visible = intro and game.arena_mode
@@ -514,11 +512,13 @@ func _sync_button() -> void:
 	action_button.visible = show_menu
 	gameplay_hud.visible = game.state == game.State.SAILING and not game.walkthrough.active and not game.paused
 	if not gameplay_hud.visible and not game.paused:
-		boss_label.visible = false
 		boss_health.visible = false
 		_update_boss_feedback(0)
 		fleet_status.visible = false
 		_announced_fleet = 0
+		_ribbon_time = 0.0
+		_ribbon_material.set_shader_parameter("cloth_time", 0.0)
+		_ribbon_text_material.set_shader_parameter("cloth_time", 0.0)
 		_fleet_banner_left = 0.0
 		_sync_fleet_circles(0)
 		_fleet_group_total = 0
@@ -649,6 +649,8 @@ func _update_storm_warning(delta: float = 0.0) -> void:
 		_storm_notice_left = 0.0
 	storm_warning.visible = outside and _storm_notice_left > 0.0
 	var occupied_bottom: float = wave_announcement.offset_bottom if wave_announcement.visible else 112
+	if boss_health.visible:
+		occupied_bottom = maxf(occupied_bottom, boss_health.offset_bottom)
 	if wave_countdown.visible:
 		occupied_bottom = maxf(occupied_bottom, wave_countdown.offset_bottom)
 	storm_warning.offset_top = occupied_bottom + 20
@@ -898,14 +900,12 @@ func _update_boss_feedback(delta: float) -> void:
 func _update_wave_ui(delta: float = 0.0) -> void:
 	var waves = game.enemy_encounters
 	var active: bool = game.arena_mode and game.state == game.State.SAILING
-	boss_label.visible = active and waves.boss_active()
-	boss_health.visible = boss_label.visible
-	boss_label.text = "FLAGSHIP · RELOADING" if boss_label.visible and waves.boss.weapon_state == waves.boss.Weapon.RELOAD else "FLAGSHIP"
+	boss_health.visible = active and waves.boss_active()
 	_update_boss_feedback(delta)
 	if boss_health.visible:
 		boss_health.max_value = waves.boss.hull_capacity
 		boss_health.value = waves.boss.hull
-	wave_announcement.offset_top = 110 if boss_health.visible else 44
+	wave_announcement.offset_top = 16 if boss_health.visible else 44
 	wave_announcement.offset_bottom = wave_announcement.offset_top + 64
 	fleet_status.visible = false
 	wave_countdown.visible = false
@@ -919,6 +919,7 @@ func _update_wave_ui(delta: float = 0.0) -> void:
 		remaining += 1
 	if waves.wave_number != _announced_fleet:
 		_announced_fleet = waves.wave_number
+		_ribbon_time = 0.0
 		# Freeze this group's size: later defeats of carried survivors also leave hollows.
 		_fleet_group_total = remaining
 		_fleet_complete_left = 0.0
@@ -932,15 +933,20 @@ func _update_wave_ui(delta: float = 0.0) -> void:
 	fleet_status.visible = not boss_health.visible and _fleet_group_total > 0 and (remaining > 0 or _fleet_complete_left > 0.0)
 	if waves.phase == waves.Phase.EARLY_CLEAR:
 		_fleet_banner_left = 0.0
-		wave_countdown.text = "WAVE CLEARED · NEXT IN %d" % ceili(waves.next_wave_in)
-		wave_countdown.visible = true
-	elif waves.wave_number < waves.ARENA_WAVES and waves.next_wave_in > 0 and waves.next_wave_in <= 15:
-		var seconds := ceili(waves.next_wave_in)
-		wave_countdown.text = "NEXT WAVE IN %02d:%02d" % [seconds / 60, seconds % 60]
-		wave_countdown.visible = true
-	if _fleet_banner_left > 0.0:
-		wave_announcement.text = "WAVE " + ["", "I", "II", "III", "IV", "V"][clampi(waves.wave_number, 0, waves.ARENA_WAVES)]
+	if boss_health.visible:
+		wave_announcement.text = "FLAGSHIP"
+		wave_announcement.visible = true
+		wave_announcement.modulate.a = 1.0
+	elif _fleet_banner_left > 0.0:
+		wave_announcement.text = "WAVE %d / %d" % [waves.wave_number, waves.ARENA_WAVES]
 		wave_announcement.visible = true
 		wave_announcement.modulate.a = 1.0 if game.motion_setting == 1 else clampf(_fleet_banner_left / 0.4, 0, 1)
+	if wave_announcement.visible:
+		_ribbon_time += maxf(0.0, delta)
+		_ribbon_material.set_shader_parameter("cloth_time", _ribbon_time)
+		_ribbon_material.set_shader_parameter("motion_amount", 0.0 if game.motion_setting == 1 else 1.0)
+		_ribbon_text_material.set_shader_parameter("cloth_time", _ribbon_time)
+		_ribbon_text_material.set_shader_parameter("motion_amount", 0.0 if game.motion_setting == 1 else 1.0)
+		_ribbon_text_material.set_shader_parameter("ribbon_size", wave_announcement.size)
 	wave_countdown.offset_top = wave_announcement.offset_bottom + 8 if wave_announcement.visible else 52
 	wave_countdown.offset_bottom = wave_countdown.offset_top + 20

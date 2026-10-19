@@ -79,7 +79,8 @@ func _run() -> void:
 			var side: Vector3 = geometry.direction.cross(Vector3.UP)
 			var contained := true
 			for planned in snapshot:
-				for point: Vector3 in [planned.origin, planned.end]:
+				var lane: Dictionary = boss._shot_lane(planned)
+				for point: Vector3 in [lane.origin, lane.end]:
 					var offset: Vector3 = point - geometry.origin
 					var along: float = offset.dot(geometry.direction)
 					contained = contained and along > 0 and along <= geometry.length + 0.001 and absf(offset.dot(side)) <= geometry.half_width * along / geometry.length
@@ -105,9 +106,9 @@ func _run() -> void:
 				matched = matched and flat.normalized().dot(shot.direction) > 0.9999 and shot.origin.distance_to(shot.warning_origin) < 0.3
 			check(matched, "origins and physical travel match committed warnings")
 			if kind == boss.Pattern.ROLLING:
-				check(snapshot[0].origin.distance_to(snapshot[4].origin) > 10 and snapshot[4].time > 0.8, "rolling shots traverse five separated hull muzzles over 0.84 seconds")
+				check(boss._shot_lane(snapshot[0]).origin.distance_to(boss._shot_lane(snapshot[4]).origin) > 10 and snapshot[4].time > 0.8, "rolling shots traverse five separated hull muzzles over 0.84 seconds")
 			if kind == boss.Pattern.SCATTER:
-				check((snapshot[0].origin + snapshot[0].direction * boss.minimum_attack_distance).distance_to(snapshot[1].origin + snapshot[1].direction * boss.minimum_attack_distance) > 7.0, "scatter leaves over seven metres between rays at minimum attack range")
+				check((boss._shot_lane(snapshot[0]).origin + boss._shot_lane(snapshot[0]).direction * boss.minimum_attack_distance).distance_to(boss._shot_lane(snapshot[1]).origin + boss._shot_lane(snapshot[1]).direction * boss.minimum_attack_distance) > 7.0, "scatter leaves over seven metres between rays at minimum attack range")
 			var shot: Dictionary = boss.projectiles[0]
 			var velocity: Vector3 = shot.velocity
 			game.boat.position += Vector3(30, 0, 20)
@@ -233,12 +234,12 @@ func _run() -> void:
 			check(boss.weapon_state == boss.Weapon.RELOAD and boss.mines.size() == mine_count and boss.shots_fired == shot_count, "%d Hz phase %s reload allows approach without new attacks" % [hz, second_phase])
 			check(reload_mine.armed() and reload_mine.age > 2.0, "reload keeps existing mine hazards active")
 			game.hud._process(0.0)
-			check(game.hud.boss_label.text == "FLAGSHIP · RELOADING", "health bar identifies the reload opening")
+			check(game.hud.wave_announcement.visible and game.hud.wave_announcement.text == "FLAGSHIP", "reload keeps the Flagship ribbon without reload text")
 			boss.cooldown = 0.0
 			boss._update_weapon(1.0 / hz)
 			check(boss.weapon_state == boss.Weapon.READY, "full reload returns guns to ready")
 			game.hud._process(0.0)
-			check(game.hud.boss_label.text == "FLAGSHIP", "reload cue clears when guns are ready")
+			check(game.hud.wave_announcement.text == "FLAGSHIP", "ready weapons retain the same Flagship header")
 			boss._update_mines(10.0)
 			check(boss.mines.size() == mine_count and boss.mine_clock == 0.0, "ready navigation never lays mines or banks a burst")
 

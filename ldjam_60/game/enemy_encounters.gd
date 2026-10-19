@@ -147,12 +147,36 @@ func reset() -> void:
 	announcement_left = 0.0
 	_debug_release_wave = 0
 
+func resume_wave(number: int) -> void:
+	# restart() has cleared every hazard. Preserve record indexing for the roster,
+	# without replaying earlier waves or carrying their enemies into this attempt.
+	wave_number = clampi(number, 1, ARENA_WAVES) - 1
+	for previous in wave_number:
+		records.append({"wave":previous + 1, "count":0, "spawned":0,
+			"defeated":0, "started":0.0, "expired":true, "repair_awarded":true})
+	cleared_waves = wave_number
+	_begin_wave()
+
+
 func debug_cutter() -> void:
 	if not game.development_tools or not game.arena_mode or not enabled:
 		return
 	# Use the normal queue/accounting instead of inventing an untracked enemy.
 	if phase == Phase.PREPARING:
 		next_wave_in = 0.0
+
+func debug_skip_wave() -> void:
+	if not game.arena_mode or not enabled or game.state != game.State.SAILING or game.hull <= 0:
+		return
+	if game.paused or not game._window_focused or game.walkthrough.active or game.hud.settings_open or game.hud.credits_open:
+		return
+	if phase not in [Phase.PREPARING, Phase.ACTIVE, Phase.EARLY_CLEAR] or wave_number >= ARENA_WAVES:
+		return
+	if phase == Phase.ACTIVE and not records.is_empty():
+		records.back().expired = true
+	_begin_wave() # Normal banner/sound and accounting; survivors remain alive.
+	debug_release_wave()
+
 
 func debug_release_wave() -> void:
 	if not game.arena_mode or not enabled or game.state != game.State.SAILING or game.hull <= 0:

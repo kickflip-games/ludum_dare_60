@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: updated itch.io with the user-optimized animated cover,
+  clean hero banner and four new screenshots; removed old screenshots from both
+  pages and saved a navy, cream and brass itch.io theme. Updated the
+  Ludum Dare draft with the new still cover, GIF and screenshots; verified saved
+  assets after reload. Moved its play URL to the top with a workaround for broken
+  inline links; the entry is still unpublished.
+
 - Work in progress: removed gameplay HUD, speed ribbons, targeting/attack cones
   and warning rings from every studio artwork preset, retaining the cover title
   and real combat effects. Regenerated native stills/cover frames and added a

@@ -139,3 +139,22 @@ left intact; these are gaps in the broader validation, not passing checks.
 
 No browser/device performance or human balance testing is implied by these
 staged captures. Keep raw takes local; review before replacing published artwork.
+
+## Page artwork update — 19 October 2026
+
+- [itch.io](https://avivajpeyi.itch.io/blackwater): saved the user-optimized
+  630 × 500 GIF as the cover (1,996,453 bytes, 75 frames / five seconds), the clean
+  hero as the banner, and four new screenshots. Removed the four older gallery
+  images after approval. Saved a navy theme with cream text and brass links/buttons.
+- [Ludum Dare](https://ldjam.com/events/ludum-dare/60/$435484/edit): saved the
+  still cover, optimized GIF and four new screenshots; reloaded and confirmed
+  they load. Removed the earlier screenshots and moved **Play here** above the
+  description and GIF. Inline links render as `<link />` on the site, so the top
+  callout shows the full URL as code and points to the working native Links
+  section. This entry remains **Unpublished Game**, awaiting its submission
+  checklist/event-format completion.
+- Reloaded and visually inspected both saved pages. Game downloads, credits and
+  original local artwork were preserved.
+- The supplied GIF is copied locally to
+  `build/marketing_studio/blackwater-cover-optimized.gif`; page review captures
+  are in `build/marketing_studio/page-review/`. These stay ignored.

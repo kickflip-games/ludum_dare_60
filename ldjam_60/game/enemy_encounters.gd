@@ -464,7 +464,7 @@ func _complete_boss_encounter() -> void:
 	if phase == Phase.COMPLETE or game.state != game.State.SAILING or game.hull <= 0: return
 	phase = Phase.COMPLETE
 	victory_transitions += 1
-	game.state = game.State.ARRIVED
+	game.begin_result(true)
 	game.note_event("victory", {"wave": wave_number})
 	spawn_queue.clear()
 	_debug_release_wave = 0

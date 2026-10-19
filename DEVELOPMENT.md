@@ -24,7 +24,7 @@ earlier survivors alive. Entering the old harbour never wins.
   input; Continue/Enter moves on, and Skip begins the voyage immediately.
   Finish or Skip starts a fresh game, clearing practice time, shots and rewards.
   The Tutorial button is always available on the start menu for replay.
-- **Credits:** available from the title, pause and result menus; Back or Esc returns
+- **Credits:** available from the title and pause menus; Back or Esc returns
   to the previous menu without starting or resuming play.
 - **A / D or arrows:** steer; forward sailing stays automatic.
 - **Mouse:** bounded horizontal chase-camera look (±45°); after 1.5 seconds
@@ -43,7 +43,7 @@ earlier survivors alive. Entering the old harbour never wins.
 - Dark navy night water uses **4x the first implementation's modulation**
   (height multiplier 0.88). Existing directional crest force is **50% stronger**,
   with countersteering and the wave-turn cap retained. A swell can block a low shot.
-- **Hold R for 0.6 seconds:** restart; after sinking, press **R / Retry**
+- **Hold R for 0.6 seconds:** restart; after the sinking hold, press **R / Try Again**
   to respawn with full hull at the start of the current wave. Earlier waves and their survivors are skipped; the current
   roster (including a fresh flagship on wave five) restarts. Main Menu and Play
   Again start a fresh run.
@@ -87,10 +87,17 @@ earlier survivors alive. Entering the old harbour never wins.
   bar replaces the circles beneath a persistent **FLAGSHIP** Kenney ribbon and
   briefly flashes/shakes when hit. Defeats leave hollow
   circles until the next wave rebuilds the group; an all-hollow row hides after
-  one second. Result screens show the wave reached, with no survival time or
-  wave countdowns. A pulsing warning
+  one second. Result screens use a centered Kenney Adventure panel and cloth
+  headline: **VICTORY / All 5 waves cleared** or **SUNK / Reached wave X of 5**.
+  Play Again starts fresh; Try Again retains the reached-wave checkpoint. A pulsing warning
   triangle marks incoming fire on the left or right; storm warnings remain; **FLAGSHIP** health bar sits clear of the ribbon.
-  The existing player hull-damage presentation remains.
+  Player health stays on the ship: full hull is clean, damaged hull has a clear
+  pale-grey stern plume, and critical hull has larger, denser charcoal smoke. Retained
+  scratches and restrained scorch support those cues. Damaged sails have a
+  scorched hole and frayed foot; critical sails have larger holes and missing edge
+  sections. These cutouts follow the existing cloth animation, restore with hull
+  repairs, and preserve the original mesh, mast and boom. Accepted hits still flash
+  red briefly. Repair immediately reduces/clears the plume. No health HUD.
 - Voyage progression, sextant and old territory triggers are inactive. Visible
   pushing wave pairs recur during combat and aiming: first launch after 6–8 s,
   two crests 2 s apart, then full expiry and 4–6 s of calm recovery. Three-second
@@ -302,8 +309,14 @@ spawning, targeting, victory and cleanup; the six ordinary slots remain availabl
   remain dangerous: steer around the mine trail and approach during this opening.
   Clear broadsides can also start while turning or repositioning; terrain
   avoidance still cancels unsafe attacks.
-- Boss defeat starts sinking and wins immediately. Escort kills alone never win.
+- Boss defeat ends combat immediately, then holds the sinking for 4.2 seconds
+  with two cosmetic blank cannon salutes before the result overlay. Player defeat
+  holds its sinking for 2.8 seconds. Both overlays dim the settled scene; replay
+  and R become available after the hold. Escort kills alone never win.
   Victory/defeat/retry clear all hazards; retry restores health, phases and HUD.
+  Focused runtime/GUI regression: `res://tests/result_flow_smoke.gd`; add
+  `-- --realtime` for normal callbacks/timing, or `-- --capture` with a native renderer
+  for staged sequence captures in `/tmp/blackwater-results`.
 
 Tune the hull in `game/boss_ship.tscn`, volley/mine exports in `game/boss_ship.gd`,
 and the two final escorts in `game/survival_settings.gd`. Models, exact source
@@ -334,6 +347,13 @@ At most **192 cubes** are drawn in one batch; busy frames replace the oldest
 cosmetic particles. Animation runs in the vertex shader, without particle nodes,
 collisions, textures, lights or shadows. Idle effects stop processing and drawing.
 Particles expire within 1.25 seconds, including after defeat; retry clears the pool.
+Player condition smoke uses one separate preallocated **16-puff opaque MultiMesh**
+with low-poly spheres and the same shader. It inherits most ship velocity, rises
+from the stern gunwale, and emits about 6.7 / 12.5 puffs per second for
+ordinary / critical damage. Puffs are roughly twice their initial width, with
+longer 1.05 / 1.2 s lives and stronger rise for gameplay-camera readability.
+No textures, lights, shadows, collisions or new process callbacks. Healthy hull, death, results and restart hide/clear it; partial
+repair replaces the old plume immediately without erasing combat effects.
 Water impacts reuse four preallocated six-mesh splash groups (24 meshes and
 24 independent opacity materials). Expired nodes stay hidden; saturation replaces
 a complete cosmetic splash. Rings follow the animated water height. Mid-air
@@ -595,8 +615,14 @@ add `--size=900x506` for the small view.
   two actual projectile hits, sinking and reset.
 - `--script res://tests/hud_smoke.gd`: menu actions, responsive bounds,
   minimal sailing HUD, reload/damage feedback, sighting priorities and result screens.
-- `--script res://tests/damage_smoke.gd`: health-derived scratches, accepted-hit flash,
-  immunity/non-damage controls, threshold boundaries, repairs, sinking and retry.
+- `--script res://tests/damage_smoke.gd`: health-derived scratches/smoke, accepted-hit
+  flash, immunity/non-damage controls, 30/60/120 Hz thresholds, repairs, sinking and retry.
+- `--script res://tests/hull_condition_smoke.gd`: current-arena health transitions,
+  early-clear/automatic repairs, pause, restart/results and fixed smoke budget.
+  Native `-- --capture --realtime` records chase/cannon views at 1280×720 and
+  900×506 plus normal-callback health transitions in `/tmp/blackwater-hull-condition`.
+- Native `--script res://tests/sail_damage_smoke.gd`: renders the real canvas to
+  verify missing cloth, immune-hit rejection, partial/full repair and restart.
 - `--script res://tests/stargazing_smoke.gd`: delayed focus, immediate release,
   repeated checks, live-star/edge projection across headings/window sizes, text-free
   focus stages, star/horizon framing, 30/60/120 Hz camera transitions, active enemy

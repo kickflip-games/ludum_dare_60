@@ -75,6 +75,13 @@ var _threat_direction: float = 1.0
 var _has_threat: bool = false
 var _threat_pulse := 0.0
 var _menu_alpha: float = 1.0
+var _last_result_ready := true
+var result_shade: ColorRect
+var result_panel: Panel
+var result_ribbon: TextureRect
+var _result_ribbon_material: ShaderMaterial
+var _result_text_material: ShaderMaterial
+var _result_cloth_time := 0.0
 
 
 class ThreatIcon extends Control:
@@ -266,10 +273,24 @@ func _build_menu() -> void:
 	menu_shade.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(menu_shade)
 	menu_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	result_shade = ColorRect.new()
+	result_shade.name = "ResultDim"
+	result_shade.color = Color("07131baa")
+	result_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(result_shade)
+	result_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu = MarginContainer.new()
 	menu.name = "VoyageMenu"
 	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(menu)
+	result_panel = Panel.new()
+	result_panel.name = "ResultPanel"
+	var result_style := NauticalTheme.panel_style()
+	result_style.set_expand_margin_all(28)
+	result_panel.add_theme_stylebox_override("panel", result_style)
+	result_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(result_panel)
+	result_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu_column = VBoxContainer.new()
 	menu_column.alignment = BoxContainer.ALIGNMENT_BEGIN
 	menu_column.add_theme_constant_override("separation", 12)
@@ -278,6 +299,20 @@ func _build_menu() -> void:
 	menu_title = _label(menu_column, "Title", "BLACKWATER", 82, NauticalTheme.IVORY, true)
 	menu_title.add_theme_constant_override("line_spacing", -12)
 	menu_title.add_theme_constant_override("outline_size", 0)
+	result_ribbon = TextureRect.new()
+	result_ribbon.name = "ResultRibbon"
+	result_ribbon.texture = WAVE_RIBBON
+	result_ribbon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	result_ribbon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	result_ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_ribbon.show_behind_parent = true
+	_result_ribbon_material = ShaderMaterial.new()
+	_result_ribbon_material.shader = WAVE_RIBBON_PALETTE
+	result_ribbon.material = _result_ribbon_material
+	_result_text_material = ShaderMaterial.new()
+	_result_text_material.shader = WAVE_RIBBON_TEXT
+	menu_title.add_child(result_ribbon)
+	result_ribbon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	menu_body = _label(menu_column, "ResultReason", "", 21, NauticalTheme.SEA_GLASS)
 	menu_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	menu_details = _label(menu_column, "VoyageDetails", "", 18, NauticalTheme.BRASS)
@@ -428,6 +463,33 @@ func _input(event: InputEvent) -> void:
 func _layout_menu() -> void:
 	if not is_instance_valid(menu) or size.x < 1.0 or size.y < 1.0: return
 	var subpage_open := settings_open or credits_open
+	var result: bool = game.state in [game.State.ARRIVED, game.State.LOST] and not subpage_open and not game.paused
+	result_panel.visible = result
+	result_ribbon.visible = result
+	menu_title.material = _result_text_material if result else null
+	menu_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER if result else VERTICAL_ALIGNMENT_TOP
+	menu_title.custom_minimum_size.y = 104 if result else 0
+	menu_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if result else HORIZONTAL_ALIGNMENT_LEFT
+	menu_details.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if result else HORIZONTAL_ALIGNMENT_LEFT
+	for side: String in ["left", "right", "top", "bottom"]:
+		menu.add_theme_constant_override("margin_" + side, 28 if result else 0)
+	if result:
+		var width := minf(472, size.x - 40)
+		menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		menu_title.add_theme_font_size_override("font_size", 48 if width >= 430 else 40)
+		menu_details.add_theme_font_size_override("font_size", 22)
+		menu_actions.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		for button: Button in [action_button, main_menu_button]:
+			button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		menu_spacer.visible = false
+		menu_column.add_theme_constant_override("separation", 18)
+		menu_actions.add_theme_constant_override("separation", 12)
+		menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		var height := menu.get_combined_minimum_size().y
+		menu.position = Vector2((size.x - width) * 0.5, (size.y - height) * 0.5)
+		menu.size = Vector2(width, height)
+		menu.queue_sort()
+		return
 	var centered_title: bool = game.state == game.State.READY and not subpage_open and not game.paused
 	var width := minf(760 if centered_title else 480, size.x - 48)
 	var left := (size.x - width) * 0.5 if centered_title else clampf(size.x * 0.05, 24, 80)
@@ -467,12 +529,15 @@ func _refresh_menu_copy() -> void:
 	var subpage_open := settings_open or credits_open
 	var intro: bool = game.state == game.State.READY
 	var won: bool = game.state == game.State.ARRIVED
+	var result: bool = not intro and not game.paused
 	menu_title.text = "PAUSED" if game.paused else "BLACKWATER" if intro else "VICTORY" if won else "SUNK"
 	menu_body.text = ""
 	menu_body.visible = not menu_body.text.is_empty() and not subpage_open
 	menu_details.visible = game.arena_mode and not intro and not game.paused
-	menu_details.text = "WAVE REACHED %d / 5" % maxi(1, game.enemy_encounters.wave_number) if game.arena_mode else ""
-	action_button.text = "RESUME" if game.paused else "PLAY" if intro else "PLAY AGAIN" if won else "RETRY"
+	menu_details.text = ("All 5 waves cleared" if won else "Reached wave %d of 5" % maxi(1, game.enemy_encounters.wave_number)) if game.arena_mode else ""
+	action_button.text = "RESUME" if game.paused else "PLAY" if intro else "PLAY AGAIN" if won else "TRY AGAIN"
+	settings_button.visible = not result
+	credits_button.visible = not result
 	main_menu_button.visible = not intro
 	walkthrough_button.visible = intro and game.arena_mode
 	menu_controls.visible = intro and not game.arena_mode and not subpage_open
@@ -512,9 +577,12 @@ func _build_instrument() -> void:
 
 
 func _sync_button() -> void:
-	var show_menu: bool = game.paused or game.state in [game.State.READY, game.State.LOST, game.State.ARRIVED]
+	var ready: bool = game.result_ready()
+	var result: bool = game.state in [game.State.LOST, game.State.ARRIVED]
+	var show_menu: bool = game.paused or game.state == game.State.READY or (result and ready)
 	menu.visible = show_menu
-	menu_shade.visible = show_menu
+	menu_shade.visible = show_menu and not result
+	result_shade.visible = result and ready
 	action_button.visible = show_menu
 	gameplay_hud.visible = game.state == game.State.SAILING and not game.walkthrough.active and not game.paused
 	if not gameplay_hud.visible and not game.paused:
@@ -536,8 +604,10 @@ func _sync_button() -> void:
 		threat_icon.visible = false
 		_threat_pulse = 0.0
 		threat_icon.modulate.a = 1.0
-	if game.state == _last_state and game.paused == _last_paused:
+	if game.state == _last_state and game.paused == _last_paused and ready == _last_result_ready:
 		return
+	_last_result_ready = ready
+	_result_cloth_time = 0.0
 	_last_state = game.state
 	_last_paused = game.paused
 	if not show_menu:
@@ -556,7 +626,7 @@ func _sync_button() -> void:
 
 
 func _on_action_pressed() -> void:
-	if settings_open or credits_open: return
+	if settings_open or credits_open or not game.result_ready(): return
 	if game.paused:
 		game.set_paused(false)
 	elif game.state == game.State.READY:
@@ -582,6 +652,12 @@ func _process(delta: float) -> void:
 	_update_storm_warning(delta)
 	_menu_alpha = move_toward(_menu_alpha, 1.0, delta * 7.0)
 	menu.modulate.a = _menu_alpha
+	result_shade.modulate.a = _menu_alpha
+	if result_ribbon.is_visible_in_tree():
+		_result_cloth_time += delta
+		for mat: ShaderMaterial in [_result_ribbon_material, _result_text_material]:
+			mat.set_shader_parameter("cloth_time", _result_cloth_time)
+			mat.set_shader_parameter("motion_amount", game.motion_amount())
 	if game.state != game.State.SAILING:
 		_reading_alpha = 0.0
 		instrument.visible = false

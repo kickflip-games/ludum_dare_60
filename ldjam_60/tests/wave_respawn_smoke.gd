@@ -15,8 +15,9 @@ func _run() -> void:
 		game.damage_immunity = 0
 		game.take_damage(game.hull_capacity, "respawn fixture")
 		check(game.state == game.State.LOST and enemies.wave_number == number, "wave %d death retains checkpoint" % number)
+		game._physics_process(game.LOSS_HOLD_SECONDS)
 		hud._process(0)
-		check(hud.menu_details.text == "WAVE REACHED %d / 5" % number, "wave %d result contains no time" % number)
+		check(hud.menu_details.text == "Reached wave %d of 5" % number, "wave %d result contains no time" % number)
 		if number % 2 == 0:
 			hud.action_button.pressed.emit()
 		else:
@@ -39,6 +40,7 @@ func _run() -> void:
 			for repeat in 2:
 				game.damage_immunity = 0
 				game.take_damage(game.hull_capacity, "repeated death")
+				game._physics_process(game.LOSS_HOLD_SECONDS)
 				hud._on_action_pressed()
 				game._physics_process(game.CAST_OFF_SECONDS)
 			check(enemies.wave_number == number and enemies.records.size() == number, "repeated retries preserve wave without duplicate records")
@@ -93,6 +95,7 @@ func capture_results() -> void:
 			for previous in range(1, number): enemies.debug_skip_wave()
 			game.damage_immunity = 0
 			game.take_damage(game.hull_capacity, "capture")
+			game._physics_process(game.LOSS_HOLD_SECONDS)
 			hud._process(1)
 			await settle()
 			RenderingServer.force_draw(true, 1.0 / 60)

@@ -52,6 +52,14 @@ const TARGET_HEADING: float = PI / 6.0
 const START_HEADING: float = -PI * 0.28
 const CAST_OFF_SECONDS: float = 1.25
 const RESTART_HOLD_SECONDS: float = 0.6
+const VICTORY_HOLD_SECONDS := 4.2
+const LOSS_HOLD_SECONDS := 2.8
+var result_active := false
+var result_elapsed := 0.0
+var result_salutes := 0
+var _result_camera_from := Transform3D.IDENTITY
+var _result_camera_to := Transform3D.IDENTITY
+var _result_camera_offset := 0.0
 const DAMAGE_SHAKE_SECONDS: float = 0.32
 const DAMAGE_SHAKE_DISTANCE: float = 0.28
 # Leave room for the hull and camera inside the terrain's 512 m edges.
@@ -429,7 +437,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not event.is_pressed():
 			restart_elapsed = 0.0
 			_restart_consumed = false
-		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and not hud.settings_open and not hud.credits_open:
+		elif not _restart_consumed and state in [State.LOST, State.ARRIVED] and result_ready() and not hud.settings_open and not hud.credits_open:
 			restart()
 	elif event.is_action_pressed("begin_crossing") and state == State.READY and not hud.settings_open and not hud.credits_open:
 		# Preserve the focused launch action when Enter reaches the global shortcut.
@@ -705,6 +713,9 @@ func restart(to_menu: bool = false) -> void:
 	beacon_seen = arena_mode
 	beacon.visible = arena_mode
 	failure_reason = ""
+	result_active = false
+	result_elapsed = 0.0
+	result_salutes = 0
 	transition_elapsed = 0.0
 	end_view_blend = 0.0
 	state = State.READY
@@ -721,6 +732,18 @@ func _physics_process(delta: float) -> void:
 	if not _window_focused and state in [State.SAILING, State.CASTING_OFF]:
 		set_paused(true)
 	if paused:
+		return
+	if result_active:
+		if result_ready(): return
+		result_elapsed = minf(result_duration(), result_elapsed + delta)
+		# Two blank salutes reuse muzzle/smoke/audio, never gameplay projectiles.
+		if state == State.ARRIVED:
+			while result_salutes < 2 and result_elapsed >= 1.1 + result_salutes * 0.85:
+				cannon.salute()
+				result_salutes += 1
+		sea_time += delta
+		_update_view(delta)
+		hud.queue_redraw()
 		return
 	_update_restart_hold(delta)
 	if walkthrough.active and state == State.SAILING:
@@ -958,12 +981,47 @@ func take_damage(amount: int, reason: String) -> bool:
 		wave_encounters.stop(ocean.wave_field)
 		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
-		state = State.LOST
+		begin_result(false)
 		note_event("death", {"wave": enemy_encounters.wave_number})
 		_clear_player_controls()
 		cannon.reset()
 	combat_particles.damage(boat_visual.to_global(Vector3(0, 1.0, -1.8)), hull == 0)
 	return true
+
+
+func result_duration() -> float:
+	return VICTORY_HOLD_SECONDS if state == State.ARRIVED else LOSS_HOLD_SECONDS
+
+
+func result_ready() -> bool:
+	return not result_active or result_elapsed >= result_duration()
+
+
+func begin_result(won: bool) -> void:
+	if result_active: return
+	state = State.ARRIVED if won else State.LOST
+	if not arena_mode: return
+	result_active = true
+	result_elapsed = 0.0
+	result_salutes = 0
+	_result_camera_from = camera.transform
+	_result_camera_offset = camera.h_offset
+	var at := boat.position + Basis(Vector3.UP, -heading) * Vector3(9, 6, 12)
+	var focus := boat.position + Vector3.UP * 1.5
+	if won:
+		at = camera.position + Vector3.UP * 3.0
+		focus = enemy_encounters.boss.position + Vector3.UP * 3.0
+	at = _camera_obstruction_limit(at)
+	_result_camera_to = Transform3D(Basis.looking_at(focus - at), at)
+	_clear_player_controls(false)
+	cannon.reset()
+	enemy_encounters.stop()
+	wave_encounters.stop(ocean.wave_field)
+	wave_sailing.reset()
+	flow_zones.reset()
+	boat.velocity = Vector3.ZERO
+	actual_speed = 0.0
+	if won: cue_sound("victory")
 
 
 func shake(amount: float) -> void:
@@ -976,7 +1034,7 @@ func _update_view(delta: float) -> void:
 	water_material.set_shader_parameter("storm_boundary", Vector4(light.x, light.z, arena_radius, storm_warning_strength()))
 	discovery_left = maxf(0.0, discovery_left - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
-	boat_damage.update(hull, hull_capacity, hit_flash, delta)
+	boat_damage.update(hull, hull_capacity, hit_flash, delta, state == State.SAILING)
 	shake_strength = maxf(0.0, shake_strength - delta * 0.9)
 	damage_shake_left = maxf(0.0, damage_shake_left - delta)
 	_update_weather(delta)
@@ -1002,8 +1060,9 @@ func _update_view(delta: float) -> void:
 	boost_wind.update_wind(boosting and state==State.SAILING,sea_time,delta,camera,motion_setting==1,cannon.aiming)
 	enemy_encounters.update_visuals(delta)
 	if state == State.LOST:
-		boat_visual.position.y -= minf(2.6, end_view_blend * 2.6)
-		boat_visual.rotation.z += end_view_blend * 0.32
+		var sink := smoothstep(0.15, LOSS_HOLD_SECONDS, result_elapsed) if result_active else end_view_blend
+		boat_visual.position.y -= sink * 3.8
+		boat_visual.rotation.z += sink * 0.42
 	var sky_blend := smoothstep(0.0, 1.0, read_blend)
 	var helm_pose := _normal_sailing_pose(delta)
 	helm_pose = _sailing_camera_pose(helm_pose, delta)
@@ -1024,6 +1083,11 @@ func _update_view(delta: float) -> void:
 		camera.transform = _transition_from.interpolate_with(helm_pose, amount)
 		camera.h_offset = lerpf(-4.2, 0.0, amount)
 		camera.fov = lerpf(64.0, sailing_fov, amount)
+	elif result_active:
+		# Preserve the killing frame, then ease to the wreck without a menu cut.
+		end_view_blend = smoothstep(0.15, 1.25, result_elapsed)
+		camera.transform = _result_camera_from.interpolate_with(_result_camera_to, end_view_blend)
+		camera.h_offset = lerpf(_result_camera_offset, 0.0, end_view_blend)
 	elif state == State.ARRIVED or state == State.LOST:
 		end_view_blend = minf(1.0, end_view_blend + delta * 1.3)
 		var orientation := Basis(Vector3.UP, -heading)

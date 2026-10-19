@@ -209,6 +209,7 @@ func _run() -> void:
 	game.damage_immunity=0
 	game.take_damage(game.hull_capacity,"defeat fixture")
 	check(game.state==game.State.LOST, "actual player sinking causes defeat")
+	game._physics_process(game.LOSS_HOLD_SECONDS)
 	var encounters: int=enemies.encounter_index
 	enemies.update_encounters(100)
 	check(enemies.encounter_index==encounters, "defeat immediately prevents further spawns")
@@ -317,6 +318,7 @@ func _completion_checks() -> void:
 	check(enemies.ships_sunk==16 and game.state==game.State.SAILING, "all sixteen ordinary enemies defeated still requires the flagship")
 	while enemies.boss.hull>0: game.cannon._impact(enemies.boss,enemies.boss.position+Vector3.UP)
 	check(game.state==game.State.ARRIVED and not enemies.has_projectiles(), "flagship death immediately wins and clears incoming shots")
+	game._physics_process(game.VICTORY_HOLD_SECONDS)
 	game.hud._process(0)
 	check(game.hud.menu_title.text=="VICTORY", "victory screen uses VICTORY")
 	action("restart_crossing",true)

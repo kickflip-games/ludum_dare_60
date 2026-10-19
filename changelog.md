@@ -6,6 +6,38 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: player sails now show scorched holes and ragged edges when
+  damaged, with larger tears and missing sections at critical hull. Reuses the
+  animated canvas material with opaque cutouts; preserves the source model,
+  mast/boom, gameplay and smoke. Partial/full repairs and restart restore cloth.
+  Native cutout coverage and gameplay-camera review at both sizes, plus cloth/
+  damage suites: 176 checks pass. Local Web export succeeds.
+
+- Work in progress: made player damage smoke much more obvious: roughly doubled
+  puff width, brighter damaged smoke, denser critical smoke, longer lifetimes and
+  higher rise. Kept it aft of the cannon; one fixed 16-puff batch, with the same
+  healthy/repair/reset behavior and no gameplay or HUD changes. Native camera/
+  lifecycle and damage suites pass 125 checks at both target sizes.
+
+- Work in progress: player hull condition now uses sparse grey smoke when damaged
+  and larger, denser charcoal smoke when critical, plus existing scratches and
+  restrained scorch. Kept the brief red hit flash; removed the persistent red
+  glow. One 12-puff batch reuses the combat shader; no new HUD, assets or lights.
+  Repair reduces/clears smoke immediately; pause, death, results and restart clean
+  up correctly. Damage/repair rules and the wave system are unchanged.
+  Native chase/cannon captures at 1280×720 and 900×506 plus live callback checks:
+  70 pass. Seven damage/recovery/control/combat/wave/result suites: 554 pass.
+  Local Web export succeeds; human playtesting and browser profiling remain open.
+
+- Work in progress: let the flagship sink for 4.2 seconds with two cosmetic cannon
+  salutes; hold player sinking for 2.8 seconds before showing centered Kenney
+  Adventure result cards and animated headlines. Added the requested victory/
+  reached-wave copy, two-action menus and gated replay; combat stops immediately.
+  Play Again starts fresh; Try Again preserves the current-wave checkpoint.
+  Native result/GUI regression: 237 checks pass with normal callbacks, plus 226
+  capture checks at 1280×720, 960×540 and 900×506. Seven adjacent suites pass
+  691 checks; local Web export succeeds. Human playthrough/browser profiling remain open.
+
 - Work in progress: refreshed the repository README with browser-play and Ludum
   Dare links, concise controls, three native stills and the optimized animated
   cover. Preserved the former README in a linked development reference; added

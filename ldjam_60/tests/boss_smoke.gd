@@ -317,7 +317,10 @@ func _run() -> void:
 	check(manager.victory_transitions == 1, "repeated defeat callbacks leave one victory transition")
 	check(not game.take_damage(1, "late hazard"), "late hazards cannot damage after victory")
 	game.hud._process(0)
-	check(not game.hud.boss_health.visible and game.hud.menu_title.text == "VICTORY", "flagship victory uses simple result heading and hides boss HUD")
+	check(not game.hud.boss_health.visible and not game.hud.menu.visible, "flagship sinking holds without gameplay HUD or early result menu")
+	game._physics_process(game.VICTORY_HOLD_SECONDS)
+	game.hud._process(0)
+	check(game.hud.menu_title.text == "VICTORY", "flagship victory heading appears after sinking hold")
 	fresh()
 	final_wave()
 	game.damage_immunity = 0

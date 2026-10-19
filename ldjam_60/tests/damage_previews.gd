@@ -20,6 +20,8 @@ func _initialize() -> void:
 
 func capture(label: String, storm: bool = false) -> void:
 	# Match boat, camera, sea and light across health states without changing hull.
+	# This manually stepped fixture must not capture an incidental focus-loss menu.
+	game.set_paused(false, false)
 	game.boat.position = game.arena_center() + Vector3(0, 0, 100)
 	game.heading = 0.0
 	game.sea_time = 14.0

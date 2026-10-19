@@ -251,6 +251,7 @@ func fire() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if game.state != game.State.SAILING:
+		_advance_muzzle(delta)
 		advance_effects(delta)
 		return
 	advance(delta)
@@ -258,16 +259,7 @@ func _physics_process(delta: float) -> void:
 
 func advance(delta: float) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
-	flash_time = maxf(0.0, flash_time - delta)
-	flash.visible = flash_time > 0.0
-	flash_light.visible = flash_time > 0.0
-	var flash_envelope := clampf(flash_time / 0.11, 0.0, 1.0)
-	flash.scale = Vector3.ONE * (0.45 + flash_envelope * 0.55)
-	flash_light.light_energy = 5.0 * flash_envelope * flash_envelope
-	_recoil_left = maxf(0.0, _recoil_left - delta)
-	var age := 0.25 - _recoil_left
-	var kick := sin(clampf(age / 0.045, 0.0, 1.0) * PI * 0.5) if age < 0.045 else 1.0 - smoothstep(0.045, 0.25, age)
-	barrel.position.x = -recoil_strength * kick
+	_advance_muzzle(delta)
 	feedback_time = maxf(0.0, feedback_time - delta)
 	if feedback_time <= 0.0:
 		feedback = ""
@@ -308,6 +300,28 @@ func advance(delta: float) -> void:
 				shot.trail_clock = 0.0
 				game.combat_particles.trail(ball.global_position)
 	advance_effects(delta)
+
+
+func salute() -> void:
+	# Cosmetic blank: no shot count, fire signal, damage, targeting or projectile.
+	flash_time = 0.11
+	_recoil_left = 0.25
+	game.combat_particles.muzzle(shot_origin(), starboard_direction())
+	if is_instance_valid(_shot_audio) and game.effects_enabled():
+		_shot_audio.play()
+
+
+func _advance_muzzle(delta: float) -> void:
+	flash_time = maxf(0.0, flash_time - delta)
+	flash.visible = flash_time > 0.0
+	flash_light.visible = flash_time > 0.0
+	var flash_envelope := clampf(flash_time / 0.11, 0.0, 1.0)
+	flash.scale = Vector3.ONE * (0.45 + flash_envelope * 0.55)
+	flash_light.light_energy = 5.0 * flash_envelope * flash_envelope
+	_recoil_left = maxf(0.0, _recoil_left - delta)
+	var age := 0.25 - _recoil_left
+	var kick := sin(clampf(age / 0.045, 0.0, 1.0) * PI * 0.5) if age < 0.045 else 1.0 - smoothstep(0.045, 0.25, age)
+	barrel.position.x = -recoil_strength * kick
 
 
 func advance_effects(delta: float) -> void:

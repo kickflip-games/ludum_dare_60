@@ -28,6 +28,8 @@ func configure_canvas(sail: MeshInstance3D, surface: int) -> void:
 	var bounds := AABB(vertices[0], Vector3.ZERO)
 	for vertex in vertices:
 		bounds = bounds.expand(vertex)
+	_canvas.set_shader_parameter("canvas_bounds", Vector4(bounds.position.y, bounds.position.z,
+		1.0 / maxf(bounds.size.y, 0.000001), 1.0 / maxf(bounds.size.z, 0.000001)))
 	# This import's mast runs along mesh-local Z; the canvas spans local Y.
 	_canvas.set_shader_parameter("foot_height", bounds.position.z + bounds.size.z * 0.01)
 	_canvas.set_shader_parameter("foot_blend", bounds.size.z * 0.4)

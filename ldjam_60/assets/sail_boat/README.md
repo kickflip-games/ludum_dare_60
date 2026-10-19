@@ -12,3 +12,8 @@ contains the license text.
 The player visual uses this model. Enemy cutters and wrecks retain Small Ship
 from the Pirate kit. The cannon and lantern share the player's visual pivot,
 which follows waves, heels gently underway and banks smoothly into turns.
+
+Player canvas damage is applied by `game/player_sail.gdshader`: health selects
+scorched holes and ragged edges on surface 1, following the existing cloth sway.
+Repair restores the original silhouette. The GLB and its mast/boom stay intact;
+no Blender export, textures or extra rendering pass are needed.

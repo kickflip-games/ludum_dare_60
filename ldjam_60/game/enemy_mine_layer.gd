@@ -75,5 +75,6 @@ func deploy() -> bool:
 			break
 	assert(mine != null, "Prepared heavy mine pool must cover trail maximum")
 	mine.activate(at)
+	game.note_event("mine_deployment", {"side": "enemy", "position": [at.x, at.z]})
 	mines.append(mine)
 	return true

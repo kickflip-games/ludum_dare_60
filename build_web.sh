@@ -23,12 +23,18 @@ fi
 }
 echo "Export runtime: $("$GODOT_BIN" --version)"
 [[ "${1:-}" != --check ]] || exit 0
+export GODOT_BIN
 
 # Export an isolated copy so the editor's project and import cache stay intact.
 python3 - <<'PY'
 from pathlib import Path
 import re
 import shutil
+import hashlib
+import json
+import subprocess
+import os
+from datetime import datetime, timezone
 
 build = Path('build')
 build.mkdir(exist_ok=True)
@@ -51,12 +57,35 @@ source = re.sub(r'^_mcp_game_helper=.*\n', '', source, flags=re.M)
 source = re.sub(r'^enabled=PackedStringArray\(.*\)$',
                 'enabled=PackedStringArray()', source, flags=re.M)
 project.write_text(source)
+digest = hashlib.sha256()
+head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+engine_version = subprocess.check_output([os.environ['GODOT_BIN'], '--version'], text=True).strip()
+# Provenance and export tooling also affect the pack, even on docs-only commits.
+digest.update(head.encode() + b'\0' + engine_version.encode() + b'\0')
+digest.update(Path('build_web.sh').read_bytes())
+for path in sorted((build / 'staging').rglob('*')):
+    if path.is_file():
+        digest.update(str(path.relative_to(build / 'staging')).encode() + b'\0')
+        digest.update(path.read_bytes())
+info = {
+    'git_sha': head,
+    'godot_version': engine_version,
+    'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()),
+    'source_sha256': digest.hexdigest(),
+    'commit_utc': datetime.fromisoformat(subprocess.check_output(['git', 'show', '-s', '--format=%cI', 'HEAD'], text=True).strip()).astimezone(timezone.utc).isoformat(),
+    'configuration': 'single-thread Web / Compatibility / 960x540 viewport',
+}
+runtime_name = 'blackwater-runtime-' + info['source_sha256'][:12] + '.js'
+info['runtime_script'] = runtime_name
+(build / 'web/build.json').write_text(json.dumps(info, indent=2, sort_keys=True) + '\n')
+(build / 'staging/game/build_info.json').write_text(json.dumps(info, sort_keys=True))
+(build / 'web' / runtime_name).write_bytes(Path('ldjam_60/game/web_runtime.js').read_bytes())
 (build / 'staging/export_presets.cfg').write_text('''[preset.0]
 name="Web"
 platform="Web"
 runnable=true
 export_filter="all_resources"
-include_filter=""
+include_filter="game/build_info.json"
 exclude_filter="addons/godot_ai/*,tests/*"
 script_export_mode=2
 
@@ -68,7 +97,8 @@ vram_texture_compression/for_mobile=false
 html/canvas_resize_policy=2
 html/focus_canvas_on_start=true
 progressive_web_app/enabled=false
-''')
+html/head_include="<script src='RUNTIME_SCRIPT'></script>"
+'''.replace('RUNTIME_SCRIPT', runtime_name))
 PY
 
 run_export_step() {
@@ -86,20 +116,32 @@ run_export_step() {
     fi
 }
 run_export_step build/import.log --editor --quit
-run_export_step build/export.log --export-release Web ../web/index.html
+# Content-specific engine/pack filenames prevent stale itch caches mixing builds.
+BUILD_ID="$(python3 -c 'import json; print(json.load(open("build/web/build.json"))["source_sha256"][:12])')"
+run_export_step build/export.log --export-release Web "../web/blackwater-${BUILD_ID}.html"
+mv "build/web/blackwater-${BUILD_ID}.html" build/web/index.html
 
 python3 - <<'PY'
 from pathlib import Path
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
+import hashlib
+import json
 
 web = Path('build/web')
-for name in ('index.html', 'index.js', 'index.wasm', 'index.pck'):
+info = json.loads((web / 'build.json').read_text())
+prefix = 'blackwater-' + info['source_sha256'][:12]
+for name in ('index.html', prefix + '.js', prefix + '.wasm', prefix + '.pck', info['runtime_script']):
     output = web / name
     if not output.is_file() or output.stat().st_size == 0:
         raise SystemExit(f'Web export incomplete: {output}. See build/export.log.')
-with ZipFile('build/blackwater-web.zip', 'w', ZIP_DEFLATED) as archive:
+checksums = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(web.iterdir()) if p.is_file()}
+(web / 'checksums.json').write_text(json.dumps(checksums, indent=2, sort_keys=True) + '\n')
+with ZipFile('build/blackwater-web.zip', 'w', ZIP_DEFLATED, compresslevel=9) as archive:
     for output in sorted(web.iterdir()):
         if output.is_file():
-            archive.write(output, output.name)
+            entry = ZipInfo(output.name, date_time=(1980, 1, 1, 0, 0, 0))
+            entry.compress_type = ZIP_DEFLATED
+            entry.external_attr = 0o644 << 16
+            archive.writestr(entry, output.read_bytes())
 print('Ready: build/blackwater-web.zip')
 PY

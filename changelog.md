@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Genuine Web/native focus loss now pauses gameplay and audio
+  until explicit Resume; keyboard focus and steering no longer depend on pointer
+  capture. Added Web-only 960×540 rendering with optional 720p, sample music and
+  a baked quiet ocean loop. Settings/F8 opens bounded, local-only diagnostics
+  with input/audio/frame evidence, comparison controls and JSON export.
+  Repeatable release tooling and validation: [Web release guide](WEB_RELEASE.md)
+  and [stability review](artifacts/web_stability_review.md). No public upload.
+
 - Work in progress: updated itch.io with the user-optimized animated cover,
   clean hero banner and four new screenshots; removed old screenshots from both
   pages and saved a navy, cream and brass itch.io theme. Updated the

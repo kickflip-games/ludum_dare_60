@@ -244,7 +244,7 @@ func fire() -> bool:
 	fired.emit(aimed_direction())
 	feedback = "STARBOARD SHOT"
 	feedback_time = 0.9
-	if is_instance_valid(_shot_audio) and game._sound_enabled:
+	if is_instance_valid(_shot_audio) and game.effects_enabled():
 		_shot_audio.play()
 	return true
 
@@ -366,7 +366,7 @@ func _impact(body: Object, at: Vector3) -> void:
 		water_splash(at, false)
 	game.shake(0.04 if ship else 0.025)
 	var audio: AudioStreamPlayer = _ship_audio if ship else _impact_audio
-	if is_instance_valid(audio) and game._sound_enabled:
+	if is_instance_valid(audio) and game.effects_enabled():
 		audio.play()
 	CombatMetrics.finish("broadside_cannon.gd:_impact", _profile_started)
 
@@ -470,7 +470,7 @@ func water_splash(at: Vector3, sound: bool = true) -> void:
 			node.scale = effect.spray_scale
 		effect.ttl = effect.lifetime
 		effects.append(effect)
-	if sound and is_instance_valid(_water_audio) and game._sound_enabled:
+	if sound and is_instance_valid(_water_audio) and game.effects_enabled():
 		_water_audio.play()
 
 

@@ -284,6 +284,8 @@ func lifecycle() -> void:
 	mouse(900)
 	check(game.cannon.shots_fired == shots and game.look_yaw == 0 and game.turn_input == 0 and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "focus loss clears controls and releases mouse")
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+	check(game.paused, "focus restoration requires explicit resume")
+	game.set_paused(false)
 	key(KEY_SPACE, true, true)
 	step(1.7)
 	check(game.cannon.shots_fired == shots and game.look_yaw == 0, "focus return and OS key-repeat cannot revive held shots or mouse offset")
@@ -415,6 +417,7 @@ func camera_toggle_cases() -> void:
 	await process_frame
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	game._notification(Node.NOTIFICATION_APPLICATION_FOCUS_IN)
+	game.set_paused(false)
 	key(KEY_E, true, true)
 	step(0.1)
 	check(not game.arena_cannon_view and game.aim_camera_blend == 0, "focus loss resets close view and held E cannot reopen it")

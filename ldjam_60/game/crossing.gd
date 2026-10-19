@@ -4,6 +4,8 @@ extends Node3D
 const VoyageDirector = preload("res://game/voyage_director.gd")
 const NavigationBearings = preload("res://game/navigation_bearings.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
+const LiveDiagnostics = preload("res://game/live_diagnostics.gd")
+var diagnostics: CanvasLayer
 const OceanController = preload("res://game/ocean/ocean_controller.gd")
 const WaveSettings = preload("res://game/ocean/wave_settings.gd")
 const BoatWaveMotion = preload("res://game/ocean/boat_wave_motion.gd")
@@ -183,7 +185,6 @@ var _fire_armed := false
 enum State { READY, SAILING, LOST, ARRIVED, CASTING_OFF }
 var state: State = State.READY
 var paused := false
-var _web_had_mouse_capture := false
 var phase: int = 0
 var phase_banner_left: float = 4.0
 var storm_blend: float = 0.0
@@ -277,6 +278,10 @@ var _audio_rng := RandomNumberGenerator.new()
 var _whiz_players: Array[AudioStreamPlayer3D] = []
 var _whiz_player_cursor: int = 0
 var _sound_enabled: bool = true
+var diagnostic_audio_mode := 0
+var diagnostic_generator := false
+var _generator_skips_total := 0
+var _last_generator_skips := 0
 
 
 func course_forward() -> Vector3:
@@ -341,6 +346,9 @@ func _ready() -> void:
 	add_child(turbulence_effects)
 	turbulence_effects.setup(self,layer)
 	_build_audio()
+	diagnostics = LiveDiagnostics.new()
+	diagnostics.game = self
+	add_child(diagnostics)
 	if DisplayServer.get_name() != "headless":
 		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
 		_wave_audio = cannon._audio(110.0, 0.55, -22.0)
@@ -382,16 +390,21 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if paused:
+	if paused or (is_instance_valid(diagnostics) and diagnostics.panel.visible):
 		return
 	# A fresh canvas click can restore capture if a browser denied an Esc resume.
 	if OS.has_feature("web") and arena_mode and state == State.SAILING and _window_focused and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		_request_mouse_capture()
 	if arena_mode and event is InputEventMouseMotion:
 		if state == State.SAILING and _window_focused:
-			walkthrough.note_mouse(event.relative)
-			look_target = clampf(look_target - event.relative.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
-			if not event.relative.is_zero_approx():
+			var motion: Vector2 = event.relative
+			# Relative input follows Godot's viewport stretch. Retain the authored
+			# 1280-pixel look sensitivity when Web switches between 540p and 720p.
+			if OS.has_feature("web") and get_window().content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT:
+				motion *= 1280.0 / get_window().content_scale_size.x
+			walkthrough.note_mouse(motion)
+			look_target = clampf(look_target - motion.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
+			if not motion.is_zero_approx():
 				look_idle = 0.0
 		return
 	if walkthrough.active and (walkthrough.step != Walkthrough.Step.FIRE or walkthrough.practiced) and (event.is_action("fire_starboard") or event.is_action("fire_mouse")):
@@ -447,35 +460,59 @@ func _unhandled_input(event: InputEvent) -> void:
 		update_guiding_star()
 	elif event.is_action_pressed("mute_sea"):
 		_sound_enabled = not _sound_enabled
-		_music.volume_db = -18.0 if _sound_enabled else -80.0
-		if is_instance_valid(_sound):
-			_sound.volume_db = -26.0 if _sound_enabled else -80.0
-		for player in _whiz_players:
-			player.volume_db = -7.0 if _sound_enabled else -80.0
+		_sync_audio_volumes(1.0)
+		note_event("mute", {"muted": not _sound_enabled})
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
-		_window_focused = true
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(cannon):
-		_window_focused = false
+	if what not in [NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_IN, NOTIFICATION_WM_WINDOW_FOCUS_OUT]: return
+	if not is_instance_valid(cannon): return
+	var focused := what in [NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_WM_WINDOW_FOCUS_IN]
+	# Browser document/canvas state is authoritative; pointer capture isn't focus.
+	if OS.has_feature("web") and is_instance_valid(diagnostics) and diagnostics._has_browser:
+		focused = diagnostics.browser_focused()
+	application_focus_changed(focused, "godot_notification")
+
+
+func application_focus_changed(focused: bool, source: String) -> void:
+	_window_focused = focused
+	note_event("focus", {"focused": focused, "source": source})
+	if not focused:
 		_clear_player_controls()
 		Input.action_release("restart_crossing")
 		_restart_consumed = false
+		set_paused(true)
+		if is_instance_valid(diagnostics): diagnostics.pause_audio(true)
+	# Restoring focus never resumes gameplay or captures the pointer.
+	elif not paused and is_instance_valid(diagnostics):
+		diagnostics.pause_audio(false)
+
+
+func _request_mouse_capture() -> void:
+	if not arena_mode or not _window_focused: return
+	if OS.has_feature("web") and (not is_instance_valid(diagnostics) or not diagnostics.can_capture()):
+		note_event("pointer_capture_deferred", {"reason": "no_browser_user_gesture"})
+		return
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func set_paused(value: bool, restore_capture: bool = true) -> void:
-	if value == paused or (value and state not in [State.SAILING, State.CASTING_OFF]):
-		return
+	if value == paused or (value and state not in [State.SAILING, State.CASTING_OFF]): return
+	if not value and restore_capture and is_instance_valid(diagnostics):
+		diagnostics.focus_canvas()
+		if OS.has_feature("web") and not _window_focused: return
+	# Set paused before releasing pointer lock, which may notify synchronously.
+	paused = value
 	_clear_player_controls(false)
 	Input.action_release("restart_crossing")
 	_restart_consumed = false
-	_web_had_mouse_capture = false
-	paused = value
 	get_tree().paused = value
-	# Resume is invoked from the UI/input callback so Web can capture the pointer.
-	if not value and restore_capture and arena_mode and state == State.SAILING and _window_focused and not walkthrough.active:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if is_instance_valid(diagnostics):
+		diagnostics.steering(0.0)
+		diagnostics.pause_audio(value)
+	note_event("pause", {"paused": value})
+	if not value and restore_capture and state == State.SAILING and not walkthrough.active:
+		_request_mouse_capture()
 	hud._sync_button()
 	hud.queue_redraw()
 
@@ -522,6 +559,7 @@ func _update_restart_hold(delta: float) -> void:
 
 func _on_cannon_fired(_direction: Vector3) -> void:
 	_cannon_impulse = 1.0
+	note_event("cannon_volley", {"side": "player", "shots": cannon.shots_fired})
 
 
 func start_crossing(with_walkthrough: bool = false) -> void:
@@ -533,8 +571,10 @@ func start_crossing(with_walkthrough: bool = false) -> void:
 	transition_elapsed = 0.0
 	_transition_from = camera.transform
 	state = State.CASTING_OFF
-	if OS.has_feature("web") and arena_mode and _window_focused:
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if with_walkthrough else Input.MOUSE_MODE_CAPTURED
+	if is_instance_valid(diagnostics):
+		diagnostics.focus_canvas()
+		diagnostics.pause_audio(false)
+	if not with_walkthrough: _request_mouse_capture()
 
 
 func arena_center() -> Vector3:
@@ -594,8 +634,8 @@ func journey_progress() -> float:
 
 func restart(to_menu: bool = false) -> void:
 	var retry_wave: int = maxi(1, enemy_encounters.wave_number) if arena_mode and state == State.LOST and not to_menu else 0
+	note_event("restart", {"to_menu": to_menu, "retry_wave": retry_wave})
 	set_paused(false, false)
-	_web_had_mouse_capture = false
 	walkthrough.cancel()
 	hud.reset_storm_notice()
 	combat_particles.reset()
@@ -677,15 +717,11 @@ func restart(to_menu: bool = false) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_instance_valid(diagnostics): diagnostics.poll_lifecycle()
+	if not _window_focused and state in [State.SAILING, State.CASTING_OFF]:
+		set_paused(true)
 	if paused:
 		return
-	# Browsers can consume Esc to release pointer lock before Godot sees a key.
-	if OS.has_feature("web") and arena_mode and state in [State.SAILING, State.CASTING_OFF] and not walkthrough.active:
-		var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-		if _web_had_mouse_capture and not captured:
-			set_paused(true)
-			return
-		_web_had_mouse_capture = captured
 	_update_restart_hold(delta)
 	if walkthrough.active and state == State.SAILING:
 		_physics_walkthrough(delta)
@@ -793,6 +829,7 @@ func advance_sailing(delta: float, steering: float) -> void:
 	# Only the retained voyage fixture has a gun-view steering gate.
 	if not arena_mode and cannon.aiming:
 		steering = 0.0
+	if is_instance_valid(diagnostics): diagnostics.steering(steering)
 	var center: Vector3 = boat.to_global(BoatWaveMotion.HULL_CENTER)
 	wave_sailing.rudder_response = arena_rudder_response if arena_mode else 7.0
 	heading = wave_sailing.step(ocean.wave_field, Vector2(center.x, center.z), heading, steering, sea_time, delta, forward_speed)
@@ -905,6 +942,7 @@ func take_damage(amount: int, reason: String) -> bool:
 		return false
 	hull = maxi(0, hull - amount)
 	hits_taken += 1
+	note_event("hull_damage", {"hull": hull, "reason": reason, "amount": amount})
 	hull_repair_elapsed = 0.0
 	_last_hull_damage_time = elapsed
 	damage_immunity = hit_immunity_seconds
@@ -921,6 +959,7 @@ func take_damage(amount: int, reason: String) -> bool:
 		wave_sailing.reset()
 		failure_reason = "The hull gave way. The sea came in."
 		state = State.LOST
+		note_event("death", {"wave": enemy_encounters.wave_number})
 		_clear_player_controls()
 		cannon.reset()
 	combat_particles.damage(boat_visual.to_global(Vector3(0, 1.0, -1.8)), hull == 0)
@@ -1196,8 +1235,9 @@ func _title_camera_pose() -> Transform3D:
 	return Transform3D(Basis.looking_at(look_at_point - at), at)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_fill_audio()
+	_sync_audio_volumes(delta)
 
 
 func _exit_tree() -> void:
@@ -1440,7 +1480,7 @@ func _apply_night_illumination() -> void:
 
 
 func cue_sound(kind: String) -> void:
-	if not _sound_enabled:
+	if not effects_enabled():
 		return
 	if kind == "wave" and is_instance_valid(_wave_audio):
 		_wave_audio.play()
@@ -1455,7 +1495,7 @@ func cue_sound(kind: String) -> void:
 
 
 func cannonball_whiz(from: Vector3, to: Vector3, shot: Dictionary) -> void:
-	if shot.get("whiz_played", false) or not _sound_enabled or _whiz_players.is_empty() or not is_instance_valid(boat):
+	if shot.get("whiz_played", false) or not effects_enabled() or _whiz_players.is_empty() or not is_instance_valid(boat):
 		return
 	var segment := to - from
 	var along := clampf((boat.global_position - from).dot(segment) / maxf(0.0001, segment.length_squared()), 0.0, 1.0)
@@ -1552,11 +1592,24 @@ func _build_audio() -> void:
 	var music_stream := preload("res://assets/music/esa.ogg").duplicate() as AudioStreamOggVorbis
 	music_stream.loop = true
 	_music.stream = music_stream
-	_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	_music.playback_type = AudioServer.PLAYBACK_TYPE_SAMPLE if OS.has_feature("web") else AudioServer.PLAYBACK_TYPE_STREAM
+	# Keep long samples attached while the browser AudioContext is suspended.
+	# This backend resumes a paused sample with a seek offset that it then reuses
+	# on every loop, truncating the track after an ordinary game pause.
+	if OS.has_feature("web"): _music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_music.volume_db = -18.0
 	add_child(_music)
 	_music.play()
-	# Quiet synthesized surf and positional cannon whizzes.
+	# The continuous ocean is a seamless sample; no per-frame sample generation.
+	_sound = AudioStreamPlayer.new()
+	_sound.name = "OceanAmbience"
+	_sound.stream = _ocean_loop()
+	_sound.playback_type = AudioServer.PLAYBACK_TYPE_SAMPLE if OS.has_feature("web") else AudioServer.PLAYBACK_TYPE_STREAM
+	if OS.has_feature("web"): _sound.process_mode = Node.PROCESS_MODE_ALWAYS
+	_sound.volume_db = -26.0
+	add_child(_sound)
+	_sound.play()
+	# Positional cannon whizzes.
 	if DisplayServer.get_name() == "headless":
 		return
 	var whistle := AudioStreamWAV.new()
@@ -1584,23 +1637,123 @@ func _build_audio() -> void:
 		player.max_distance = 30.0
 		add_child(player)
 		_whiz_players.append(player)
-	_sound = AudioStreamPlayer.new()
-	# Web defaults to sample playback, which cannot play an AudioStreamGenerator.
-	_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
-	var stream := AudioStreamGenerator.new()
-	stream.mix_rate = 22050.0
-	stream.buffer_length = 0.15
-	_sound.stream = stream
-	_sound.volume_db = -26.0
-	add_child(_sound)
+
+
+func note_event(kind: String, data: Dictionary = {}) -> void:
+	if is_instance_valid(diagnostics): diagnostics.note(kind, data)
+
+
+func effects_enabled() -> bool:
+	return _sound_enabled and diagnostic_audio_mode in [0, 3]
+
+
+func _sync_audio_volumes(delta: float) -> void:
+	var music_paused := (paused and not OS.has_feature("web")) or diagnostic_audio_mode == 2
+	_set_continuous_audio_paused(_music, music_paused)
+	var music_db := -18.0 if _sound_enabled and diagnostic_audio_mode != 2 else -80.0
+	if _music.volume_db != music_db: _music.volume_db = music_db
+	var gain := 1.0 + (clampf(actual_speed / sailing_speed - 1.0, 0.0, 1.0) * 0.28 if state == State.SAILING else 0.0)
+	gain *= 1.0 + storm_blend * 0.75
+	var target_db := -26.0 + linear_to_db(gain) if _sound_enabled and diagnostic_audio_mode != 1 else -80.0
+	if is_instance_valid(_sound):
+		var ocean_paused := (paused and not OS.has_feature("web")) or diagnostic_audio_mode == 1
+		_set_continuous_audio_paused(_sound, ocean_paused)
+		# Generator already applies the weather/speed gain to its samples.
+		if diagnostic_generator and target_db > -80.0: target_db = -26.0
+		var next_db := lerpf(_sound.volume_db, target_db, 1.0 - exp(-3.0 * delta)) if target_db > -80.0 and delta < 1.0 else target_db
+		if not is_equal_approx(_sound.volume_db, next_db): _sound.volume_db = next_db
+	var whiz_db := -7.0 if effects_enabled() else -80.0
+	for player in _whiz_players:
+		if player.volume_db != whiz_db: player.volume_db = whiz_db
+
+
+func _set_continuous_audio_paused(player: AudioStreamPlayer, value: bool) -> void:
+	if player.stream_paused == value: return
+	player.stream_paused = value
+	# Leaving a solo comparison starts a full sample, never a repeating tail.
+	if not value and OS.has_feature("web") and player.playback_type == AudioServer.PLAYBACK_TYPE_SAMPLE:
+		player.stop()
+		player.play()
+
+
+func set_diagnostic_audio(mode: int) -> void:
+	diagnostic_audio_mode = mode
+	if not effects_enabled():
+		for player in find_children("*", "AudioStreamPlayer", true, false) + find_children("*", "AudioStreamPlayer3D", true, false):
+			if player != _music and player != _sound: player.stop()
+	_sync_audio_volumes(1.0)
+	note_event("audio_mode", {"mode": mode})
+
+
+func set_music_playback(sample: bool) -> void:
+	_music.stop()
+	_music.playback_type = AudioServer.PLAYBACK_TYPE_SAMPLE if sample and OS.has_feature("web") else AudioServer.PLAYBACK_TYPE_STREAM
+	# The Web sample backend reuses its initial offset on every loop. Start at zero
+	# for mode comparisons so it cannot repeat only the tail of the supplied OGG.
+	_music.play()
+	note_event("music_mode", {"playback_type": _music.playback_type, "restarted_from_zero": true})
+
+
+func set_ocean_generator(value: bool) -> void:
+	if is_instance_valid(_audio_playback):
+		var skips := _audio_playback.get_skips()
+		_generator_skips_total += skips
+		note_event("generator_stopped", {"skips": skips})
+	_sound.stop()
+	_audio_playback = null
+	diagnostic_generator = value
+	_last_generator_skips = 0
+	if value:
+		var stream := AudioStreamGenerator.new()
+		stream.mix_rate = 22050.0
+		stream.buffer_length = 0.15
+		_sound.stream = stream
+		_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	else:
+		_sound.stream = _ocean_loop()
+		_sound.playback_type = AudioServer.PLAYBACK_TYPE_SAMPLE if OS.has_feature("web") else AudioServer.PLAYBACK_TYPE_STREAM
 	_sound.play()
-	_audio_playback = _sound.get_stream_playback()
-	_audio_rng.seed = 60
+	if value:
+		_audio_playback = _sound.get_stream_playback()
+		_audio_rng.seed = 60
+		_audio_phase = 0.0
+		_audio_noise = 0.0
+		_fill_audio()
+	_sync_audio_volumes(1.0)
+	note_event("ocean_mode", {"generator": value, "total_skips": _generator_skips_total})
+
+
+func _ocean_loop() -> AudioStreamWAV:
+	var stream := preload("res://assets/sounds/ocean_loop.wav").duplicate() as AudioStreamWAV
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = 22050 * 32
+	return stream
+
+
+func audio_diagnostic_state() -> Dictionary:
+	var raw_position := _music.get_playback_position()
+	var ocean_position := _sound.get_playback_position() if is_instance_valid(_sound) and not diagnostic_generator else -1.0
+	return {"enabled": _sound_enabled, "mode": diagnostic_audio_mode, "music_playing": _music.playing,
+		"music_paused": _music.stream_paused, "music_playback_type": _music.playback_type,
+		"music_position_s": fposmod(raw_position, _music.stream.get_length()), "music_raw_position_s": raw_position,
+		"music_volume_db": _music.volume_db,
+		"ocean_generator": diagnostic_generator, "ocean_playing": is_instance_valid(_sound) and _sound.playing,
+		"ocean_paused": _sound.stream_paused if is_instance_valid(_sound) else null,
+		"ocean_position_s": fposmod(ocean_position, 32.0) if ocean_position >= 0.0 else null,
+		"effects_enabled": effects_enabled(),
+		"ocean_volume_db": _sound.volume_db if is_instance_valid(_sound) else null,
+		"generator_skips": _audio_playback.get_skips() if is_instance_valid(_audio_playback) else null,
+		"generator_past_skips": _generator_skips_total}
 
 
 func _fill_audio() -> void:
-	if not is_instance_valid(_audio_playback):
+	if not is_instance_valid(_audio_playback) or diagnostic_audio_mode == 1:
 		return
+	var skips := _audio_playback.get_skips()
+	if skips != _last_generator_skips:
+		note_event("generator_skips", {"skips": skips, "increase": skips - _last_generator_skips})
+		_last_generator_skips = skips
 	var frames := _audio_playback.get_frames_available()
 	var speed_gain := 1.0
 	if state == State.SAILING:

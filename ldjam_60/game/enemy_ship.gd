@@ -425,6 +425,7 @@ func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
 	set_meta("destroyed", false)
 	_update_cloth()
 	sea_effects.begin()
+	game.note_event("ship_spawn", {"kind": archetype.resource_name if archetype != null else str(name), "position": [position.x, position.z]})
 	game.cue_sound("enemy")
 	CombatMetrics.finish("enemy_ship.gd:begin", _profile_started)
 
@@ -928,6 +929,7 @@ func _fire() -> void:
 		if mount.battery == active_battery:
 			_launch_ball(_mount_position(mount))
 	salvos_fired += 1
+	game.note_event("cannon_volley", {"side": "enemy", "ship": name, "battery": active_battery})
 	cooldown = reload_seconds
 	game.cue_sound("enemy_shot")
 	CombatMetrics.finish("enemy_ship.gd:_fire", _profile_started)

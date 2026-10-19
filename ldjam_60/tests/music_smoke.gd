@@ -19,7 +19,7 @@ func _run() -> void:
 	check(music.playing and game.state == game.State.READY, "music starts on title")
 	check(music.stream is AudioStreamOggVorbis and music.stream.loop, "supplied Ogg loops")
 	check(music.stream.get_length() > 41.0 and music.stream.get_length() < 42.0, "full supplied track loaded")
-	check(music.playback_type == AudioServer.PLAYBACK_TYPE_STREAM, "stream playback selected for Web")
+	check(music.playback_type == (AudioServer.PLAYBACK_TYPE_SAMPLE if OS.has_feature("web") else AudioServer.PLAYBACK_TYPE_STREAM), "platform-appropriate music playback selected")
 	music.seek(music.stream.get_length() - 0.15)
 	await create_timer(0.6).timeout
 	check(music.playing and music.get_playback_position() < 2.0, "playback crosses loop boundary")

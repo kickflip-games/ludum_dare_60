@@ -299,6 +299,7 @@ func on_ship_sunk(cutter: CharacterBody3D) -> void:
 
 func _begin_wave() -> void:
 	wave_number += 1
+	game.note_event("wave_start", {"number": wave_number})
 	phase = Phase.ACTIVE
 	wave_remaining = survival_settings.deadlines[wave_number-1]
 	next_wave_in = wave_remaining
@@ -464,6 +465,7 @@ func _complete_boss_encounter() -> void:
 	phase = Phase.COMPLETE
 	victory_transitions += 1
 	game.state = game.State.ARRIVED
+	game.note_event("victory", {"wave": wave_number})
 	spawn_queue.clear()
 	_debug_release_wave = 0
 	boss_spawn_pending = false

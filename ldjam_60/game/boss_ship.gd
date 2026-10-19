@@ -301,6 +301,7 @@ func _fire_due() -> void:
 		shots_fired += 1
 		launch_history.append({"pattern":pattern, "salvo":salvo, "origin":from, "warning_origin":lane.origin, "direction":lane.direction, "velocity":launch, "battery":attack_battery})
 		if launch_history.size() > 128: launch_history.pop_front()
+		game.note_event("cannon_volley", {"side": "flagship", "pattern": pattern, "battery": attack_battery})
 		game.cue_sound("enemy_shot")
 	if volley.all(func(shot): return shot.fired):
 		if pattern == Pattern.DOUBLE and salvo == 0:
@@ -415,6 +416,7 @@ func deploy_mine() -> bool:
 			break
 	assert(mine != null, "Mine pool must cover configured maximum")
 	mine.activate(at)
+	game.note_event("mine_deployment", {"side": "flagship", "position": [at.x, at.z]})
 	mines.append(mine)
 	return true
 

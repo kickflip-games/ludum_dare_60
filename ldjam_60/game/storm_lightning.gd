@@ -35,14 +35,14 @@ func update(game: Node, delta: float) -> void:
 	if not game.arena_mode or not game.weather_enabled or not game.storm_lightning_enabled or game.state != game.State.SAILING or game.walkthrough.active or not game._window_focused:
 		clear()
 		return
-	if is_instance_valid(player) and not game._sound_enabled: player.stop()
+	if is_instance_valid(player) and not game.effects_enabled(): player.stop()
 	if pending_thunder >= 0.0:
 		pending_thunder -= delta
 		if pending_thunder <= 0.0:
 			pending_thunder = -1.0
 			thundered.emit()
 			var pitch := rng.randf_range(0.88, 1.08)
-			if is_instance_valid(player) and game._sound_enabled:
+			if is_instance_valid(player) and game.effects_enabled():
 				player.pitch_scale = pitch
 				player.play()
 	if flash_age >= 0.0: flash_age += delta

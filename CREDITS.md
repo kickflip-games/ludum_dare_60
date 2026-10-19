@@ -69,6 +69,8 @@ in Godot. Credit is provided as a courtesy. No endorsement is implied.
 
 The gameplay, procedural sea/cloud shaders, synthesized audio, reef-serpent
 geometry, lighthouse, and remaining primitive props were created for this prototype.
+The ocean loop in `assets/sounds/ocean_loop.wav` is baked from the game's filtered
+noise ambience with `tools/build_ocean_audio.py`; the licensed music is unchanged.
 
 
 ## Earlier flagship (retained asset)

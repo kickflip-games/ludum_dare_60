@@ -3,6 +3,10 @@
 Marketing screenshots and fixed-step cover recording: [Capture Studio](CAPTURE.md)
 (`res://tools/marketing_studio.tscn`, F6).
 
+Web export, iframe checks and opt-in **Settings → Diagnostics / F8** recording:
+[Web release guide](WEB_RELEASE.md). Reports export locally as JSON; the public
+itch build is updated only after approval.
+
 Open `ldjam_60/project.godot` in Godot 4.8 and press **F5**. Normal play is a
 compact arena around the existing lighthouse at **(275, 250)**. The boat starts
 75 m north of the tower, facing east-southeast into safe water. Survive **five

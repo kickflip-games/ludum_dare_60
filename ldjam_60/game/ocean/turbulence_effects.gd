@@ -112,13 +112,13 @@ func update_effects(game: Node3D, delta: float) -> void:
 		burst.id = event.id
 		emitted += 1
 	envelope = maxf(envelope,strongest)
-	if strongest>0.0 and audio_cooldown==0.0 and game._sound_enabled and game.development_sound and is_instance_valid(thump):
+	if strongest>0.0 and audio_cooldown==0.0 and game.effects_enabled() and game.development_sound and is_instance_valid(thump):
 		thump.volume_db = lerpf(-32,-22,strongest)
 		splash.volume_db = lerpf(-36,-26,strongest)
 		thump.play()
 		splash.play()
 		audio_cooldown = 0.22
-	if not game._sound_enabled or not game.development_sound:
+	if not game.effects_enabled() or not game.development_sound:
 		if is_instance_valid(thump): thump.stop()
 		if is_instance_valid(splash): splash.stop()
 	active_count = 0

@@ -351,8 +351,13 @@ func _build_menu() -> void:
 		key.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var action := _label(controls, "Action%d" % index, bindings[index][1], 17, INK)
 		action.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	settings_back = _menu_button(settings_panel, "SettingsBack", "BACK")
-	settings_back.custom_minimum_size.x = 160
+	var settings_actions := HBoxContainer.new()
+	settings_panel.add_child(settings_actions)
+	var diagnostics_button := _menu_button(settings_actions, "Diagnostics", "DIAGNOSTICS")
+	diagnostics_button.custom_minimum_size.x = 200
+	diagnostics_button.pressed.connect(func(): game.diagnostics.open_panel())
+	settings_back = _menu_button(settings_actions, "SettingsBack", "BACK")
+	settings_back.custom_minimum_size.x = 130
 	settings_back.pressed.connect(func(): _show_settings(false))
 	credits_frame = PanelContainer.new()
 	credits_frame.name = "CreditsFrame"
@@ -409,6 +414,7 @@ func _show_credits(open: bool) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if is_instance_valid(game.diagnostics) and game.diagnostics.panel.visible: return
 	if event is InputEventKey and event.pressed and not event.is_echo() and event.keycode == KEY_ESCAPE:
 		if settings_open:
 			_show_settings(false)

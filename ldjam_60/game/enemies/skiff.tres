@@ -18,5 +18,5 @@ reposition_angle = 1.0
 return_seconds = 2.5
 bow_gun = true
 telegraph_seconds = 0.4
-reload_seconds = 2.0
+reload_seconds = 1.25
 attack_run_seconds = 8

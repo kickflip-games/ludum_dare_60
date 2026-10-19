@@ -38,6 +38,7 @@ enum Battery { PORT, STARBOARD, BOW }
 @export var firing_range: float = 62.0
 @export var reload_seconds: float = 3.8
 @export var telegraph_seconds: float = 1.65
+@export var minimum_firing_distance: float = 10.0
 @export var projectile_speed: float = 24.0
 @export var encounter_seconds: float = 55.0
 @export var escape_distance: float = 135.0
@@ -687,12 +688,11 @@ func _update_weapon(delta: float) -> void:
 	match weapon_state:
 		Weapon.READY:
 			var offset: Vector3 = game.boat.position - global_position
-			var permitted: bool = not managed_by_director or director.owners.has(self)
-			var sailing_leg: bool = navigation_state in [Navigation.APPROACH, Navigation.REPOSITION, Navigation.TURN_AWAY]
+			var sailing_leg: bool = navigation_state in [Navigation.APPROACH, Navigation.REPOSITION, Navigation.TURN_AWAY, Navigation.HOLDING]
 			var attack_course: bool = navigation_state == Navigation.ATTACK_RUN or (game.arena_mode and sailing_leg and absf(turn_rate) < 0.7)
-			if not permitted or not attack_course or safety_priority >= 2 or cooldown > 0.0:
+			if not attack_course or safety_priority >= 2 or cooldown > 0.0:
 				return
-			if offset.length() <= player_separation or offset.length() >= firing_range:
+			if offset.length() <= (minimum_firing_distance if game.arena_mode else player_separation) or offset.length() >= firing_range:
 				return
 			var battery := _select_battery(offset)
 			if battery < 0:

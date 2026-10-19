@@ -3,16 +3,18 @@ extends "res://game/enemy_ship.gd"
 const FLAGSHIP = preload("res://assets/kenney_ships/ship-pirate-large.glb")
 const WARNING = preload("res://game/boss_warning.gdshader")
 const MINE = preload("res://game/boss_mine.tscn")
+# Barrel mouth in the imported cannon's local metre coordinates (+Z).
+const CANNON_MUZZLE := Vector3(0, 0.70, 0.84)
 enum Pattern { ROLLING, DOUBLE, SCATTER }
 enum DeckBattery { PORT, STARBOARD, BOW, STERN }
 @export_group("Flagship volleys")
 @export var rolling_gap := 0.21
 @export var second_warning := 0.8
-@export var minimum_attack_distance := 35.0
+@export var minimum_attack_distance := 14.0
 @export var maximum_projectiles := 12
 @export var scatter_half_angle := 24.0
-@export var volley_reload := 3.0
-@export var double_reload := 3.4
+@export var volley_reload := 1.8
+@export var double_reload := 2.1
 @export_group("Flagship mines")
 @export var mine_interval := 2.2
 @export var phase_two_mine_interval := 1.8
@@ -42,6 +44,7 @@ var phase_bursts := 0
 var muzzle_flash_until := 0.0
 var flagship_model: Node3D
 var boss_materials: Array[StandardMaterial3D] = []
+var deck_guns: Array[Dictionary] = []
 
 func _ready() -> void:
 	super._ready()
@@ -92,6 +95,21 @@ func _build_presentation() -> void:
 	model_materials = ShipMaterials.prepare(flagship_model)
 	boss_materials.assign(model_materials)
 	sail_material = flagship_model.get_node("ship-pirate-large/sail-a").get_active_material(0)
+	# Keep one visible cannon for each authored lane. These use the existing
+	# licensed cannon mesh and follow the same cosmetic hull motion as the deck.
+	for battery in [DeckBattery.PORT, DeckBattery.STARBOARD, DeckBattery.BOW, DeckBattery.STERN]:
+		for i in 5:
+			var spread := float(i) / 4.0 * 2.0 - 1.0
+			var along: float = (7.5 if battery == DeckBattery.BOW else -8.0) if battery >= DeckBattery.BOW else spread * 5.2
+			var across: float = spread * 2.6 if battery >= DeckBattery.BOW else (3.5 if battery == DeckBattery.PORT else -3.5)
+			var muzzle := Vector3(-across, 2.0, -along)
+			var gun: Node3D = CANNON.instantiate()
+			gun.name = "DeckCannon%d_%d" % [battery, i]
+			gun.scale = Vector3.ONE * 1.3
+			gun.rotation.y = [-PI / 2.0, PI / 2.0, PI, 0.0][battery]
+			gun.position = muzzle - gun.basis * CANNON_MUZZLE
+			presentation.add_child(gun)
+			deck_guns.append({"gun": gun, "muzzle": muzzle, "along": along, "across": across})
 
 
 func _update_cloth() -> void:
@@ -135,7 +153,7 @@ func clear_hazards() -> void:
 
 func begin(at: Vector3 = Vector3.INF, coordinated: bool = false) -> void:
 	super.begin(at, false)
-	cooldown = 2.0
+	cooldown = 1.0
 
 func update_ship(delta: float) -> void:
 	# Refresh a missed interception only between committed manoeuvres, every six
@@ -199,14 +217,14 @@ func _update_weapon(delta: float) -> void:
 			var offset: Vector3 = game.boat.position - global_position
 			if cooldown > 0.0 or safety_priority >= 2 or navigation_state not in [Navigation.APPROACH, Navigation.ATTACK_RUN, Navigation.TURN_AWAY, Navigation.REPOSITION]: return
 			if offset.length() < minimum_attack_distance or offset.length() > firing_range: return
-			if absf(turn_rate) > 0.12: return
-			if not game.enemy_encounters.director.request_boss_warning(telegraph_seconds + 1.2): return
+			if game.enemy_encounters.director.clock < game.enemy_encounters.director.next_warning: return
 			var rotation_one := [Pattern.ROLLING, Pattern.DOUBLE]
 			var rotation_two := [Pattern.ROLLING, Pattern.DOUBLE, Pattern.SCATTER, Pattern.ROLLING, Pattern.SCATTER]
 			var rotation_set: Array = rotation_two if phase_two else rotation_one
 			pattern = rotation_set[pattern_index % rotation_set.size()]
 			salvo = 0
 			if _prepare_volley(telegraph_seconds):
+				game.enemy_encounters.director.reserve_boss_warning(telegraph_seconds + 1.2)
 				pattern_index += 1
 				pattern_history.append(pattern)
 				if pattern_history.size() > 64: pattern_history.pop_front()
@@ -227,9 +245,8 @@ func _prepare_volley(seconds: float) -> bool:
 	committed_heading = heading
 	var count := 5 if pattern != Pattern.DOUBLE else 2
 	var gap := rolling_gap if pattern == Pattern.ROLLING else (0.10 if pattern == Pattern.DOUBLE else 0.025)
-	var future: Vector3 = position + forward() * _speed * seconds
-	var target: Vector3 = game.boat.position + game.boat.velocity * (seconds + clampf(position.distance_to(game.boat.position) / projectile_speed, 0.6, 2.7))
-	var aim := target - future
+	var target: Vector3 = game.boat.position
+	var aim := target - position
 	aim.y = 0
 	if aim.length() < 1.0: return false
 	if salvo == 0:
@@ -237,20 +254,23 @@ func _prepare_volley(seconds: float) -> bool:
 	var angle_step := scatter_half_angle * 2.0 / 4.0
 	for i in count:
 		var time: float = i * gap
-		var spread := float(i) / maxf(1.0, count - 1.0) * 2.0 - 1.0
-		var along: float
-		var across: float
-		if attack_battery in [DeckBattery.BOW, DeckBattery.STERN]:
-			along = 7.5 if attack_battery == DeckBattery.BOW else -8.0
-			across = spread * (1.8 if pattern == Pattern.DOUBLE else 2.6)
-		else:
-			along = spread * (1.8 if pattern == Pattern.DOUBLE else 5.2)
-			across = 3.5 if attack_battery == DeckBattery.PORT else -3.5
+		var mount := deck_guns[int(attack_battery) * 5 + ([1, 3][i] if pattern == Pattern.DOUBLE else i)]
+		# Solve separately for each muzzle and its launch delay. A range/speed
+		# estimate under-led fast boats, especially later in a rolling broadside.
+		var future: Vector3 = presentation.to_global(mount.muzzle) + forward() * _speed * (seconds + time)
+		var v: Vector3 = game.boat.velocity * Vector3(1, 0, 1)
+		var player_at: Vector3 = game.boat.position + v * (seconds + time)
+		var flight := intercept_time((player_at - future) * Vector3(1, 0, 1), v, projectile_speed)
+		if flight <= 0.0 or flight >= 3.8:
+			volley.clear()
+			return false
+		target = player_at + v * flight
+		aim = (target - future) * Vector3(1, 0, 1)
 		var degrees: float = (-scatter_half_angle + i * angle_step) if pattern == Pattern.SCATTER else ((i - (count - 1) * 0.5) * 3.0)
 		var direction := aim.normalized().rotated(Vector3.UP, deg_to_rad(degrees))
-		var shot := {"across":across, "along":along,
+		var shot := {"across":mount.across, "along":mount.along,
 			"local_direction":Vector2(direction.dot(port_direction()), direction.dot(forward())),
-			"distance":clampf(aim.length(), 35.0, 72.0), "time":time, "fired":false}
+			"distance":aim.length(), "time":time, "fired":false}
 		var lane := _shot_lane(shot)
 		if not _volley_lane_clear(lane.origin, lane.end):
 			volley.clear()
@@ -288,7 +308,7 @@ func _fire_due() -> void:
 		if not _volley_lane_clear(from, end): continue
 		var flight: float = maxf(0.2, shot.distance / projectile_speed)
 		var launch: Vector3 = lane.direction * projectile_speed
-		launch.y = (end.y - from.y + 2.5 * flight * flight) / flight
+		launch.y = (end.y - from.y) / flight + 2.5 * maxf(0.0, flight - 1.0 / Engine.physics_ticks_per_second)
 		var ball: MeshInstance3D = game.cannon.projectile_visuals.acquire(from, true)
 		assert(ball != null, "Configured projectile budget must cover every live shot")
 		projectiles.append({"node":ball, "position":from, "velocity":launch, "ttl":4.0, "trail_clock":0.0})
@@ -346,8 +366,7 @@ func _select_deck_battery(aim: Vector3) -> DeckBattery:
 	return DeckBattery.PORT if across > 0.0 else DeckBattery.STARBOARD
 
 func _shot_lane(shot: Dictionary) -> Dictionary:
-	var origin: Vector3 = position + forward() * shot.along + port_direction() * shot.across
-	origin.y = 2.0
+	var origin: Vector3 = presentation.to_global(Vector3(-shot.across, 2.0, -shot.along))
 	var direction: Vector3 = port_direction() * shot.local_direction.x + forward() * shot.local_direction.y
 	var end: Vector3 = origin + direction * shot.distance
 	end.y = 0.8

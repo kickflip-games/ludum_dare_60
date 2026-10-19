@@ -115,10 +115,11 @@ committed heading. Spawns prefer safe starboard approaches, with separated
 sector fallbacks. Warnings hold one intercept point from their start, using measured player and
 ship velocity plus warning and flight time; launched shots never home. A steady
 course is hittable; steering after the warning spoils the prediction. Crowded ships yield speed as well as turning.
-Ordinary guns reach **78 m** and reload in **2.5 / 2.0 / 3.5 seconds** for
+Ordinary guns reach **78 m** and reload in **1.6 / 1.25 / 2.3 seconds** for
 cutters/skiffs/heavies. They can fire repeatedly during a pass, or from a stable
-approach, turn or reposition leg with an attack slot when the player is on their gun side and
-the lane is clear. Every volley still receives its full warning. Cutters and skiffs carry two
+approach, turn, reposition or holding leg when the player is on their gun side and
+the lane is clear. Guns defend down to **10 m**, independently of pursuit slots.
+Every volley still receives its full warning. Cutters and skiffs carry two
 cannons per side; heavies carry three per side. Only the battery facing the player
 fires, using one shared reload. Skiffs also have a forward cannon for targets off
 the bow. Heavies leave up to three stationary mines astern while pursued: a
@@ -149,8 +150,8 @@ wave forces, surface and rocking muzzle. Existing crests keep moving while firin
 Arena enemies use independent navigation and weapon states: a committed approach,
 parallel pass, broad turn and reposition; guns keep sailing through warnings and
 reload. A lightweight director allocates 1/1/2/2/2 navigation attack slots, queues ships fairly,
-and separates ordinary warning starts by 0.7 seconds. Only slot owners may
-start warnings; waiting ships cannot fire. Ordinary batteries accept ±38°
+and separates ordinary warning starts by 0.7 seconds. Waiting ships can fire
+through a clear facing battery without taking a pursuit slot. Ordinary batteries accept ±38°
 and recheck the lane at launch. Their glow is visible throughout the warning,
 and acquisition waits until arrival readiness completes. Waiting ships sail vulnerable routes
 around the lighthouse rather than chasing the player. Living enemies never time
@@ -209,6 +210,7 @@ godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_accur
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_gunnery_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/fleet_smoke.gd -- --pressure
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_cadence_smoke.gd
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_threat_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_armament_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/mine_persistence_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/enemy_sea_effects_smoke.gd
@@ -263,19 +265,22 @@ recovery and terrain avoidance. Broadside passes commit their sailing course;
 missed approaches refresh only after six seconds. The encounter manager owns
 spawning, targeting, victory and cleanup; the six ordinary slots remain available.
 
-- **9 hits**, **8.7 m/s**, **0.34 rad/s** maximum turn; attacks at **35–65 m**.
+- **9 hits**, **8.7 m/s**, **0.34 rad/s** maximum turn; attacks at **14–85 m**.
 - Guns cover **port, starboard, bow and stern**. The battery facing the predicted
-  player position fires, with one shared attack/reload cycle.
-- **Rolling volley:** five separated gun positions, **1.6 s** warning,
-  **0.21 s** shot spacing and **3 s** recovery.
+  player position fires, with one shared attack/reload cycle. Visible cannons
+  sit at the real launch points and follow the rocking deck.
+- **Rolling volley:** five separated gun positions, **0.9 s** warning,
+  **0.21 s** shot spacing and **1.8 s** recovery.
 - **Double Salvo:** two shots, a newly locked **0.8 s** second warning, two
-  further shots; **3.4 s** recovery. Each pair keeps its advertised aim relative
+  further shots; **2.1 s** recovery. Each pair keeps its advertised aim relative
   to the hull; the second pair gets a fresh warning.
 - **Scattershot:** five outward fan trajectories across **±24°**, with visible
   gaps. Introduced below half health, with a splinter burst and persistent smoke.
   Phase two rotates fan/rolling/fan/rolling/double and reduces recovery by 10%.
 - All shells use existing ballistic collision, gravity, water interception,
   muzzle effects and trails; they never home. Terrain cancels obstructed shots.
+  Intercepts account for each muzzle, warning, shot delay and measured player
+  velocity; **30 m/s** shells threaten steady cruising and boost courses.
   One translucent triangle follows the hull position and heading on the water,
   covering the active battery’s whole volley, including bow/stern fire. The
   unlaunched shots move with this cone; shells already in flight keep their
@@ -289,10 +294,11 @@ spawning, targeting, victory and cleanup; the six ordinary slots remain availabl
   horizontally and bob with the real sea. The thin coral ring pulses in opacity
   at its actual fixed trigger radius. A detonation consumes one mine and calls
   normal one-hit damage, respecting immunity. The player cannon can target and destroy mines.
-- During the **3 / 3.4 s reload** (10% shorter in phase two), no new shells
+- During the **1.8 / 2.1 s reload** (10% shorter in phase two), no new shells
   or mines launch. Existing hazards
   remain dangerous: steer around the mine trail and approach during this opening.
-  Clear, steady broadsides can also start on turn-away and reposition legs.
+  Clear broadsides can also start while turning or repositioning; terrain
+  avoidance still cancels unsafe attacks.
 - Boss defeat starts sinking and wins immediately. Escort kills alone never win.
   Victory/defeat/retry clear all hazards; retry restores health, phases and HUD.
 

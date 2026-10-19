@@ -90,7 +90,7 @@ func _run() -> void:
 	check(ship.weapon_state == ship.Weapon.READY, "an avoidance manoeuvre cannot start an opportunistic broadside")
 	ship.safety_priority = 0
 	ship._update_weapon(0)
-	check(ship.weapon_state == ship.Weapon.READY, "queued holding ships cannot start warnings")
+	check(ship.weapon_state == ship.Weapon.TELEGRAPH and not game.enemy_encounters.director.owners.has(ship), "queued holding ships can defend themselves without a pursuit slot")
 	game.enemy_encounters.director.owners.append(ship)
 	ship._change_navigation(ship.Navigation.APPROACH)
 	ship._update_weapon(0)

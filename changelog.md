@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Work in progress: enemies defend themselves while waiting for pursuit slots
+  and at close range; cutter/skiff/heavy reloads are now 1.6/1.25/2.3 seconds.
+  Flagship guns are visible on all four faces, with deck-matched launch points,
+  per-shot moving-target intercepts, 0.9 s warnings, 1.8/2.1 s reloads and
+  14–85 m reach. Turning no longer silences its guns. Full warnings, ballistic
+  shots, terrain checks, player controls and damage immunity remain.
+
 - Genuine Web/native focus loss now pauses gameplay and audio
   until explicit Resume; keyboard focus and steering no longer depend on pointer
   capture. Added Web-only 960×540 rendering with optional 720p, sample music and

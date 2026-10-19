@@ -15,7 +15,7 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS: " if ok else "FAIL: ") + label)
 
 func fresh() -> void:
-	game.restart()
+	game.restart(true) # Independent fixtures start new runs rather than wave retries.
 	game.state = game.State.SAILING
 	game.wave_encounters.enabled = false
 	game.boat.position = game.arena_center() + Vector3(0, 0, 112)
@@ -108,7 +108,7 @@ func _run() -> void:
 			if kind == boss.Pattern.ROLLING:
 				check(boss._shot_lane(snapshot[0]).origin.distance_to(boss._shot_lane(snapshot[4]).origin) > 10 and snapshot[4].time > 0.8, "rolling shots traverse five separated hull muzzles over 0.84 seconds")
 			if kind == boss.Pattern.SCATTER:
-				check((boss._shot_lane(snapshot[0]).origin + boss._shot_lane(snapshot[0]).direction * boss.minimum_attack_distance).distance_to(boss._shot_lane(snapshot[1]).origin + boss._shot_lane(snapshot[1]).direction * boss.minimum_attack_distance) > 7.0, "scatter leaves over seven metres between rays at minimum attack range")
+				check((boss._shot_lane(snapshot[0]).origin + boss._shot_lane(snapshot[0]).direction * 35.0).distance_to(boss._shot_lane(snapshot[1]).origin + boss._shot_lane(snapshot[1]).direction * 35.0) > 7.0, "scatter retains wide gaps at the original 35-metre engagement distance")
 			var shot: Dictionary = boss.projectiles[0]
 			var velocity: Vector3 = shot.velocity
 			game.boat.position += Vector3(30, 0, 20)
@@ -232,7 +232,7 @@ func _run() -> void:
 				boss._update_weapon(1.0 / hz)
 				boss._update_mines(1.0 / hz)
 			check(boss.weapon_state == boss.Weapon.RELOAD and boss.mines.size() == mine_count and boss.shots_fired == shot_count, "%d Hz phase %s reload allows approach without new attacks" % [hz, second_phase])
-			check(reload_mine.armed() and reload_mine.age > 2.0, "reload keeps existing mine hazards active")
+			check(reload_mine.armed() and reload_mine.age >= reload_seconds - 0.15, "reload keeps existing mine hazards ticking and armed")
 			game.hud._process(0.0)
 			check(game.hud.wave_announcement.visible and game.hud.wave_announcement.text == "FLAGSHIP", "reload keeps the Flagship ribbon without reload text")
 			boss.cooldown = 0.0
@@ -255,9 +255,10 @@ func _run() -> void:
 		boss.weapon_state = boss.Weapon.READY
 		boss.cooldown = 0.0
 		boss.turn_rate = 0.3
+		manager.director.clock = manager.director.next_warning
 		boss._update_weapon(0.0)
 		boss._update_mines(10.0)
-		check(boss.weapon_state == boss.Weapon.READY and boss.mines.is_empty(), "hard turn cannot begin an unsafe volley or mine burst")
+		check(boss.weapon_state == boss.Weapon.TELEGRAPH, "turning return leg still advertises a committed volley")
 	fresh()
 	boss.begin(game.arena_center() + Vector3(-107, 0, -42))
 	boss.heading = PI

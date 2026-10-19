@@ -19,5 +19,5 @@ return_seconds = 5.0
 broadside_guns = 3
 lays_mines = true
 telegraph_seconds = 0.75
-reload_seconds = 3.5
+reload_seconds = 2.3
 attack_run_seconds = 10

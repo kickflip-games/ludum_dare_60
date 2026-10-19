@@ -40,7 +40,7 @@ def summarize(path):
         if b.get('visibility') != 'visible' or not b.get('canvas_focus'):
             continue
         audio = s['audio']
-        key = (s['game_state'], tuple(s['render_target']), audio['mode'],
+        key = (s['game_state'], tuple(s.get('viewport_internal', s.get('render_target', []))), audio['mode'],
                audio['music_playback_type'], audio['ocean_generator'])
         groups[key].append(interval)
     music = [e for e in data['browser']['events'] if e['kind'] == 'audio_sample_start'

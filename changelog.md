@@ -6,6 +6,13 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Bound Web rendering to Performance 640×360, Standard 960×540 (default) or
+  High 1280×720; keep aspect and remove the Web canvas-scaling comparison.
+  Cap the presentation buffer at 1280×720 through resize, zoom and fullscreen.
+  Separate viewport/texture counters from GPU attachment evidence; preserve
+  native quality and licensed music. Browser gestures respect explicit audio
+  Resume. Investigation and real iframe checks: [resolution review](artifacts/web_resolution_review.md).
+
 - Work in progress: refreshed the repository README with browser-play and Ludum
   Dare links, concise controls, three native stills and the optimized animated
   cover. Preserved the former README in a linked development reference; added

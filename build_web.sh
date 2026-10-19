@@ -73,7 +73,7 @@ info = {
     'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()),
     'source_sha256': digest.hexdigest(),
     'commit_utc': datetime.fromisoformat(subprocess.check_output(['git', 'show', '-s', '--format=%cI', 'HEAD'], text=True).strip()).astimezone(timezone.utc).isoformat(),
-    'configuration': 'single-thread Web / Compatibility / 960x540 viewport',
+    'configuration': 'single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing',
 }
 runtime_name = 'blackwater-runtime-' + info['source_sha256'][:12] + '.js'
 info['runtime_script'] = runtime_name
@@ -94,7 +94,7 @@ variant/extensions_support=false
 variant/thread_support=false
 vram_texture_compression/for_desktop=true
 vram_texture_compression/for_mobile=false
-html/canvas_resize_policy=2
+html/canvas_resize_policy=0
 html/focus_canvas_on_start=true
 progressive_web_app/enabled=false
 html/head_include="<script src='RUNTIME_SCRIPT'></script>"
@@ -129,6 +129,17 @@ import json
 
 web = Path('build/web')
 info = json.loads((web / 'build.json').read_text())
+# The engine's adaptive policy multiplies CSS size by DPR, including fullscreen.
+# Let the shipped runtime own a bounded presentation buffer instead. Set a safe
+# initial buffer before WebGL context creation; CSS still fills the iframe.
+html = web / 'index.html'
+source = html.read_text()
+if source.count('<canvas id="canvas">') != 1 or '</style>' not in source:
+    raise SystemExit('Web template changed: verify bounded canvas sizing before packaging.')
+source = source.replace('<canvas id="canvas">', '<canvas id="canvas" width="1280" height="720">')
+source = source.replace('</style>', '''#canvas { width: 100vw; height: 100vh; }
+</style>''', 1)
+html.write_text(source)
 prefix = 'blackwater-' + info['source_sha256'][:12]
 for name in ('index.html', prefix + '.js', prefix + '.wasm', prefix + '.pck', info['runtime_script']):
     output = web / name
@@ -136,12 +147,15 @@ for name in ('index.html', prefix + '.js', prefix + '.wasm', prefix + '.pck', in
         raise SystemExit(f'Web export incomplete: {output}. See build/export.log.')
 checksums = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(web.iterdir()) if p.is_file()}
 (web / 'checksums.json').write_text(json.dumps(checksums, indent=2, sort_keys=True) + '\n')
-with ZipFile('build/blackwater-web.zip', 'w', ZIP_DEFLATED, compresslevel=9) as archive:
+versioned = Path('build') / ('blackwater-web-' + info['git_sha'][:12] + '-' + info['source_sha256'][:12] + '.zip')
+with ZipFile(versioned, 'w', ZIP_DEFLATED, compresslevel=9) as archive:
     for output in sorted(web.iterdir()):
         if output.is_file():
             entry = ZipInfo(output.name, date_time=(1980, 1, 1, 0, 0, 0))
             entry.compress_type = ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
             archive.writestr(entry, output.read_bytes())
-print('Ready: build/blackwater-web.zip')
+import shutil
+shutil.copyfile(versioned, 'build/blackwater-web.zip')
+print('Ready: ' + str(versioned))
 PY

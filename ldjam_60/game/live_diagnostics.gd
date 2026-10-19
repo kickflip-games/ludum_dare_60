@@ -6,6 +6,8 @@ const FRAME_LIMIT := 40000
 const EVENT_LIMIT := 2000
 const SAMPLE_LIMIT := 1200
 const ACTIONS := ["steer_port", "steer_starboard", "boost_sailing", "fire_starboard", "fire_mouse", "watch_starboard", "restart_crossing"]
+const WEB_RESOLUTIONS := [Vector2i(640, 360), Vector2i(960, 540), Vector2i(1280, 720)]
+var resolution_index := 1
 var game
 var enabled := false
 var applied_steering := 0.0
@@ -41,6 +43,7 @@ func _ready() -> void:
 	if OS.has_feature("web"):
 		_browser = JavaScriptBridge.get_interface("BlackwaterRuntime")
 		_has_browser = is_instance_valid(_browser)
+		set_resolution(resolution_index)
 	_build_panel()
 
 func note(kind: String, data: Dictionary = {}) -> void:
@@ -157,10 +160,16 @@ func _sample() -> Dictionary:
 		"actions": actions, "movement_steering": applied_steering, "turn_input": game.turn_input,
 		"look_yaw": game.look_yaw, "look_target": game.look_target,
 		"wave": game.enemy_encounters.wave_number, "hull": game.hull,
-		"render_target": _render_size(), "display_window": [get_window().size.x, get_window().size.y],
+		"viewport_texture_reported": _render_size(),
+		"viewport_internal": _internal_size(),
+		"content_scale_size": [get_window().content_scale_size.x, get_window().content_scale_size.y],
+		"content_scale_mode": get_window().content_scale_mode, "content_scale_aspect": get_window().content_scale_aspect,
+		"viewport_stretch_scale": [get_viewport().get_stretch_transform().get_scale().x, get_viewport().get_stretch_transform().get_scale().y],
+		"display_window": [get_window().size.x, get_window().size.y],
 		"viewport_logical": [get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y],
 		"physics_ms": Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
 		"physics_frame": Engine.get_physics_frames(), "physics_ticks_per_second": Engine.physics_ticks_per_second,
+		"render_frame": Engine.get_frames_drawn(),
 		"process_ms": Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 		"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
@@ -175,6 +184,14 @@ func _positive_monitor(monitor: Performance.Monitor):
 
 func _render_size() -> Array:
 	var dimensions := get_viewport().get_texture().get_size()
+	return [dimensions.x, dimensions.y]
+
+func _internal_size() -> Array:
+	# Root Window does not expose its raw viewport size. Reconstruct it from the
+	# logical rect and canvas stretch; verify physical storage independently in JS.
+	var dimensions := get_viewport().get_visible_rect().size
+	if get_window().content_scale_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS:
+		dimensions = (dimensions * get_viewport().get_stretch_transform().get_scale()).round()
 	return [dimensions.x, dimensions.y]
 
 func _recent_frames() -> Array:
@@ -212,7 +229,7 @@ func report() -> Dictionary:
 	var browser: Dictionary = JSON.parse_string(JavaScriptBridge.get_interface("BlackwaterRuntime").report()) if _has_browser else {}
 	if browser.has("raf_frames"): browser["frame_summary"] = summarize(browser.raf_frames)
 	var cutoff := Time.get_ticks_msec() - KEEP_SECONDS * 1000
-	return {"schema": 1, "build": build_info, "godot": Engine.get_version_info(),
+	return {"schema": 2, "build": build_info, "godot": Engine.get_version_info(),
 		"platform": OS.get_name(), "renderer": RenderingServer.get_current_rendering_method(),
 		"recording_enabled": enabled, "retention_seconds": KEEP_SECONDS,
 		"created_utc": Time.get_datetime_string_from_system(true), "engine_clock_ms": Time.get_ticks_msec(),
@@ -220,7 +237,7 @@ func report() -> Dictionary:
 		"frame_columns": ["engine_ms", "interval_ms"], "engine_frames": frames, "frame_summary": summarize(frames),
 		"current_state": _sample(), "samples": samples.filter(func(s): return s.t_ms >= cutoff),
 		"events": events.filter(func(e): return e.t_ms >= cutoff), "browser": browser,
-		"counter_notes": "Frame intervals use wall time, including pauses. Estimated missed slots assume 60 Hz, not measured physics drops. Null memory means unavailable. Engine/browser clocks are joined using export clock_ms values."}
+		"counter_notes": "viewport_internal is reconstructed from the logical rect and canvas stretch; viewport_texture_reported is the root ViewportTexture getter and may include stretch again. Browser GPU attachments and drawing buffer are independent observations. Frame intervals use wall time including pauses. Null memory means unavailable. Engine/browser clocks are joined using export clock_ms values."}
 
 func export_report() -> void:
 	var data := JSON.stringify(report())
@@ -238,23 +255,38 @@ func _refresh_stats() -> void:
 	var summary_text := "Recording · collecting frame intervals" if enabled else "Recorder off · no performance or input history collected"
 	if enabled and _summary.get("frames", 0) > 0:
 		summary_text = "%.1f FPS · frame median %.1f / p95 %.1f / p99 %.1f / max %.1f ms" % [_summary.fps_median, _summary.median_ms, _summary.p95_ms, _summary.p99_ms, _summary.max_ms]
-	live.text = summary_text + "\nF8 diagnostics · steering %.1f · %s" % [game.turn_input, str(_render_size())]
+	live.text = summary_text + "\nF8 diagnostics · steering %.1f · viewport %s" % [game.turn_input, str(_internal_size())]
 	if not events.is_empty():
 		var recent := PackedStringArray()
 		for i in range(maxi(0, events.size() - 2), events.size()): recent.append("%.1fs %s" % [events[i].t_ms / 1000.0, events[i].kind])
 		live.text += "\n" + " · ".join(recent)
-	stats.text = summary_text + "\nRender %s · focus %s · paused %s · steering %.1f\nMusic %s · ocean %s · generator skips %s" % [_render_size(), game._window_focused, game.paused, game.turn_input, "sample" if game._music.playback_type == AudioServer.PLAYBACK_TYPE_SAMPLE else "stream", "generator" if game.diagnostic_generator else "loop sample", game.audio_diagnostic_state().generator_skips]
+	stats.text = summary_text + "\nViewport %s · texture getter %s\nFocus %s · paused %s · steering %.1f\nMusic %s · ocean %s · generator skips %s" % [_internal_size(), _render_size(), game._window_focused, game.paused, game.turn_input, "sample" if game._music.playback_type == AudioServer.PLAYBACK_TYPE_SAMPLE else "stream", "generator" if game.diagnostic_generator else "loop sample", game.audio_diagnostic_state().generator_skips]
 	var lines := PackedStringArray()
 	for i in range(maxi(0, events.size() - 5), events.size()):
 		lines.append("%.1fs  %s  %s" % [events[i].t_ms / 1000.0, events[i].kind, JSON.stringify(events[i].data).left(120)])
 	timeline.text = "Recent events\n" + "\n".join(lines)
 
 func set_resolution(index: int) -> void:
+	# Native quality and its diagnostic comparisons remain unchanged.
 	var window := get_window()
+	if OS.has_feature("web"):
+		_apply_web_resolution(index)
+		return
 	window.content_scale_size = Vector2i(960, 540) if index == 0 else Vector2i(1280, 720)
 	window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS if index == 2 else Window.CONTENT_SCALE_MODE_VIEWPORT
 	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND if index == 2 else Window.CONTENT_SCALE_ASPECT_KEEP
 	note("resolution", {"mode": index, "size": str(window.content_scale_size)})
+
+func _apply_web_resolution(index: int) -> void:
+	resolution_index = index if index >= 0 and index < WEB_RESOLUTIONS.size() else 1
+	var window := get_window()
+	# Switch mode first, so a previous/invalid canvas setting cannot allocate at
+	# window resolution during a size change. No Web path selects canvas mode.
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	window.content_scale_factor = 1.0
+	window.content_scale_size = WEB_RESOLUTIONS[resolution_index]
+	note("resolution", {"preset": resolution_index, "size": str(window.content_scale_size), "scaling": "viewport_keep"})
 
 func _build_panel() -> void:
 	var root := Control.new()
@@ -300,7 +332,10 @@ func _build_panel() -> void:
 	_add_options(column, "Audio", ["Music + ocean + effects", "Music only", "Ocean only", "Both + cannon effects"], func(i): game.set_diagnostic_audio(i))
 	_add_options(column, "Music playback", ["Sample (Web default)", "Stream (comparison)"], func(i): game.set_music_playback(i == 0), 0 if OS.has_feature("web") else 1)
 	_add_options(column, "Ocean playback", ["Loop sample (default)", "Generator (comparison, records skips)"], func(i): game.set_ocean_generator(i == 1))
-	_add_options(column, "Render resolution", ["960 x 540 (Web default)", "1280 x 720", "Original canvas scaling (comparison)"], set_resolution, 0 if OS.has_feature("web") else 2)
+	if OS.has_feature("web"):
+		_add_options(column, "Render resolution", ["Performance: 640 x 360", "Standard: 960 x 540 (default)", "High: 1280 x 720"], set_resolution, resolution_index)
+	else:
+		_add_options(column, "Render resolution", ["960 x 540", "1280 x 720", "Original canvas scaling (comparison)"], set_resolution, 2)
 	var buttons := HBoxContainer.new()
 	column.add_child(buttons)
 	for caption: String in ["Export Diagnostics", "Close"]:

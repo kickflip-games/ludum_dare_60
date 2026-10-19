@@ -29,6 +29,24 @@ func _run() -> void:
 	root.add_child(game)
 	await frames()
 	var d = game.diagnostics
+	var native_size := root.content_scale_size
+	var native_mode := root.content_scale_mode
+	var native_aspect := root.content_scale_aspect
+	check(native_size == Vector2i(1280, 720) and native_mode == Window.CONTENT_SCALE_MODE_CANVAS_ITEMS and native_aspect == Window.CONTENT_SCALE_ASPECT_EXPAND, "native rendering defaults stay unchanged")
+	for index in [0, 1, 2, -1, 3, 999]:
+		d._apply_web_resolution(index)
+		var expected = d.WEB_RESOLUTIONS[index] if index in [0, 1, 2] else Vector2i(960, 540)
+		check(root.content_scale_size == expected and root.content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT and root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP, "Web preset %d is fixed, bounded and keeps aspect" % index)
+	root.size = Vector2i(3360, 1822)
+	await frames()
+	d.open_panel()
+	d.close_panel()
+	game.restart(true)
+	check(root.content_scale_size == Vector2i(960, 540) and root.content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT, "resize, diagnostics reopen and restart preserve safe Web scaling")
+	root.content_scale_size = native_size
+	root.content_scale_mode = native_mode
+	root.content_scale_aspect = native_aspect
+	root.size = Vector2i(1280, 720)
 	check(not d.enabled and d.samples.is_empty() and d.events.is_empty(), "diagnostics starts off without retaining input/history")
 	check(game.hud.settings_panel.find_child("Diagnostics", true, false) != null, "Settings exposes diagnostics without query parameters")
 	check(game._sound.stream is AudioStreamWAV and game._sound.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "ocean uses a looping sample")

@@ -19,10 +19,17 @@ class Target {
 }
 class Canvas extends Target {
     width = 2560; height = 1440;
-    getContext() { return null; }
+    getContext() { return this.gl ?? null; }
     getBoundingClientRect() { return {width: 1280, height: 720}; }
 }
 const canvas = new Canvas(), window = new Target(), document = new Target();
+class AudioContext extends Target {
+    constructor() { super(); this.state = 'suspended'; }
+    resume() { this.state = 'running'; return Promise.resolve(); }
+    suspend() { this.state = 'suspended'; return Promise.resolve(); }
+    createBufferSource() { return Object.assign(new Target(), {start() {}}); }
+}
+window.AudioContext = AudioContext;
 Object.assign(document, {body: new Target(), readyState: 'complete', activeElement: canvas,
     visibilityState: 'visible', hidden: false, hasFocus: () => true,
     getElementById: id => id === 'canvas' ? canvas : null,
@@ -38,6 +45,18 @@ vm.runInNewContext(fs.readFileSync('ldjam_60/game/web_runtime.js', 'utf8'), {
     cancelAnimationFrame: id => frames.delete(id), setTimeout, URL, Blob,
 });
 const runtime = window.BlackwaterRuntime;
+const audio = new window.AudioContext();
+audio.resume();
+check.equal(audio.state, 'running', 'initial user gesture can start audio');
+runtime.pauseAudio(true);
+audio.resume();
+check.equal(audio.state, 'suspended', 'engine gesture resume cannot bypass explicit game pause');
+canvas.emit('focus');
+audio.resume();
+check.equal(audio.state, 'suspended', 'focus restoration keeps audio suspended');
+runtime.pauseAudio(false);
+check.equal(audio.state, 'running', 'explicit Resume restores audio');
+runtime.takeLifecycle();
 check.equal(frames.size, 0, 'disabled recorder schedules no rAF work');
 check.equal(runtime.isFocused(), true, 'canvas focus works without pointer lock');
 document.emit('pointerlockerror');
@@ -55,7 +74,41 @@ check.equal(report.events.filter(e => e.kind === 'browser_keydown').length, 1);
 check(!JSON.stringify(report).includes('private typed text'), 'unrelated keys/text are excluded');
 check.equal(report.environment.device_pixel_ratio, 2);
 check.deepEqual(report.environment.canvas_css, [1280, 720]);
-check.deepEqual(report.environment.canvas_backing, [2560, 1440]);
+check.deepEqual(report.environment.canvas_backing, [1280, 720], 'HiDPI presentation is bounded before engine startup');
+canvas.width = 9000; canvas.height = 9000;
+window.emit('resize');
+check.deepEqual(JSON.parse(runtime.snapshot()).canvas_backing, [1280, 720], 'resize corrects an excessive backing buffer');
+canvas.width = 9000; document.emit('fullscreenchange');
+check.equal(canvas.width, 1280, 'fullscreen keeps the backing buffer bounded');
+const tex = {}, rb = {}, fb = {};
+const gl = {
+    TEXTURE_2D: 1, TEXTURE_BINDING_2D: 2, COLOR_ATTACHMENT0: 100,
+    FRAMEBUFFER_BINDING: 3, READ_FRAMEBUFFER_BINDING: 4, READ_FRAMEBUFFER: 5,
+    RENDERBUFFER_BINDING: 6, RENDERBUFFER: 7, RENDERBUFFER_WIDTH: 8, RENDERBUFFER_HEIGHT: 9, RENDERER: 10,
+    drawingBufferWidth: 1280, drawingBufferHeight: 720,
+    getParameter(p) { return p === 2 ? tex : p === 3 ? fb : p === 6 ? rb : 'test-renderer'; },
+    getExtension() { return null; }, isContextLost() { return false; },
+    texImage2D() {}, texStorage2D() {}, framebufferTexture2D() {}, framebufferRenderbuffer() {},
+    renderbufferStorage(...a) { this.rbSize = [a[2], a[3]]; },
+    getRenderbufferParameter(t, p) { return this.rbSize[p === 8 ? 0 : 1]; },
+    deleteFramebuffer() {}, deleteTexture() {}, deleteRenderbuffer() {},
+};
+canvas.gl = gl;
+canvas.getContext('webgl2');
+gl.texStorage2D(1, 1, 0, 960, 540);
+gl.framebufferTexture2D(0, 100, 1, tex, 0);
+check.deepEqual(JSON.parse(runtime.snapshot()).webgl[0].color_attachments[0].size, [960, 540]);
+for (let i = 0; i < 100; i++) gl.framebufferTexture2D(0, 100, 1, tex, 0);
+check.equal(JSON.parse(runtime.snapshot()).gpu_color_target_allocations.length, 1, 'repeated sky attachments do not flood allocation history');
+gl.texImage2D(1, 0, 0, 1280, 720, 0, 0, 0, null);
+check.deepEqual(JSON.parse(runtime.snapshot()).webgl[0].color_attachments[0].size, [1280, 720], 'storage resize updates current attachments without reattaching');
+gl.renderbufferStorage(7, 0, 640, 360);
+gl.framebufferRenderbuffer(0, 101, 7, rb);
+check.deepEqual(JSON.parse(runtime.snapshot()).webgl[0].color_attachments[1].size, [640, 360], 'renderbuffer dimensions come from actual GL queries');
+gl.deleteTexture(tex);
+check.equal(JSON.parse(runtime.snapshot()).webgl[0].color_attachments.length, 1, 'deleted textures leave current inventory');
+gl.deleteFramebuffer(fb);
+check.equal(JSON.parse(runtime.snapshot()).webgl[0].color_attachments.length, 0, 'deleted framebuffers leave current inventory');
 canvas.emit('blur'); canvas.emit('focus');
 check.equal(runtime.takeLifecycle(), 3, 'loss is retained even when focus returns in the same frame');
 check.equal(runtime.takeLifecycle(), 0, 'lifecycle flags are consumed once');

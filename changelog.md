@@ -6,6 +6,14 @@ recorded evidence and limitations.
 
 ## 2026-10-19
 
+- Added landscape touch controls using Virtual Joystick DX,
+  held FIRE/BOOST, independent swipe camera and pause. Menus and the full tutorial
+  accept touch; focus, reset and resize release owned fingers. Added safe-area
+  layout and a portrait hint without changing Web render sizing or combat.
+  Synthetic touch, desktop arcade, wave and result checks pass; native captures
+  and local Web export reviewed. Legacy crossing tests retain three reproduced
+  terrain/route failures. Physical Android/iPhone verification remains open.
+
 - Resolved the changelog conflicts while retaining both histories.
   Native close and current smoke fixtures now wait for queued audio playback to
   release before exit, with a bounded deadline. Gameplay and visuals are preserved;

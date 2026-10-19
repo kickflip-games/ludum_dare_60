@@ -6,6 +6,8 @@ const NavigationBearings = preload("res://game/navigation_bearings.gd")
 const HUD_SCRIPT = preload("res://game/navigation_hud.gd")
 const LiveDiagnostics = preload("res://game/live_diagnostics.gd")
 const AudioShutdown = preload("res://game/audio_shutdown.gd")
+const MobileControls = preload("res://game/mobile_controls.gd")
+var mobile_controls: CanvasLayer
 var diagnostics: CanvasLayer
 var _owns_quit_request := false
 var _previous_auto_accept_quit := true
@@ -365,6 +367,9 @@ func _ready() -> void:
 	diagnostics = LiveDiagnostics.new()
 	diagnostics.game = self
 	add_child(diagnostics)
+	mobile_controls = MobileControls.new()
+	mobile_controls.game = self
+	add_child(mobile_controls)
 	if DisplayServer.get_name() != "headless":
 		_warning_audio = cannon._audio(220.0, 0.5, -18.0)
 		_wave_audio = cannon._audio(110.0, 0.55, -22.0)
@@ -406,6 +411,7 @@ func _configure_inputs() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouse and event.device in [InputEvent.DEVICE_ID_EMULATION, MobileControls.MENU_DEVICE]: return
 	if paused or (is_instance_valid(diagnostics) and diagnostics.panel.visible):
 		return
 	# A fresh canvas click can restore capture if a browser denied an Esc resume.
@@ -418,10 +424,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			# 1280-pixel look sensitivity when Web switches between 540p and 720p.
 			if OS.has_feature("web") and get_window().content_scale_mode == Window.CONTENT_SCALE_MODE_VIEWPORT:
 				motion *= 1280.0 / get_window().content_scale_size.x
-			walkthrough.note_mouse(motion)
-			look_target = clampf(look_target - motion.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
-			if not motion.is_zero_approx():
-				look_idle = 0.0
+			apply_camera_look(motion)
 		return
 	if walkthrough.active and (walkthrough.step != Walkthrough.Step.FIRE or walkthrough.practiced) and (event.is_action("fire_starboard") or event.is_action("fire_mouse")):
 		return
@@ -454,11 +457,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not arena_mode:
 			cannon.set_fire_held(event.is_pressed())
 		elif state == State.SAILING and _window_focused:
-			# Only a fresh press arms fire after a menu, restart or focus loss.
-			# OS key-repeat events must not revive a cleared held button.
-			if event.is_pressed():
-				_fire_armed = true
-			cannon.set_fire_held(_fire_armed and (Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")))
+			_set_arena_fire(event.is_pressed())
 	elif event.is_action("watch_starboard") and not event.is_echo():
 		if arena_mode:
 			if event.is_pressed() and state == State.SAILING and _window_focused:
@@ -478,6 +477,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		_sound_enabled = not _sound_enabled
 		_sync_audio_volumes(1.0)
 		note_event("mute", {"muted": not _sound_enabled})
+
+
+func apply_camera_look(motion: Vector2) -> void:
+	walkthrough.note_mouse(motion)
+	look_target = clampf(look_target - motion.x * camera_mouse_sensitivity, -camera_yaw_limit, camera_yaw_limit)
+	if not motion.is_zero_approx(): look_idle = 0.0
+
+
+func _set_arena_fire(pressed: bool) -> void:
+	if walkthrough.active and (walkthrough.step != Walkthrough.Step.FIRE or walkthrough.practiced): return
+	if paused or state != State.SAILING or not _window_focused: return
+	if pressed: _fire_armed = true
+	cannon.set_fire_held(_fire_armed and (Input.is_action_pressed("fire_starboard") or Input.is_action_pressed("fire_mouse")))
+
+
+func set_touch_fire(pressed: bool) -> void:
+	if pressed: Input.action_press("fire_starboard")
+	else: Input.action_release("fire_starboard")
+	_set_arena_fire(pressed)
 
 
 func _notification(what: int) -> void:
@@ -510,6 +528,7 @@ func application_focus_changed(focused: bool, source: String) -> void:
 
 
 func _request_mouse_capture() -> void:
+	if is_instance_valid(mobile_controls) and mobile_controls.enabled: return
 	if not arena_mode or not _window_focused: return
 	if OS.has_feature("web") and (not is_instance_valid(diagnostics) or not diagnostics.can_capture()):
 		note_event("pointer_capture_deferred", {"reason": "no_browser_user_gesture"})
@@ -539,6 +558,7 @@ func set_paused(value: bool, restore_capture: bool = true) -> void:
 
 
 func _clear_player_controls(reset_view: bool = true, release_mouse: bool = true) -> void:
+	if is_instance_valid(mobile_controls): mobile_controls.reset_touches()
 	_fire_armed = false
 	if reset_view:
 		look_yaw = 0.0
@@ -773,7 +793,7 @@ func _physics_process(delta: float) -> void:
 		if not held:
 			_fire_armed = false
 		cannon.set_fire_held(held and _fire_armed and _window_focused and state == State.SAILING)
-		if not OS.has_feature("web"):
+		if not OS.has_feature("web") and not (is_instance_valid(mobile_controls) and mobile_controls.enabled):
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if state == State.SAILING and _window_focused else Input.MOUSE_MODE_VISIBLE
 		elif state not in [State.SAILING, State.CASTING_OFF] or not _window_focused:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

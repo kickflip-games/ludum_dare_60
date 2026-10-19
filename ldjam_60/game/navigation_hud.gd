@@ -427,7 +427,20 @@ func _build_menu() -> void:
 	_layout_menu()
 
 
+func _sync_touch_guidance() -> void:
+	if not is_instance_valid(game.mobile_controls) or not game.mobile_controls.enabled: return
+	var bindings := [["Drag left", "Steer"], ["Hold FIRE", "Shoot"], ["Swipe", "Look around"], ["Hold BOOST", "Speed up"], ["Pause", "Pause / resume"]]
+	var controls := settings_panel.get_node("FullControls")
+	for index in controls.get_child_count() / 2:
+		controls.get_child(index * 2).visible = index < bindings.size()
+		controls.get_child(index * 2 + 1).visible = index < bindings.size()
+		if index < bindings.size():
+			controls.get_child(index * 2).get_child(0).text = bindings[index][0]
+			controls.get_child(index * 2 + 1).text = bindings[index][1]
+
+
 func _show_settings(open: bool) -> void:
+	if open: _sync_touch_guidance()
 	settings_open = open
 	if open:
 		credits_open = false
@@ -501,10 +514,12 @@ func _layout_menu() -> void:
 	menu_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL if centered_title else Control.SIZE_FILL
 	menu_actions.custom_minimum_size.x = minf(300, width)
 	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	menu_column.add_theme_constant_override("separation", 12)
-	menu_actions.add_theme_constant_override("separation", 10)
+	var touch_mode: bool = is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled
+	menu_column.add_theme_constant_override("separation", 8 if touch_mode else 12)
+	menu_actions.add_theme_constant_override("separation", 6 if touch_mode else 10)
 	menu_spacer.visible = not subpage_open
 	var title_size := 92 if centered_title else 68 if game.state == game.State.READY else 48
+	if touch_mode and centered_title: title_size = 76
 	if subpage_open: title_size = 42
 	var widest := 1.0
 	for line: String in menu_title.text.split("\n"):
@@ -542,12 +557,14 @@ func _refresh_menu_copy() -> void:
 	walkthrough_button.visible = intro and game.arena_mode
 	menu_controls.visible = intro and not game.arena_mode and not subpage_open
 	menu_footer.text = "A/D steer · W/Shift boost · Mouse look\nClick/Space fire · Enter play" if intro and game.arena_mode else "Enter play · M mute · Esc pause / resume" if intro else "R retry · M mute · Esc pause / resume"
+	if is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled:
+		menu_footer.text = "Drag left — Steer · Hold FIRE — Shoot\nSwipe — Look around · Hold BOOST — Speed up"
 	settings_frame.visible = settings_open
 	settings_panel.visible = settings_open
 	credits_frame.visible = credits_open
 	credits_panel.visible = credits_open
 	menu_actions.visible = not subpage_open
-	menu_footer.visible = not subpage_open and not game.arena_mode
+	menu_footer.visible = not subpage_open and (not game.arena_mode or (is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled and intro))
 	if subpage_open:
 		menu_title.text = "CREDITS" if credits_open else "SETTINGS"
 		menu_details.visible = false

@@ -185,6 +185,11 @@
     function installCanvas() {
         const c = canvas();
         if (!c) return;
+        c.style.touchAction = 'none';
+        c.style.webkitUserSelect = 'none';
+        c.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
+        c.addEventListener('touchmove', e => e.preventDefault(), {passive: false});
+        c.addEventListener('contextmenu', e => e.preventDefault());
         // Canvas Resize Policy=None: the engine follows this backing buffer.
         // Match its aspect to CSS so Window's KEEP letterboxing and pointer
         // coordinates stay aligned. Presentation is bounded even at extreme DPR,

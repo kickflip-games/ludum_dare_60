@@ -16,6 +16,36 @@ canvas with 16:9 letterboxing. The presentation backing buffer is independently
 capped at 1280×720, including HiDPI, zoom and fullscreen. Canvas Resize Policy is
 None; the runtime matches the bounded buffer's aspect to the CSS canvas.
 
+## Touch review
+
+The touch HUD uses [Godot touchscreen detection](https://docs.godotengine.org/en/latest/classes/class_displayserver.html#class-displayserver-method-is-touchscreen-available)
+and `navigator.maxTouchPoints` on Web. Use `?touch=1` on the local game URL to
+show it on desktop for layout review, or `--touch-controls` in native runs.
+This override does not turn mouse events into multitouch. The installed Virtual
+Joystick DX drives the existing steering actions; FIRE uses the existing fresh
+press gate and cannon reload. Touch-to-mouse emulation is disabled; a single owned
+menu finger is forwarded to the existing GUI without entering gameplay input.
+
+Test Android Chrome and iPhone Safari in landscape, both standalone and embedded:
+steer + FIRE + swipe together; add/release BOOST independently; pause, switch tabs,
+Resume, retry and Play Again. Tap open water and drag from controls to ensure no
+extra shots or camera ownership changes. Rotate the device, resize/fullscreen,
+and check notches, reload feedback and menu buttons. Portrait shows a rotate hint.
+Canvas gestures suppress browser scrolling/zoom only inside the game. No pointer
+lock or fullscreen permission is needed for touch gameplay.
+
+Run the regression and optional rendered captures locally:
+
+```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/mobile_controls_smoke.gd -- --touch-controls
+godot --path ldjam_60 --fixed-fps 60 --script res://tests/mobile_controls_smoke.gd -- --touch-controls --output=/tmp/blackwater-touch-captures
+```
+
+Synthetic multi-finger Godot events verify ownership, actions, reload, tutorial,
+menus and reset paths. Native captures and desktop browser layout review do not
+establish physical Android/iPhone touch feel, Safari gesture delivery or notch
+behavior. These still require device testing before uploading a release.
+
 ## Record a problem
 
 1. Open **Settings → Diagnostics**, or press **F8**. Recording starts **off**.

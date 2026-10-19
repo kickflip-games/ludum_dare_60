@@ -50,6 +50,9 @@ shutil.copytree('ldjam_60', build / 'staging', ignore=shutil.ignore_patterns(
 # Keep it while omitting the editor automation plugin from the distributable.
 shutil.copytree('ldjam_60/addons/lite_terrain', build / 'staging/addons/lite_terrain',
                 ignore=shutil.ignore_patterns('.godot', '.DS_Store'))
+# Touch HUD uses the installed joystick at runtime.
+shutil.copytree('ldjam_60/addons/virtual_joystick_DX', build / 'staging/addons/virtual_joystick_DX',
+                ignore=shutil.ignore_patterns('.godot', '.DS_Store', 'README.md'))
 (build / 'web').mkdir()
 project = build / 'staging/project.godot'
 source = project.read_text()

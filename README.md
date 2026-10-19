@@ -28,7 +28,11 @@ systems. These staged shots hide gameplay HUD and guides.*
 
 ## Controls
 
-Play with a **keyboard and mouse**. Choose **Tutorial** on the title menu for guided practice.
+Play with a **keyboard and mouse**, or turn a touchscreen phone to **landscape**.
+Choose **Tutorial** on the title menu for guided practice.
+
+On touchscreens: **drag left** to steer, **hold FIRE** to shoot, **swipe** the open
+water to look, and **hold BOOST** to speed up. Tap **II** to pause.
 
 | Input | Action |
 | --- | --- |
@@ -74,6 +78,7 @@ The browser release may lag the latest source changes.
 Focused smoke checks, run from the repository root with your installed Godot executable:
 
 ```sh
+godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/mobile_controls_smoke.gd -- --touch-controls
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/arcade_controls_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/survival_smoke.gd
 godot --headless --path ldjam_60 --fixed-fps 60 --script res://tests/wave_encounter_smoke.gd

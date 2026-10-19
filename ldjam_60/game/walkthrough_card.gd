@@ -3,6 +3,7 @@ extends PanelContainer
 const Palette = preload("res://game/nautical_theme.gd")
 const Guide = preload("res://game/walkthrough.gd")
 const TITLES := ["STEER", "BOOST", "LOOK", "FIRE", "CAMERA", "READY"]
+const TOUCH_INSTRUCTIONS := ["Drag left — Steer", "Hold BOOST — Speed up", "Swipe — Look around", "Hold FIRE — Shoot", "Tap VIEW to switch camera views.", "Tap Play to start the game."]
 const INSTRUCTIONS := ["Use A / D or the arrow keys to turn.", "Hold W or Shift to move faster.", "Move the mouse to look around.", "Press Space or click to fire.", "Press E to switch camera views.", "Press Play to start the game."]
 var game: Node3D
 var column: VBoxContainer
@@ -81,6 +82,9 @@ func _layout() -> void:
 	if not is_instance_valid(game.hud) or game.hud.size.x < 1: return
 	var width := minf(360, game.hud.size.x - 48)
 	size = Vector2(width, 0)
+	if is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled:
+		position = Vector2((game.hud.size.x - width) * 0.5, 16)
+		return
 	position = Vector2(maxf(24, game.hud.size.x - width - 24), maxf(24, game.hud.size.y - size.y - 24))
 
 func _cap(caption: String, action: String, width: float = 60) -> void:
@@ -104,6 +108,9 @@ func _rebuild_keys(step: int) -> void:
 		child.queue_free()
 	caps.clear()
 	key_actions.clear()
+	if is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled:
+		_cap(["DRAG LEFT", "BOOST", "SWIPE", "FIRE", "VIEW", "COMPLETE"][step], ["steer_port", "boost_sailing", "mouse", "fire_starboard", "watch_starboard", ""][step], 200)
+		return
 	match step:
 		Guide.Step.STEER:
 			_cap("A / LEFT", "steer_port", 112)
@@ -124,7 +131,7 @@ func _process(_delta: float) -> void:
 	if guide.step != _step:
 		_step = guide.step
 		heading.text = TITLES[_step]
-		instruction.text = INSTRUCTIONS[_step]
+		instruction.text = TOUCH_INSTRUCTIONS[_step] if is_instance_valid(game.mobile_controls) and game.mobile_controls.enabled else INSTRUCTIONS[_step]
 		_rebuild_keys(_step)
 		next_button.release_focus()
 		skip_button.release_focus()

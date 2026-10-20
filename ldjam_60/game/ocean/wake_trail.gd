@@ -16,12 +16,25 @@ var draw_clock := 0.0
 var last_time := 0.0
 var meshes: Array[ArrayMesh] = []
 var buffers: Array[Array] = []
+var sample_sides := PackedVector3Array()
+var sample_energy := PackedFloat64Array()
+var sample_width := PackedFloat64Array()
+var sample_spread := PackedFloat64Array()
+var sample_modulation := PackedFloat64Array()
+var sample_offset := PackedFloat64Array()
 
 func setup(material: ShaderMaterial) -> void:
 	points.resize(CAPACITY)
 	directions.resize(CAPACITY)
 	times.resize(CAPACITY)
 	speeds.resize(CAPACITY)
+	sample_sides.resize(CAPACITY)
+	sample_energy.resize(CAPACITY)
+	sample_width.resize(CAPACITY)
+	sample_spread.resize(CAPACITY)
+	sample_modulation.resize(CAPACITY*2)
+	sample_offset.resize(CAPACITY*2)
+	for slot in CAPACITY: _cache_shape(slot)
 	materials.assign([material,material.duplicate()])
 	for kind in range(2):
 		materials[kind].set_shader_parameter("wake_kind",kind)
@@ -90,10 +103,24 @@ func advance_path(at: Vector3, time: float, delta: float, speed_factor: float, h
 		directions[cursor] = motion.normalized()
 		times[cursor] = time
 		speeds[cursor] = factor
+		_cache_shape(cursor)
 	if draw_clock>=1.0/30.0:
 		draw_clock = fmod(draw_clock,1.0/30.0)
 		_rebuild(time)
 	return factor
+
+func _cache_shape(slot: int) -> void:
+	# These terms depend only on the deposited sample, not its advancing age.
+	# Reuse them for both meshes and both V arms at every 30 Hz rebuild.
+	var speed := speeds[slot]
+	var tangent := directions[slot]
+	sample_sides[slot] = Vector3(-tangent.y,0,tangent.x)
+	sample_energy[slot] = minf(1.0,speed)*(1.0+maxf(0,speed-1.0)*0.23)
+	sample_width[slot] = lerpf(0.32,1.0,minf(speed,1.0))*(1.0+maxf(0,speed-1.0)*0.25)
+	sample_spread[slot] = sqrt(speed)
+	for wing in 2:
+		sample_modulation[slot*2+wing] = 0.78+0.22*sin(times[slot]*3.3+wing*2.1)
+		sample_offset[slot*2+wing] = 0.10*sin(times[slot]*5.1+wing*2.4)
 
 func _rebuild(time: float) -> void:
 	for kind in range(meshes.size()):
@@ -101,27 +128,23 @@ func _rebuild(time: float) -> void:
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
 		var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
-		for wing in range(2 if kind==0 else 1):
-			for i in range(CAPACITY):
-				var slot := posmod(cursor-mini(i,maxi(0,count-1)),CAPACITY)
-				var age := maxf(0,time-times[slot])
-				var life := LIFETIME if kind==0 else 1.35
-				var speed := speeds[slot]
-				var energy := minf(1.0,speed)*(1.0+maxf(0,speed-1.0)*0.23)
-				var fade := pow(maxf(0,1.0-age/life),1.45)*energy
-				if count<2 or i>=count:
-					fade = 0
-				var tangent := directions[slot]
-				var side := Vector3(-tangent.y,0,tangent.x)
+		for i in range(CAPACITY):
+			var slot := posmod(cursor-mini(i,maxi(0,count-1)),CAPACITY)
+			var age := maxf(0,time-times[slot])
+			var life := LIFETIME if kind==0 else 1.35
+			var fade: float = pow(maxf(0,1.0-age/life),1.45)*sample_energy[slot]
+			if count<2 or i>=count:
+				fade = 0
+			var side: Vector3 = sample_sides[slot]
+			var base_width: float = (0.46+age*0.19 if kind==0 else 0.78+age*0.42)*sample_width[slot]
+			for wing in range(2 if kind==0 else 1):
 				var center := points[slot]
-				var width := (0.46+age*0.19 if kind==0 else 0.78+age*0.42)
-				width *= lerpf(0.32,1.0,minf(speed,1.0))*(1.0+maxf(0,speed-1.0)*0.25)
 				# Deposit-time variation breaks ruler-straight arms without new geometry
 				# or moving the fixed world-space history as the ship turns.
-				width *= 0.78+0.22*sin(times[slot]*3.3+wing*2.1)
-				center += side*0.10*sin(times[slot]*5.1+wing*2.4)
+				var width: float = base_width*sample_modulation[slot*2+wing]
+				center += side*sample_offset[slot*2+wing]
 				if kind==0:
-					center += side*(-1 if wing==0 else 1)*(0.83+age*1.28*sqrt(speed))
+					center += side*(-1 if wing==0 else 1)*(0.83+age*1.28*sample_spread[slot])
 				for edge in range(2):
 					var index := (wing*CAPACITY+i)*2+edge
 					vertices[index] = center+side*width*(-1 if edge==0 else 1)

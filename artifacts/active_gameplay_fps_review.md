@@ -198,3 +198,20 @@ retry assertion fails in both runs. It predates this visual-only change.
 [Matched render pairs](../build/map_trim/matched/),
 [WebGL report](../build/map_trim/web-after.json), and
 [tested ZIP](../build/blackwater-web-f7d45d223f23-d5fd445742ed.zip) remain local.
+
+### Final wake CPU pass — 20 October 2026
+
+Cached deposit-only wake shape terms in packed arrays for every ship. Six alternating
+paired runs reduced local CPU update cost from 84.80 to 62.87 µs (25.9%). The same
+indices, UVs and colors passed 36 reference comparisons across 30/60/120 Hz,
+boosting, turning, stopping and teleporting; maximum vertex difference was 0.0038 mm.
+Enemy effects (111), ocean effects (34) and boss batteries (412) passed with zero
+failures. Inspected native cutter and flagship wake captures. This is a small CPU
+saving, not evidence of an affected-device FPS target. Sky, physical waves, particle
+budgets and boss attacks are unchanged. Raw paired timings: [wake_cpu_measurements.json](wake_cpu_measurements.json).
+
+Final rebuilt Chrome iframe check at 960×540 measured 119.80 FPS with the normal
+camera and 119.98 FPS with the downward camera (six seconds measured per case).
+Median/p95/p99/max were 7.9/10.9/11.4/25.1 ms and
+8.1/11.2/11.5/12.6 ms respectively. Both stayed at at most one physics tick
+per rendered frame. This short local check does not establish affected-Mac FPS.

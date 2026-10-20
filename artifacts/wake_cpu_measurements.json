@@ -1,0 +1,215 @@
+{
+  "geometry_checks": 36,
+  "max_vertex_error_m": 3.814697265625e-06,
+  "note": "CPU advance_path timing; headless runs do not measure GPU cost or whole-game FPS.",
+  "timings": [
+    {
+      "case": "before",
+      "round": 0,
+      "us_per_update": 84.535
+    },
+    {
+      "case": "after",
+      "round": 0,
+      "us_per_update": 62.8058333333333
+    },
+    {
+      "case": "after",
+      "round": 1,
+      "us_per_update": 62.8141666666667
+    },
+    {
+      "case": "before",
+      "round": 1,
+      "us_per_update": 85.1266666666667
+    },
+    {
+      "case": "before",
+      "round": 2,
+      "us_per_update": 84.7483333333333
+    },
+    {
+      "case": "after",
+      "round": 2,
+      "us_per_update": 62.9266666666667
+    },
+    {
+      "case": "after",
+      "round": 3,
+      "us_per_update": 63.1008333333333
+    },
+    {
+      "case": "before",
+      "round": 3,
+      "us_per_update": 84.8475
+    },
+    {
+      "case": "before",
+      "round": 4,
+      "us_per_update": 85.2675
+    },
+    {
+      "case": "after",
+      "round": 4,
+      "us_per_update": 63.3883333333333
+    },
+    {
+      "case": "after",
+      "round": 5,
+      "us_per_update": 62.8091666666667
+    },
+    {
+      "case": "before",
+      "round": 5,
+      "us_per_update": 84.1691666666667
+    }
+  ],
+  "before_median_us": 84.79791666666665,
+  "after_median_us": 62.8704166666667,
+  "cpu_reduction_percent": 25.858536225830964,
+  "validation": {
+    "enemy_sea_effects": {
+      "checks": 111,
+      "failures": 0
+    },
+    "ocean_juice": {
+      "checks": 34,
+      "failures": 0
+    },
+    "boss_batteries": {
+      "checks": 412,
+      "failures": 0
+    },
+    "native_previews": "/tmp/blackwater-final-wakes",
+    "web_fps_after_this_change": "Chrome iframe 960x540: baseline 119.80 FPS, downward 119.98 FPS, six seconds measured per case; local M4 Pro only"
+  },
+  "web_build": {
+    "commit_utc": "2026-10-19T21:46:25+00:00",
+    "configuration": "single-thread Web / Compatibility / 960x540 viewport / 1280x720 max backing",
+    "dirty": true,
+    "git_sha": "18c27ee6826efa636f9551e179915efc2f4df6dd",
+    "godot_version": "4.8.dev6.official.8898c2b3d",
+    "runtime_script": "blackwater-runtime-4022cb25d8fa.js",
+    "source_sha256": "4022cb25d8faf495b0a7340f45433908cc13758d5f5790ba627ae96078fdbedb"
+  },
+  "web_cases": [
+    {
+      "case": "baseline",
+      "summary": {
+        "duration_s": 6.0101,
+        "estimated_missed_60hz_slots": 1,
+        "fps_mean": 119.798339461906,
+        "fps_median": 126.582278481013,
+        "fps_p95": 175.438596491228,
+        "fps_p99": 188.679245283019,
+        "frames": 720,
+        "max_ms": 25.1,
+        "mean_ms": 8.34736111111111,
+        "median_ms": 7.9,
+        "p95_ms": 10.9,
+        "p99_ms": 11.4,
+        "presented_fps": 119.798339461906,
+        "slow_frames_over_33_ms": 0
+      },
+      "browser_raf": {
+        "duration_s": 5.9908,
+        "estimated_missed_60hz_slots": 0,
+        "fps_mean": 119.85043733725,
+        "fps_median": 120.481927710843,
+        "fps_p95": 133.333333333333,
+        "fps_p99": 135.135135135135,
+        "frames": 718,
+        "max_ms": 16.7,
+        "mean_ms": 8.34373259052925,
+        "median_ms": 8.3,
+        "p95_ms": 9.2,
+        "p99_ms": 9.3,
+        "slow_frames_over_33_ms": 0
+      },
+      "cpu_ms_per_gameplay_tick": {
+        "camera_collision": 0.08781163434903047,
+        "enemy_movement": 0.2116343490304709,
+        "enemy_navigation": 0.19002770083102494,
+        "enemy_path_probes": 0.1556786703601108,
+        "enemy_projectiles": 0.12160664819944599,
+        "enemy_route": 0.000554016620498615,
+        "enemy_total": 1.0282548476454294,
+        "firing_guide": 0.0008310249307479224,
+        "ocean_update": 0.16232686980609418,
+        "physics_tick": 1.877562326869806,
+        "player_movement": 0.056509695290858725,
+        "player_projectiles": 0.004709141274238228,
+        "projectile_water_queries": 0.05955678670360111,
+        "view": 0.5878116343490304,
+        "wave_queries": 0.16592797783933516
+      },
+      "physics_ticks_per_render": {
+        "n": 720,
+        "mean": 0.5013888888888889,
+        "median": 1,
+        "p95": 1,
+        "p99": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "case": "downward_camera",
+      "summary": {
+        "duration_s": 6.001,
+        "estimated_missed_60hz_slots": 0,
+        "fps_mean": 119.980003332778,
+        "fps_median": 123.456790123457,
+        "fps_p95": 181.818181818182,
+        "fps_p99": 188.679245283019,
+        "frames": 720,
+        "max_ms": 12.6,
+        "mean_ms": 8.33472222222223,
+        "median_ms": 8.1,
+        "p95_ms": 11.2,
+        "p99_ms": 11.5,
+        "presented_fps": 119.980003332778,
+        "slow_frames_over_33_ms": 0
+      },
+      "browser_raf": {
+        "duration_s": 5.98270000000001,
+        "estimated_missed_60hz_slots": 0,
+        "fps_mean": 120.012703294499,
+        "fps_median": 120.481927710843,
+        "fps_p95": 135.135135135135,
+        "fps_p99": 136.986301369863,
+        "frames": 718,
+        "max_ms": 9.4,
+        "mean_ms": 8.3324512534819,
+        "median_ms": 8.3,
+        "p95_ms": 9.3,
+        "p99_ms": 9.4,
+        "slow_frames_over_33_ms": 0
+      },
+      "cpu_ms_per_gameplay_tick": {
+        "camera_collision": 0.09944444444444445,
+        "enemy_movement": 0.165,
+        "enemy_navigation": 0.20027777777777778,
+        "enemy_path_probes": 0.15611111111111112,
+        "enemy_projectiles": 0.12111111111111111,
+        "enemy_route": 0.0002777777777777778,
+        "enemy_total": 1.026388888888889,
+        "firing_guide": 0.0025,
+        "ocean_update": 0.17333333333333334,
+        "physics_tick": 1.8941666666666668,
+        "player_movement": 0.04388888888888889,
+        "player_projectiles": 0.0044444444444444444,
+        "projectile_water_queries": 0.06138888888888889,
+        "view": 0.6252777777777778,
+        "wave_queries": 0.16972222222222222
+      },
+      "physics_ticks_per_render": {
+        "n": 720,
+        "mean": 0.5,
+        "median": 1,
+        "p95": 1,
+        "p99": 1,
+        "maximum": 1
+      }
+    }
+  ]
+}

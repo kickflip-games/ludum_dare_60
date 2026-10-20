@@ -6,6 +6,12 @@ recorded evidence and limitations.
 
 ## 2026-10-20
 
+- Work in progress: cached fixed wake-shape calculations for player and enemy
+  foam, retaining the same meshes, sample history and shared physical waves.
+  Six paired local CPU runs reduced wake updates from about 85 to 63 µs (26%);
+  36 geometry comparisons retained the original shape within 0.004 mm.
+  This measures wake CPU cost, not affected-device WebGL frame rate.
+
 - Work in progress: added six straight, tapered boost ribbons alongside the hull
   and sail, streaming aft with the existing camera streaks. Both effects share
   the boost fade and clear together on focus loss, pause and restart.
